@@ -1,10 +1,14 @@
 cmake_minimum_required(VERSION 3.13)
 project(grunk)
 
+option(GRUNK_TESTS "Build unit tests using GTest" OFF)
 
 # conan creates FindPackage.cmake files in the CMAKE_BINARY_DIR
 set(CMAKE_MODULE_PATH ${CMAKE_BINARY_DIR} ${CMAKE_MODULE_PATH})
 set(CMAKE_PREFIX_PATH ${CMAKE_BINARY_DIR} ${CMAKE_PREFIX_PATH})
+
+# grunk needs to be a shared library
+set(BUILD_SHARED_LIBS  ON)
 
 # find dependencies
 find_package(Boost REQUIRED COMPONENTS headers)
@@ -16,19 +20,19 @@ find_package(reflect REQUIRED)
 set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
 
 # create a library and add source files
-add_library(grunk plugins/api.h
-                  plugins/PluginRegistry.h
-                  plugins/PluginRegistry.cpp
-                  plugins/StdPlugin.h 
-                  plugins/StdPlugin.cpp
-                  Algorithm.h
-                  Algorithm.cpp
-                  RuntimeObject.h
-                  RuntimeObject.cpp
+add_library(grunk grunk/plugins/api.h
+                  grunk/plugins/PluginRegistry.h
+                  grunk/plugins/PluginRegistry.cpp
+                  grunk/plugins/StdPlugin.h 
+                  grunk/plugins/StdPlugin.cpp
+                  grunk/Algorithm.h
+                  grunk/Algorithm.cpp
+                  grunk/RuntimeObject.h
+                  grunk/RuntimeObject.cpp
 )
 
 target_compile_features(grunk PUBLIC cxx_std_17)
-target_link_libraries(grunk PRIVATE parametric::parametric 
+target_link_libraries(grunk PUBLIC parametric::parametric 
                                     Boost::headers
                                     range-v3::range-v3
                                     reflect::reflect
@@ -38,6 +42,10 @@ target_include_directories(grunk PUBLIC
   $<INSTALL_INTERFACE:include/grunk> 
 )
 
+if (GRUNK_TESTS)
+        add_subdirectory(tests)
+endif()
+
 # install binaries
 install(TARGETS grunk
         RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
@@ -46,7 +54,7 @@ install(TARGETS grunk
 )
 
 # install headers
-install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/
+install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/grunk
         DESTINATION include/grunk
         FILES_MATCHING
         REGEX ".*\\.(h|hpp|hxx|inl)"
