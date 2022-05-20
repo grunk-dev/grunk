@@ -4,7 +4,6 @@ set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
 
 include(${CMAKE_BINARY_DIR}/conanbuildinfo.cmake)
 conan_basic_setup()
-message("Conan libs = ${CONAN_LIBS}")
 
 add_library(bar SHARED plugin.cpp)
 target_link_libraries(bar ${CONAN_LIBS})
