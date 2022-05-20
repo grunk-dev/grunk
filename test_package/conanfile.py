@@ -22,4 +22,7 @@ class GrunkTestConan(ConanFile):
     def test(self):
         if not tools.cross_building(self):
             os.chdir("bin")
-            self.run(".%sexample ..%slib" % (os.sep, os.sep), run_environment=True)
+            if self.settings.os == "Windows":
+                self.run(".%sexample ." % os.sep, run_environment=True)
+            else:
+                self.run(".%sexample ..%slib" % (os.sep, os.sep), run_environment=True)

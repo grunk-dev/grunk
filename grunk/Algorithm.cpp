@@ -1,9 +1,6 @@
 #include "Algorithm.h"
 
 #include <vector>
-#include <range/v3/all.hpp>
-
-using namespace ranges;
 
 namespace grunk {
 
@@ -21,16 +18,21 @@ Algorithm::Algorithm(Function fun, std::initializer_list<parametric::param<Runti
 
 void Algorithm::eval() const
 {
-
-    // tranform inputs to vector of runtime objects and call the wrapped function and 
-    auto outputs_vals = function( 
-        inputs | views::transform([](auto const& param) { return std::ref(param.value()); })
-               | to<std::vector>()
+    // tranform input nodes to vector of runtime objects
+    InputsVec inputs_vec;
+    std::transform(inputs.begin(),
+                   inputs.end(),
+                   inputs_vec.begin(),
+                   [](auto const& param) { return std::ref(param.value()); }
     );
+
+    // call the wrapped function
+    auto outputs_vals = function(inputs_vec);
     
-    for (auto&& [i, output] : outputs_vals | views::enumerate  ) {
+    // move the output values to the output nodes
+    for (int i=0; i<outputs.size(); ++i) {
         if (!outputs[i].expired()) {
-                    outputs[i].set_value(std::move(output));
+                    outputs[i].set_value(std::move(outputs_vals[i]));
         }
     }
 }

@@ -1,6 +1,7 @@
 #pragma once
 
 
+#include <functional>
 #include <parametric/core.hpp>
 #include "RuntimeObject.h"
 
@@ -9,8 +10,9 @@ namespace grunk {
 class Algorithm : public parametric::ComputeNode
 {
 public:
-
-    using Function = std::function<std::vector<RuntimeObject>(std::vector<std::reference_wrapper<RuntimeObject const>> const&)>;
+    using InputsVec = std::vector<std::reference_wrapper<RuntimeObject const>>;
+    using OutputsVec = std::vector<RuntimeObject>;
+    using Function = std::function<OutputsVec(InputsVec const&)>;
 
     Algorithm(Function fun, std::initializer_list<parametric::param<RuntimeObject>> const&);
 

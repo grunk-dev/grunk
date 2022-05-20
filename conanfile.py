@@ -13,7 +13,7 @@ class GrunkConan(ConanFile):
     options = {"shared": [True], "fPIC": [True, False]}
     default_options = {"shared": True, "fPIC": True}
     generators = "cmake_find_package"
-    requires = "boost/1.78.0", "range-v3/0.11.0", "parametric/0.1@klei_j0/testing", "reflect/0.1@klei_j0/testing"
+    requires = "boost/1.78.0", "parametric/0.1@klei_j0/testing", "reflect/0.1@klei_j0/testing"
     exports_sources = "*"
 
     def config_options(self):

@@ -12,7 +12,6 @@ set(BUILD_SHARED_LIBS  ON)
 
 # find dependencies
 find_package(Boost REQUIRED COMPONENTS headers)
-find_package(range-v3 REQUIRED)
 find_package(parametric REQUIRED)
 find_package(reflect REQUIRED)
 
@@ -33,10 +32,9 @@ add_library(grunk grunk/plugins/api.h
 
 target_compile_features(grunk PUBLIC cxx_std_17)
 target_link_libraries(grunk PUBLIC parametric::parametric 
-                                    Boost::headers
-                                    range-v3::range-v3
-                                    reflect::reflect
-                                    ${CMAKE_DL_LIBS})
+                                   Boost::headers
+                                   reflect::reflect
+                                   ${CMAKE_DL_LIBS})
 target_include_directories(grunk PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
   $<INSTALL_INTERFACE:include/grunk> 
