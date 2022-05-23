@@ -13,7 +13,7 @@ include(AddGoogleTest)
 
 set(TESTSOURCES
   testmain.cpp
-  RuntimeObject.cpp
+  RuntimeFunction.cpp
 )
 
 add_executable(runUnitTests ${TESTSOURCES})

@@ -43,7 +43,7 @@ namespace grunk {
 
         /// some convenience funcs for casting
         template <typename T>
-        T cast() {
+        T cast() const {
             return std::any_cast<T>(object);
         }
 
