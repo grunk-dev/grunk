@@ -14,6 +14,7 @@ include(AddGoogleTest)
 set(TESTSOURCES
   testmain.cpp
   RuntimeFunction.cpp
+  RuntimeObject.cpp
 )
 
 add_executable(runUnitTests ${TESTSOURCES})
