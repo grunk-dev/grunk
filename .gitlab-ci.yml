@@ -34,7 +34,6 @@ build-debug:
   artifacts:
     paths:
       - build
-      - ~/.conan
       # cache:
       #   paths:
       #     - "*.o"
@@ -46,6 +45,18 @@ test-debug:
   stage: test
   dependencies:
     - build-debug
+  before_script:
+    - conan profile new default --detect
+    - conan profile update settings.compiler.libcxx=libstdc++11 default
+  # TODO: It would be cooler to have the conan packages uploaded to a registry on gitlab
+    - git clone https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.dlr.de/paradigms/parametric.git
+    - cd parametric
+    - conan create . parametric/0.1@klei_j0/testing -s build_type=Debug
+    - cd ..
+    - git clone https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.dlr.de/paradigms/reflect.git
+    - cd reflect
+    - conan create . reflect/0.1@klei_j0/testing -s build_type=Debug
+    - cd ..
   script:
     - cd build
     - conan install .. --generator=virtuanrunenv -s build_type=Debug
