@@ -21,7 +21,7 @@ build-debug:
     - conan create . parametric/0.1@klei_j0/testing -s build_type=Debug
     - cd ..
     - git clone https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.dlr.de/paradigms/reflect.git
-    - cd parametric
+    - cd reflect
     - conan create . reflect/0.1@klei_j0/testing -s build_type=Debug
     - cd ..
   script:
