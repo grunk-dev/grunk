@@ -7,6 +7,9 @@ class GrunkTestConan(ConanFile):
     settings = "os", "compiler", "build_type", "arch"
     generators = "cmake"
 
+    def config_options(self):
+        self.settings.compiler.libcxx = "libstdc++11"
+
     def build(self):
         cmake = CMake(self)
         # Current dir is "test_package/build/<build_id>" and CMakeLists.txt is

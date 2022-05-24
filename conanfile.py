@@ -21,6 +21,7 @@ class GrunkConan(ConanFile):
             del self.options.fPIC
         self.options["boost"].shared = False
         self.options["boost"].header_only = True
+        self.settings.compiler.libcxx = "libstdc++11"
 
     def build(self):
         cmake = CMake(self)
