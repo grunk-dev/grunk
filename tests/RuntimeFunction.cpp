@@ -1,0 +1,141 @@
+#include <gtest/gtest.h>
+
+#include <grunk/RuntimeFunction.h>
+
+using namespace grunk;
+
+// a class with one const and one non-const member function
+struct Foo {
+    // const member function (should be allowed)
+    std::string hello(int v) const
+    {
+        return "Hello from const function, input: " + std::to_string(v);
+    }
+
+    // non-const member function (should not be allowed)
+    void set(int v) {
+        val = v;
+    }
+
+    // const void member function
+    void bar() const {}
+
+    void operator()(double& input) {
+        input *= val;
+    }
+
+    int val {3};
+};
+
+
+// normal function
+int fun0(double x) {
+    return (int)x;
+}
+
+// function returning a tuple
+std::tuple<int, double> fun1(std::string const& in){
+    return std::make_tuple(4, 4.2);
+}
+
+class RuntimeFunctionTest : public ::testing::Test 
+{
+public:
+
+    static void SetUpTestCase() {
+        Reflect::Reflect<double>("double");
+        Reflect::Reflect<int>("int");
+        Reflect::Reflect<std::string>("string");
+
+        Reflect::Reflect<Foo>("Foo")
+        .AddDataMember(&Foo::val, "val")
+        .AddMemberFunction(&Foo::hello, "hello")
+        .AddMemberFunction(&Foo::set, "set")
+        .AddMemberFunction(&Foo::bar, "bar");
+    } 
+
+    static void TearDownTestCase() {
+        Reflect::GetTypeRegistry().clear();
+    } 
+};
+
+
+TEST_F(RuntimeFunctionTest, FunctionPointer)
+{
+    auto f = RuntimeFunction(&fun0);
+    auto x = RuntimeObject(2.2);
+    auto r = f(x);
+    EXPECT_EQ(r.size(), 1);
+    EXPECT_EQ(r[0].cast<int>(), 2);
+}
+
+TEST_F(RuntimeFunctionTest, FunctionReturningTuple)
+{
+    auto f = RuntimeFunction(&fun1);
+    auto x = RuntimeObject(std::string("Hello"));
+    auto r = f(x);
+    EXPECT_EQ(r.size(), 2);
+    EXPECT_EQ(r[0].cast<int>(), 4);
+    EXPECT_EQ(r[1].cast<double>(), 4.2);
+}
+
+TEST_F(RuntimeFunctionTest, ConstMemberFunction)
+{
+    auto f = RuntimeFunction(&Foo::hello);
+    auto foo = RuntimeObject(Foo{});
+    auto x = RuntimeObject(5);
+    auto r = f(foo, x);
+    EXPECT_EQ(r.size(), 1);
+    EXPECT_EQ(r[0].cast<std::string>(), "Hello from const function, input: 5");
+}
+
+TEST_F(RuntimeFunctionTest, ConstVoidMemberFunction)
+{
+    auto f = RuntimeFunction(&Foo::bar);
+    auto foo = RuntimeObject(Foo{});
+    auto r = f(foo);
+    EXPECT_EQ(r.size(), 0);
+}
+
+TEST_F(RuntimeFunctionTest, NonConstMemberFunction)
+{
+    auto f = RuntimeFunction(&Foo::set);
+    auto foo = RuntimeObject(Foo{});
+    auto x = RuntimeObject(5);
+    auto r = f(foo, x);
+    EXPECT_EQ(r.size(), 0);
+
+    EXPECT_EQ(foo.Get("val").cast<int>(), 5);
+}
+
+TEST_F(RuntimeFunctionTest, Lambda)
+{
+    bool proof = false;
+    auto f = RuntimeFunction(
+        [&proof](int i){ proof = true; return i*i; }
+    );
+    auto x = RuntimeObject(4);
+    auto r = f(x);
+    EXPECT_TRUE(proof);
+    EXPECT_EQ(r.size(), 1);
+    EXPECT_EQ(r[0].cast<int>(), 16); // no rounding with power of two
+}
+
+TEST_F(RuntimeFunctionTest, StdFunction)
+{
+    auto f = RuntimeFunction(std::function(&fun0));
+    auto x = RuntimeObject(2.2);
+    auto r = f(x);
+    EXPECT_EQ(r.size(), 1);
+    EXPECT_EQ(r[0].cast<int>(), 2);
+}
+
+// TODO
+// TEST_F(RuntimeFunctionTest, CallOperator)
+// {
+//     auto f = RuntimeFunction(Foo);
+//     auto x = RuntimeObject(1.1);
+//     auto r = f(x);
+//     EXPECT_EQ(r.size(), 0);
+//     EXPECT_NEAR(x.cast<double>(), 3.3, 1e-10);
+// }

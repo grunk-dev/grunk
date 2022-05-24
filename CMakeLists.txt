@@ -28,6 +28,8 @@ add_library(grunk grunk/plugins/api.h
                   grunk/Algorithm.cpp
                   grunk/RuntimeObject.h
                   grunk/RuntimeObject.cpp
+                  grunk/RuntimeFunction.h
+                  grunk/RuntimeFunction.cpp
 )
 
 target_compile_features(grunk PUBLIC cxx_std_17)
