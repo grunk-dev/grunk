@@ -10,8 +10,8 @@
 
 image: conanio/gcc9
 
-build:
-  stage: build-debug
+build-debug:
+  stage: build
   before_script:
   # TODO: It would be cooler to have the conan packages uploaded to a registry on gitlab
     - git clone https://gitlab.dlr.de/paradigms/parametric.git
