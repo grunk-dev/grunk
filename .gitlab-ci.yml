@@ -62,4 +62,4 @@ test-debug:
     - conan install .. --generator=virtualrunenv -s build_type=Debug
     - chmod a+x activate_run.sh
     - ./activate_run.sh
-    - ./build/tests/runUnitTests
+    - ./tests/runUnitTests
