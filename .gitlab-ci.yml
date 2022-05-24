@@ -26,7 +26,7 @@ build-debug:
     - cd ..
   script:
     - mkdir build && cd build
-    - conan install ..
+    - conan install .. -s build_type=Debug
     - cmake .. -DCMAKE_BUILD_TYPE=Debug -DGRUNK_TESTS=ON
     - make -j
   artifacts:
