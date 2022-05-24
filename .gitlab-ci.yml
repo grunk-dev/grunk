@@ -11,6 +11,8 @@
 image: conanio/gcc9
 
 build-debug:
+  tags:
+    - docker
   stage: build
   before_script:
   # TODO: It would be cooler to have the conan packages uploaded to a registry on gitlab
@@ -31,6 +33,8 @@ build-debug:
 
 # run tests using the binary built before
 test-debug:
+  tags:
+    - docker
   stage: test
   dependencies:
     - build-debug
