@@ -15,6 +15,7 @@ build-debug:
     - docker
   stage: build
   before_script:
+    - conan profile update settings.compiler.libcxx=libstdc++11 default
   # TODO: It would be cooler to have the conan packages uploaded to a registry on gitlab
     - git clone https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.dlr.de/paradigms/parametric.git
     - cd parametric
@@ -32,6 +33,7 @@ build-debug:
   artifacts:
     paths:
       - build
+      - ~/.conan
       # cache:
       #   paths:
       #     - "*.o"
