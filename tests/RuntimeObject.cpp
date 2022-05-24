@@ -40,6 +40,23 @@ TEST_F(RuntimeObjectTest, CtorSimple)
     EXPECT_EQ(x.Get("value").cast<double>(), 0.5);
 }
 
+TEST_F(RuntimeObjectTest, Casting)
+{
+    RuntimeObject x = make_rto("MyDouble", 0.5);
+    
+    auto* y = x.cast<MyDouble*>();
+    y->value = 13.;
+    EXPECT_EQ(x.Get("value").cast<double>(), 13.);
+
+    auto& z = x.cast<MyDouble&>();
+    z.value = 11.1;
+    EXPECT_EQ(x.Get("value").cast<double>(), 11.1);
+
+    auto cpy = x.cast<MyDouble>();
+    cpy.value = 0.124;
+    EXPECT_EQ(x.Get("value").cast<double>(), 11.1);
+}
+
 TEST_F(RuntimeObjectTest, SetterGetter)
 {
     RuntimeObject x = make_rto("MyDouble", 0.5);
