@@ -19,35 +19,71 @@ constexpr bool is_tuple_v<std::tuple<Args...>> = true;
 
 // arg_type gets the argument types of a callable object
 
-template <typename> struct arg_types;
+// as seen on http://functionalcpp.wordpress.com/2013/08/05/function-traits/
+template<class F>
+struct function_traits;
 
+// function pointer
+template<class R, class... Args>
+struct function_traits<R(*)(Args...)> : public function_traits<R(Args...)>
+{};
 
-// arg_type of function pointer
-template <typename R, typename... Args> 
-struct arg_types<R(*)(Args...)> {
-  using type = std::tuple<Args...>;
-}; 
+template<class R, class... Args>
+struct function_traits<R(Args...)>
+{
+    using return_type = R;
 
-// arg_type of function
-template <typename R, typename... Args> 
-struct arg_types<R(Args...)> {
-  using type = std::tuple<Args...>;
-}; 
+    static constexpr std::size_t arity = sizeof...(Args);
 
-// arg_type of const member function
-template <typename R, typename T, typename... Args> 
-struct arg_types<R(T::*)(Args...) const> {
-  using type = std::tuple<T const&, Args...>;
+    template <std::size_t N>
+    struct argument
+    {
+        static_assert(N < arity, "error: invalid parameter index.");
+        using type = typename std::tuple_element<N,std::tuple<Args...>>::type;
+    };
 };
 
-// arg_type of non-const member function
-template <typename R, typename T, typename... Args> 
-struct arg_types<R(T::*)(Args...)> {
-  using type = std::tuple<T&, Args...>;
+// member function pointer
+template<class C, class R, class... Args>
+struct function_traits<R(C::*)(Args...)> : public function_traits<R(C&,Args...)>
+{};
+
+// const member function pointer
+template<class C, class R, class... Args>
+struct function_traits<R(C::*)(Args...) const> : public function_traits<R(C&,Args...)>
+{};
+
+// member object pointer
+template<class C, class R>
+struct function_traits<R(C::*)> : public function_traits<R(C&)>
+{};
+
+// functor
+template<class F>
+struct function_traits
+{
+    private:
+        using call_type = function_traits<decltype(&F::operator())>;
+    public:
+        using return_type = typename call_type::return_type;
+
+        static constexpr std::size_t arity = call_type::arity - 1;
+
+        template <std::size_t N>
+        struct argument
+        {
+            static_assert(N < arity, "error: invalid parameter index.");
+            using type = typename call_type::template argument<N+1>::type;
+        };
 };
 
-template <typename T>
-using arg_types_t = typename arg_types<T>::type;
+template<class F>
+struct function_traits<F&> : public function_traits<F>
+{};
+
+template<class F>
+struct function_traits<F&&> : public function_traits<F>
+{};
 
 } // namespace details
 
@@ -59,9 +95,8 @@ template <typename F>
 class RuntimeFunction
 {
 
-    using args = typename details::arg_types_t<F>;
-
 public:
+
     RuntimeFunction(F const& f)
      : fun{f}
     {}
@@ -76,12 +111,12 @@ private:
     template <typename... Inputs, size_t... Is>
     std::vector<RuntimeObject> call(std::index_sequence<Is...>, Inputs&&... inputs) const
     {
-        using ResultType = std::invoke_result_t<F, typename std::tuple_element<Is, args>::type...>;
+        using ResultType = typename details::function_traits<F>::return_type;
 
         auto invoke = [this](Inputs const&... i){
             return std::invoke(
                 fun,
-                i.template cast<typename std::tuple_element<Is, args>::type>()...
+                i.template cast<typename details::function_traits<F>::template argument<Is>::type>()...
             ); 
         };
 
