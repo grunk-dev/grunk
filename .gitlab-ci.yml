@@ -44,4 +44,4 @@ test-debug:
   dependencies:
     - build-debug
   script:
-    - .build/tests/runUnitTests
+    - ./build/tests/runUnitTests
