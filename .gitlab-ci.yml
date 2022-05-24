@@ -16,7 +16,7 @@ build-debug:
   stage: build
   before_script:
   # TODO: It would be cooler to have the conan packages uploaded to a registry on gitlab
-    - git clone https://gitlab.dlr.de/paradigms/parametric.git
+    - git clone https://gitlab-ci-token:${CI_JOB_TOKEN}@https://gitlab.dlr.de/paradigms/parametric.git
     - cd parametric
     - conan create . parametric/0.1@klei_j0/testing -s build_type=Debug
   script:
