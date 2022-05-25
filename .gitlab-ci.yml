@@ -52,7 +52,7 @@ create-package-debug:
   dependencies:
     - test-debug
   script:
-    - conan remote add gitlab ${CI_API_V4_URL}/groups/7242/packages/conan
+    - conan remote add gitlab ${CI_API_V4_URL}/projects/21487/packages/conan
     - conan create . paradigms/testing -s build_type=Debug
     - CONAN_LOGIN_USERNAME=ci_user CONAN_PASSWORD=${CI_JOB_TOKEN} conan upload grunk/0.1@paradigms/testing --all --remote=gitlab
 
