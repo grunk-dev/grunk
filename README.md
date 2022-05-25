@@ -40,16 +40,14 @@ conda activate paradigms
 Now, `grunk` can be installed from the conan remote `gitlab` via
 
 ```
-conan install grunk/0.1@paradigms/testing
+conan install grunk/0.1@paradigms/testing --build=missing
 ```
-
-**Disclaimer:** *Currently, only gcc 9 Debug packages are hosted on the paradigms gitlab package registry for `grunk`, `parametric` and `reflect`. For another compiler or build configuration, you need to manually build the configuration using `conan install grunk/0.1@paradigms/testing --build=missing`.*
 
 ## Building grunk from source
 
 You need cmake as well as a C++17 compliant compiler to build grunk from source. In addition, grunk depends on the packages `reflect` and `parametric` which can be installed using conan. Make sure you setup conan to use the paradigms gitlab package registry, see the **Installation** section [above](https://gitlab.dlr.de/paradigms/grunk#setup-conan-to-use-the-paradigms-gitlab-package-registry). 
 
-- If you are using gcc>=5.1, you should [update the ABI used by conan](https://docs.conan.io/en/latest/howtos/manage_gcc_abi.html):
+- If you are using Linux and gcc>=5.1, you should [update the ABI used by conan](https://docs.conan.io/en/latest/howtos/manage_gcc_abi.html):
   ```
   conan profile update settings.compiler.libcxx=libstdc++11 default
   ```
@@ -58,7 +56,7 @@ You need cmake as well as a C++17 compliant compiler to build grunk from source.
 
   ```
   mkdir build && cd build
-  conan install .. -r gitlab -s build_type=Debug
+  conan install .. -r gitlab -s build_type=Debug --build=missing
   cmake .. -DCMAKE_BUILD_TYPE=Debug -DGRUNK_TESTS=ON -GNinja
   ninja
   ```
@@ -73,7 +71,7 @@ You need cmake as well as a C++17 compliant compiler to build grunk from source.
     ./activate_run.sh
     ```
   
-    On Windows you can skip the `chmod` step and you would execute `activate_run.ps` in the following step.
+    On Windows you can skip the `chmod` step and you would execute `activate_run.ps` or `activate_run.bat` in the following step.
   
   - Now run the unit tests:
 
