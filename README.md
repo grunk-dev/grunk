@@ -13,33 +13,56 @@ This way, models built with grunk are highly modular and extendable. Users can s
 
 ## Installation
 
-Grunk can be built or installed by conan
+Grunk can be installed using [conan](https://conan.io/).
 
-TODO
+- Install conan via pip or conda, whichever you prefer. As always, it is recommended to install python packages in an isolated environment. To install `conan` into an environment called `paradigms` enter the following commands
+  ```
+  conda create -n paradigms conan
+  conda activate paradigms
+  ```
+- Add the conan package registry and name it `gitlab`
+  ```
+  conan remote add gitlab https://gitlab.dlr.de/api/v4/projects/21487/packages/conan
+  ```
+- The package registry is private, so to install packages from it, we need to create a personal access token. When you are logged in to Gitlab click your profile picture at the top right and select `Edit profile`. At the left click `Access Tokens` and create a new token with scope `api`. Copy the token and enter the following commands to use this access token for the remote `gitlab`:
+  ```
+  conan user <gitlab_username or deploy_token_username> -r gitlab -p <personal_access_token or deploy_token>
+  ```
+- Now, `grunk` can be installed from the conan remote `gitlab` via
+  ```
+  conan install grunk/0.1@paradigms/testing
+  ```
 
 ## Building
 
-Grunk has the following build dependencies:
+All you need is a C++17 compliant compiler. grunk depends on the packages `reflect` and `parametric` which can be installed using conan. Make sure you setup conan to use the paradigms package registry, see the **Installation** section. 
 
- - `boost` (headers only)
- - `parametric`
- - `reflect`
-
-Both `parametric` and `reflect` were written specifically for grunk. You will also need a C++17 compliant compiler. The easiest way to install the dependencies is using conan. Make sure you have local conan packages for `parametric` and `reflect`, as they are currently not hosted in a package registry (yet).
+Enter the following commands to install the dependencies and build grunk in debug mode from source using the generator `ninja`:
 
 ```
 mkdir build && cd build
-conan install ..
-cmake .. -DGRUNK_TESTS=ON -GNinja
+conan install .. -r gitlab -s build_type=Debug
+cmake .. -DCMAKE_BUILD_TYPE=Debug -DGRUNK_TESTS=ON -GNinja
 ninja
 ```
 
-Make sure everything works:
+Make sure everything works by running the unit tests. 
 
-```
-cd tests
-./runUnitTests
-```
+- Set the paths to all required shared libraries. The easiest way to do this is using a conan virtual run environment. Assuming you are using Linux, enter:
+
+  ```
+  conan install .. --generator=virtualrunenv -s build_type=Debug
+  chmod a+x activate_run.sh
+  ./activate_run.sh
+  ```
+
+  On Windows you can skip the `chmod` step and you would execute `activate_run.ps` in the following step.
+
+- Now run the unit tests:
+
+  ```
+  ./tests/runUnitTests
+  ```
 
 ## Roadmap
 

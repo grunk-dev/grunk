@@ -1,15 +1,14 @@
 image: conanio/gcc9
 
 before_script:
+# use new ABI by default
   - conan profile new default --detect
   - conan profile update settings.compiler.libcxx=libstdc++11 default
+# Add gitlab conan package registry and setup ser name and access token
   - conan remote add gitlab https://gitlab.dlr.de/api/v4/projects/21487/packages/conan
   - conan user ci_user -r gitlab -p ${CI_JOB_TOKEN}
-# TODO: It would be cooler to have the conan packages uploaded to a registry on gitlab
-  - git clone https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.dlr.de/paradigms/parametric.git
-  - cd parametric
-  - conan create . parametric/0.1@klei_j0/testing -s build_type=Debug
-  - cd ..
+# install requirements
+  - conan install parametric/0.1@paradigms/testing --remote=gitlab
   - conan install reflect/0.1@paradigms/testing --remote=gitlab -s build_type=Debug
 
 # TODO: debug & release builds for several clang and gcc versions, windows CI
