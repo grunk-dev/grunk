@@ -15,12 +15,18 @@ This way, models built with grunk are highly modular and extendable. Users can s
 
 Grunk can be installed using [conan](https://conan.io/).
 
-- Install conan via pip or conda, whichever you prefer. As always, it is recommended to install python packages in an isolated environment. To install `conan` into an environment called `paradigms` enter the following commands
-  ```
-  conda create -n paradigms conan
-  conda activate paradigms
-  ```
-- Add the conan package registry and name it `gitlab`
+### Install conan
+
+Install conan via pip or conda, whichever you prefer. As always, it is recommended to install python packages in an isolated environment. To install `conan` into an environment called `paradigms` enter the following commands
+
+```
+conda create -n paradigms conan
+conda activate paradigms
+```
+
+###  Setup conan to use the paradigms gitlab package registry
+
+- Add the paradigms gitlab package registry and name it `gitlab`
   ```
   conan remote add gitlab https://gitlab.dlr.de/api/v4/projects/21487/packages/conan
   ```
@@ -28,14 +34,18 @@ Grunk can be installed using [conan](https://conan.io/).
   ```
   conan user <gitlab_username or deploy_token_username> -r gitlab -p <personal_access_token or deploy_token>
   ```
-- Now, `grunk` can be installed from the conan remote `gitlab` via
-  ```
-  conan install grunk/0.1@paradigms/testing
-  ```
 
-## Building
+### Install grunk
 
-All you need is a C++17 compliant compiler. grunk depends on the packages `reflect` and `parametric` which can be installed using conan. Make sure you setup conan to use the paradigms package registry, see the **Installation** section. 
+Now, `grunk` can be installed from the conan remote `gitlab` via
+
+```
+conan install grunk/0.1@paradigms/testing
+```
+
+## Building grunk from source
+
+You need cmake as well as a C++17 compliant compiler to build grunk from source. In addition, grunk depends on the packages `reflect` and `parametric` which can be installed using conan. Make sure you setup conan to use the paradigms gitlab package registry, see the **Installation** section above. 
 
 Enter the following commands to install the dependencies and build grunk in debug mode from source using the generator `ninja`:
 
@@ -63,6 +73,20 @@ Make sure everything works by running the unit tests.
   ```
   ./tests/runUnitTests
   ```
+
+## Design ideas
+
+### Runtime Objects and Runtime Functions
+
+C++ is a statically typed language and all types must be determined at compile time. To be able to load user defined feature types at runtime and do something with them, grunk works with type-erased objects called `RuntimeObject`. Basically, a `RuntimeObject` is an [`std::any`](https://en.cppreference.com/w/cpp/utility/any) on steroids: In addition to the type-erased object, it stores a type description with some functionality for accessing constructors as well as data members and member functions. This type descriptor must be created once, e.g. by a plugin author by *reflecting* the type at compile time of the plugin when registering the feature types provided by the plugin.
+
+A `RuntimeFunction` creates a function accepting and returning `RuntimeObject`s from any function accepting and returning types, which have been *reflected*.
+
+Thus, `RuntimeFunction`s and `RuntimeObject`s provide a minimalistic dynamically typed sublanguage in C++. Why not use a dynamically typed scripting language like python from the start? Firstly, python would be a big dependency for grunk and would hinder the integrability. Most features of Python are not needed for grunk. It should be easy to use grunk as a fairly light-weight C++ library. Secondly, both the `RuntimeObject`s and python's ability to be dynamically typed come at a performance overhead because types must be resolved at runtime via type-erasure and runtime polymorphism techniques. Using a minimalistic sublanguage in C++ gives us fine-grained control over just how much dynamic typing we need.
+
+### Features and Algorithms
+
+TODO
 
 ## Roadmap
 
