@@ -121,6 +121,19 @@ TEST_F(RuntimeFunctionTest, Lambda)
     EXPECT_EQ(r[0].cast<int>(), 16); // no rounding with power of two
 }
 
+// TEST_F(RuntimeFunctionTest, MutableLambda)
+// {
+//     bool proof = false;
+//     auto f = RuntimeFunction(
+//         [=](int i) mutable { proof = true; return i*i; }
+//     );
+//     auto x = RuntimeObject(4);
+//     auto r = f(x);
+//     EXPECT_TRUE(proof);
+//     EXPECT_EQ(r.size(), 1);
+//     EXPECT_EQ(r[0].cast<int>(), 16); // no rounding with power of two
+// }
+
 TEST_F(RuntimeFunctionTest, StdFunction)
 {
     auto f = RuntimeFunction(std::function(&fun0));
