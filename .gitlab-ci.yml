@@ -1,31 +1,24 @@
-# This file is a template, and might need editing before it works on your project.
-# To contribute improvements to CI/CD templates, please follow the Development guide at:
-# https://docs.gitlab.com/ee/development/cicd/templates.html
-# This specific template is located at:
-# https://gitlab.com/gitlab-org/gitlab/-/blob/master/lib/gitlab/ci/templates/C++.gitlab-ci.yml
-
-# use the official gcc image, based on debian
-# can use verions as well, like gcc:5.2
-# see https://hub.docker.com/_/gcc/
-
 image: conanio/gcc9
+
+before_script:
+  - conan profile new default --detect
+  - conan profile update settings.compiler.libcxx=libstdc++11 default
+# TODO: It would be cooler to have the conan packages uploaded to a registry on gitlab
+  - git clone https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.dlr.de/paradigms/parametric.git
+  - cd parametric
+  - conan create . parametric/0.1@klei_j0/testing -s build_type=Debug
+  - cd ..
+  - git clone https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.dlr.de/paradigms/reflect.git
+  - cd reflect
+  - conan create . reflect/0.1@klei_j0/testing -s build_type=Debug
+  - cd ..
+
+# TODO: debug & release builds for several clang and gcc versions, windows CI
 
 build-debug:
   tags:
     - docker
   stage: build
-  before_script:
-    - conan profile new default --detect
-    - conan profile update settings.compiler.libcxx=libstdc++11 default
-  # TODO: It would be cooler to have the conan packages uploaded to a registry on gitlab
-    - git clone https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.dlr.de/paradigms/parametric.git
-    - cd parametric
-    - conan create . parametric/0.1@klei_j0/testing -s build_type=Debug
-    - cd ..
-    - git clone https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.dlr.de/paradigms/reflect.git
-    - cd reflect
-    - conan create . reflect/0.1@klei_j0/testing -s build_type=Debug
-    - cd ..
   script:
     - mkdir build && cd build
     - conan install .. -s build_type=Debug
@@ -45,18 +38,6 @@ test-debug:
   stage: test
   dependencies:
     - build-debug
-  before_script:
-    - conan profile new default --detect
-    - conan profile update settings.compiler.libcxx=libstdc++11 default
-  # TODO: It would be cooler to have the conan packages uploaded to a registry on gitlab
-    - git clone https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.dlr.de/paradigms/parametric.git
-    - cd parametric
-    - conan create . parametric/0.1@klei_j0/testing -s build_type=Debug
-    - cd ..
-    - git clone https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.dlr.de/paradigms/reflect.git
-    - cd reflect
-    - conan create . reflect/0.1@klei_j0/testing -s build_type=Debug
-    - cd ..
   script:
     - cd build
     - conan install .. --generator=virtualrunenv -s build_type=Debug
@@ -64,7 +45,7 @@ test-debug:
     - ./activate_run.sh
     - ./tests/runUnitTests
 
-create_package-debug:
+create-package-debug:
   tags:
     - docker
   stage: deploy
