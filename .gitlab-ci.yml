@@ -4,6 +4,7 @@ before_script:
   - conan profile new default --detect
   - conan profile update settings.compiler.libcxx=libstdc++11 default
   - conan remote add gitlab https://gitlab.dlr.de/api/v4/projects/21487/packages/conan
+  - conan user ci_user -r gitlab -p ${CI_JOB_TOKEN}
 # TODO: It would be cooler to have the conan packages uploaded to a registry on gitlab
   - git clone https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.dlr.de/paradigms/parametric.git
   - cd parametric
