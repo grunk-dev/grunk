@@ -102,20 +102,20 @@ public:
     {}
     
     template <typename... Inputs, typename Indices = std::make_index_sequence<sizeof...(Inputs)>>
-    std::vector<RuntimeObject> operator()(Inputs&&... inputs) const
+    std::vector<RuntimeObject> operator()(Inputs&&... inputs)
     {
        return call(Indices{}, std::forward<Inputs>(inputs)...);
     }
 private:
 
     template <typename... Inputs, size_t... Is>
-    std::vector<RuntimeObject> call(std::index_sequence<Is...>, Inputs&&... inputs) const
+    std::vector<RuntimeObject> call(std::index_sequence<Is...>, Inputs&&... inputs)
     {
         using ResultType = typename details::function_traits<F>::return_type;
 
-        auto invoke = [this](Inputs const&... i){
+        auto invoke = [this](Inputs&... i){
             return std::invoke(
-                fun,
+                std::forward<F>(fun),
                 i.template cast<typename details::function_traits<F>::template argument<Is>::type>()...
             ); 
         };
@@ -145,7 +145,7 @@ private:
         }
     }
 
-    F const fun;
+    F fun;
 };
 
 } // namespace grunk

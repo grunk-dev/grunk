@@ -20,8 +20,8 @@ struct Foo {
     // const void member function
     void bar() const {}
 
-    void operator()(double& input) {
-        input *= val;
+    double operator()(double& input) const {
+        return input * val;
     }
 
     int val {3};
@@ -121,18 +121,18 @@ TEST_F(RuntimeFunctionTest, Lambda)
     EXPECT_EQ(r[0].cast<int>(), 16); // no rounding with power of two
 }
 
-// TEST_F(RuntimeFunctionTest, MutableLambda)
-// {
-//     bool proof = false;
-//     auto f = RuntimeFunction(
-//         [=](int i) mutable { proof = true; return i*i; }
-//     );
-//     auto x = RuntimeObject(4);
-//     auto r = f(x);
-//     EXPECT_TRUE(proof);
-//     EXPECT_EQ(r.size(), 1);
-//     EXPECT_EQ(r[0].cast<int>(), 16); // no rounding with power of two
-// }
+TEST_F(RuntimeFunctionTest, MutableLambda)
+{
+    int j = 0;
+    auto f = RuntimeFunction(
+        [=](int i) mutable {  j=4; return j*i; }
+    );
+    auto x = RuntimeObject(4);
+    auto r = f(x);
+    EXPECT_EQ(j, 0);
+    EXPECT_EQ(r.size(), 1);
+    EXPECT_EQ(r[0].cast<int>(), 16); // no rounding with power of two
+}
 
 TEST_F(RuntimeFunctionTest, StdFunction)
 {
@@ -143,12 +143,11 @@ TEST_F(RuntimeFunctionTest, StdFunction)
     EXPECT_EQ(r[0].cast<int>(), 2);
 }
 
-// TODO
-// TEST_F(RuntimeFunctionTest, CallOperator)
-// {
-//     auto f = RuntimeFunction(Foo);
-//     auto x = RuntimeObject(1.1);
-//     auto r = f(x);
-//     EXPECT_EQ(r.size(), 0);
-//     EXPECT_NEAR(x.cast<double>(), 3.3, 1e-10);
-// }
+TEST_F(RuntimeFunctionTest, CallOperator)
+{
+    auto f = RuntimeFunction(Foo());
+    auto x = RuntimeObject(1.1);
+    auto r = f(x);
+    EXPECT_EQ(r.size(), 1);
+    EXPECT_NEAR(r[0].cast<double>(), 3.3, 1e-10);
+}
