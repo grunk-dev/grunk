@@ -65,7 +65,11 @@ test-debug:
     - ./tests/runUnitTests
 
 create_package-debug:
+  tags:
+    - docker
   stage: deploy
+  dependencies:
+    - test-debug
   script:
     - conan remote add gitlab ${CI_API_V4_URL}/groups/7242/packages/conan
     - conan create . paradigms/testing
