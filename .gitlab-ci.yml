@@ -10,7 +10,7 @@ before_script:
   - cd parametric
   - conan create . parametric/0.1@klei_j0/testing -s build_type=Debug
   - cd ..
-  - conan install reflect --remote=gitlab -s build_type=Debug
+  - conan install reflect/0.1@paradigms/testing --remote=gitlab -s build_type=Debug
 
 # TODO: debug & release builds for several clang and gcc versions, windows CI
 
