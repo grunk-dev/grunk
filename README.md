@@ -4,7 +4,7 @@
 
 Grunk is a parametric modeling engine that helps you build complex models from parameters, track the dependencies of your model features and annotate them with metadata. Features are evaluated lazily and they will be automatically invalidated if any of the features and parameters it depends on changes. You can write your model to a human-readable file to disk and rebuild your model from the saved file. Grunk is targeted at - but not limited to - geometric modeling.
 
-The only assumption grunk makes is that the model consists of certain **features** *(objects of a specific type)* which can be computed with the help of given **functions** from other features or parameters. These functions are expected to be [referentially transparent](https://en.wikipedia.org/wiki/Referential_transparency) *(disrregarding logging etc.)*. A model can therefore be identified with a *directed acyclic graph* of functions, their inputs and their outputs.
+The only assumption grunk makes is that the model consists of certain **features** *(objects of a specific type)* which can be computed with the help of given **functions** from other features or parameters. These functions are expected to be [referentially transparent](https://en.wikipedia.org/wiki/Referential_transparency) *(disregarding logging etc.)*. A model can therefore be identified with a *directed acyclic graph* of functions, their inputs and their outputs.
 
 Functions and feature types are loaded at runtime from grunk plugins. By doing this, each grunk plugin provides some domain specific building blocks for any kind of model.
 
@@ -83,11 +83,13 @@ You need cmake as well as a C++17 compliant compiler to build grunk from source.
 
 ### Runtime Objects and Runtime Functions
 
-C++ is a statically typed language and all types must be determined at compile time. To be able to load user defined feature types at runtime and do something with them, grunk works with type-erased objects called `RuntimeObject`. Basically, a `RuntimeObject` is an [`std::any`](https://en.cppreference.com/w/cpp/utility/any) on steroids: In addition to the type-erased object, it stores a type description with some functionality for accessing constructors as well as data members and member functions. This type descriptor must be created once, e.g. by a plugin author by *reflecting* the type at compile time of the plugin when registering the feature types provided by the plugin.
+C++ is a statically typed language and all types must be determined at compile time. To be able to load user defined feature types at runtime and do something with them, grunk works with type-erased objects called `RuntimeObject` as well as `RuntimeFunction`s that accept and return `RuntimeObject`s. In a way, `RuntimeObject`s and `RuntimeFunction`s provide a minimalistic dynamically typed sublanguage in C++. 
 
-A `RuntimeFunction` creates a function accepting and returning `RuntimeObject`s from any function accepting and returning types, which have been *reflected*.
+Basically, a `RuntimeObject` is an [`std::any`](https://en.cppreference.com/w/cpp/utility/any) on steroids: In addition to the type-erased object, it stores a type descriptor with some functionality for accessing constructors as well as data members and member functions. This type descriptor must be created once by *reflecting* the actual C++ type. This is done at compile time of the plugin that provides the correspong feature type. 
 
-Thus, `RuntimeFunction`s and `RuntimeObject`s provide a minimalistic dynamically typed sublanguage in C++. Why not use a dynamically typed scripting language like python from the start? Firstly, python would be a big dependency for grunk and would hinder the integrability. Most features of Python are not needed for grunk. It should be easy to use grunk as a fairly light-weight C++ library. Secondly, both the `RuntimeObject`s and python's ability to be dynamically typed come at a performance overhead because types must be resolved at runtime via type-erasure and runtime polymorphism techniques. Using a minimalistic sublanguage in C++ gives us fine-grained control over just how much dynamic typing we need.
+A `RuntimeFunction` creates a function accepting and returning `RuntimeObject`s from any function accepting and returning types, which have previously been *reflected*. 
+
+Why not use a dynamically typed scripting language like python from the start? Firstly, python would be a big dependency for grunk and would hinder the integrability. Most features of Python are not needed for grunk. It should be easy to use grunk as a fairly light-weight C++ library. Secondly, both the `RuntimeObject`s and python's ability to be dynamically typed come at a performance overhead because types must be resolved at runtime via type-erasure and runtime polymorphism techniques. Using a minimalistic sublanguage in C++ gives us fine-grained control over just how much dynamic typing we need.
 
 ### Features and Algorithms
 
