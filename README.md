@@ -47,32 +47,37 @@ conan install grunk/0.1@paradigms/testing
 
 You need cmake as well as a C++17 compliant compiler to build grunk from source. In addition, grunk depends on the packages `reflect` and `parametric` which can be installed using conan. Make sure you setup conan to use the paradigms gitlab package registry, see the **Installation** section [above](https://gitlab.dlr.de/paradigms/grunk#setup-conan-to-use-the-paradigms-gitlab-package-registry). 
 
-Enter the following commands to install the dependencies and build grunk in debug mode from source using the generator `ninja`:
-
-```
-mkdir build && cd build
-conan install .. -r gitlab -s build_type=Debug
-cmake .. -DCMAKE_BUILD_TYPE=Debug -DGRUNK_TESTS=ON -GNinja
-ninja
-```
-
-Make sure everything works by running the unit tests. 
-
-- Set the paths to all required shared libraries. The easiest way to do this is using a conan virtual run environment. Assuming you are using Linux, enter:
-
+- If you are using gcc>=5.1, you should [update the ABI used by conan](https://docs.conan.io/en/latest/howtos/manage_gcc_abi.html):
   ```
-  conan install .. --generator=virtualrunenv -s build_type=Debug
-  chmod a+x activate_run.sh
-  ./activate_run.sh
+  conan profile update settings.compiler.libcxx=libstdc++11 default
   ```
 
-  On Windows you can skip the `chmod` step and you would execute `activate_run.ps` in the following step.
-
-- Now run the unit tests:
+- Enter the following commands to install the dependencies and build grunk in debug mode from source using the generator `ninja`:
 
   ```
-  ./tests/runUnitTests
+  mkdir build && cd build
+  conan install .. -r gitlab -s build_type=Debug
+  cmake .. -DCMAKE_BUILD_TYPE=Debug -DGRUNK_TESTS=ON -GNinja
+  ninja
   ```
+
+- Make sure everything works by running the unit tests. 
+
+  - Set the paths to all required shared libraries. The easiest way to do this is using a conan virtual run environment. Assuming you are using Linux, enter:
+
+    ```
+    conan install .. --generator=virtualrunenv -s build_type=Debug
+    chmod a+x activate_run.sh
+    ./activate_run.sh
+    ```
+  
+    On Windows you can skip the `chmod` step and you would execute `activate_run.ps` in the following step.
+  
+  - Now run the unit tests:
+
+    ```
+    ./tests/runUnitTests
+    ```
 
 ## Design ideas
 
