@@ -63,3 +63,11 @@ test-debug:
     - chmod a+x activate_run.sh
     - ./activate_run.sh
     - ./tests/runUnitTests
+
+create_package-debug:
+  stage: deploy
+  script:
+    - conan remote add gitlab ${CI_API_V4_URL}/groups/7242/packages/conan
+    - conan create . paradigms/testing
+    - CONAN_LOGIN_USERNAME=ci_user CONAN_PASSWORD=${CI_JOB_TOKEN} conan upload grunk/0.1@paradigms/testing --all --remote=gitlab
+
