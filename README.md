@@ -2,7 +2,7 @@
 
 **Disclaimer:** *This is work in progress at a very early stage. Most features have not been implemented yet. Expect the code and API to change frequently!*
 
-Grunk is a parametric modeling engine that helps you build complex models from parameters, track the dependencies of your model features and annotate them with metadata. You can write your model to a human-readable file to disk and rebuild your model from the saved file. Grunk is targeted at - but not limited to - geometric modeling.
+Grunk is a parametric modeling engine that helps you build complex models from parameters, track the dependencies of your model features and annotate them with metadata. Features are evaluated lazily and they will be automatically invalidated if any of the features and parameters it depends on changes. You can write your model to a human-readable file to disk and rebuild your model from the saved file. Grunk is targeted at - but not limited to - geometric modeling.
 
 The only assumption grunk makes is that the model consists of certain **features** *(objects of a specific type)* which can be computed with the help of given **functions** from other features or parameters. These functions are expected to be [referentially transparent](https://en.wikipedia.org/wiki/Referential_transparency) *(disrregarding logging etc.)*. A model can therefore be identified with a *directed acyclic graph* of functions, their inputs and their outputs.
 
@@ -32,7 +32,7 @@ conda activate paradigms
   ```
 - The package registry is private, so to install packages from it, we need to create a personal access token. When you are logged in to Gitlab click your profile picture at the top right and select `Edit profile`. At the left click `Access Tokens` and create a new token with scope `api`. Copy the token and enter the following commands to use this access token for the remote `gitlab`:
   ```
-  conan user <gitlab_username or deploy_token_username> -r gitlab -p <personal_access_token or deploy_token>
+  conan user <gitlab_username> -r gitlab -p <personal_access_token>
   ```
 
 ### Install grunk
@@ -45,7 +45,7 @@ conan install grunk/0.1@paradigms/testing
 
 ## Building grunk from source
 
-You need cmake as well as a C++17 compliant compiler to build grunk from source. In addition, grunk depends on the packages `reflect` and `parametric` which can be installed using conan. Make sure you setup conan to use the paradigms gitlab package registry, see the **Installation** section above. 
+You need cmake as well as a C++17 compliant compiler to build grunk from source. In addition, grunk depends on the packages `reflect` and `parametric` which can be installed using conan. Make sure you setup conan to use the paradigms gitlab package registry, see the **Installation** section [above](https://gitlab.dlr.de/paradigms/grunk#setup-conan-to-use-the-paradigms-gitlab-package-registry). 
 
 Enter the following commands to install the dependencies and build grunk in debug mode from source using the generator `ninja`:
 
