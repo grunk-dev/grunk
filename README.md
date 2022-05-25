@@ -43,6 +43,8 @@ Now, `grunk` can be installed from the conan remote `gitlab` via
 conan install grunk/0.1@paradigms/testing
 ```
 
+**Disclaimer:** *Currently, only gcc 9 Debug packages are hosted on the paradigms gitlab package registry for `grunk`, `parametric` and `reflect`. For another compiler or build configuration, you need to manually build the configuration using `conan install grunk/0.1@paradigms/testing --build=missing`.*
+
 ## Building grunk from source
 
 You need cmake as well as a C++17 compliant compiler to build grunk from source. In addition, grunk depends on the packages `reflect` and `parametric` which can be installed using conan. Make sure you setup conan to use the paradigms gitlab package registry, see the **Installation** section [above](https://gitlab.dlr.de/paradigms/grunk#setup-conan-to-use-the-paradigms-gitlab-package-registry). 
