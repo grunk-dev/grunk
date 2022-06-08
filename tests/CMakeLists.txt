@@ -13,6 +13,7 @@ include(AddGoogleTest)
 
 set(TESTSOURCES
   testmain.cpp
+  Algorithm.cpp
   RuntimeFunction.cpp
   RuntimeObject.cpp
 )

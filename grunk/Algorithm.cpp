@@ -4,25 +4,13 @@
 
 namespace grunk {
 
-Algorithm::Algorithm(Function fun, std::initializer_list<parametric::param<RuntimeObject>> const& in)
- : function(fun)
- , inputs(in)
-{
-    for (auto& i: inputs){
-        depends_on(i);
-    }
-    for (auto& o: outputs){
-        computes(o, parametric::param<RuntimeObject>(""));
-    }
-}
-
 void Algorithm::eval() const
 {
     // tranform input nodes to vector of runtime objects
     InputsVec inputs_vec;
     std::transform(inputs.begin(),
                    inputs.end(),
-                   inputs_vec.begin(),
+                   std::back_inserter(inputs_vec),
                    [](auto const& param) { return std::ref(param.value()); }
     );
 
@@ -37,9 +25,9 @@ void Algorithm::eval() const
     }
 }
 
-std::vector<parametric::OutputParam<RuntimeObject>> const& Algorithm::get_outputs() const
+parametric::param<RuntimeObject> Algorithm::get(size_t idx) const
 {
-    return outputs;
+    return outputs[idx];
 }
 
 } //namespace grunk

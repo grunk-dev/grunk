@@ -17,7 +17,17 @@ template<typename> constexpr bool is_tuple_v = false;
 template<typename... Args>
 constexpr bool is_tuple_v<std::tuple<Args...>> = true;
 
-// arg_type gets the argument types of a callable object
+template <typename T>
+constexpr size_t num_values() {
+    if constexpr (details::is_tuple_v<T>) {
+        return std::tuple_size_v<T>;
+    }
+    else {
+        return 1;
+    }
+}
+
+// function_traits gets the argument types of a callable object
 
 // as seen on http://functionalcpp.wordpress.com/2013/08/05/function-traits/
 template<class F>
@@ -97,21 +107,24 @@ class RuntimeFunction
 
 public:
 
+    using ResultType = typename details::function_traits<F>::return_type;
+
+    static size_t const numOutputs = details::num_values<RuntimeFunction<F>::ResultType>();
+
     RuntimeFunction(F const& f)
      : fun{f}
     {}
     
     template <typename... Inputs, typename Indices = std::make_index_sequence<sizeof...(Inputs)>>
-    std::vector<RuntimeObject> operator()(Inputs&&... inputs)
+    std::vector<RuntimeObject> operator()(Inputs&&... inputs) const
     {
        return call(Indices{}, std::forward<Inputs>(inputs)...);
     }
 private:
 
     template <typename... Inputs, size_t... Is>
-    std::vector<RuntimeObject> call(std::index_sequence<Is...>, Inputs&&... inputs)
+    std::vector<RuntimeObject> call(std::index_sequence<Is...>, Inputs&&... inputs) const
     {
-        using ResultType = typename details::function_traits<F>::return_type;
 
         auto invoke = [this](Inputs&... i){
             return std::invoke(
@@ -130,7 +143,7 @@ private:
             // return type is not void. Evaluate the function and ...
             auto ret = invoke(inputs...);
 
-            if constexpr (details::is_tuple_v<decltype(ret)>) {
+            if constexpr (numOutputs > 1) {
                 // ... if the return type is a tuple, store results in a vector of RuntimeObjects
                 return std::apply([](auto&&... elems){
                     return std::vector<RuntimeObject>{std::forward<decltype(elems)>(elems)...};
@@ -145,7 +158,7 @@ private:
         }
     }
 
-    F fun;
+    F mutable fun;
 };
 
 } // namespace grunk

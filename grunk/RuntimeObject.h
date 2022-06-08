@@ -62,6 +62,21 @@ namespace grunk {
             }
         }
 
+        template <typename T>
+        T cast() const {
+            if constexpr (std::is_reference_v<T>) {
+                using Type = std::remove_reference_t<T>;
+                return *std::any_cast<Type const>(&object);
+            }
+            else if constexpr (std::is_pointer_v<T>) {
+                using Type = std::remove_pointer_t<T>;
+                return std::any_cast<Type const>(&object);
+            }
+            else {
+                return std::any_cast<T>(object);
+            }
+        }
+
     private:
         Reflect::TypeDescriptor const* type_info  {nullptr};
         std::any object;
