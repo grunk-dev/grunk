@@ -4,6 +4,8 @@
 
 using namespace grunk;
 
+namespace RuntimeFunction_test {
+
 // a class with one const and one non-const member function
 struct Foo {
     // const member function (should be allowed)
@@ -37,6 +39,10 @@ int fun0(double x) {
 std::tuple<int, double> fun1(std::string const& in){
     return std::make_tuple(4, 4.2);
 }
+
+} //namespace RuntimeFunction_test
+
+using namespace RuntimeFunction_test;
 
 class RuntimeFunctionTest : public ::testing::Test 
 {

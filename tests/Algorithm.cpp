@@ -5,6 +5,8 @@
 
 using namespace grunk;
 
+namespace Algorithm_test {
+
 // a class with one const and one non-const member function
 struct MyDouble {
 
@@ -18,6 +20,10 @@ struct MyDouble {
 MyDouble add(MyDouble const& l, MyDouble const& r) {
     return MyDouble(l.val + r.val);
 }
+
+} //namespace Algorithm_test
+
+using namespace Algorithm_test;
 
 
 class AlgorithmTest : public ::testing::Test 
@@ -86,3 +92,5 @@ TEST_F(AlgorithmTest, BasicUsage)
 }
 
 // TODO: test Algorithm for multi-output runtime function
+
+// TODO: Can we test, that only referentially transparent functions are allowed?

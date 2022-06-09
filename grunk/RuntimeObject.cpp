@@ -14,4 +14,9 @@ void RuntimeObject::Set(std::string const& memberName, RuntimeObject const& obj)
     member->Set(object, obj.object);
 }
 
+Reflect::TypeDescriptor const* RuntimeObject::GetTypeInfo() const
+{
+    return type_info;
+}
+
 }

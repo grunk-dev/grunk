@@ -77,6 +77,8 @@ namespace grunk {
             }
         }
 
+        Reflect::TypeDescriptor const* GetTypeInfo() const;
+
     private:
         Reflect::TypeDescriptor const* type_info  {nullptr};
         std::any object;

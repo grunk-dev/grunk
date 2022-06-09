@@ -16,6 +16,8 @@ void Algorithm::eval() const
 
     // call the wrapped function
     auto outputs_vals = function(inputs_vec);
+
+    assert(outputs_vals.size() == outputs.size());
     
     // move the output values to the output nodes
     for (int i=0; i<outputs.size(); ++i) {
