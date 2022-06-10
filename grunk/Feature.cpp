@@ -25,9 +25,11 @@ Feature Feature::Get(std::string const& memberName) const
 
                 if ( auto const& member = in.value().Get(member_str); member.GetTypeInfo()->GetName() == "Feature" ) {
                     // the member already is a feature. unwrap the contained parameter
-                    out = member.cast<Feature>().param;
+                    //TODO: Expensive copy! Would be better to use references or pointers here
+                    out.set_value(member.cast<Feature>().param.value());
                 }
                 else {
+                    //TODO: Expensive copy! Would be better to use references or pointers here
                     out.set_value(member);
                 }
         }
@@ -52,12 +54,12 @@ bool Feature::is_valid() const
     return param.is_valid();
 }
 
-RuntimeObject const& Feature::value() const
+RuntimeObject const& Feature::Value() const
 {
     return param.value();
 }
 
-RuntimeObject& Feature::value()
+RuntimeObject& Feature::AccessValue()
 {
     return param.change_value();
 }

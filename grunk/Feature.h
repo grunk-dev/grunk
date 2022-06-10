@@ -21,8 +21,8 @@ public:
 
     Feature Get(std::string const& memberName) const;
 
-    RuntimeObject const& value() const;
-    RuntimeObject& value();
+    RuntimeObject const& Value() const;
+    RuntimeObject& AccessValue();
     
     template <typename T>
     T GetAs(std::string const& memberName) const {
