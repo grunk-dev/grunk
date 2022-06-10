@@ -11,7 +11,7 @@ void Algorithm::eval() const
     std::transform(inputs.begin(),
                    inputs.end(),
                    std::back_inserter(inputs_vec),
-                   [](auto const& param) { return std::ref(param.value()); }
+                   [](auto const& in_feature) { return std::ref(in_feature.param.value()); }
     );
 
     // call the wrapped function
@@ -27,9 +27,9 @@ void Algorithm::eval() const
     }
 }
 
-parametric::param<RuntimeObject> Algorithm::get(size_t idx) const
+Feature Algorithm::get(size_t idx) const
 {
-    return outputs[idx];
+    return Feature(outputs[idx]);
 }
 
 } //namespace grunk

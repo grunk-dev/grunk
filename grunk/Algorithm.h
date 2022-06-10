@@ -6,7 +6,7 @@
 #include <parametric/core.hpp>
 #include <utility>
 
-#include "RuntimeObject.h"
+#include "Feature.h"
 #include "RuntimeFunction.h"
 
 namespace grunk {
@@ -51,13 +51,13 @@ public:
     using Function = std::function<OutputsVec(InputsVec const&)>;
 
     template <typename F>
-    Algorithm(RuntimeFunction<F> const& fun, std::initializer_list<parametric::param<RuntimeObject>> const& in)
+    Algorithm(RuntimeFunction<F> const& fun, std::initializer_list<Feature> const& in)
      : function(details::RuntimeFunctionWrapper<F>(fun))
      , inputs{in}
      , outputs(RuntimeFunction<F>::numOutputs)
     {
         for (auto& i: inputs){
-            depends_on(i);
+            depends_on(i.param);
         }
         for (auto& o: outputs){
             computes(o, parametric::param<RuntimeObject>(""));
@@ -66,17 +66,17 @@ public:
 
     void eval() const override;
 
-    parametric::param<RuntimeObject> get(size_t idx  = 0) const;
+    Feature get(size_t idx  = 0) const;
 
 private:
     Function function;
-    std::vector<parametric::param<RuntimeObject>> const inputs;
+    std::vector<Feature> const inputs;
     std::vector<parametric::OutputParam<RuntimeObject>> mutable outputs;
 };
 
 // parametric::new_node does not work with templated ctor of Algorithm
 template <typename F>
-parametric::compute_node_ptr<Algorithm> new_algorithm(RuntimeFunction<F> const& fun, std::initializer_list<parametric::param<RuntimeObject>> const& in)
+parametric::compute_node_ptr<Algorithm> new_algorithm(RuntimeFunction<F> const& fun, std::initializer_list<Feature> const& in)
 {
     return parametric::compute_node_ptr<Algorithm>(new Algorithm(fun, in));
 }

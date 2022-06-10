@@ -48,8 +48,8 @@ TEST_F(AlgorithmTest, BasicUsage)
     auto f = RuntimeFunction(&add);
 
     // l and r are the root input nodes
-    auto l = parametric::new_param(make_rto("MyDouble", 0.2));
-    auto r = parametric::new_param(make_rto("MyDouble", 0.1));
+    auto l = Feature("MyDouble", 0.2);
+    auto r = Feature("MyDouble", 0.1);
 
     // a depends on l and r, b depends on a and r
     //    
@@ -67,15 +67,15 @@ TEST_F(AlgorithmTest, BasicUsage)
     EXPECT_FALSE(b.is_valid());
 
     // evaluating b should trigger evaluation of the entire tree
-    EXPECT_NEAR(b.value().Get("val").cast<double>(), 0.4, 1e-12);
+    EXPECT_NEAR(b.Value().Get("val").cast<double>(), 0.4, 1e-12);
 
     EXPECT_TRUE(a.is_valid());
     EXPECT_TRUE(b.is_valid());
 
-    EXPECT_NEAR(a.value().Get("val").cast<double>(), 0.3, 1e-12);
+    EXPECT_NEAR(a.Value().Get("val").cast<double>(), 0.3, 1e-12);
 
     // reseting a root node should invalidate the entire tree
-    l.change_value().Set("val", 0.5); 
+    l.AccessValue().Set("val", 0.5); 
 
     // TODO: using set_value() instead of change_value() does not seem to work
 
@@ -83,12 +83,12 @@ TEST_F(AlgorithmTest, BasicUsage)
     EXPECT_FALSE(b.is_valid());
 
     // evaluating b should trigger evaluation of the entire tree
-    EXPECT_NEAR(b.value().Get("val").cast<double>(), 0.7, 1e-12);
+    EXPECT_NEAR(b.Value().Get("val").cast<double>(), 0.7, 1e-12);
 
     EXPECT_TRUE(a.is_valid());
     EXPECT_TRUE(b.is_valid());
 
-    EXPECT_NEAR(a.value().Get("val").cast<double>(), 0.6, 1e-12);
+    EXPECT_NEAR(a.Value().Get("val").cast<double>(), 0.6, 1e-12);
 }
 
 // TODO: test Algorithm for multi-output runtime function
