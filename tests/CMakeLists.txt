@@ -21,7 +21,7 @@ set(TESTSOURCES
 
 add_executable(runUnitTests ${TESTSOURCES})
 target_link_libraries(runUnitTests PRIVATE grunk gtest_main)
-add_gtest(runUnitTests)
+#add_gtest(runUnitTests)
 
-include(CTest)
-add_test(NAME test COMMAND runUnitTests WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
+#include(CTest)
+#add_test(NAME test COMMAND runUnitTests WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
