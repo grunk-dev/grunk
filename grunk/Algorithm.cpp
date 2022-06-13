@@ -1,6 +1,7 @@
 #include "Algorithm.h"
 
 #include <vector>
+#include <iterator>
 
 namespace grunk {
 
