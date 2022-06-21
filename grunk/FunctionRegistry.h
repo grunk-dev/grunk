@@ -24,6 +24,7 @@ public:
     };
 
     FunctionRegistry() = default;
+    ~FunctionRegistry();
 
     void insert(std::string const&, Entry const&);
 

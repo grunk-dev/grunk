@@ -2,6 +2,11 @@
 
 namespace grunk {
 
+FunctionRegistry::~FunctionRegistry()
+{
+    clear();
+}
+
 void FunctionRegistry::clear()
 {
     algorithmMap.clear();

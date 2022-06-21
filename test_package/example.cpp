@@ -59,5 +59,5 @@ int main(int argc, char* argv[]) {
     std::cout << std::boolalpha << "a.is_valid() = " << a.is_valid() << std::endl;
     std::cout << std::boolalpha << "b.is_valid() = " << b.is_valid() << std::endl;
 
-
+    
 }
