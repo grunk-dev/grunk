@@ -3,13 +3,12 @@
 struct MyDouble {
 
     MyDouble(double v) : value(v) {}
-
-    void multiply(int factor) {
-        value *= factor;
-    }
-
     double value;
 };
+
+MyDouble add(MyDouble const& l, MyDouble const& r) {
+    return MyDouble(l.value + r.value);
+}
 
 class Bar: public grunk::IPlugin
 {
@@ -20,12 +19,17 @@ public:
         return "Bar";
     }
 
-    virtual void register_types() const override final 
+    virtual void init() const override final 
     {
-        Reflect::Reflect<MyDouble>("MyDouble")
+        // register types
+
+        grunk::RegisterType<MyDouble>("MyDouble")
         .AddConstructor<double>()
-        .AddMemberFunction(&MyDouble::multiply, "multiply")
         .AddDataMember(&MyDouble::value, "value");
+
+        // register functions
+
+        grunk::RegisterFunction("add", &add, "adds two MyDouble values");
     }
 
 };

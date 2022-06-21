@@ -7,17 +7,17 @@ std::string StdPlugin::name() const
         return "Std";
     }
 
-void StdPlugin::register_types() const
+void StdPlugin::init() const
 {
-    Reflect::Reflect<bool>("bool");
+    RegisterType<bool>("bool");
 
-    Reflect::Reflect<int>("int");
+    RegisterType<int>("int");
     
-    Reflect::Reflect<double>("double");
+    RegisterType<double>("double");
 
-    Reflect::Reflect<std::string>("string");
+    RegisterType<std::string>("string");
     
-    Reflect::Reflect<const char*>("cstring")
+    RegisterType<const char*>("cstring")
     .AddConversion<std::string>();
 }
 

@@ -12,7 +12,7 @@ public:
 
     virtual std::string name() const override final;
 
-    virtual void register_types() const override final;
+    virtual void init() const override final;
 
 };
 
