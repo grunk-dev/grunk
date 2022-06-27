@@ -19,7 +19,7 @@ public:
          , documentation(doc)
         {}
 
-        std::function<parametric::compute_node_ptr<Algorithm>(std::initializer_list<Feature> const&)> factory;
+        std::function<parametric::compute_node_ptr<RuntimeAlgorithm>(std::initializer_list<Feature<RuntimeObject>> const&)> factory;
         std::string documentation;
     };
 
@@ -52,14 +52,18 @@ void RegisterFunction(std::string const& name,
     registry.insert(
         name,
         {
-            [=](std::initializer_list<Feature> const& args) {
-                return new_algorithm(func, args);
+            [=](auto& args) {
+                return algorithm(func, args);
             },
             doc
         }
     );
 }
 
-parametric::compute_node_ptr<Algorithm> Eval(std::string const&, std::initializer_list<Feature> const&);
+template <typename... Args>
+parametric::compute_node_ptr<RuntimeAlgorithm> eval(std::string const& name, Feature<Args> const&... args)
+{
+    return GetFunctionRegistry()[name].factory({args...});
+}
 
 } //namespace grunk

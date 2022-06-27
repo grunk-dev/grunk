@@ -43,7 +43,7 @@ public:
     } 
 };
 
-TEST_F(AlgorithmTest, BasicUsage)
+TEST_F(AlgorithmTest, Runtime)
 {
     auto f = RuntimeFunction(&add);
 
@@ -59,8 +59,8 @@ TEST_F(AlgorithmTest, BasicUsage)
     //       \  |
     //         b
     //
-    auto a = new_algorithm(f, {l, r})->get();
-    auto b = new_algorithm(f, {a, r})->get();
+    auto a = algorithm(f, l, r)->get();
+    auto b = algorithm(f, a, r)->get();
 
     // nothing has been computed yet, we just registered the feature tree
     EXPECT_FALSE(a.is_valid());
@@ -91,6 +91,52 @@ TEST_F(AlgorithmTest, BasicUsage)
     EXPECT_NEAR(a.Value().Get("val").cast<double>(), 0.6, 1e-12);
 }
 
-// TODO: test Algorithm for multi-output runtime function
+TEST_F(AlgorithmTest, Compiletime)
+{
+    // l and r are the root input nodes
+    auto l = Feature(MyDouble(0.2));
+    auto r = Feature(MyDouble(0.1));
+
+    // a depends on l and r, b depends on a and r
+    //    
+    //   l      r
+    //    \   / |
+    //      a   |
+    //       \  |
+    //         b
+    //
+    auto a = algorithm(&add, l, r)->get();
+    auto b = algorithm(&add, a, r)->get();
+
+    // nothing has been computed yet, we just registered the feature tree
+    EXPECT_FALSE(a.is_valid());
+    EXPECT_FALSE(b.is_valid());
+
+    // evaluating b should trigger evaluation of the entire tree
+    EXPECT_NEAR(b.Value().val, 0.4, 1e-12);
+
+    EXPECT_TRUE(a.is_valid());
+    EXPECT_TRUE(b.is_valid());
+
+    EXPECT_NEAR(a.Value().val, 0.3, 1e-12);
+
+    // reseting a root node should invalidate the entire tree
+    l.AccessValue().val = 0.5; 
+
+    // TODO: using set_value() instead of change_value() does not seem to work
+
+    EXPECT_FALSE(a.is_valid());
+    EXPECT_FALSE(b.is_valid());
+
+    // evaluating b should trigger evaluation of the entire tree
+    EXPECT_NEAR(b.Value().val, 0.7, 1e-12);
+
+    EXPECT_TRUE(a.is_valid());
+    EXPECT_TRUE(b.is_valid());
+
+    EXPECT_NEAR(a.Value().val, 0.6, 1e-12);
+}
+
+// TODO: test Algorithm for multi-output functions
 
 // TODO: Can we test, that only referentially transparent functions are allowed?

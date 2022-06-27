@@ -6,6 +6,8 @@
 
 
 #include <functional>
+#include <vector>
+#include <iterator>
 
 #include <parametric/core.hpp>
 #include <utility>
@@ -14,6 +16,53 @@
 #include "RuntimeFunction.h"
 
 namespace grunk {
+
+template <typename F, typename... Args>
+class Algorithm : public parametric::ComputeNode
+{
+public:
+    using ReturnType = std::invoke_result_t<F, Args...>;
+
+    Algorithm(F const& f, Feature<Args> const&... args) 
+     : in(std::make_tuple(args...))
+     , function(f)
+    {
+        std::apply([=](auto&... feature){ (...,depends_on(feature.param)); }, in);
+        computes(out, parametric::param<ReturnType>(""));
+    }
+
+    void eval() const override
+    {
+        if (!out.expired()) {
+            out.set_value(call(std::make_index_sequence<sizeof...(Args)>{}));
+        }
+    }
+
+    template <size_t Idx=0>
+    decltype(auto) get() const
+    {
+
+        if constexpr ( details::is_tuple_v<ReturnType> ) {
+            return Feature<std::tuple_element_t<Idx, ReturnType>>(std::get<Idx>(out));
+        }
+        else {
+            static_assert(Idx == 0, "get with Index>0 only allowed for Algorithms returning a tuple.");
+            return Feature<ReturnType>(out);
+        }
+    }
+
+private:
+    template <size_t... I>
+    ReturnType call(std::index_sequence<I...>) const
+    {
+        return function(std::get<I>(in).Value()...);
+    }
+
+    F const function;
+    std::tuple<Feature<Args> const...> const in;
+    parametric::OutputParam<ReturnType> mutable out;
+
+};
 
 namespace details {
 
@@ -45,6 +94,10 @@ namespace details {
         RuntimeFunction<F> const function;
     };
 
+    using RTAlgInputs = std::vector<std::reference_wrapper<RuntimeObject const>>;
+    using RTAlgOutputs = std::vector<RuntimeObject>;
+    using RTAlgFunction = std::function<RTAlgOutputs(RTAlgInputs const&)>;
+
 } // namespace details
 
 
@@ -53,12 +106,10 @@ namespace details {
  *
  * In particular ...
  */
-class Algorithm : public parametric::ComputeNode
+template <>
+class Algorithm<details::RTAlgFunction> : public parametric::ComputeNode
 {
 public:
-    using InputsVec = std::vector<std::reference_wrapper<RuntimeObject const>>;
-    using OutputsVec = std::vector<RuntimeObject>;
-    using Function = std::function<OutputsVec(InputsVec const&)>;
 
     /**
         * @brief Creates a ...
@@ -66,7 +117,7 @@ public:
         * Further information ...
         */
     template <typename F>
-    Algorithm(RuntimeFunction<F> const& fun, std::initializer_list<Feature> const& in)
+    Algorithm(RuntimeFunction<F> const& fun, std::initializer_list<RuntimeFeature> const& in)
      : function(details::RuntimeFunctionWrapper<F>(fun))
      , inputs{in}
      , outputs(RuntimeFunction<F>::numOutputs)
@@ -84,26 +135,67 @@ public:
         *
         * Further information ...
         */
-    void eval() const override;
+    void eval() const override
+    {
+        // tranform input nodes to vector of runtime objects
+        details::RTAlgInputs inputs_vec;
+        std::transform(inputs.begin(),
+                    inputs.end(),
+                    std::back_inserter(inputs_vec),
+                    [](auto const& in_feature) { return std::cref(in_feature.param.value()); }
+        );
+
+        // call the wrapped function
+        auto outputs_vals = function(inputs_vec);
+
+        assert(outputs_vals.size() == outputs.size());
+        
+        // move the output values to the output nodes
+        for (int i=0; i<outputs.size(); ++i) {
+            if (!outputs[i].expired()) {
+                outputs[i].set_value(std::move(outputs_vals[i]));
+            }
+        }
+    }
 
     /**
         * @brief This function does ...
         *
         * Further information ...
         */
-    Feature get(size_t idx  = 0) const;
+    template <size_t Idx = 0>
+    Feature<RuntimeObject> get() const
+    {
+        return Feature<RuntimeObject>(outputs[Idx]);
+    }
 
 private:
-    Function function;
-    std::vector<Feature> const inputs;
+    details::RTAlgFunction function;
+    std::vector<RuntimeFeature> const inputs;
     std::vector<parametric::OutputParam<RuntimeObject>> mutable outputs;
 };
 
-// parametric::new_node does not work with templated ctor of Algorithm
-template <typename F>
-parametric::compute_node_ptr<Algorithm> new_algorithm(RuntimeFunction<F> const& fun, std::initializer_list<Feature> const& in)
+using RuntimeAlgorithm = Algorithm<details::RTAlgFunction>;
+
+template <typename F, typename... Args>
+decltype(auto) algorithm(F const& fun, Feature<Args> const&... args)
 {
-    return parametric::compute_node_ptr<Algorithm>(new Algorithm(fun, in));
+    // parametric::new_node does not work with templated ctor of Algorithm
+    return parametric::compute_node_ptr<Algorithm<F, Args...>>(new Algorithm<F, Args...>(fun, args...));
+}
+
+template <typename F, typename... Args>
+decltype(auto) algorithm(RuntimeFunction<F> const& fun, Feature<Args> const&... args)
+{
+    // parametric::new_node does not work with templated ctor of Algorithm
+    return parametric::compute_node_ptr<RuntimeAlgorithm>(new RuntimeAlgorithm(fun, {args...}));
+}
+
+template <typename F>
+decltype(auto) algorithm(RuntimeFunction<F> const& fun, std::initializer_list<Feature<RuntimeObject>> const& args)
+{
+    // parametric::new_node does not work with templated ctor of Algorithm
+    return parametric::compute_node_ptr<RuntimeAlgorithm>(new RuntimeAlgorithm(fun, args));
 }
 
 } //namespace grunk

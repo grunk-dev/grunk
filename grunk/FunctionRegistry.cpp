@@ -27,9 +27,4 @@ FunctionRegistry& GetFunctionRegistry() {
     return registry;
 }
 
-parametric::compute_node_ptr<Algorithm> Eval(std::string const& name, std::initializer_list<Feature> const& args)
-{
-    return GetFunctionRegistry()[name].factory(args);
-}
-
 } // namespace grunk
