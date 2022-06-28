@@ -10,6 +10,16 @@
 
 namespace grunk {
 
+//forward declarations
+template <typename T>
+class Feature;
+
+template <typename F, typename... Args>
+class Algorithm;
+
+template <typename F, typename... Args>
+parametric::compute_node_ptr<Algorithm<F, Args...>> algorithm(F const& fun, Feature<Args> const&... args);
+
 /**
  * @brief This class does ...
  *
@@ -49,10 +59,6 @@ protected:
 
     parametric::param<T> param;
 };
-
-//forward declaration
-template <typename T>
-class Feature;
 
 template <>
 class Feature<RuntimeObject> : public FeatureBase<RuntimeObject>
@@ -98,11 +104,13 @@ public:
         return Feature<RuntimeObject>(RuntimeObject(this->param.value()));
     }
 
+    template <typename F, typename... Args>
+    decltype(auto) invoke(F const& f, Feature<Args> const&... args) const
+    {
+        return algorithm(f, *this, args...);
+    }
 
     // Feature Get(std::string const& memberName) const;
-
-    // RuntimeObject const& Value() const;
-    // RuntimeObject& AccessValue();
     
     // template <typename T>
     // T GetAs(std::string const& memberName) const {
