@@ -78,6 +78,12 @@ public:
      : FeatureBase(std::forward<RuntimeObject>(o))
     {}
 
+    template <typename T, typename = std::enable_if_t<!std::is_same_v<T, RuntimeObject>>>
+    operator Feature<T>() const
+    {
+        return Feature<T>(this->param.value().cast<T>());
+    }
+
     decltype(auto) get(std::string const& memberName) const
     {
         return algorithm(

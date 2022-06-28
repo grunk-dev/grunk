@@ -59,6 +59,20 @@ public:
     } 
 };
 
+TEST_F(FeatureTest, Conversions)
+{
+    RuntimeFeature x("MyStruct", 0.33);
+    EXPECT_NEAR(x.value().Get("val").cast<double>(), 0.33, 1e-12);
+
+    // Feature<RuntimeObject> -> Feature<T>
+    Feature<MyStruct> y(x);
+    EXPECT_NEAR(y.value().val, 0.33, 1e-12);
+
+    // Feature<T> -> Feature<RuntimeObject> 
+    RuntimeFeature z(y);
+    EXPECT_NEAR(z.value().Get("val").cast<double>(), 0.33, 1e-12);
+}
+
 TEST_F(FeatureTest, Compiletime_get)
 {
     Feature x(MyStruct(0.5));
