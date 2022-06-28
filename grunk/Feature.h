@@ -35,20 +35,49 @@ public:
         return param.is_valid();
     }
 
-    T const& Value() const
+    T const& value() const
     {
         return param.value();
     }
 
-    T& AccessValue()
+    T& access_value()
     {
         return param.change_value();
     }
 
-private:
+protected:
 
     parametric::param<T> param;
 };
+
+//forward declaration
+template <typename T>
+class Feature;
+
+template <>
+class Feature<RuntimeObject> : public FeatureBase<RuntimeObject>
+{
+public:
+
+    template <typename... Args>
+    Feature(std::string const& typeName, Args&&... args)
+     : FeatureBase<RuntimeObject>(make_rto(typeName, std::forward<Args>(args)...))
+    {}
+
+    Feature(parametric::param<RuntimeObject>&& p)
+     : FeatureBase<RuntimeObject>(std::forward<parametric::param<RuntimeObject>>(p))
+    {}
+
+    Feature(RuntimeObject&& o)
+     : FeatureBase(std::forward<RuntimeObject>(o))
+    {}
+
+};
+//TODO: How is this not ambiguous with a Feature<std::string>???
+template <typename... Args>
+Feature(std::string const&, Args&&...) -> Feature<RuntimeObject>;
+
+using RuntimeFeature = Feature<RuntimeObject>;
 
 template <typename T>
 class Feature : public FeatureBase<T>
@@ -62,6 +91,12 @@ public:
     Feature(parametric::param<T>&& p)
      : FeatureBase<T>(std::forward<parametric::param<T>>(p))
     {}
+
+    template <typename = std::enable_if_t<!std::is_same_v<RuntimeObject, T>>>
+    operator Feature<RuntimeObject>() const
+    {
+        return Feature<RuntimeObject>(RuntimeObject(this->param.value()));
+    }
 
 
     // Feature Get(std::string const& memberName) const;

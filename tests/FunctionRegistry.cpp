@@ -55,7 +55,7 @@ TEST_F(FunctionRegistryTest, BasicUsage)
     EXPECT_FALSE(a.is_valid());
     EXPECT_FALSE(b.is_valid());
 
-    EXPECT_NEAR(b.Value().Get("val").cast<double>(), 7.7, 1e-12);
+    EXPECT_NEAR(b.value().Get("val").cast<double>(), 7.7, 1e-12);
 
     EXPECT_TRUE(a.is_valid());
     EXPECT_TRUE(b.is_valid());

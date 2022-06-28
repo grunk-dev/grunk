@@ -55,7 +55,7 @@ private:
     template <size_t... I>
     ReturnType call(std::index_sequence<I...>) const
     {
-        return function(std::get<I>(in).Value()...);
+        return function(std::get<I>(in).value()...);
     }
 
     F const function;
@@ -178,21 +178,21 @@ private:
 using RuntimeAlgorithm = Algorithm<details::RTAlgFunction>;
 
 template <typename F, typename... Args>
-decltype(auto) algorithm(F const& fun, Feature<Args> const&... args)
+parametric::compute_node_ptr<Algorithm<F, Args...>> algorithm(F const& fun, Feature<Args> const&... args)
 {
     // parametric::new_node does not work with templated ctor of Algorithm
     return parametric::compute_node_ptr<Algorithm<F, Args...>>(new Algorithm<F, Args...>(fun, args...));
 }
 
 template <typename F, typename... Args>
-decltype(auto) algorithm(RuntimeFunction<F> const& fun, Feature<Args> const&... args)
+parametric::compute_node_ptr<RuntimeAlgorithm> algorithm(RuntimeFunction<F> const& fun, Feature<Args> const&... args)
 {
     // parametric::new_node does not work with templated ctor of Algorithm
     return parametric::compute_node_ptr<RuntimeAlgorithm>(new RuntimeAlgorithm(fun, {args...}));
 }
 
 template <typename F>
-decltype(auto) algorithm(RuntimeFunction<F> const& fun, std::initializer_list<Feature<RuntimeObject>> const& args)
+parametric::compute_node_ptr<RuntimeAlgorithm> algorithm(RuntimeFunction<F> const& fun, std::initializer_list<Feature<RuntimeObject>> const& args)
 {
     // parametric::new_node does not work with templated ctor of Algorithm
     return parametric::compute_node_ptr<RuntimeAlgorithm>(new RuntimeAlgorithm(fun, args));
