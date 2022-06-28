@@ -170,24 +170,24 @@ TEST_F(AlgorithmTest, PassNonRumtimeFeatureToRuntimeAlgorithm)
     EXPECT_NEAR(ret2.value().Get("val").cast<double>(), 0.3, 1e-12);
 }
 
-// TEST_F(AlgorithmTest, CompiletimeMultiOutput)
-// {
-//     auto f = &get_components;
+TEST_F(AlgorithmTest, CompiletimeMultiOutput)
+{
+    auto f = &get_components;
 
-//     auto i = Feature(Point(0.2, 0.6));
-//     auto x = algorithm(f, i)->get<0>();
-//     auto y = algorithm(f, i)->get<1>();
+    auto i = Feature(Point(0.2, 0.6));
+    auto x = algorithm(f, i)->get<0>();
+    auto y = algorithm(f, i)->get<1>();
 
-//     EXPECT_EQ(x.value(), 0.2);
-//     EXPECT_EQ(y.value(), 0.6);
+    EXPECT_EQ(x.value(), 0.2);
+    EXPECT_EQ(y.value(), 0.6);
 
-//     i.access_value().y = 0.7
+    i.access_value().y = 0.7;
     
-//     EXPECT_FALSE(x.is_valid());
-//     EXPECT_FALSE(y.is_valid());
+    EXPECT_FALSE(x.is_valid());
+    EXPECT_FALSE(y.is_valid());
 
-//     EXPECT_EQ(y.value(), 0.7);
-// }
+    EXPECT_EQ(y.value(), 0.7);
+}
 
 TEST_F(AlgorithmTest, RuntimeMultiOutput)
 {
@@ -209,3 +209,4 @@ TEST_F(AlgorithmTest, RuntimeMultiOutput)
 }
 
 // TODO: Can we test, that only referentially transparent functions are allowed?
+// TODO: We should at least static_assert to prevent unreadable compiler errors

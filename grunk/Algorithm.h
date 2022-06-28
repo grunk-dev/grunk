@@ -17,6 +17,13 @@
 
 namespace grunk {
 
+//forward declarations 
+template <typename F, typename... Args>
+class Algorithm;
+
+template <typename F, typename... Args>
+parametric::compute_node_ptr<Algorithm<F, Args...>> algorithm(F const& fun, Feature<Args> const&... args);
+
 template <typename F, typename... Args>
 class Algorithm : public parametric::ComputeNode
 {
@@ -41,13 +48,12 @@ public:
     template <size_t Idx=0>
     decltype(auto) get() const
     {
-
-        if constexpr ( details::is_tuple_v<ReturnType> ) {
-            return Feature<std::tuple_element_t<Idx, ReturnType>>(std::get<Idx>(out));
-        }
-        else {
+        if constexpr ( !details::is_tuple_v<ReturnType> ) {
             static_assert(Idx == 0, "get with Index>0 only allowed for Algorithms returning a tuple.");
             return Feature<ReturnType>(out);
+        }
+        else {
+            return algorithm([&](ReturnType const& tuple){ return std::get<Idx>(tuple); }, Feature<ReturnType>(out))->get();
         }
     }
 
@@ -184,18 +190,18 @@ parametric::compute_node_ptr<Algorithm<F, Args...>> algorithm(F const& fun, Feat
     return parametric::compute_node_ptr<Algorithm<F, Args...>>(new Algorithm<F, Args...>(fun, args...));
 }
 
-template <typename F, typename... Args>
-parametric::compute_node_ptr<RuntimeAlgorithm> algorithm(RuntimeFunction<F> const& fun, Feature<Args> const&... args)
-{
-    // parametric::new_node does not work with templated ctor of Algorithm
-    return parametric::compute_node_ptr<RuntimeAlgorithm>(new RuntimeAlgorithm(fun, {args...}));
-}
-
 template <typename F>
 parametric::compute_node_ptr<RuntimeAlgorithm> algorithm(RuntimeFunction<F> const& fun, std::initializer_list<Feature<RuntimeObject>> const& args)
 {
     // parametric::new_node does not work with templated ctor of Algorithm
     return parametric::compute_node_ptr<RuntimeAlgorithm>(new RuntimeAlgorithm(fun, args));
+}
+
+template <typename F, typename... Args>
+parametric::compute_node_ptr<RuntimeAlgorithm> algorithm(RuntimeFunction<F> const& fun, Feature<Args> const&... args)
+{
+    // parametric::new_node does not work with templated ctor of Algorithm
+    return algorithm(fun, {args...});
 }
 
 } //namespace grunk
