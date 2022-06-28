@@ -24,7 +24,6 @@ public:
     };
 
     FunctionRegistry() = default;
-    ~FunctionRegistry();
 
     void insert(std::string const&, Entry const&);
 
@@ -39,15 +38,15 @@ private:
 };
 
 // lazy creation of static algorithm registry
-FunctionRegistry& GetFunctionRegistry();
+FunctionRegistry& get_function_registry();
 
 template <typename F>
-void RegisterFunction(std::string const& name, 
-                      F&& f, 
+void register_function(F&& f,
+                      std::string const& name,
                       std::string doc = "")
 {
     RuntimeFunction<F> func(f);
-    auto& registry = GetFunctionRegistry();
+    auto& registry = get_function_registry();
 
     registry.insert(
         name,
@@ -63,7 +62,7 @@ void RegisterFunction(std::string const& name,
 template <typename... Args>
 parametric::compute_node_ptr<RuntimeAlgorithm> eval(std::string const& name, Feature<Args> const&... args)
 {
-    return GetFunctionRegistry()[name].factory({args...});
+    return get_function_registry()[name].factory({args...});
 }
 
 } //namespace grunk

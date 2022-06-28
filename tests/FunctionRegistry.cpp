@@ -35,12 +35,12 @@ public:
         .AddConstructor<double>()
         .AddDataMember(&MyDouble::val, "val");
 
-        RegisterFunction("add", &add);
+        grunk::register_function(&add, "add");
     } 
 
     static void TearDownTestCase() {
         Reflect::GetTypeRegistry().clear();
-        grunk::GetFunctionRegistry().clear();
+        grunk::get_function_registry().clear();
     } 
 };
 
