@@ -28,7 +28,12 @@ template <typename F, typename... Args>
 class Algorithm : public parametric::ComputeNode
 {
 public:
-    using ReturnType = std::invoke_result_t<F, Args...>;
+    
+    static_assert(std::is_invocable_v<F, Args const& ...>, "\n\nFunction is not invocable with const references. "
+        "Algorithms can only be used with referentially transparent functions.\n\n");
+        
+    using ReturnType = std::invoke_result_t<F, Args const&...>;
+
 
     Algorithm(F const& f, Feature<Args> const&... args) 
      : in(std::make_tuple(args...))

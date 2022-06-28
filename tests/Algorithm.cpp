@@ -12,6 +12,10 @@ struct MyDouble {
 
     MyDouble(double v) : val{v} {}
 
+    double& value_ref() {
+        return val;
+    }
+
     double val;
 };
 
@@ -208,5 +212,8 @@ TEST_F(AlgorithmTest, RuntimeMultiOutput)
     EXPECT_EQ(y.value().cast<double>(), 0.7);
 }
 
-// TODO: Can we test, that only referentially transparent functions are allowed?
-// TODO: We should at least static_assert to prevent unreadable compiler errors
+// TEST_F(AlgorithmTest, CompiletimeReturnReference)
+// {
+//     Feature x(MyDouble{0.125});
+//     auto v = algorithm(&MyDouble::value_ref, x)->get();
+// }
