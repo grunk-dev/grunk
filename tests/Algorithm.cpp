@@ -21,6 +21,17 @@ MyDouble add(MyDouble const& l, MyDouble const& r) {
     return MyDouble(l.val + r.val);
 }
 
+struct Point {
+    Point(double xin, double yin) : x(xin), y(yin) {}
+    double x;
+    double y;
+};
+
+// simple multi-output function
+std::tuple<double, double> get_components(Point const& p){
+    return std::make_tuple(p.x, p.y);
+}
+
 } //namespace Algorithm_test
 
 using namespace Algorithm_test;
@@ -36,6 +47,11 @@ public:
         Reflect::Reflect<MyDouble>("MyDouble")
         .AddConstructor<double>()
         .AddDataMember(&MyDouble::val, "val");
+
+        Reflect::Reflect<Point>("Point")
+        .AddConstructor<double, double>()
+        .AddDataMember(&Point::x, "x")
+        .AddDataMember(&Point::y, "y");
     } 
 
     static void TearDownTestCase() {
@@ -146,14 +162,50 @@ TEST_F(AlgorithmTest, PassNonRumtimeFeatureToRuntimeAlgorithm)
     auto rc = Feature(MyDouble(0.1));
 
     // (RuntimeFeature, Feature<T>) -> RuntimeAlgorithm
-    auto ret = algorithm(f, lr, rc)->get();
-    EXPECT_NEAR(ret.value().Get("val").cast<double>(), 0.3, 1e-12);
+    auto ret1 = algorithm(f, lr, rc)->get();
+    EXPECT_NEAR(ret1.value().Get("val").cast<double>(), 0.3, 1e-12);
 
     // (Feature<T>, Feature<T>) -> RuntimeAlgorithm
-    auto ret = algorithm(f, lc, rc)->get();
-    EXPECT_NEAR(ret.value().Get("val").cast<double>(), 0.3, 1e-12);
+    auto ret2 = algorithm(f, lc, rc)->get();
+    EXPECT_NEAR(ret2.value().Get("val").cast<double>(), 0.3, 1e-12);
 }
 
-// TODO: test Algorithm for multi-output functions
+// TEST_F(AlgorithmTest, CompiletimeMultiOutput)
+// {
+//     auto f = &get_components;
+
+//     auto i = Feature(Point(0.2, 0.6));
+//     auto x = algorithm(f, i)->get<0>();
+//     auto y = algorithm(f, i)->get<1>();
+
+//     EXPECT_EQ(x.value(), 0.2);
+//     EXPECT_EQ(y.value(), 0.6);
+
+//     i.access_value().y = 0.7
+    
+//     EXPECT_FALSE(x.is_valid());
+//     EXPECT_FALSE(y.is_valid());
+
+//     EXPECT_EQ(y.value(), 0.7);
+// }
+
+TEST_F(AlgorithmTest, RuntimeMultiOutput)
+{
+    auto f = grunk::RuntimeFunction(&get_components);
+
+    auto i = Feature("Point", 0.2, 0.6);
+    auto x = algorithm(f, i)->get<0>();
+    auto y = algorithm(f, i)->get<1>();
+
+    EXPECT_EQ(x.value().cast<double>(), 0.2);
+    EXPECT_EQ(y.value().cast<double>(), 0.6);
+
+    i.access_value().Set("y", 0.7);
+    
+    EXPECT_FALSE(x.is_valid());
+    EXPECT_FALSE(y.is_valid());
+
+    EXPECT_EQ(y.value().cast<double>(), 0.7);
+}
 
 // TODO: Can we test, that only referentially transparent functions are allowed?
