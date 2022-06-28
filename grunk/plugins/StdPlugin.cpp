@@ -9,15 +9,15 @@ std::string StdPlugin::name() const
 
 void StdPlugin::init() const
 {
-    RegisterType<bool>("bool");
+    register_type<bool>("bool");
 
-    RegisterType<int>("int");
+    register_type<int>("int");
     
-    RegisterType<double>("double");
+    register_type<double>("double");
 
-    RegisterType<std::string>("string");
+    register_type<std::string>("string");
     
-    RegisterType<const char*>("cstring")
+    register_type<const char*>("cstring")
     .AddConversion<std::string>();
 }
 

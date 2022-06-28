@@ -23,13 +23,13 @@ public:
     {
         // register types
 
-        grunk::RegisterType<MyDouble>("MyDouble")
+        grunk::register_type<MyDouble>("MyDouble")
         .AddConstructor<double>()
         .AddDataMember(&MyDouble::value, "value");
 
         // register functions
 
-        grunk::RegisterFunction("add", &add, "adds two MyDouble values");
+        grunk::register_function(&add, "add", "adds two MyDouble values");
     }
 
 };

@@ -22,7 +22,7 @@ namespace grunk {
 
 // function alias
 template<typename T>
-const auto RegisterType = Reflect::Reflect<T>;
+const auto register_type = Reflect::Reflect<T>;
 
 struct IPlugin
 {
