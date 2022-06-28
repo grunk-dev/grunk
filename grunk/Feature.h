@@ -78,8 +78,29 @@ public:
      : FeatureBase(std::forward<RuntimeObject>(o))
     {}
 
+    decltype(auto) get(std::string const& memberName) const
+    {
+        return algorithm(
+            [=](RuntimeObject const& wrapped){
+                return wrapped.Get(memberName);
+            },
+            *this
+        );
+    }
+
+    template <typename... Args>
+    decltype(auto) invoke(std::string const& memberFunName, Feature<Args> const&... args) const
+    {
+        return algorithm(
+            [=](auto const& wrapped, auto const&... arguments){
+                return wrapped.Invoke(memberFunName, arguments...);
+            },
+            *this,
+            args...
+        );
+    }
+
 };
-//TODO: How is this not ambiguous with a Feature<std::string>???
 template <typename... Args>
 Feature(std::string const&, Args&&...) -> Feature<RuntimeObject>;
 
@@ -104,14 +125,29 @@ public:
         return Feature<RuntimeObject>(RuntimeObject(this->param.value()));
     }
 
-    template <typename F, typename... Args>
-    decltype(auto) invoke(F const& f, Feature<Args> const&... args) const
+    template <typename MemberPtr>
+    decltype(auto) get(MemberPtr ptr) const
     {
-        return algorithm(f, *this, args...);
+        return algorithm(
+            [=](auto const& wrapped){ 
+                return wrapped.*ptr; 
+            }, 
+            *this
+        );
     }
 
-    // Feature Get(std::string const& memberName) const;
-    
+    template <typename MemberFunPtr, typename... Args>
+    decltype(auto) invoke(MemberFunPtr funPtr, Feature<Args> const&... args) const
+    {
+        return algorithm(
+            [=](auto const& wrapped, auto const&... arguments){
+                return (wrapped.*funPtr)(arguments...);
+            },
+            *this,
+            args...
+        );
+    }
+
     // template <typename T>
     // T GetAs(std::string const& memberName) const {
     //     return param.value().GetAs<T>(memberName);
@@ -122,34 +158,11 @@ public:
     // {
     //     return param.value().cast<T>();
     // }
-
-
-    // bool is_valid() const;
-
 };
 
 template <typename T>
 Feature(T&&) -> Feature<T>;
 
-template <>
-class Feature<RuntimeObject> : public FeatureBase<RuntimeObject>
-{
-public:
-
-    template <typename... Args>
-    Feature(std::string const& typeName, Args&&... args)
-     : FeatureBase<RuntimeObject>(make_rto(typeName, std::forward<Args>(args)...))
-    {}
-
-    Feature(parametric::param<RuntimeObject>&& p)
-     : FeatureBase<RuntimeObject>(std::forward<parametric::param<RuntimeObject>>(p))
-    {}
-
-};
-//TODO: How is this not ambiguous with a Feature<std::string>???
-template <typename... Args>
-Feature(std::string const&, Args&&...) -> Feature<RuntimeObject>;
-
-using RuntimeFeature = Feature<RuntimeObject>;
-
 } //namespace grunk
+
+#include "Algorithm.h"

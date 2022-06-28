@@ -2,10 +2,6 @@
 
 namespace grunk {
 
-// Feature::Feature(parametric::param<RuntimeObject> const& p)
-//  : param(p)
-// {}
-
 // Feature Feature::Get(std::string const& memberName) const
 // {
 //     class MemberGetter : public  parametric::ComputeNode
@@ -47,21 +43,6 @@ namespace grunk {
 
 //     auto computeNode = parametric::new_node<MemberGetter>(param, memberName);
 //     return Feature(computeNode->result());
-// }
-
-// bool Feature::is_valid() const 
-// {
-//     return param.is_valid();
-// }
-
-// RuntimeObject const& Feature::Value() const
-// {
-//     return param.value();
-// }
-
-// RuntimeObject& Feature::AccessValue()
-// {
-//     return param.change_value();
 // }
 
 } //namespace grunk

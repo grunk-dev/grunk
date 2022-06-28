@@ -2,7 +2,6 @@
 
 #include <parametric/core.hpp>
 #include <grunk/Feature.h>
-#include <grunk/Algorithm.h>
 
 using namespace grunk;
 
@@ -41,7 +40,8 @@ public:
 
         Reflect::Reflect<RuntimeFeature>("Feature");
 
-        Reflect::Reflect<double>("double");
+        Reflect::Reflect<double>("double")
+        .AddConstructor<double>();
 
         Reflect::Reflect<MyDouble>("MyDouble")
         .AddConstructor<>()
@@ -59,11 +59,11 @@ public:
     } 
 };
 
-TEST_F(FeatureTest, Compiletime_invoke_data_member)
+TEST_F(FeatureTest, Compiletime_get)
 {
     Feature x(MyStruct(0.5));
 
-    Feature v = x.invoke([](MyStruct const& m){ return m.val; })->get();
+    Feature v = x.get(&MyStruct::val)->get();
     EXPECT_EQ(v.value(), 0.5);
 
     x.access_value().val = 0.3;
@@ -72,12 +72,12 @@ TEST_F(FeatureTest, Compiletime_invoke_data_member)
 
 }
 
-TEST_F(FeatureTest, Compiletime_invoke_member_function)
+TEST_F(FeatureTest, Compiletime_invoke)
 {
     Feature x(MyStruct(0.5));
     Feature factor(3.);
 
-    Feature v = x.invoke([](MyStruct const& m, double factor){ return m.times(factor); }, factor)->get();
+    Feature v = x.invoke(&MyStruct::times, factor)->get();
     
     EXPECT_NEAR(v.value(), 1.5, 1e-12);
     EXPECT_TRUE(v.is_valid());
@@ -93,19 +93,39 @@ TEST_F(FeatureTest, Compiletime_invoke_member_function)
     EXPECT_TRUE(v.is_valid());
 }
 
-// TEST_F(FeatureTest, GetValueAsValue)
-// {
-//     Feature x("MyStruct", 0.5);
-//     double val_as_value = x.GetAs<double>("val");
+TEST_F(FeatureTest, Runtime_get)
+{
+    Feature x("MyStruct", 0.5);
 
-//     EXPECT_EQ(val_as_value, 0.5);
-//     EXPECT_TRUE(x.is_valid());
+    // Feature v = x.get("val")->get();
+    // EXPECT_EQ(v.value().cast<double>(), 0.5);
 
-//     x.AccessValue().Set("val", 0.25);
-//     EXPECT_EQ(x.GetAs<double>("val"), 0.25);
+    // x.access_value().Set("val", 0.3);
+    // EXPECT_FALSE(v.is_valid());
+    // EXPECT_EQ(v.value().Get("val").cast<double>(), 0.3);
 
-//     EXPECT_TRUE(x.is_valid());
-// }
+}
+
+TEST_F(FeatureTest, Runtime_invoke)
+{
+    Feature x("MyStruct", 0.5);
+    Feature factor("double", 3.);
+
+    // Feature v = x.invoke("times", factor)->get();
+    
+    // EXPECT_NEAR(v.value().cast<double>(), 1.5, 1e-12);
+    // EXPECT_TRUE(v.is_valid());
+
+    // x.access_value().val = 0.3;
+    // EXPECT_FALSE(v.is_valid());
+    // EXPECT_NEAR(v.value(), 0.9, 1e-12);
+    // EXPECT_TRUE(v.is_valid());
+
+    // factor.access_value() = 2.;
+    // EXPECT_FALSE(v.is_valid());
+    // EXPECT_NEAR(v.value(), 0.6, 1e-12);
+    // EXPECT_TRUE(v.is_valid());
+}
 
 // TEST_F(FeatureTest, GetValueAsFeature)
 // {

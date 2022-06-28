@@ -5,6 +5,8 @@
 #pragma once
 
 #include "reflect/Reflect.hpp"
+
+#include <cassert>
 #include <type_traits>
 
 namespace grunk {
@@ -24,7 +26,10 @@ namespace grunk {
         explicit RuntimeObject(Reflect::TypeDescriptor const& descriptor, CtorArgs&&... args)
          : type_info(&descriptor)
          , object(type_info->GetConstructor<CtorArgs...>()->NewInstance(std::forward<CtorArgs>(args)...))
-        {}
+        {
+            // this assertion is too late...
+            assert(type_info != nullptr);
+        }
 
 
         template <typename T, 
@@ -35,7 +40,9 @@ namespace grunk {
         RuntimeObject(T const& t)
          : type_info(Reflect::Resolve<T>())
          , object(t)
-        {}
+        {
+            assert(type_info != nullptr);
+        }
 
         // some convenience funcs to set and get dataMembers as RuntimeObjects
 
@@ -45,8 +52,15 @@ namespace grunk {
         void Set(std::string const& memberName, RuntimeObject const&);
 
         template <typename... Args>
-        RuntimeObject Invoke(std::string const& name, Args&&... args){
+        RuntimeObject Invoke(std::string const& name, Args&&... args)
+        {
+            
             auto* fun = type_info->GetMemberFunction(name);
+            
+            if (!fun) {
+                throw std::invalid_argument("RuntimeObject::Invoke: No member function \"" + name + "\" found for Type \"" + type_info->GetName() + "\"");
+            }
+
             if constexpr ( (std::is_same_v<std::decay_t<Args>, RuntimeObject> && ...) ) { // cleaner would be a per-arg conversion
                 return RuntimeObject(fun->GetReturnType(),
                                      fun->Invoke(object, args.object...));
@@ -107,6 +121,12 @@ namespace grunk {
     template <typename... Args>
     inline RuntimeObject make_rto(std::string const& typeName, Args&&... args)
     {
+        auto* descr = Reflect::Resolve(typeName);
+
+        if (!descr) {
+            throw std::invalid_argument("make_rto: No type with name\"" + typeName + "\" found in static TypeRegistry.");
+        }
+
         return RuntimeObject(*Reflect::Resolve(typeName), std::forward<Args>(args)...);
     }
 
