@@ -21,11 +21,18 @@ namespace grunk {
 template <typename F, typename... Args>
 class Algorithm;
 
-template <typename F, typename... Args>
-parametric::compute_node_ptr<Algorithm<F, Args...>> algorithm(F const& fun, Feature<Args> const&... args)
+template<typename F, typename... Args>
+using AlgorithmPtr = parametric::compute_node_ptr<Algorithm<F, Args...>>;
+
+template <typename F,
+          typename,
+          typename... Args>
+AlgorithmPtr<F, Args...> eval(F const& fun, Feature<Args> const&... args)
 {
+    static_assert(!std::is_convertible_v<std::decay_t<F>, std::string>, "");
+
     // parametric::new_node does not work with templated ctor of Algorithm
-    return parametric::compute_node_ptr<Algorithm<F, Args...>>(new Algorithm<F, Args...>(fun, args...));
+    return AlgorithmPtr<F, Args...>(new Algorithm<F, Args...>(fun, args...));
 }
 
 template <typename F, typename... Args>
@@ -38,11 +45,15 @@ public:
         
     using ReturnType = std::invoke_result_t<F, Args const&...>;
 
-    // factory function
-    template <typename Fun, typename... Arguments>
-    friend parametric::compute_node_ptr<Algorithm<Fun, Arguments...>> algorithm(Fun const& fun, Feature<Arguments> const&... args);
+//TODO: Why can't I have a templated friend factory function and private ctor here?
 
-private:
+//    // factory function
+//    template <typename Function,
+//              typename,
+//              typename... Arguments>
+//    friend AlgorithmPtr<Function, Args...> eval(Function const& fun, Feature<Arguments> const&... args);
+
+//private:
 
     Algorithm(F const& f, Feature<Args> const&... args) 
      : function(f)
@@ -69,7 +80,7 @@ public:
             return Feature<ReturnType>(out);
         }
         else {
-            return algorithm([&](ReturnType const& tuple){ return std::get<Idx>(tuple); }, Feature<ReturnType>(out))->get();
+            return grunk::eval([](ReturnType const& tuple){ return std::get<Idx>(tuple); }, Feature<ReturnType>(out))->get();
         }
     }
 
@@ -127,11 +138,13 @@ namespace details {
  *
  * In particular ...
  */
+using RuntimeAlgorithmPtr = AlgorithmPtr<details::RTAlgFunction>;
+
 template <typename F>
-parametric::compute_node_ptr<Algorithm<details::RTAlgFunction>> algorithm(RuntimeFunction<F> const& fun, std::initializer_list<Feature<RuntimeObject>> const& args)
+RuntimeAlgorithmPtr eval(RuntimeFunction<F> const& fun, std::initializer_list<Feature<RuntimeObject>> const& args)
 {
     // parametric::new_node does not work with templated ctor of Algorithm
-    return parametric::compute_node_ptr<Algorithm<details::RTAlgFunction>>(new RuntimeAlgorithm(fun, args));
+    return RuntimeAlgorithmPtr(new RuntimeAlgorithm(fun, args));
 }
 
 template <>
@@ -139,7 +152,7 @@ class Algorithm<details::RTAlgFunction> : public parametric::ComputeNode
 {
 
     template <typename F>
-    friend parametric::compute_node_ptr<Algorithm<details::RTAlgFunction>> algorithm(RuntimeFunction<F> const&, std::initializer_list<Feature<RuntimeObject>> const&);
+    friend AlgorithmPtr<details::RTAlgFunction> eval(RuntimeFunction<F> const&, std::initializer_list<Feature<RuntimeObject>> const&);
 
 private:
 
@@ -211,10 +224,10 @@ private:
 using RuntimeAlgorithm = Algorithm<details::RTAlgFunction>;
 
 template <typename F, typename... Args>
-parametric::compute_node_ptr<RuntimeAlgorithm> algorithm(RuntimeFunction<F> const& fun, Feature<Args> const&... args)
+parametric::compute_node_ptr<RuntimeAlgorithm> eval(RuntimeFunction<F> const& fun, Feature<Args> const&... args)
 {
     // parametric::new_node does not work with templated ctor of Algorithm
-    return algorithm(fun, {args...});
+    return eval(fun, {args...});
 }
 
 } //namespace grunk

@@ -52,7 +52,7 @@ void register_function(F&& f,
         name,
         {
             [=](auto& args) {
-                return algorithm(func, args);
+                return eval(func, args);
             },
             doc
         }
@@ -60,7 +60,7 @@ void register_function(F&& f,
 }
 
 template <typename... Args>
-parametric::compute_node_ptr<RuntimeAlgorithm> eval(std::string const& name, Feature<Args> const&... args)
+RuntimeAlgorithmPtr eval(std::string const& name, Feature<Args> const&... args)
 {
     return get_function_registry()[name].factory({args...});
 }

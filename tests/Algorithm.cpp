@@ -79,8 +79,8 @@ TEST_F(AlgorithmTest, RuntimeBasic)
     //       \  |
     //         b
     //
-    auto a = algorithm(f, l, r)->get();
-    auto b = algorithm(f, a, r)->get();
+    auto a = eval(f, l, r)->get();
+    auto b = eval(f, a, r)->get();
 
     // nothing has been computed yet, we just registered the feature tree
     EXPECT_FALSE(a.is_valid());
@@ -125,8 +125,8 @@ TEST_F(AlgorithmTest, CompiletimeBasic)
     //       \  |
     //         b
     //
-    auto a = algorithm(&add, l, r)->get();
-    auto b = algorithm(&add, a, r)->get();
+    auto a = eval(&add, l, r)->get();
+    auto b = eval(&add, a, r)->get();
 
     // nothing has been computed yet, we just registered the feature tree
     EXPECT_FALSE(a.is_valid());
@@ -166,11 +166,11 @@ TEST_F(AlgorithmTest, PassNonRumtimeFeatureToRuntimeAlgorithm)
     auto rc = Feature(MyDouble(0.1));
 
     // (RuntimeFeature, Feature<T>) -> RuntimeAlgorithm
-    auto ret1 = algorithm(f, lr, rc)->get();
+    auto ret1 = eval(f, lr, rc)->get();
     EXPECT_NEAR(ret1.value().Get("val").cast<double>(), 0.3, 1e-12);
 
     // (Feature<T>, Feature<T>) -> RuntimeAlgorithm
-    auto ret2 = algorithm(f, lc, rc)->get();
+    auto ret2 = eval(f, lc, rc)->get();
     EXPECT_NEAR(ret2.value().Get("val").cast<double>(), 0.3, 1e-12);
 }
 
@@ -179,8 +179,8 @@ TEST_F(AlgorithmTest, CompiletimeMultiOutput)
     auto f = &get_components;
 
     auto i = Feature(Point(0.2, 0.6));
-    auto x = algorithm(f, i)->get<0>();
-    auto y = algorithm(f, i)->get<1>();
+    auto x = eval(f, i)->get<0>();
+    auto y = eval(f, i)->get<1>();
 
     EXPECT_EQ(x.value(), 0.2);
     EXPECT_EQ(y.value(), 0.6);
@@ -198,8 +198,8 @@ TEST_F(AlgorithmTest, RuntimeMultiOutput)
     auto f = grunk::RuntimeFunction(&get_components);
 
     auto i = Feature("Point", 0.2, 0.6);
-    auto x = algorithm(f, i)->get<0>();
-    auto y = algorithm(f, i)->get<1>();
+    auto x = eval(f, i)->get<0>();
+    auto y = eval(f, i)->get<1>();
 
     EXPECT_EQ(x.value().cast<double>(), 0.2);
     EXPECT_EQ(y.value().cast<double>(), 0.6);
@@ -215,5 +215,5 @@ TEST_F(AlgorithmTest, RuntimeMultiOutput)
 // TEST_F(AlgorithmTest, CompiletimeReturnReference)
 // {
 //     Feature x(MyDouble{0.125});
-//     auto v = algorithm(&MyDouble::value_ref, x)->get();
+//     auto v = eval(&MyDouble::value_ref, x)->get();
 // }

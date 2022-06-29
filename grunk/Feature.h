@@ -17,8 +17,13 @@ class Feature;
 template <typename F, typename... Args>
 class Algorithm;
 
-template <typename F, typename... Args>
-parametric::compute_node_ptr<Algorithm<F, Args...>> algorithm(F const& fun, Feature<Args> const&... args);
+template<typename F, typename... Args>
+using AlgorithmPtr = parametric::compute_node_ptr<Algorithm<F, Args...>>;
+
+template <typename F,
+          typename = std::enable_if_t<!std::is_convertible_v<std::decay_t<F>, std::string>>,
+          typename... Args>
+AlgorithmPtr<F, Args...> eval(F const& fun, Feature<Args> const&... args);
 
 /**
  * @brief This class does ...
@@ -86,7 +91,7 @@ public:
 
     decltype(auto) get(std::string const& memberName) const
     {
-        return algorithm(
+        return eval(
             [=](RuntimeObject const& wrapped){
                 return wrapped.Get(memberName);
             },
@@ -97,7 +102,7 @@ public:
     template <typename... Args>
     decltype(auto) invoke(std::string const& memberFunName, Feature<Args> const&... args) const
     {
-        return algorithm(
+        return eval(
             [=](auto const& wrapped, auto const&... arguments){
                 return wrapped.Invoke(memberFunName, arguments...);
             },
@@ -134,7 +139,7 @@ public:
     template <typename MemberPtr>
     decltype(auto) get(MemberPtr ptr) const
     {
-        return algorithm(
+        return eval(
             [=](auto const& wrapped){ 
                 return wrapped.*ptr; 
             }, 
@@ -145,7 +150,7 @@ public:
     template <typename MemberFunPtr, typename... Args>
     decltype(auto) invoke(MemberFunPtr funPtr, Feature<Args> const&... args) const
     {
-        return algorithm(
+        return eval(
             [=](T const& wrapped, auto const&... arguments){
                 return (wrapped.*funPtr)(arguments...);
             },
