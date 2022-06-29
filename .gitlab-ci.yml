@@ -1,6 +1,8 @@
 image: conanio/gcc9
 
-before_script:
+# TODO: debug & release builds for several clang and gcc versions, windows CI
+
+.conan_setup: &conan_setup
 # use new ABI by default
   - conan profile new default --detect
   - conan profile update settings.compiler.libcxx=libstdc++11 default
@@ -11,17 +13,20 @@ before_script:
   - conan install parametric/0.1@paradigms/testing --remote=gitlab
   - conan install reflect/0.1@paradigms/testing --remote=gitlab -s build_type=Debug
 
-# TODO: debug & release builds for several clang and gcc versions, windows CI
-
 build-debug:
   tags:
     - docker
   stage: build
+  before_script:
+    - *conan_setup  
+    - sudo apt-get -qq update && sudo apt -qq -y install make git doxygen python3-pip
+    - pip3 install 'Sphinx>=2.4.0,<3.0.0' sphinx-rtd-theme 'breathe<4.15.0' m2r 'mistune==0.8.4' 'Jinja2<3.1'
   script:
     - mkdir build && cd build
     - conan install .. -s build_type=Debug
-    - cmake .. -DCMAKE_BUILD_TYPE=Debug -DGRUNK_TESTS=ON
+    - cmake .. -DCMAKE_BUILD_TYPE=Debug -DGRUNK_TESTS=ON -DGRUNK_BUILD_DOCS=ON 
     - make -j
+    - cmake --build . --target Sphinx
   artifacts:
     paths:
       - build
@@ -36,6 +41,8 @@ test-debug:
   stage: test
   dependencies:
     - build-debug
+  before_script:
+    - *conan_setup  
   script:
     - cd build
     - conan install .. --generator=virtualrunenv -s build_type=Debug
@@ -49,7 +56,35 @@ create-package-debug:
   stage: deploy
   dependencies:
     - test-debug
+  before_script:
+    - *conan_setup  
   script:
     - conan create . paradigms/testing -s build_type=Debug
     - conan upload grunk/0.1@paradigms/testing --all --remote=gitlab
-
+    
+docs:
+  stage: deploy
+  image: ubuntu:18.04
+  tags:
+    - docker
+  dependencies:
+    - build-debug
+  script:
+    - mv build/docs/html grunk-docs
+    - tar czf grunk-docs.tar.gz grunk-docs
+  artifacts:
+    paths:
+      - grunk-docs.tar.gz
+      
+pages:
+  only:
+    - main
+  stage: deploy
+  image: ubuntu:18.04
+  tags:
+    - docker
+  script:
+    - mv build/docs/html public
+  artifacts:
+    paths:
+      - public

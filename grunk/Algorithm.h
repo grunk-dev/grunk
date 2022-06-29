@@ -1,3 +1,7 @@
+/**
+ * @file Algorithm.h
+ */
+
 #pragma once
 
 
@@ -43,6 +47,12 @@ namespace details {
 
 } // namespace details
 
+
+/**
+ * @brief This class does ...
+ *
+ * In particular ...
+ */
 class Algorithm : public parametric::ComputeNode
 {
 public:
@@ -50,6 +60,11 @@ public:
     using OutputsVec = std::vector<RuntimeObject>;
     using Function = std::function<OutputsVec(InputsVec const&)>;
 
+    /**
+        * @brief Creates a ...
+        *
+        * Further information ...
+        */
     template <typename F>
     Algorithm(RuntimeFunction<F> const& fun, std::initializer_list<Feature> const& in)
      : function(details::RuntimeFunctionWrapper<F>(fun))
@@ -64,8 +79,18 @@ public:
         }
     }
 
+    /**
+        * @brief This function does ...
+        *
+        * Further information ...
+        */
     void eval() const override;
 
+    /**
+        * @brief This function does ...
+        *
+        * Further information ...
+        */
     Feature get(size_t idx  = 0) const;
 
 private:

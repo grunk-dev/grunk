@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 3.13)
 project(grunk)
 
+set(CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake" ${CMAKE_MODULE_PATH})
+
 option(GRUNK_TESTS "Build unit tests using GTest" OFF)
 
 # conan creates FindPackage.cmake files in the CMAKE_BINARY_DIR
@@ -43,6 +45,10 @@ target_include_directories(grunk PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
   $<INSTALL_INTERFACE:include/grunk> 
 )
+
+include(GNUInstallDirs)
+
+add_subdirectory(docs)
 
 if (GRUNK_TESTS)
         add_subdirectory(tests)

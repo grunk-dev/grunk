@@ -1,5 +1,9 @@
 # Grunk
 
+
+[![pipeline status]( https://gitlab.dlr.de/paradigms/grunk/badges/main/pipeline.svg)](https://gitlab.dlr.de/paradigms/grunk/-/commits/main/)
+[![documentation](https://img.shields.io/badge/docs-online-blue)](https://paradigms.pages.gitlab.dlr.de/grunk/)
+
 **Disclaimer:** *This is work in progress at a very early stage. Most features have not been implemented yet. Expect the code and API to change frequently!*
 
 Grunk is a parametric modeling engine that helps you build complex models from parameters, track the dependencies of your model features and annotate them with metadata. Features are evaluated lazily and they will be automatically invalidated if any of the features and parameters it depends on changes. You can write your model to a human-readable file to disk and rebuild your model from the saved file. Grunk is targeted at - but not limited to - geometric modeling.
@@ -9,6 +13,8 @@ The only assumption grunk makes is that the model consists of certain **features
 Functions and feature types are loaded at runtime from grunk plugins. By doing this, each grunk plugin provides some domain specific building blocks for any kind of model.
 
 This way, models built with grunk are highly modular and extendable. Users can share plugins and enrich their models without the need to re-compile anything.
+
+[Read the documentation](https://paradigms.pages.gitlab.dlr.de/grunk/) to learn more.
 
 
 ## Installation
