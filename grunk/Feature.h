@@ -1,3 +1,7 @@
+/**
+ * @file Feature.h
+ */
+
 #pragma once
 
 #include <parametric/core.hpp>
@@ -6,6 +10,11 @@
 
 namespace grunk {
 
+/**
+ * @brief This class does ...
+ *
+ * A more detailed description of this class can be found here.
+ */
 class Feature 
 {
 public:

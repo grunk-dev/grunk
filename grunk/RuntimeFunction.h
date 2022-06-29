@@ -1,3 +1,7 @@
+/**
+ * @file RuntimeFunction.h
+ */
+
 #pragma once
 
 #include <functional>
@@ -38,6 +42,11 @@ template<class R, class... Args>
 struct function_traits<R(*)(Args...)> : public function_traits<R(Args...)>
 {};
 
+/**
+ * @brief This struct does ...
+ *
+ * A more detailed description of this class can be found here.
+ */
 template<class R, class... Args>
 struct function_traits<R(Args...)>
 {
@@ -101,6 +110,11 @@ struct function_traits<F&&> : public function_traits<F>
 // turns any function into a function taking RuntimeObjects and returns a vector of RuntimeObjects.
 // For "normal" functions the vector has 1 element. For void functions the vector is empty. For functions
 // returning tuples, the vector has as many elements as the tuple.
+/**
+ * @brief This class does ...
+ *
+ * A more detailed description of this class can be found here.
+ */
 template <typename F>
 class RuntimeFunction
 {

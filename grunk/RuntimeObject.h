@@ -1,3 +1,7 @@
+/**
+ * @file RuntimeObject.h
+ */
+
 #pragma once
 
 #include "reflect/Reflect.hpp"
@@ -5,6 +9,12 @@
 
 namespace grunk {
 
+
+    /**
+     * @brief This class does ...
+     *
+     * A more detailed description of this class can be found here.
+     */
     class RuntimeObject {
     public:
 
