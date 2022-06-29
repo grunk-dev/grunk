@@ -122,10 +122,10 @@ TEST_F(FeatureTest, Runtime_get)
 
 TEST_F(FeatureTest, Runtime_invoke)
 {
-//    Feature x("MyStruct", 0.5);
-//    Feature factor("double", 3.);
+    Feature x("MyStruct", 0.5);
+    Feature factor("double", 3.);
 
-//     Feature v = x.invoke("times", factor)->get();
+    // Feature v = x.invoke("times", factor)->get();
     
 //     EXPECT_NEAR(v.value().cast<double>(), 1.5, 1e-12);
 //     EXPECT_TRUE(v.is_valid());

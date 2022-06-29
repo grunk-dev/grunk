@@ -77,13 +77,16 @@ namespace grunk {
                 throw std::invalid_argument("RuntimeObject::Invoke: No member function \"" + name + "\" found for Type \"" + type_info->GetName() + "\"");
             }
 
-            if constexpr ( (std::is_same_v<std::decay_t<Args>, RuntimeObject> && ...) ) { // cleaner would be a per-arg conversion
-                return RuntimeObject(fun->GetReturnType(),
-                                     fun->Invoke(object, args.object...));
-            } else {
-                return RuntimeObject(fun->GetReturnType(),
-                                     fun->Invoke(object, RuntimeObject(args).object...));
-            }
+            auto to_rto = [](auto const& v){
+                if constexpr ( std::is_same_v<std::decay_t<decltype(v)>, RuntimeObject> )
+                {
+                    return v;
+                }
+                return RuntimeObject(v);
+            };
+
+            return RuntimeObject(fun->GetReturnType(),
+                                 fun->Invoke(object, to_rto(args).object...));
         }
 
         /// some convenience funcs for casting
