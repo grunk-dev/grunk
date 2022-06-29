@@ -24,6 +24,11 @@ namespace grunk {
 
         RuntimeObject() = delete;
 
+        template <typename... Args>
+        friend RuntimeObject make_rto(std::string const& typeName, Args&&... args);
+
+    private:
+
         template <typename... CtorArgs>
         explicit RuntimeObject(Reflect::TypeDescriptor const& descriptor, CtorArgs&&... args)
          : type_info(&descriptor)
@@ -31,6 +36,7 @@ namespace grunk {
         {
         }
 
+    public:
 
         template <typename T,
                   typename = typename std::enable_if<!std::is_same<std::decay_t<T>, Reflect::TypeDescriptor>::value>::type,
