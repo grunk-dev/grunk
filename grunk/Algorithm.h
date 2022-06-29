@@ -25,15 +25,9 @@ template<typename F, typename... Args>
 using AlgorithmPtr = parametric::compute_node_ptr<Algorithm<F, Args...>>;
 
 template <typename F,
-          typename,
+          typename, // default-value (enable_if) declared in Feature.h
           typename... Args>
-AlgorithmPtr<F, Args...> eval(F const& fun, Feature<Args> const&... args)
-{
-    static_assert(!std::is_convertible_v<std::decay_t<F>, std::string>, "");
-
-    // parametric::new_node does not work with templated ctor of Algorithm
-    return AlgorithmPtr<F, Args...>(new Algorithm<F, Args...>(fun, args...));
-}
+AlgorithmPtr<F, Args...> eval(F const& fun, Feature<Args> const&... args);
 
 template <typename F, typename... Args>
 class Algorithm : public parametric::ComputeNode
@@ -53,7 +47,7 @@ public:
 //              typename... Arguments>
 //    friend AlgorithmPtr<Function, Args...> eval(Function const& fun, Feature<Arguments> const&... args);
 
-//private:
+// private:
 
     Algorithm(F const& f, Feature<Args> const&... args) 
      : function(f)
@@ -141,11 +135,7 @@ namespace details {
 using RuntimeAlgorithmPtr = AlgorithmPtr<details::RTAlgFunction>;
 
 template <typename F>
-RuntimeAlgorithmPtr eval(RuntimeFunction<F> const& fun, std::initializer_list<Feature<RuntimeObject>> const& args)
-{
-    // parametric::new_node does not work with templated ctor of Algorithm
-    return RuntimeAlgorithmPtr(new RuntimeAlgorithm(fun, args));
-}
+RuntimeAlgorithmPtr eval(RuntimeFunction<F> const& fun, std::initializer_list<Feature<RuntimeObject>> const& args);
 
 template <>
 class Algorithm<details::RTAlgFunction> : public parametric::ComputeNode
@@ -223,8 +213,24 @@ private:
 
 using RuntimeAlgorithm = Algorithm<details::RTAlgFunction>;
 
+template <typename F,
+          typename, // default-value (enable_if) declared in Feature.h
+          typename... Args>
+AlgorithmPtr<F, Args...> eval(F const& fun, Feature<Args> const&... args)
+{
+    // parametric::new_node does not work with templated ctor of Algorithm
+    return AlgorithmPtr<F, Args...>(new Algorithm<F, Args...>(fun, args...));
+}
+
+template <typename F>
+RuntimeAlgorithmPtr eval(RuntimeFunction<F> const& fun, std::initializer_list<Feature<RuntimeObject>> const& args)
+{
+    // parametric::new_node does not work with templated ctor of Algorithm
+    return RuntimeAlgorithmPtr(new Algorithm<details::RTAlgFunction>(fun, args));
+}
+
 template <typename F, typename... Args>
-parametric::compute_node_ptr<RuntimeAlgorithm> eval(RuntimeFunction<F> const& fun, Feature<Args> const&... args)
+RuntimeAlgorithmPtr eval(RuntimeFunction<F> const& fun, Feature<Args> const&... args)
 {
     // parametric::new_node does not work with templated ctor of Algorithm
     return eval(fun, {args...});

@@ -7,6 +7,7 @@
 #include <parametric/core.hpp>
 
 #include "RuntimeObject.h"
+#include "RuntimeFunction.h"
 
 namespace grunk {
 
@@ -20,8 +21,18 @@ class Algorithm;
 template<typename F, typename... Args>
 using AlgorithmPtr = parametric::compute_node_ptr<Algorithm<F, Args...>>;
 
+namespace details {
+    template<typename> constexpr bool is_runtime_function_v = false;
+
+    template<typename F>
+    constexpr bool is_runtime_function_v<RuntimeFunction<F>> = true;
+}
+
 template <typename F,
-          typename = std::enable_if_t<!std::is_convertible_v<std::decay_t<F>, std::string>>,
+          typename = std::enable_if_t<
+            !std::is_convertible_v<std::decay_t<F>, std::string>
+            && !details::is_runtime_function_v<std::decay_t<F>>
+          >,
           typename... Args>
 AlgorithmPtr<F, Args...> eval(F const& fun, Feature<Args> const&... args);
 
