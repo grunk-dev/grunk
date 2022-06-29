@@ -61,7 +61,7 @@ TEST_F(RuntimeObjectTest, SetterGetter)
 {
     RuntimeObject x = make_rto("MyDouble", 0.5);
     
-    RuntimeObject y = 0.25;
+    RuntimeObject y(0.25);
     x.Set("value", y);
     EXPECT_EQ(x.Get("value").cast<double>(), 0.25);
 
@@ -76,7 +76,7 @@ TEST_F(RuntimeObjectTest, Invoke)
     x.Invoke("multiply", 2);
     EXPECT_NEAR(x.Get("value").cast<double>(), 1., 1e-10);
 
-    RuntimeObject z = 3;
+    RuntimeObject z(3);
     x.Invoke("multiply", z);
     EXPECT_NEAR(x.Get("value").cast<double>(), 3., 1e-10);
 }

@@ -8,6 +8,8 @@
 
 #include <cassert>
 #include <type_traits>
+#include <typeinfo>
+#include <stdexcept>
 
 namespace grunk {
 
@@ -20,7 +22,7 @@ namespace grunk {
     class RuntimeObject {
     public:
 
-        RuntimeObject() = default;
+        RuntimeObject() = delete;
 
         template <typename... CtorArgs>
         explicit RuntimeObject(Reflect::TypeDescriptor const& descriptor, CtorArgs&&... args)
@@ -32,16 +34,19 @@ namespace grunk {
         }
 
 
-        template <typename T, 
+        template <typename T,
                   typename = typename std::enable_if<!std::is_same<std::decay_t<T>, Reflect::TypeDescriptor>::value>::type,
                   typename = typename std::enable_if<!std::is_reference_v<T>>::type,
                   typename = typename std::enable_if<!std::is_pointer_v<T>>::type
-        > 
-        RuntimeObject(T const& t)
+        >
+        explicit RuntimeObject(T const& t)
          : type_info(Reflect::Resolve<T>())
          , object(t)
         {
             assert(type_info != nullptr);
+            if (type_info == nullptr || type_info->GetName() == ""){
+                throw std::domain_error(std::string("Constructor for RuntimeObject called with unregistered type ") + typeid(t).name());
+            }
         }
 
         // some convenience funcs to set and get dataMembers as RuntimeObjects
@@ -49,7 +54,14 @@ namespace grunk {
         // it would be really cool to be able to set by reference
         RuntimeObject Get(std::string const& memberName) const;
 
-        void Set(std::string const& memberName, RuntimeObject const&);
+        template <typename T>
+        void Set(std::string const& memberName, T const& t)
+        {
+            //this is just a convenience wrapper to hide the explicit conversion
+            Set(memberName, (RuntimeObject)t);
+        };
+
+        void Set(std::string const& memberName, RuntimeObject const& obj);
 
         template <typename... Args>
         RuntimeObject Invoke(std::string const& name, Args&&... args)
@@ -127,7 +139,7 @@ namespace grunk {
             throw std::invalid_argument("make_rto: No type with name\"" + typeName + "\" found in static TypeRegistry.");
         }
 
-        return RuntimeObject(*Reflect::Resolve(typeName), std::forward<Args>(args)...);
+        return RuntimeObject(*descr, std::forward<Args>(args)...);
     }
 
 } //namespace grunk

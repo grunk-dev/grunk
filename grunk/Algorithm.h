@@ -36,14 +36,14 @@ public:
 
 
     Algorithm(F const& f, Feature<Args> const&... args) 
-     : in(std::make_tuple(args...))
-     , function(f)
+     : function(f)
+     , in{std::make_tuple(args...)}
     {
-        std::apply([=](auto&... feature){ (...,depends_on(feature.param)); }, in);
+        std::apply([=](Feature<Args> const&... feature){ (...,depends_on(feature.param)); }, in);
         computes(out, parametric::param<ReturnType>(""));
     }
 
-    void eval() const override
+    void eval() const override final
     {
         if (!out.expired()) {
             out.set_value(call(std::make_index_sequence<sizeof...(Args)>{}));

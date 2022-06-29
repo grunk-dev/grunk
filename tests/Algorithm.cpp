@@ -95,7 +95,7 @@ TEST_F(AlgorithmTest, RuntimeBasic)
     EXPECT_NEAR(a.value().Get("val").cast<double>(), 0.3, 1e-12);
 
     // reseting a root node should invalidate the entire tree
-    l.access_value().Set("val", 0.5); 
+    l.access_value().Set("val", 0.5);
 
     // TODO: using set_value() instead of change_value() does not seem to work
 

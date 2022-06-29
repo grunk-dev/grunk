@@ -18,6 +18,13 @@ void RuntimeObject::Set(std::string const& memberName, RuntimeObject const& obj)
     if (!member) {
         throw std::invalid_argument("RuntimeObject::Set: No member \"" + memberName + "\" found for Type \"" + type_info->GetName() + "\"");
     }
+    if (member->GetType()->GetName() != obj.GetTypeInfo()->GetName()) {
+        throw std::invalid_argument("RuntimeObject::Set: Argument type \""
+                                    + obj.GetTypeInfo()->GetName()
+                                    + "\" and member type \""
+                                    + member->GetType()->GetName()
+                                    + "\" are incompatible.");
+    }
     member->Set(object, obj.object);
 }
 

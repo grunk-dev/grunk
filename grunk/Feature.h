@@ -66,7 +66,7 @@ class Feature<RuntimeObject> : public FeatureBase<RuntimeObject>
 public:
 
     template <typename... Args>
-    Feature(std::string const& typeName, Args&&... args)
+    Feature(const char* typeName, Args&&... args)
      : FeatureBase<RuntimeObject>(make_rto(typeName, std::forward<Args>(args)...))
     {}
 
@@ -74,7 +74,7 @@ public:
      : FeatureBase<RuntimeObject>(std::forward<parametric::param<RuntimeObject>>(p))
     {}
 
-    Feature(RuntimeObject&& o)
+    explicit Feature(RuntimeObject&& o)
      : FeatureBase(std::forward<RuntimeObject>(o))
     {}
 
@@ -146,7 +146,7 @@ public:
     decltype(auto) invoke(MemberFunPtr funPtr, Feature<Args> const&... args) const
     {
         return algorithm(
-            [=](auto const& wrapped, auto const&... arguments){
+            [=](T const& wrapped, auto const&... arguments){
                 return (wrapped.*funPtr)(arguments...);
             },
             *this,

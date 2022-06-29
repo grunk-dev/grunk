@@ -160,14 +160,14 @@ private:
             if constexpr (numOutputs > 1) {
                 // ... if the return type is a tuple, store results in a vector of RuntimeObjects
                 return std::apply([](auto&&... elems){
-                    return std::vector<RuntimeObject>{std::forward<decltype(elems)>(elems)...};
+                    return std::vector<RuntimeObject>{(RuntimeObject)std::forward<decltype(elems)>(elems)...};
                     }, 
                     std::forward<decltype(ret)>(ret)
                 );
             }
             else {
                 // ... if the return type is not a tuple, store the result in a one element vector
-                return std::vector<RuntimeObject>(1, ret);
+                return std::vector<RuntimeObject>(1, (RuntimeObject)ret);
             }
         }
     }

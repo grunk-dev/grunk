@@ -111,34 +111,34 @@ TEST_F(FeatureTest, Runtime_get)
 {
     Feature x("MyStruct", 0.5);
 
-    // Feature v = x.get("val")->get();
-    // EXPECT_EQ(v.value().cast<double>(), 0.5);
+    Feature v = x.get("val")->get();
+    EXPECT_EQ(v.value().cast<double>(), 0.5);
 
-    // x.access_value().Set("val", 0.3);
-    // EXPECT_FALSE(v.is_valid());
-    // EXPECT_EQ(v.value().Get("val").cast<double>(), 0.3);
+     x.access_value().Set("val", 0.3);
+     EXPECT_FALSE(v.is_valid());
+     EXPECT_EQ(v.value().cast<double>(), 0.3);
 
 }
 
 TEST_F(FeatureTest, Runtime_invoke)
 {
-    Feature x("MyStruct", 0.5);
-    Feature factor("double", 3.);
+//    Feature x("MyStruct", 0.5);
+//    Feature factor("double", 3.);
 
-    // Feature v = x.invoke("times", factor)->get();
+//     Feature v = x.invoke("times", factor)->get();
     
-    // EXPECT_NEAR(v.value().cast<double>(), 1.5, 1e-12);
-    // EXPECT_TRUE(v.is_valid());
+//     EXPECT_NEAR(v.value().cast<double>(), 1.5, 1e-12);
+//     EXPECT_TRUE(v.is_valid());
 
-    // x.access_value().val = 0.3;
-    // EXPECT_FALSE(v.is_valid());
-    // EXPECT_NEAR(v.value(), 0.9, 1e-12);
-    // EXPECT_TRUE(v.is_valid());
+//     x.access_value().Set("val", 0.3);
+//     EXPECT_FALSE(v.is_valid());
+//     EXPECT_NEAR(v.value().cast<double>(), 0.9, 1e-12);
+//     EXPECT_TRUE(v.is_valid());
 
-    // factor.access_value() = 2.;
-    // EXPECT_FALSE(v.is_valid());
-    // EXPECT_NEAR(v.value(), 0.6, 1e-12);
-    // EXPECT_TRUE(v.is_valid());
+//     factor.access_value() = (RuntimeObject)2.;
+//     EXPECT_FALSE(v.is_valid());
+//     EXPECT_NEAR(v.value().cast<double>(), 0.6, 1e-12);
+//     EXPECT_TRUE(v.is_valid());
 }
 
 // TEST_F(FeatureTest, GetValueAsFeature)
