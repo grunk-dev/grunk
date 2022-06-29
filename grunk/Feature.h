@@ -114,7 +114,7 @@ public:
     decltype(auto) invoke(std::string const& memberFunName, Feature<Args> const&... args) const
     {
         return eval(
-            [=](auto const& wrapped, auto const&... arguments){
+            [=](RuntimeObject const& wrapped, auto const&... arguments){
                 return wrapped.Invoke(memberFunName, arguments...);
             },
             *this,
@@ -169,17 +169,6 @@ public:
             args...
         );
     }
-
-    // template <typename T>
-    // T GetAs(std::string const& memberName) const {
-    //     return param.value().GetAs<T>(memberName);
-    // }
-
-    // template <typename T> 
-    // T cast() const
-    // {
-    //     return param.value().cast<T>();
-    // }
 };
 
 template <typename T>

@@ -12,6 +12,10 @@ struct MyDouble {
         value *= factor;
     }
 
+    double get() const {
+        return value;
+    }
+
     double value;
 };
 
@@ -30,6 +34,7 @@ public:
         Reflect::Reflect<MyDouble>("MyDouble")
         .AddConstructor<double>()
         .AddMemberFunction(&MyDouble::multiply, "multiply")
+        .AddMemberFunction(&MyDouble::get, "get")
         .AddDataMember(&MyDouble::value, "value");
     } 
     static void TearDownTestCase() {
@@ -80,7 +85,7 @@ TEST_F(RuntimeObjectTest, SetterGetter)
     EXPECT_THROW(x.Set("non existent member", 123), std::invalid_argument);
 }
 
-TEST_F(RuntimeObjectTest, Invoke)
+TEST_F(RuntimeObjectTest, InvokeNonConst)
 {
     RuntimeObject x = make_rto("MyDouble", 0.5);
     x.Invoke("multiply", 2);
@@ -91,6 +96,28 @@ TEST_F(RuntimeObjectTest, Invoke)
     EXPECT_NEAR(x.Get("value").cast<double>(), 3., 1e-10);
 
     EXPECT_THROW(x.Invoke("nonexistent member function"), std::invalid_argument);
+}
+
+TEST_F(RuntimeObjectTest, InvokeConstCorrectness)
+{
+    RuntimeObject x = make_rto("MyDouble", 0.5);
+    RuntimeObject const& xcref = x;
+    RuntimeObject& xref = x;
+
+    // calling const member fun on const ref
+    // ASSERT_NO_THROW(xcref.Invoke("get"));
+    // auto r = xcref.Invoke("get");
+    // EXPECT_EQ(r.cast<double>(), 0.5);
+
+    // calling nonconst member fun on const ref
+    // auto r = xcref.Invoke("multiply", 3);
+    // TODO: ThIS SHOULD THROW disregards_qualifier, derived from std::exception
+
+    // calling const member on ref
+    EXPECT_NO_THROW(xref.Invoke("get"));
+
+    // calling nonconst member on ref
+    EXPECT_NO_THROW(xref.Invoke("multiply", 1.23));
 }
 
 TEST_F(RuntimeObjectTest, make_rto)

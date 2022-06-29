@@ -68,22 +68,26 @@ namespace grunk {
         void Set(std::string const& memberName, RuntimeObject const& obj);
 
         template <typename... Args>
-        RuntimeObject Invoke(std::string const& name, Args&&... args)
+        RuntimeObject Invoke(std::string const& name, Args&&... args) const
         {
-            
             auto* fun = type_info->GetMemberFunction(name);
             
             if (!fun) {
                 throw std::invalid_argument("RuntimeObject::Invoke: No member function \"" + name + "\" found for Type \"" + type_info->GetName() + "\"");
             }
 
-            auto to_rto = [](auto const& v){
-                if constexpr ( std::is_same_v<std::decay_t<decltype(v)>, RuntimeObject> )
-                {
-                    return v;
-                }
-                return RuntimeObject(v);
-            };
+            return RuntimeObject(fun->GetReturnType(),
+                                 fun->Invoke(object, to_rto(args).object...));
+        }
+
+        template <typename... Args>
+        RuntimeObject Invoke(std::string const& name, Args&&... args)
+        {
+            auto* fun = type_info->GetMemberFunction(name);
+            
+            if (!fun) {
+                throw std::invalid_argument("RuntimeObject::Invoke: No member function \"" + name + "\" found for Type \"" + type_info->GetName() + "\"");
+            }
 
             return RuntimeObject(fun->GetReturnType(),
                                  fun->Invoke(object, to_rto(args).object...));
@@ -135,6 +139,16 @@ namespace grunk {
          : type_info{ti}
          , object{obj}
          {}
+
+        template<typename T>
+        static RuntimeObject to_rto(T const& t){
+            if constexpr ( std::is_same_v<std::decay_t<T>, RuntimeObject> )
+            {
+                return t;
+            }
+            return RuntimeObject(t);
+        };
+
     };
 
     template <typename... Args>
