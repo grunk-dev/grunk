@@ -29,8 +29,6 @@ namespace grunk {
          : type_info(&descriptor)
          , object(type_info->GetConstructor<CtorArgs...>()->NewInstance(std::forward<CtorArgs>(args)...))
         {
-            // this assertion is too late...
-            assert(type_info != nullptr);
         }
 
 
@@ -137,6 +135,26 @@ namespace grunk {
 
         if (!descr) {
             throw std::invalid_argument("make_rto: No type with name\"" + typeName + "\" found in static TypeRegistry.");
+        }
+
+        if (!descr->GetConstructor<Args...>()) {
+
+            std::string error = "make_rto: No known constructor of type \""
+                                + descr->GetName()
+                                + "\" accepts the given argument(s)";
+            if constexpr (sizeof...(Args) == 0) {
+                error = "make_rto: No constructor of type \""
+                        + descr->GetName()
+                        + "\" accepts zero argument(s)";
+                throw std::invalid_argument(error + ".");
+            } else if constexpr (sizeof...(Args) == 1) {
+                throw std::invalid_argument(error + " " + typeid(args).name()...);
+            } else {
+                throw std::invalid_argument(error
+                                            + (... + (", " + std::string(typeid(args).name())))
+                                            + "."
+                );
+            }
         }
 
         return RuntimeObject(*descr, std::forward<Args>(args)...);

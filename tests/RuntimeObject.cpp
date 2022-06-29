@@ -20,6 +20,9 @@ class RuntimeObjectTest : public ::testing::Test
 public:
 
     static void SetUpTestCase() {
+
+        Reflect::Reflect<std::string>("string");
+
         Reflect::Reflect<double>("double");
 
         Reflect::Reflect<int>("int");
@@ -36,8 +39,11 @@ public:
 
 TEST_F(RuntimeObjectTest, CtorSimple)
 {
-    RuntimeObject x = make_rto("MyDouble", 0.5);
+    RuntimeObject x(MyDouble(0.5));
     EXPECT_EQ(x.Get("value").cast<double>(), 0.5);
+
+    // ctor called with unregistered type, e.g. bool
+    EXPECT_THROW(RuntimeObject(true), std::domain_error);
 }
 
 TEST_F(RuntimeObjectTest, Casting)
@@ -68,6 +74,10 @@ TEST_F(RuntimeObjectTest, SetterGetter)
     // setting and getting by conversion with other types
     x.Set("value", 3.14);
     EXPECT_EQ(x.Get("value").cast<double>(), 3.14);
+
+    EXPECT_THROW(x.Get("non existentent member"), std::invalid_argument);
+    EXPECT_THROW(x.Set("value", std::string("wrong argument type")), std::invalid_argument);
+    EXPECT_THROW(x.Set("non existent member", 123), std::invalid_argument);
 }
 
 TEST_F(RuntimeObjectTest, Invoke)
@@ -79,6 +89,18 @@ TEST_F(RuntimeObjectTest, Invoke)
     RuntimeObject z(3);
     x.Invoke("multiply", z);
     EXPECT_NEAR(x.Get("value").cast<double>(), 3., 1e-10);
+
+    EXPECT_THROW(x.Invoke("nonexistent member function"), std::invalid_argument);
+}
+
+TEST_F(RuntimeObjectTest, make_rto)
+{
+    auto x = make_rto("MyDouble", 0.5);
+    EXPECT_EQ(x.Get("value").cast<double>(), 0.5);
+
+    EXPECT_THROW(make_rto("NonRegisteredType", 0.5), std::invalid_argument);
+
+    EXPECT_THROW(make_rto("MyDouble", 0.5, 0.5, 0.5), std::invalid_argument);
 }
 
 // TODO: Test misuse and error handling (To Do: error handling ;) )
