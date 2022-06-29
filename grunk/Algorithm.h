@@ -22,7 +22,11 @@ template <typename F, typename... Args>
 class Algorithm;
 
 template <typename F, typename... Args>
-parametric::compute_node_ptr<Algorithm<F, Args...>> algorithm(F const& fun, Feature<Args> const&... args);
+parametric::compute_node_ptr<Algorithm<F, Args...>> algorithm(F const& fun, Feature<Args> const&... args)
+{
+    // parametric::new_node does not work with templated ctor of Algorithm
+    return parametric::compute_node_ptr<Algorithm<F, Args...>>(new Algorithm<F, Args...>(fun, args...));
+}
 
 template <typename F, typename... Args>
 class Algorithm : public parametric::ComputeNode
@@ -34,6 +38,11 @@ public:
         
     using ReturnType = std::invoke_result_t<F, Args const&...>;
 
+    // factory function
+    template <typename Fun, typename... Arguments>
+    friend parametric::compute_node_ptr<Algorithm<Fun, Arguments...>> algorithm(Fun const& fun, Feature<Arguments> const&... args);
+
+private:
 
     Algorithm(F const& f, Feature<Args> const&... args) 
      : function(f)
@@ -42,6 +51,8 @@ public:
         std::apply([=](Feature<Args> const&... feature){ (...,depends_on(feature.param)); }, in);
         computes(out, parametric::param<ReturnType>(""));
     }
+
+public:
 
     void eval() const override final
     {
@@ -111,16 +122,26 @@ namespace details {
 
 } // namespace details
 
-
 /**
  * @brief This class does ...
  *
  * In particular ...
  */
+template <typename F>
+parametric::compute_node_ptr<Algorithm<details::RTAlgFunction>> algorithm(RuntimeFunction<F> const& fun, std::initializer_list<Feature<RuntimeObject>> const& args)
+{
+    // parametric::new_node does not work with templated ctor of Algorithm
+    return parametric::compute_node_ptr<Algorithm<details::RTAlgFunction>>(new RuntimeAlgorithm(fun, args));
+}
+
 template <>
 class Algorithm<details::RTAlgFunction> : public parametric::ComputeNode
 {
-public:
+
+    template <typename F>
+    friend parametric::compute_node_ptr<Algorithm<details::RTAlgFunction>> algorithm(RuntimeFunction<F> const&, std::initializer_list<Feature<RuntimeObject>> const&);
+
+private:
 
     /**
         * @brief Creates a ...
@@ -141,6 +162,7 @@ public:
         }
     }
 
+public:
     /**
         * @brief This function does ...
         *
@@ -187,20 +209,6 @@ private:
 };
 
 using RuntimeAlgorithm = Algorithm<details::RTAlgFunction>;
-
-template <typename F, typename... Args>
-parametric::compute_node_ptr<Algorithm<F, Args...>> algorithm(F const& fun, Feature<Args> const&... args)
-{
-    // parametric::new_node does not work with templated ctor of Algorithm
-    return parametric::compute_node_ptr<Algorithm<F, Args...>>(new Algorithm<F, Args...>(fun, args...));
-}
-
-template <typename F>
-parametric::compute_node_ptr<RuntimeAlgorithm> algorithm(RuntimeFunction<F> const& fun, std::initializer_list<Feature<RuntimeObject>> const& args)
-{
-    // parametric::new_node does not work with templated ctor of Algorithm
-    return parametric::compute_node_ptr<RuntimeAlgorithm>(new RuntimeAlgorithm(fun, args));
-}
 
 template <typename F, typename... Args>
 parametric::compute_node_ptr<RuntimeAlgorithm> algorithm(RuntimeFunction<F> const& fun, Feature<Args> const&... args)
