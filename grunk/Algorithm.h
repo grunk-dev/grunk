@@ -17,17 +17,12 @@
 
 namespace grunk {
 
-//forward declarations 
-template <typename F, typename... Args>
-class Algorithm;
+namespace details {
 
-template<typename F, typename... Args>
-using AlgorithmPtr = parametric::compute_node_ptr<Algorithm<F, Args...>>;
+//forward declaration
+struct AlgorithmFactory;
 
-template <typename F,
-          typename, // default-value (enable_if) declared in Feature.h
-          typename... Args>
-AlgorithmPtr<F, Args...> eval(F const& fun, Feature<Args> const&... args);
+} // namespace details
 
 template <typename F, typename... Args>
 class Algorithm : public parametric::ComputeNode
@@ -39,15 +34,9 @@ public:
         
     using ReturnType = std::invoke_result_t<F, Args const&...>;
 
-//TODO: Why can't I have a templated friend factory function and private ctor here?
+    friend struct details::AlgorithmFactory;
 
-//    // factory function
-//    template <typename Function,
-//              typename,
-//              typename... Arguments>
-//    friend AlgorithmPtr<Function, Args...> eval(Function const& fun, Feature<Arguments> const&... args);
-
-// private:
+ private:
 
     Algorithm(F const& f, Feature<Args> const&... args) 
      : function(f)
@@ -127,22 +116,12 @@ namespace details {
 
 } // namespace details
 
-/**
- * @brief This class does ...
- *
- * In particular ...
- */
-using RuntimeAlgorithmPtr = AlgorithmPtr<details::RTAlgFunction>;
-
-template <typename F>
-RuntimeAlgorithmPtr eval(RuntimeFunction<F> const& fun, std::initializer_list<Feature<RuntimeObject>> const& args);
 
 template <>
 class Algorithm<details::RTAlgFunction> : public parametric::ComputeNode
 {
 
-    template <typename F>
-    friend AlgorithmPtr<details::RTAlgFunction> eval(RuntimeFunction<F> const&, std::initializer_list<Feature<RuntimeObject>> const&);
+    friend struct details::AlgorithmFactory;
 
 private:
 
@@ -187,7 +166,7 @@ public:
         assert(outputs_vals.size() == outputs.size());
         
         // move the output values to the output nodes
-        for (int i=0; i<outputs.size(); ++i) {
+        for (size_t i=0; i < outputs.size(); ++i) {
             if (!outputs[i].expired()) {
                 outputs[i].set_value(std::move(outputs_vals[i]));
             }
@@ -212,28 +191,65 @@ private:
 };
 
 using RuntimeAlgorithm = Algorithm<details::RTAlgFunction>;
+using RuntimeAlgorithmPtr = AlgorithmPtr<details::RTAlgFunction>;
+
+template<typename F, typename... Args>
+using AlgorithmPtr = parametric::compute_node_ptr<Algorithm<F, Args...>>;
+
+namespace details {
+
+/**
+ * @brief The AlgorithmFactory struct is an internal factory for creating Algorithm
+ * instances.
+ *
+ * It is a proxy class used in the free factory functions eval. Factory functions are
+ * needed, because Algorithms should always be wrapped in a parametric::compute_node_ptr
+ * and the private constructor of ALgorithm makes sure that there is no misuse. The
+ * factory function parametric::new_node does not work with the templated constructors of the
+ * Algorithm class, so we need new factory functions.
+ *
+ * The proxy factory is needed, because the factory functions eval must be templated, and
+ * templated friend functions are a pain in the ass. This way we have a non-templated friend
+ * struct with templated member functions.
+ */
+struct AlgorithmFactory
+{
+
+    template <typename F,
+              typename... Args>
+    static AlgorithmPtr<F, Args...> new_algorithm(F const& fun, Feature<Args> const&... args)
+    {
+        return AlgorithmPtr<F, Args...>(new Algorithm<F, Args...>(fun, args...));
+    }
+
+    template <typename F>
+    static RuntimeAlgorithmPtr new_runtime_algorithm(RuntimeFunction<F> const& fun, std::initializer_list<Feature<RuntimeObject>> const& args)
+    {
+        return RuntimeAlgorithmPtr(new RuntimeAlgorithm(fun, args));
+    }
+
+};
+
+} //namespace details
 
 template <typename F,
           typename, // default-value (enable_if) declared in Feature.h
           typename... Args>
 AlgorithmPtr<F, Args...> eval(F const& fun, Feature<Args> const&... args)
 {
-    // parametric::new_node does not work with templated ctor of Algorithm
-    return AlgorithmPtr<F, Args...>(new Algorithm<F, Args...>(fun, args...));
-}
-
-template <typename F>
-RuntimeAlgorithmPtr eval(RuntimeFunction<F> const& fun, std::initializer_list<Feature<RuntimeObject>> const& args)
-{
-    // parametric::new_node does not work with templated ctor of Algorithm
-    return RuntimeAlgorithmPtr(new Algorithm<details::RTAlgFunction>(fun, args));
+    return details::AlgorithmFactory::new_algorithm(fun, args...);
 }
 
 template <typename F, typename... Args>
 RuntimeAlgorithmPtr eval(RuntimeFunction<F> const& fun, Feature<Args> const&... args)
 {
-    // parametric::new_node does not work with templated ctor of Algorithm
-    return eval(fun, {args...});
+    return details::AlgorithmFactory::new_runtime_algorithm(fun, {args...});
+}
+
+template <typename F>
+RuntimeAlgorithmPtr eval(RuntimeFunction<F> const& fun, std::initializer_list<Feature<RuntimeObject>> const& args)
+{
+    return details::AlgorithmFactory::new_runtime_algorithm(fun, args);
 }
 
 } //namespace grunk
