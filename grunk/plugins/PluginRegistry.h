@@ -6,7 +6,7 @@
 #include <boost/dll/shared_library.hpp>
 #include <map>
 #include <filesystem>
-#include "api.h"
+#include "IPlugin.h"
 
 namespace grunk {
 

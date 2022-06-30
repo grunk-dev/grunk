@@ -1,6 +1,6 @@
 #pragma once
 
-#include "api.h"
+#include "IPlugin.h"
 
 namespace grunk {
 

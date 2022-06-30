@@ -21,7 +21,7 @@ find_package(reflect REQUIRED)
 set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
 
 # create a library and add source files
-add_library(grunk grunk/plugins/api.h
+add_library(grunk grunk/plugins/IPlugin.h
                   grunk/plugins/PluginRegistry.h
                   grunk/plugins/PluginRegistry.cpp
                   grunk/plugins/StdPlugin.h 
@@ -36,6 +36,7 @@ add_library(grunk grunk/plugins/api.h
                   grunk/RuntimeObject.cpp
                   grunk/RuntimeFunction.h
                   grunk/RuntimeFunction.cpp
+                  grunk/grunk.h
 )
 
 target_compile_features(grunk PUBLIC cxx_std_17)

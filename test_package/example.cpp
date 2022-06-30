@@ -1,8 +1,7 @@
 #include <ios>
 #include <iostream>
 
-#include <grunk/plugins/PluginRegistry.h> 
-#include <grunk/FunctionRegistry.h>
+#include <grunk/grunk.h>
 
 
 int main(int argc, char* argv[]) {

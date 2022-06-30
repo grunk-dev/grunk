@@ -1,4 +1,4 @@
-#include <grunk/plugins/api.h>
+#include <grunk/grunk.h>
 
 struct MyDouble {
 
@@ -10,13 +10,13 @@ MyDouble add(MyDouble const& l, MyDouble const& r) {
     return MyDouble(l.value + r.value);
 }
 
-class Bar: public grunk::IPlugin
+class MyPlugin: public grunk::IPlugin
 {
 public:
 
     virtual std::string name() const override final
     {
-        return "Bar";
+        return "MyPlugin";
     }
 
     virtual void init() const override final 
@@ -33,4 +33,4 @@ public:
     }
 
 };
-GRUNK_REGISTER_PLUGIN(Bar)
+GRUNK_REGISTER_PLUGIN(MyPlugin)
