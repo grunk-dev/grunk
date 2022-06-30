@@ -9,9 +9,6 @@ image: conanio/gcc9
 # Add gitlab conan package registry and setup ser name and access token
   - conan remote add gitlab https://gitlab.dlr.de/api/v4/projects/21487/packages/conan
   - conan user ci_user -r gitlab -p ${CI_JOB_TOKEN}
-# install requirements
-  - conan install parametric/0.1@paradigms/testing --remote=gitlab
-  - conan install reflect/0.1@paradigms/testing --remote=gitlab -s build_type=Debug
 
 build-debug:
   tags:
@@ -23,7 +20,7 @@ build-debug:
     - pip3 install 'Sphinx>=2.4.0,<3.0.0' sphinx-rtd-theme 'breathe<4.15.0' m2r 'mistune==0.8.4' 'Jinja2<3.1'
   script:
     - mkdir build && cd build
-    - conan install .. -s build_type=Debug
+    - conan install .. -s build_type=Debug -b missing
     - export ASAN_FLAGS="-fsanitize=address -fsanitize-recover=address -fno-omit-frame-pointer"
     - cmake .. -DCMAKE_BUILD_TYPE=Debug
                -DGRUNK_TESTS=ON
@@ -50,7 +47,7 @@ test-debug:
     - *conan_setup  
   script:
     - cd build
-    - conan install .. --generator=virtualrunenv -s build_type=Debug
+    - conan install .. --generator=virtualrunenv -s build_type=Debug -b missing
     - chmod a+x activate_run.sh
     - ./activate_run.sh
     - ./tests/runUnitTests
