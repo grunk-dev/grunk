@@ -117,7 +117,8 @@ TEST_F(RuntimeObjectTest, InvokeConstCorrectness)
     EXPECT_NO_THROW(xref.Invoke("get"));
 
     // calling nonconst member on ref
-    EXPECT_NO_THROW(xref.Invoke("multiply", 1.23));
+    EXPECT_NO_THROW(xref.Invoke("multiply", 5));
+    EXPECT_NEAR(x.Get("value").cast<double>(), 2.5, 1e-12);
 }
 
 TEST_F(RuntimeObjectTest, make_rto)
