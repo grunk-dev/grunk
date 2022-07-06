@@ -12,7 +12,7 @@ struct MyDouble {
 
     MyDouble(double v) : val{v} {}
 
-    double& value_ref() {
+    double const& value_ref() const {
         return val;
     }
 
@@ -211,9 +211,3 @@ TEST_F(AlgorithmTest, RuntimeMultiOutput)
 
     EXPECT_EQ(y.value().cast<double>(), 0.7);
 }
-
-// TEST_F(AlgorithmTest, CompiletimeReturnReference)
-// {
-//     Feature x(MyDouble{0.125});
-//     auto v = eval(&MyDouble::value_ref, x)->get();
-// }
