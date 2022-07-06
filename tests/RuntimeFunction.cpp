@@ -111,7 +111,7 @@ TEST_F(RuntimeFunctionTest, NonConstMemberFunction)
     auto r = f(foo, x);
     EXPECT_EQ(r.size(), 0);
 
-    EXPECT_EQ(foo.Get("val").cast<int>(), 5);
+    EXPECT_EQ(foo.get("val").cast<int>(), 5);
 }
 
 TEST_F(RuntimeFunctionTest, Lambda)

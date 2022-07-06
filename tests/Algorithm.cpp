@@ -87,15 +87,15 @@ TEST_F(AlgorithmTest, RuntimeBasic)
     EXPECT_FALSE(b.is_valid());
 
     // evaluating b should trigger evaluation of the entire tree
-    EXPECT_NEAR(b.value().Get("val").cast<double>(), 0.4, 1e-12);
+    EXPECT_NEAR(b.value().get("val").cast<double>(), 0.4, 1e-12);
 
     EXPECT_TRUE(a.is_valid());
     EXPECT_TRUE(b.is_valid());
 
-    EXPECT_NEAR(a.value().Get("val").cast<double>(), 0.3, 1e-12);
+    EXPECT_NEAR(a.value().get("val").cast<double>(), 0.3, 1e-12);
 
     // reseting a root node should invalidate the entire tree
-    l.access_value().Set("val", 0.5);
+    l.access_value().set("val", 0.5);
 
     // TODO: using set_value() instead of change_value() does not seem to work
 
@@ -103,12 +103,12 @@ TEST_F(AlgorithmTest, RuntimeBasic)
     EXPECT_FALSE(b.is_valid());
 
     // evaluating b should trigger evaluation of the entire tree
-    EXPECT_NEAR(b.value().Get("val").cast<double>(), 0.7, 1e-12);
+    EXPECT_NEAR(b.value().get("val").cast<double>(), 0.7, 1e-12);
 
     EXPECT_TRUE(a.is_valid());
     EXPECT_TRUE(b.is_valid());
 
-    EXPECT_NEAR(a.value().Get("val").cast<double>(), 0.6, 1e-12);
+    EXPECT_NEAR(a.value().get("val").cast<double>(), 0.6, 1e-12);
 }
 
 TEST_F(AlgorithmTest, CompiletimeBasic)
@@ -167,11 +167,11 @@ TEST_F(AlgorithmTest, PassNonRumtimeFeatureToRuntimeAlgorithm)
 
     // (RuntimeFeature, Feature<T>) -> RuntimeAlgorithm
     auto ret1 = eval(f, lr, rc)->get();
-    EXPECT_NEAR(ret1.value().Get("val").cast<double>(), 0.3, 1e-12);
+    EXPECT_NEAR(ret1.value().get("val").cast<double>(), 0.3, 1e-12);
 
     // (Feature<T>, Feature<T>) -> RuntimeAlgorithm
     auto ret2 = eval(f, lc, rc)->get();
-    EXPECT_NEAR(ret2.value().Get("val").cast<double>(), 0.3, 1e-12);
+    EXPECT_NEAR(ret2.value().get("val").cast<double>(), 0.3, 1e-12);
 }
 
 TEST_F(AlgorithmTest, CompiletimeMultiOutput)
@@ -204,7 +204,7 @@ TEST_F(AlgorithmTest, RuntimeMultiOutput)
     EXPECT_EQ(x.value().cast<double>(), 0.2);
     EXPECT_EQ(y.value().cast<double>(), 0.6);
 
-    i.access_value().Set("y", 0.7);
+    i.access_value().set("y", 0.7);
     
     EXPECT_FALSE(x.is_valid());
     EXPECT_FALSE(y.is_valid());

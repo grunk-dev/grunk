@@ -104,7 +104,7 @@ public:
     {
         return eval(
             [=](RuntimeObject const& wrapped){
-                return wrapped.Get(memberName);
+                return wrapped.get(memberName);
             },
             *this
         );
@@ -115,7 +115,7 @@ public:
     {
         return eval(
             [=](RuntimeObject const& wrapped, auto const&... arguments){
-                return wrapped.Invoke(memberFunName, arguments...);
+                return wrapped.invoke(memberFunName, arguments...);
             },
             *this,
             args...

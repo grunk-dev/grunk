@@ -61,7 +61,7 @@ public:
 TEST_F(FeatureTest, Conversions)
 {
     RuntimeFeature x("MyStruct", 0.33);
-    EXPECT_NEAR(x.value().Get("val").cast<double>(), 0.33, 1e-12);
+    EXPECT_NEAR(x.value().get("val").cast<double>(), 0.33, 1e-12);
 
     // Feature<RuntimeObject> -> Feature<T>
     Feature<MyStruct> y(x);
@@ -69,7 +69,7 @@ TEST_F(FeatureTest, Conversions)
 
     // Feature<T> -> Feature<RuntimeObject> 
     RuntimeFeature z(y);
-    EXPECT_NEAR(z.value().Get("val").cast<double>(), 0.33, 1e-12);
+    EXPECT_NEAR(z.value().get("val").cast<double>(), 0.33, 1e-12);
 }
 
 TEST_F(FeatureTest, Compiletime_get)
@@ -114,7 +114,7 @@ TEST_F(FeatureTest, Runtime_get)
     Feature v = x.get("val")->get();
     EXPECT_EQ(v.value().cast<double>(), 0.5);
 
-     x.access_value().Set("val", 0.3);
+     x.access_value().set("val", 0.3);
      EXPECT_FALSE(v.is_valid());
      EXPECT_EQ(v.value().cast<double>(), 0.3);
 
@@ -131,7 +131,7 @@ TEST_F(FeatureTest, Runtime_invoke)
     EXPECT_NEAR(v.value().cast<double>(), 1.5, 1e-12);
     EXPECT_TRUE(v.is_valid());
 
-    x.access_value().Set("val", 0.3);
+    x.access_value().set("val", 0.3);
     EXPECT_FALSE(v.is_valid());
     EXPECT_NEAR(v.value().cast<double>(), 0.9, 1e-12);
     EXPECT_TRUE(v.is_valid());

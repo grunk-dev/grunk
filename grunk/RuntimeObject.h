@@ -56,19 +56,19 @@ namespace grunk {
         // some convenience funcs to set and get dataMembers as RuntimeObjects
 
         // it would be really cool to be able to set by reference
-        RuntimeObject Get(std::string const& memberName) const;
+        RuntimeObject get(std::string const& memberName) const;
 
         template <typename T>
-        void Set(std::string const& memberName, T const& t)
+        void set(std::string const& memberName, T const& t)
         {
             //this is just a convenience wrapper to hide the explicit conversion
-            Set(memberName, (RuntimeObject)t);
+            set(memberName, (RuntimeObject)t);
         };
 
-        void Set(std::string const& memberName, RuntimeObject const& obj);
+        void set(std::string const& memberName, RuntimeObject const& obj);
 
         template <typename... Args>
-        RuntimeObject Invoke(std::string const& name, Args&&... args) const
+        RuntimeObject invoke(std::string const& name, Args&&... args) const
         {
             auto* fun = type_info->GetMemberFunction(name);
             
@@ -81,7 +81,7 @@ namespace grunk {
         }
 
         template <typename... Args>
-        RuntimeObject Invoke(std::string const& name, Args&&... args)
+        RuntimeObject invoke(std::string const& name, Args&&... args)
         {
             auto* fun = type_info->GetMemberFunction(name);
             
@@ -125,11 +125,11 @@ namespace grunk {
         }
 
         template <typename T>
-        T GetAs(std::string const& memberName) const {
-            return Get(memberName).cast<T>();
+        T get_as(std::string const& memberName) const {
+            return get(memberName).cast<T>();
         }
 
-        Reflect::TypeDescriptor const* GetTypeInfo() const;
+        Reflect::TypeDescriptor const* get_type_info() const;
 
     private:
         Reflect::TypeDescriptor const* type_info  {nullptr};
