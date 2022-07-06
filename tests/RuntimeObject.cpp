@@ -105,13 +105,12 @@ TEST_F(RuntimeObjectTest, InvokeConstCorrectness)
     RuntimeObject& xref = x;
 
     // calling const member fun on const ref
-    // ASSERT_NO_THROW(xcref.Invoke("get"));
-    // auto r = xcref.Invoke("get");
-    // EXPECT_EQ(r.cast<double>(), 0.5);
+    ASSERT_NO_THROW(xcref.Invoke("get"));
+    auto r = xcref.Invoke("get");
+    EXPECT_EQ(r.cast<double>(), 0.5);
 
     // calling nonconst member fun on const ref
-    // auto r = xcref.Invoke("multiply", 3);
-    // TODO: ThIS SHOULD THROW disregards_qualifier, derived from std::exception
+    EXPECT_THROW(xcref.Invoke("multiply", 3), Reflect::disregards_qualifier);
 
     // calling const member on ref
     EXPECT_NO_THROW(xref.Invoke("get"));
@@ -130,6 +129,4 @@ TEST_F(RuntimeObjectTest, make_rto)
 
     EXPECT_THROW(make_rto("MyDouble", 0.5, 0.5, 0.5), std::invalid_argument);
 }
-
-// TODO: Test misuse and error handling (To Do: error handling ;) )
 

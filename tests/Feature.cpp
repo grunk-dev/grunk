@@ -15,15 +15,16 @@ struct MyDouble {
 struct MyStruct {
 
     MyStruct(double v)
-     : feature(RuntimeFeature("MyDouble"))
-     , val{v} 
+     : val{v} 
     {}
 
     double times(double factor) const {
         return val*factor;
     }
 
-    RuntimeFeature feature;
+    double timesc(double factor) {
+        return val*factor;
+    }
 
     double val;
 };
@@ -38,8 +39,6 @@ public:
 
     static void SetUpTestCase() {
 
-        Reflect::Reflect<RuntimeFeature>("Feature");
-
         Reflect::Reflect<double>("double")
         .AddConstructor<double>();
 
@@ -50,8 +49,8 @@ public:
         Reflect::Reflect<MyStruct>("MyStruct")
         .AddConstructor<double>()
         .AddDataMember(&MyStruct::val, "val")
-        .AddDataMember(&MyStruct::feature, "feature")
-        .AddMemberFunction(&MyStruct::times, "times");
+        .AddMemberFunction(&MyStruct::times, "times")
+        .AddMemberFunction(&MyStruct::timesc, "timesc");
     } 
 
     static void TearDownTestCase() {
@@ -93,6 +92,7 @@ TEST_F(FeatureTest, Compiletime_invoke)
 
     Feature v = x.invoke(&MyStruct::times, factor)->get();
     
+    EXPECT_FALSE(v.is_valid());
     EXPECT_NEAR(v.value(), 1.5, 1e-12);
     EXPECT_TRUE(v.is_valid());
 
@@ -125,54 +125,27 @@ TEST_F(FeatureTest, Runtime_invoke)
     Feature x("MyStruct", 0.5);
     Feature factor("double", 3.);
 
-    // Feature v = x.invoke("times", factor)->get();
+    Feature v = x.invoke("times", factor)->get();
     
-//     EXPECT_NEAR(v.value().cast<double>(), 1.5, 1e-12);
-//     EXPECT_TRUE(v.is_valid());
+    EXPECT_FALSE(v.is_valid());
+    EXPECT_NEAR(v.value().cast<double>(), 1.5, 1e-12);
+    EXPECT_TRUE(v.is_valid());
 
-//     x.access_value().Set("val", 0.3);
-//     EXPECT_FALSE(v.is_valid());
-//     EXPECT_NEAR(v.value().cast<double>(), 0.9, 1e-12);
-//     EXPECT_TRUE(v.is_valid());
+    x.access_value().Set("val", 0.3);
+    EXPECT_FALSE(v.is_valid());
+    EXPECT_NEAR(v.value().cast<double>(), 0.9, 1e-12);
+    EXPECT_TRUE(v.is_valid());
 
-//     factor.access_value() = (RuntimeObject)2.;
-//     EXPECT_FALSE(v.is_valid());
-//     EXPECT_NEAR(v.value().cast<double>(), 0.6, 1e-12);
-//     EXPECT_TRUE(v.is_valid());
+    factor.access_value() = (RuntimeObject)2.;
+    EXPECT_FALSE(v.is_valid());
+    EXPECT_NEAR(v.value().cast<double>(), 0.6, 1e-12);
+    EXPECT_TRUE(v.is_valid());
 }
 
-// TEST_F(FeatureTest, GetValueAsFeature)
-// {
-//     Feature x("MyStruct", 0.5);
-
-//     Feature val_as_feature = x.Get("val");
-
-//     EXPECT_FALSE(val_as_feature.is_valid());
-
-//     EXPECT_EQ(val_as_feature.cast<double>(), 0.5);
-//     EXPECT_TRUE(val_as_feature.is_valid());
-
-//     x.AccessValue().Set("val", 0.25);
-//     EXPECT_EQ(x.GetAs<double>("val"), 0.25);
-
-//     EXPECT_TRUE(x.is_valid());
-//     EXPECT_FALSE(val_as_feature.is_valid());
-
-//     EXPECT_EQ(val_as_feature.cast<double>(), 0.25);
-//     EXPECT_TRUE(val_as_feature.is_valid());
-// }
-
-//TODO the following doesn't work yet
-
-// TEST_F(FeatureTest, GetFeatureAsFeature)
-// {
-//     // make sure we .Get doesn't return a Feature of a feature,
-//     // but does a proper monadic join
-//     auto x = Feature("MyStruct", 0.5);
-//     Feature f = x.Get("feature");
-
-//     ASSERT_FALSE(f.is_valid());
-
-//     ASSERT_EQ(f.Value().GetTypeInfo()->GetName(), "MyDouble");
-//     EXPECT_EQ(f.GetAs<double>("val"), 0.75);
-// }
+TEST_F(FeatureTest, Runtime_invoke_nonConstMemberFun)
+{
+    Feature x("MyStruct", 0.5);
+    Feature factor("double", 3.);
+    Feature v = x.invoke("timesc", factor)->get();
+    EXPECT_THROW(v.value(), Reflect::disregards_qualifier);
+}
