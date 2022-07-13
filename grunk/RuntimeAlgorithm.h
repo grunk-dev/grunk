@@ -10,6 +10,7 @@
 #include <iterator>
 
 #include "RuntimeFunction.h"
+#include "RuntimeFeature.h"
 
 namespace grunk {
 

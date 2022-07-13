@@ -1,7 +1,7 @@
 #include <gtest/gtest.h>
 
 #include <parametric/core.hpp>
-#include <grunk/Feature.h>
+#include <grunk/RuntimeFeature.h>
 
 using namespace grunk;
 

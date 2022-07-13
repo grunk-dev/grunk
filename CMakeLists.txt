@@ -34,6 +34,8 @@ add_library(grunk grunk/plugins/IPlugin.h
                   grunk/FunctionRegistry.cpp
                   grunk/Feature.h
                   grunk/Feature.cpp
+                  grunk/RuntimeFeature.h
+                  grunk/RuntimeFeature.cpp
                   grunk/RuntimeObject.h
                   grunk/RuntimeObject.cpp
                   grunk/RuntimeFunction.h
