@@ -3,7 +3,7 @@
 #include <initializer_list>
 #include <unordered_map>
 
-#include "Algorithm.h"
+#include "RuntimeAlgorithm.h"
 
 namespace grunk {
 

@@ -4,4 +4,4 @@
 
 #include "plugins/PluginRegistry.h"
 #include "Feature.h"
-#include "Algorithm.h"
+#include "RuntimeAlgorithm.h"

@@ -1,7 +1,7 @@
 #include <gtest/gtest.h>
 
 #include <parametric/core.hpp>
-#include <grunk/Algorithm.h>
+#include <grunk/RuntimeAlgorithm.h>
 
 using namespace grunk;
 
