@@ -17,8 +17,8 @@ int main(int argc, char* argv[]) {
     grunk::Feature l("MyDouble", 3.3);
     grunk::Feature r("MyDouble", 2.2);
 
-    std::cout << "l = " << l.value().Get("value").cast<double>() << ", "
-              << "r = " << r.value().Get("value").cast<double>()
+    std::cout << "l = " << l.value().get("value").cast<double>() << ", "
+              << "r = " << r.value().get("value").cast<double>()
               << std::endl;
 
     // evaluate some functions on the parameters
@@ -33,27 +33,27 @@ int main(int argc, char* argv[]) {
     std::cout << std::boolalpha << "b.is_valid() = " << b.is_valid() << std::endl;
 
     // querying a should evaulate the first addition
-    std::cout << "a = " << a.value().Get("value").cast<double>() << std::endl;
+    std::cout << "a = " << a.value().get("value").cast<double>() << std::endl;
 
     // a is valid, b is invalid
     std::cout << std::boolalpha << "a.is_valid() = " << a.is_valid() << std::endl;
     std::cout << std::boolalpha << "b.is_valid() = " << b.is_valid() << std::endl;
 
     // querying b should evaluate second addition
-    std::cout << "b = " << b.value().Get("value").cast<double>() << std::endl;
+    std::cout << "b = " << b.value().get("value").cast<double>() << std::endl;
 
     std::cout << std::boolalpha << "a.is_valid() = " << a.is_valid() << std::endl;
     std::cout << std::boolalpha << "b.is_valid() = " << b.is_valid() << std::endl;
 
     // reseting a root parameter invalidates feature tree
-    l.access_value().Set("value", 0.5);
-    std::cout << "l = " << l.value().Get("value").cast<double>() << std::endl;
+    l.access_value().set("value", 0.5);
+    std::cout << "l = " << l.value().get("value").cast<double>() << std::endl;
 
     std::cout << std::boolalpha << "a.is_valid() = " << a.is_valid() << std::endl;
     std::cout << std::boolalpha << "b.is_valid() = " << b.is_valid() << std::endl;
 
     // querying b should evaluate both additions
-    std::cout << "b = " << b.value().Get("value").cast<double>() << std::endl;
+    std::cout << "b = " << b.value().get("value").cast<double>() << std::endl;
 
     std::cout << std::boolalpha << "a.is_valid() = " << a.is_valid() << std::endl;
     std::cout << std::boolalpha << "b.is_valid() = " << b.is_valid() << std::endl;

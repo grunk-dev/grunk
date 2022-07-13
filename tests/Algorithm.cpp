@@ -198,8 +198,9 @@ TEST_F(AlgorithmTest, RuntimeMultiOutput)
     auto f = grunk::RuntimeFunction(&get_components);
 
     auto i = Feature("Point", 0.2, 0.6);
-    auto x = eval(f, i)->get<0>();
-    auto y = eval(f, i)->get<1>();
+    auto fun = eval(f, i);
+    auto x = fun->get<0>();
+    auto y = fun->get<1>();
 
     EXPECT_EQ(x.value().cast<double>(), 0.2);
     EXPECT_EQ(y.value().cast<double>(), 0.6);
