@@ -87,6 +87,11 @@ namespace grunk {
             }
         }
 
+        template <typename T>
+        T GetAs(std::string const& memberName) const {
+            return Get(memberName).cast<T>();
+        }
+
         Reflect::TypeDescriptor const* GetTypeInfo() const;
 
     private:

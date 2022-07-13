@@ -1,7 +1,8 @@
+#include <ios>
 #include <iostream>
 
 #include <grunk/plugins/PluginRegistry.h> 
-#include <grunk/RuntimeObject.h>
+#include <grunk/FunctionRegistry.h>
 
 
 int main(int argc, char* argv[]) {
@@ -13,24 +14,50 @@ int main(int argc, char* argv[]) {
     plugins.print_plugins();
     std::cout<<std::endl;
 
-    // Create a dynamic object
-    grunk::RuntimeObject x = grunk::make_rto("MyDouble", 0.5);
-    std::cout<< x.Get("value").cast<double>() << std::endl;
+    // set two parameters
+    grunk::Feature l("MyDouble", 3.3);
+    grunk::Feature r("MyDouble", 2.2);
 
-    // setting and getting with runtiomeobjects
-    grunk::RuntimeObject y = 0.25;
-    x.Set("value", y);
-    std::cout<< x.Get("value").cast<double>() << std::endl;
+    std::cout << "l = " << l.GetAs<double>("value")
+              << ", r = " << r.GetAs<double>("value") 
+              << std::endl;
 
-    // setting and getting by conversion with other types
-    x.Set("value", 3.14);
-    std::cout<< x.Get("value").cast<double>() << std::endl;
+    // evaluate some functions on the parameters
+    std::cout << "a = l + r, " 
+              << "b = a + r" << std::endl;
 
-    // calling member functions
-    x.Invoke("multiply", 2);
-    std::cout<< x.Get("value").cast<double>() << std::endl;
+    auto a = grunk::Eval("add", {l, r})->get();
+    auto b = grunk::Eval("add", {a, r})->get();
 
-    grunk::RuntimeObject z = 3;
-    x.Invoke("multiply", z);
-    std::cout<< x.Get("value").cast<double>() << std::endl;
+    // nothing should have happened yet
+    std::cout << std::boolalpha << "a.is_valid() = " << a.is_valid() << std::endl;
+    std::cout << std::boolalpha << "b.is_valid() = " << b.is_valid() << std::endl;
+
+    // querying a should evaulate the first addition
+    std::cout << "a = " << a.Value().GetAs<double>("value") << std::endl;
+
+    // a is valid, b is invalid
+    std::cout << std::boolalpha << "a.is_valid() = " << a.is_valid() << std::endl;
+    std::cout << std::boolalpha << "b.is_valid() = " << b.is_valid() << std::endl;
+
+    // querying b should evaluate second addition
+    std::cout << "b = " << b.Value().GetAs<double>("value") << std::endl;
+
+    std::cout << std::boolalpha << "a.is_valid() = " << a.is_valid() << std::endl;
+    std::cout << std::boolalpha << "b.is_valid() = " << b.is_valid() << std::endl;
+
+    // reseting a root parameter invalidates feature tree
+    l.AccessValue().Set("value", 0.5);
+    std::cout << "l = " << l.GetAs<double>("value") << std::endl;
+
+    std::cout << std::boolalpha << "a.is_valid() = " << a.is_valid() << std::endl;
+    std::cout << std::boolalpha << "b.is_valid() = " << b.is_valid() << std::endl;
+
+    // querying b should evaluate both additions
+    std::cout << "b = " << b.Value().GetAs<double>("value") << std::endl;
+
+    std::cout << std::boolalpha << "a.is_valid() = " << a.is_valid() << std::endl;
+    std::cout << std::boolalpha << "b.is_valid() = " << b.is_valid() << std::endl;
+
+    
 }

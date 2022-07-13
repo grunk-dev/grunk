@@ -35,7 +35,7 @@ public:
     
     template <typename T>
     T GetAs(std::string const& memberName) const {
-        return param.value().Get(memberName).cast<T>();
+        return param.value().GetAs<T>(memberName);
     }
 
     template <typename T> 

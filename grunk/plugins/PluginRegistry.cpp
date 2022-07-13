@@ -11,7 +11,7 @@ PluginRegistry::PluginRegistry(const std::filesystem::path& plugins_dir)
 {
     // insert "standard library plugin"
     auto s = std::make_unique<StdPlugin>();
-    s->register_types();
+    s->init();
 
     // load all other plugins
     load_all();
@@ -57,7 +57,7 @@ void PluginRegistry::insert_plugin(BOOST_RV_REF(boost::dll::shared_library) lib)
 
     // register the plugin, if it hasn't been registered yet
     if (auto it = loaded_plugins.find(name); it == loaded_plugins.end()) {
-        plugin->register_types();
+        plugin->init();
         loaded_plugins[name] = std::move(lib);
     }
 }
@@ -82,6 +82,7 @@ PluginRegistry::~PluginRegistry()
 
     // Or: Figure out why plugins have to stay alive at all and check if this can 
     // be circumvented somehow.
+    GetFunctionRegistry().clear();
     Reflect::GetTypeRegistry().clear();
 }
 

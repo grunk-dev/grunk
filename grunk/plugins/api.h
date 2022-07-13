@@ -5,7 +5,8 @@
 
 #include <boost/dll/alias.hpp> 
 
-#include "reflect/Reflect.hpp"
+#include <reflect/Reflect.hpp>
+#include "../FunctionRegistry.h"
 
 // This requires #include<memory>
 #define GRUNK_REGISTER_PLUGIN(name) \
@@ -19,10 +20,14 @@
 
 namespace grunk {
 
+// function alias
+template<typename T>
+const auto RegisterType = Reflect::Reflect<T>;
+
 struct IPlugin
 {
     virtual std::string name() const = 0;
-    virtual void register_types() const {};
+    virtual void init() const {};
     virtual ~IPlugin(){}
 };
 

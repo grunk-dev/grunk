@@ -28,6 +28,8 @@ add_library(grunk grunk/plugins/api.h
                   grunk/plugins/StdPlugin.cpp
                   grunk/Algorithm.h
                   grunk/Algorithm.cpp
+                  grunk/FunctionRegistry.h
+                  grunk/FunctionRegistry.cpp
                   grunk/Feature.h
                   grunk/Feature.cpp
                   grunk/RuntimeObject.h
