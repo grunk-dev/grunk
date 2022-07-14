@@ -4,13 +4,12 @@
 
 #pragma once
 
-#include "Algorithm.h"
-
 #include <vector>
 #include <iterator>
 
-#include "RuntimeFunction.h"
-#include "RuntimeFeature.h"
+#include <grunk/core/Algorithm.h>
+#include <grunk/runtime/RuntimeFunction.h>
+#include <grunk/runtime/RuntimeFeature.h>
 
 namespace grunk {
 

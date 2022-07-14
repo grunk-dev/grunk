@@ -4,7 +4,7 @@
 
 #pragma once
 
-#include "Feature.h"
+#include <grunk/core/Feature.h>
 
 namespace grunk {
 

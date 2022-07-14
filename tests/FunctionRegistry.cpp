@@ -1,6 +1,6 @@
 #include <gtest/gtest.h>
 
-#include <grunk/FunctionRegistry.h>
+#include <grunk/runtime/FunctionRegistry.h>
 
 using namespace grunk;
 

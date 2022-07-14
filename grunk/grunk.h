@@ -2,6 +2,6 @@
 // convenience header for external use. This is the only header that needs
 // to be included when linking against grunk
 
-#include "plugins/PluginRegistry.h"
-#include "Feature.h"
-#include "RuntimeAlgorithm.h"
+#include <grunk/plugins/PluginRegistry.h>
+#include <grunk/runtime/RuntimeFeature.h>
+#include <grunk/runtime/RuntimeAlgorithm.h>

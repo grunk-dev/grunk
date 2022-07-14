@@ -1,6 +1,6 @@
 #include <gtest/gtest.h>
 
-#include <grunk/RuntimeFunction.h>
+#include <grunk/runtime/RuntimeFunction.h>
 
 using namespace grunk;
 

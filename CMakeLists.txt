@@ -20,28 +20,31 @@ find_package(reflect REQUIRED)
 # Windows specific: export all symbols
 set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
 
-# create a library and add source files
-add_library(grunk grunk/plugins/IPlugin.h
-                  grunk/plugins/PluginRegistry.h
-                  grunk/plugins/PluginRegistry.cpp
-                  grunk/plugins/StdPlugin.h 
-                  grunk/plugins/StdPlugin.cpp
-                  grunk/Algorithm.h
-                  grunk/Algorithm.cpp
-                  grunk/RuntimeAlgorithm.h
-                  grunk/RuntimeAlgorithm.cpp
-                  grunk/FunctionRegistry.h
-                  grunk/FunctionRegistry.cpp
-                  grunk/Feature.h
-                  grunk/Feature.cpp
-                  grunk/RuntimeFeature.h
-                  grunk/RuntimeFeature.cpp
-                  grunk/RuntimeObject.h
-                  grunk/RuntimeObject.cpp
-                  grunk/RuntimeFunction.h
-                  grunk/RuntimeFunction.cpp
-                  grunk/grunk.h
+set(grunk_SRC
+    grunk/core/Algorithm.h
+    grunk/core/Algorithm.cpp
+    grunk/core/Feature.h
+    grunk/core/Feature.cpp
+    grunk/plugins/IPlugin.h
+    grunk/plugins/PluginRegistry.h
+    grunk/plugins/PluginRegistry.cpp
+    grunk/plugins/StdPlugin.h 
+    grunk/plugins/StdPlugin.cpp
+    grunk/runtime/RuntimeAlgorithm.h
+    grunk/runtime/RuntimeAlgorithm.cpp
+    grunk/runtime/FunctionRegistry.h
+    grunk/runtime/FunctionRegistry.cpp
+    grunk/runtime/RuntimeFeature.h
+    grunk/runtime/RuntimeFeature.cpp
+    grunk/runtime/RuntimeObject.h
+    grunk/runtime/RuntimeObject.cpp
+    grunk/runtime/RuntimeFunction.h
+    grunk/runtime/RuntimeFunction.cpp
+    grunk/grunk.h
 )
+
+# create a library and add source files
+add_library(grunk ${grunk_SRC})
 
 target_compile_features(grunk PUBLIC cxx_std_17)
 target_link_libraries(grunk PUBLIC parametric::parametric 
