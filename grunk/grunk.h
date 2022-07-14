@@ -3,5 +3,5 @@
 // to be included when linking against grunk
 
 #include <grunk/plugins/PluginRegistry.h>
-#include <grunk/runtime/RuntimeFeature.h>
-#include <grunk/runtime/RuntimeAlgorithm.h>
+#include <grunk/dynamic/RuntimeFeature.h>
+#include <grunk/dynamic/RuntimeAlgorithm.h>
