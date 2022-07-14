@@ -79,9 +79,11 @@ Dependencies
 You need cmake as well as a C++17 compliant compiler to build grunk from 
 source. 
 
-In addition, grunk depends on the packages ``reflect`` and 
+In addition, grunk depends on the packages ``boost``, ``reflect`` and 
 ``parametric``. 
 
+- `boost <https://www.boost.org/>`_: grunk uses the header-only boost::dll library
+  for its plugin system.
 - `reflect <https://gitlab.dlr.de/paradigms/reflect>`_: This is a simple C++ type reflection library used 
   for the dynamic type system in grunk, see the :ref:`design principles<design-dynamic-sublanguage>`
   section of this documentation. 
