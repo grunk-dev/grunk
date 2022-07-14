@@ -5,7 +5,7 @@
 
 #include <boost/dll/alias.hpp> 
 
-#include <grunk/runtime/FunctionRegistry.h>
+#include <grunk/dynamic/FunctionRegistry.h>
 
 // This requires #include<memory>
 #define GRUNK_REGISTER_PLUGIN(name) \

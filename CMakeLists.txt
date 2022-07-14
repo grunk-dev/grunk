@@ -30,16 +30,16 @@ set(grunk_SRC
     grunk/plugins/PluginRegistry.cpp
     grunk/plugins/StdPlugin.h 
     grunk/plugins/StdPlugin.cpp
-    grunk/runtime/RuntimeAlgorithm.h
-    grunk/runtime/RuntimeAlgorithm.cpp
-    grunk/runtime/FunctionRegistry.h
-    grunk/runtime/FunctionRegistry.cpp
-    grunk/runtime/RuntimeFeature.h
-    grunk/runtime/RuntimeFeature.cpp
-    grunk/runtime/RuntimeObject.h
-    grunk/runtime/RuntimeObject.cpp
-    grunk/runtime/RuntimeFunction.h
-    grunk/runtime/RuntimeFunction.cpp
+    grunk/dynamic/RuntimeAlgorithm.h
+    grunk/dynamic/RuntimeAlgorithm.cpp
+    grunk/dynamic/FunctionRegistry.h
+    grunk/dynamic/FunctionRegistry.cpp
+    grunk/dynamic/RuntimeFeature.h
+    grunk/dynamic/RuntimeFeature.cpp
+    grunk/dynamic/RuntimeObject.h
+    grunk/dynamic/RuntimeObject.cpp
+    grunk/dynamic/RuntimeFunction.h
+    grunk/dynamic/RuntimeFunction.cpp
     grunk/grunk.h
 )
 

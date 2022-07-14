@@ -8,8 +8,8 @@
 #include <iterator>
 
 #include <grunk/core/Algorithm.h>
-#include <grunk/runtime/RuntimeFunction.h>
-#include <grunk/runtime/RuntimeFeature.h>
+#include <grunk/dynamic/RuntimeFunction.h>
+#include <grunk/dynamic/RuntimeFeature.h>
 
 namespace grunk {
 

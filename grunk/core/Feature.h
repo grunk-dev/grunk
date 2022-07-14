@@ -6,7 +6,7 @@
 
 #include <parametric/core.hpp>
 
-#include <grunk/runtime/RuntimeFunction.h>
+#include <grunk/dynamic/RuntimeFunction.h>
 
 namespace grunk {
 
