@@ -1,5 +1,7 @@
 /**
  * @file RuntimeFeature.h
+ *
+ * This file contains the template specialization of Feature for RuntimeObjects
  */
 
 #pragma once
@@ -8,24 +10,62 @@
 
 namespace grunk {
 
+/**
+ * @brief template specialization of Feature for RuntimeObjects
+ *
+ * In addition to the dependency management provided by the parametric library,
+ * this class provides an interface to retrieve data members and invoke member
+ * functions on the wrapped object and registering this action in the feature 
+ * tree.
+ * 
+ * @ingroup dynamic  
+ */
 template <>
 class Feature<RuntimeObject> : public FeatureBase<RuntimeObject>
 {
 public:
 
+    /**
+     * @brief Construct a new RuntimeFeature given the string representation
+     * of a reflected type and constructor arguments.
+     *
+     * This constructs a runtime object given constructor arguments and wraps 
+     * it in a feature instance. See also make_rto.
+     * 
+     * @tparam Args The constructor arguments
+     * @param typeName The string representation of the reflected type
+     * @param args The constructor arguments
+     */
     template <typename... Args>
     Feature(const char* typeName, Args&&... args)
      : FeatureBase<RuntimeObject>(make_rto(typeName, std::forward<Args>(args)...))
     {}
 
+    /**
+     * @brief Construct a new RuntimeFeature given a parametric::param<T>
+     * 
+     * @param p The parametric::param<T> to be wrapped in a Feature
+     */
     Feature(parametric::param<RuntimeObject>&& p)
      : FeatureBase<RuntimeObject>(std::forward<parametric::param<RuntimeObject>>(p))
     {}
 
+    /**
+     * @brief Construct a new RuntimeFeature given an RuntimeObject
+     * 
+     * @param o The input RuntimeObject
+     */
     explicit Feature(RuntimeObject&& o)
      : FeatureBase(std::forward<RuntimeObject>(o))
     {}
 
+    /**
+     * @brief Converting constructor from a Feature<T>, where T is not
+     * a RuntimeObject
+     * 
+     * @tparam T The type wrapped by the incoming Feature<T>
+     * @param f The input feature to be converted to a RuntimeFeature
+     */
     template <typename T,
               typename = std::enable_if_t<!std::is_same_v<RuntimeObject, T>>
     >
@@ -33,12 +73,28 @@ public:
      : Feature(RuntimeObject(f.value()))
     {}
 
+    /**
+     * @brief converts a RuntimFeature to a Feature<T>
+     * 
+     * @tparam T The type of the object to be wrapped
+     * @return Feature<T> The converted Feature<T>
+     */
     template <typename T, typename = std::enable_if_t<!std::is_same_v<T, RuntimeObject>>>
     operator Feature<T>() const
     {
         return Feature<T>(this->param.value().cast<T>());
     }
 
+    /**
+     * @brief retrieve a data member of the wrapped object and 
+     * register the retrieval of the data member in the feature tree
+     * 
+     * This will return the data member wrapped in a Feature and register
+     * the dependency of the returned feature to this.
+     * 
+     * @param memberName  The string representation of the member name
+     * @return RuntimeFeature The data member wrapped in a Feature
+     */
     decltype(auto) get(std::string const& memberName) const
     {
         return eval(
@@ -49,6 +105,15 @@ public:
         );
     }
 
+    /**
+     * @brief invoke a member function of the wrapped object and register
+     * the dependencies of the outputs on this in the feature tree
+     * 
+     * @tparam Args The argument types expected by the member function
+     * @param memberFunName The string representation of the member function
+     * @param args The arguments of the member function
+     * @return RuntimeFeature The return value of the member function 
+     */
     template <typename... Args>
     decltype(auto) invoke(std::string const& memberFunName, Feature<Args> const&... args) const
     {
@@ -62,9 +127,19 @@ public:
     }
 
 };
+
+/**
+ * @brief C++ 17 deduction guides for RuntimeFeature
+ * 
+ * @tparam Args The constructor arguments
+ */
 template <typename... Args>
 Feature(std::string const&, Args&&...) -> Feature<RuntimeObject>;
 
+/**
+ * @brief typedef for RuntimeFeature
+ * @ingroup dynamic
+ */
 using RuntimeFeature = Feature<RuntimeObject>;
 
 }

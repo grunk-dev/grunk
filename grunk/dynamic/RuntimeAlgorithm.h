@@ -1,5 +1,7 @@
 /**
  * @file RuntimeAlgorithm.h
+ * 
+ * This file implements the template specialization of Algorithm for RuntimeFunctions
  */
 
 #pragma once
@@ -15,6 +17,13 @@ namespace grunk {
 
 namespace details {
 
+    /**
+     * @brief This is a helper class that let's us evaluate a RuntimeFunction
+     * given a std::vector<RuntimeObject> as argument, rather than providing 
+     * all RuntimeObjects individually as argument.
+     * 
+     * @tparam F The type of the wrapped function
+     */
     template <typename F>
     class RuntimeFunctionWrapper 
     {
@@ -23,10 +32,21 @@ namespace details {
         using InputsVec = std::vector<std::reference_wrapper<RuntimeObject const>>;
         using OutputsVec = std::vector<RuntimeObject>;
         
+        /**
+         * @brief Construct a new RuntimeFunctionWrapper object from any (non-mutable) function
+         * 
+         * @param f The function to be wrapped
+         */
         RuntimeFunctionWrapper(RuntimeFunction<F> const& f)
             : function(f)
         {}
 
+        /**
+         * @brief Evaluates the RuntimeFunction given an std::vector of RuntimeObjects
+         * 
+         * @param inputs The vector of input arguments
+         * @return OutputsVec The vector of output arguments
+         */
         OutputsVec operator()(InputsVec const& inputs) const
         {
             return call(std::make_index_sequence<details::function_traits<F>::arity>{}, inputs);
@@ -34,6 +54,14 @@ namespace details {
 
     private:
 
+        /**
+         * @brief internal helper function to call the wrapped function
+         * using the indices trick
+         * 
+         * @tparam Is The indices of the input arguments
+         * @param inputs The vector of input arguments
+         * @return OutputsVec The vector of output arguments
+         */
         template<size_t... Is>
         OutputsVec call(std::index_sequence<Is...>, InputsVec const& inputs) const
         {
@@ -43,8 +71,20 @@ namespace details {
         RuntimeFunction<F> const function;
     };
 
+    /**
+     * @brief RTAlgInputs is the input type of a RuntimeAlgorithm
+     */
     using RTAlgInputs = std::vector<std::reference_wrapper<RuntimeObject const>>;
+
+    /**
+     * @brief RTAlgOuptuts is the output type of a RuntimeAlgorithm
+     * 
+     */
     using RTAlgOutputs = std::vector<RuntimeObject>;
+
+    /**
+     * @brief RTAlgFunction is the function wrapped by a RuntimeAlgorithm
+     */
     using RTAlgFunction = std::function<RTAlgOutputs(RTAlgInputs const&)>;
 
     //forward declaration
@@ -52,6 +92,22 @@ namespace details {
 
 } // namespace details
 
+/**
+ * @brief template specialization of Algoithm for RuntimeFunctions
+ *
+ * Given a function and a set of RuntimeFeature instances as inputs, a
+ * RuntimeAlgorithm represents the calculation of the function from the 
+ * arguments wrapped in the input RuntimeFeature instances.
+ *
+ * The class has a private constructor, as it should always be created using the 
+ * factory function ::grunk::eval.
+ *
+ * If the wrapped function returns an std::tuple, each element of this tuple
+ * is interpreted as an output of the function and each element can be retrieved
+ * individually as a feature.
+ * 
+ * @ingroup dynamic_advanced
+ */
 template <>
 class Algorithm<details::RTAlgFunction> : public parametric::ComputeNode
 {
@@ -61,10 +117,13 @@ class Algorithm<details::RTAlgFunction> : public parametric::ComputeNode
 private:
 
     /**
-        * @brief Creates a ...
-        *
-        * Further information ...
-        */
+     * @brief Construct a new RuntimeAlgorithm given a RuntimeFunction<F> and 
+     * an std::initializer_list of RuntimeFeatures.
+     * 
+     * @tparam F The type of the wrapped Function
+     * @param fun Th RuntimeFunction
+     * @param in The input RuntimeFeatures
+     */
     template <typename F>
     Algorithm(RuntimeFunction<F> const& fun, std::initializer_list<RuntimeFeature> const& in)
      : function(details::RuntimeFunctionWrapper<F>(fun))
@@ -81,10 +140,10 @@ private:
 
 public:
     /**
-        * @brief This function does ...
-        *
-        * Further information ...
-        */
+     * @brief This function evaluates the wrapped function and cacnes the
+     * output.
+     * 
+     */
     void eval() const override
     {
         // tranform input nodes to vector of runtime objects
@@ -109,10 +168,18 @@ public:
     }
 
     /**
-        * @brief This function does ...
-        *
-        * Further information ...
-        */
+     * @brief returns the output(s) of the function wrapped in RuntimeFeature instances.
+     *
+     * If the wrapped function returns an std::tuple, each element in this 
+     * tuple is interpreted as an individual output of this algorithm. This function
+     * accepts a template integer argument to specify the index of the output.
+     *
+     * If the wrapped function returns something other than an std::tuple, 
+     * there will be just one output.
+     * 
+     * @tparam Idx The index of the output. Defaults to zero.
+     * @return decltype(auto) a Feature wrapping the output of index Idx
+     */
     template <size_t Idx = 0>
     Feature<RuntimeObject> get() const
     {
@@ -125,7 +192,16 @@ private:
     std::vector<parametric::OutputParam<RuntimeObject>> mutable outputs;
 };
 
+/**
+ * @brief typedef for an Algorithm wrapping a RuntimeFunction
+ * @ingroup dynamic_advanced
+ */
 using RuntimeAlgorithm = Algorithm<details::RTAlgFunction>;
+
+/**
+ * @brief A parametric::compute_node_ptr wrapping a RuntimeAlgorithm
+ * @ingroup dynamic_advanced
+ */
 using RuntimeAlgorithmPtr = AlgorithmPtr<details::RTAlgFunction>;
 
 namespace details {
@@ -146,7 +222,15 @@ namespace details {
  */
 struct RuntimeAlgorithmFactory
 {
-
+    /**
+     * @brief Returns a new RuntimeAlgorithmPtr given a RuntimeFunction and an
+     * initializer list of RuntimeFeatures
+     * 
+     * @tparam F The type of the wrapped function
+     * @param fun The RuntimeFunction<F> to be wrapped
+     * @param args The input features
+     * @return RuntimeAlgorithmPtr The returned compute_node_ptr wrapping a RuntimeAlgorithm
+     */
     template <typename F>
     static RuntimeAlgorithmPtr new_algorithm(RuntimeFunction<F> const& fun, std::initializer_list<Feature<RuntimeObject>> const& args)
     {
@@ -157,12 +241,39 @@ struct RuntimeAlgorithmFactory
 
 } //namespace details
 
+/**
+ * @brief Given a function and some features in the feature tree, this 
+ * function creates a RuntimeAlgoritm instance representing the evaluation
+ * of the input function for the input features.
+ * 
+ * @tparam F The type of the function to be wrapped. This can be any referentially transparent function, 
+             In particular, the function must be invokable on const 
+             references.
+ * @tparam Args The types of the arguments expected by the input function
+ * @param fun The input function
+ * @param args The input features of the feature tree
+ * @return RuntimeAlgorithmPtr A special pointer type wrapping a RuntimeAlgorithm instance.
+ * @ingroup dynamic_advanced
+ */
 template <typename F, typename... Args>
 RuntimeAlgorithmPtr eval(RuntimeFunction<F> const& fun, Feature<Args> const&... args)
 {
     return details::RuntimeAlgorithmFactory::new_algorithm(fun, {args...});
 }
 
+/**
+ * @brief Given a function and an initializer list of features in the feature 
+ * tree, this function creates a RuntimeAlgoritm instance representing the 
+ * evaluation of the input function for the input features.
+ * 
+ * @tparam F The type of the function to be wrapped. This can be any referentially transparent function, 
+             In particular, the function must be invokable on const 
+             references.
+ * @param fun The input function
+ * @param args The input features of the feature tree
+ * @return RuntimeAlgorithmPtr A special pointer type wrapping a RuntimeAlgorithm instance.
+ * @ingroup dynamic_advanced
+ */
 template <typename F>
 RuntimeAlgorithmPtr eval(RuntimeFunction<F> const& fun, std::initializer_list<Feature<RuntimeObject>> const& args)
 {

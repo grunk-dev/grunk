@@ -61,6 +61,12 @@ TEST(FeatureTest, invoke)
     EXPECT_NEAR(v.value(), 0.9, 1e-12);
     EXPECT_TRUE(v.is_valid());
 
+    // a dependent node can be manually overwritten,
+    // but a change further down the tree will get precedence.
+    v.access_value() = 0.12345;
+    EXPECT_TRUE(v.is_valid());
+    EXPECT_EQ(v.value(), 0.12345);
+
     factor.access_value() = 2.;
     EXPECT_FALSE(v.is_valid());
     EXPECT_NEAR(v.value(), 0.6, 1e-12);
