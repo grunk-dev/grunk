@@ -4,7 +4,7 @@
 #define BOOST_DLL_USE_STD_FS 1
 
 #include <boost/dll/shared_library.hpp>
-#include <map>
+#include <unordered_map>
 #include <filesystem>
 #include "IPlugin.h"
 
@@ -18,7 +18,7 @@ class PluginRegistry {
 
     // a bit hacky: We mustn't close a loaded dll, because our local static type registry contains
     // pointers to TypeDescriptors defined in the plugin.
-    using PluginMap = std::map<std::string, boost::dll::shared_library>;
+    using PluginMap = std::unordered_map<std::string, boost::dll::shared_library>;
 
 public:
 
