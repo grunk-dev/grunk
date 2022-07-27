@@ -19,7 +19,6 @@ set(TESTSOURCES
   Feature.cpp
   RuntimeFeature.cpp
   RuntimeFunction.cpp
-  RuntimeObject.cpp
 )
 
 add_executable(runUnitTests ${TESTSOURCES})

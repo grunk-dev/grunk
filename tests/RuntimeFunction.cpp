@@ -69,36 +69,36 @@ public:
 TEST_F(RuntimeFunctionTest, FunctionPointer)
 {
     auto f = RuntimeFunction(&fun0);
-    auto x = RuntimeObject(2.2);
+    auto x = Reflect::DynamicObject(2.2);
     auto r = f(x);
     EXPECT_EQ(r.size(), 1);
-    EXPECT_EQ(r[0].cast<int>(), 2);
+    EXPECT_EQ(Reflect::cast<int>(r[0]), 2);
 }
 
 TEST_F(RuntimeFunctionTest, FunctionReturningTuple)
 {
     auto f = RuntimeFunction(&fun1);
-    auto x = RuntimeObject(std::string("Hello"));
+    auto x = Reflect::DynamicObject(std::string("Hello"));
     auto r = f(x);
     EXPECT_EQ(r.size(), 2);
-    EXPECT_EQ(r[0].cast<int>(), 4);
-    EXPECT_EQ(r[1].cast<double>(), 4.2);
+    EXPECT_EQ(Reflect::cast<int   >(r[0]), 4);
+    EXPECT_EQ(Reflect::cast<double>(r[1]), 4.2);
 }
 
 TEST_F(RuntimeFunctionTest, ConstMemberFunction)
 {
     auto f = RuntimeFunction(&Foo::hello);
-    auto foo = RuntimeObject(Foo{});
-    auto x = RuntimeObject(5);
+    auto foo = Reflect::DynamicObject(Foo{});
+    auto x = Reflect::DynamicObject(5);
     auto r = f(foo, x);
     EXPECT_EQ(r.size(), 1);
-    EXPECT_EQ(r[0].cast<std::string>(), "Hello from const function, input: 5");
+    EXPECT_EQ(Reflect::cast<std::string>(r[0]), "Hello from const function, input: 5");
 }
 
 TEST_F(RuntimeFunctionTest, ConstVoidMemberFunction)
 {
     auto f = RuntimeFunction(&Foo::bar);
-    auto foo = RuntimeObject(Foo{});
+    auto foo = Reflect::DynamicObject(Foo{});
     auto r = f(foo);
     EXPECT_EQ(r.size(), 0);
 }
@@ -106,12 +106,12 @@ TEST_F(RuntimeFunctionTest, ConstVoidMemberFunction)
 TEST_F(RuntimeFunctionTest, NonConstMemberFunction)
 {
     auto f = RuntimeFunction(&Foo::set);
-    auto foo = RuntimeObject(Foo{});
-    auto x = RuntimeObject(5);
+    auto foo = Reflect::DynamicObject(Foo{});
+    auto x = Reflect::DynamicObject(5);
     auto r = f(foo, x);
     EXPECT_EQ(r.size(), 0);
 
-    EXPECT_EQ(foo.get("val").cast<int>(), 5);
+    EXPECT_EQ(foo.get_as<int>("val"), 5);
 }
 
 TEST_F(RuntimeFunctionTest, Lambda)
@@ -120,11 +120,11 @@ TEST_F(RuntimeFunctionTest, Lambda)
     auto f = RuntimeFunction(
         [&proof](int i){ proof = true; return i*i; }
     );
-    auto x = RuntimeObject(4);
+    auto x = Reflect::DynamicObject(4);
     auto r = f(x);
     EXPECT_TRUE(proof);
     EXPECT_EQ(r.size(), 1);
-    EXPECT_EQ(r[0].cast<int>(), 16); // no rounding with power of two
+    EXPECT_EQ(Reflect::cast<int>(r[0]), 16); // no rounding with power of two
 }
 
 TEST_F(RuntimeFunctionTest, MutableLambda)
@@ -133,27 +133,27 @@ TEST_F(RuntimeFunctionTest, MutableLambda)
     auto f = RuntimeFunction(
         [=](int i) mutable {  j=4; return j*i; }
     );
-    auto x = RuntimeObject(4);
+    auto x = Reflect::DynamicObject(4);
     auto r = f(x);
     EXPECT_EQ(j, 0);
     EXPECT_EQ(r.size(), 1);
-    EXPECT_EQ(r[0].cast<int>(), 16); // no rounding with power of two
+    EXPECT_EQ(Reflect::cast<int>(r[0]), 16); // no rounding with power of two
 }
 
 TEST_F(RuntimeFunctionTest, StdFunction)
 {
     auto f = RuntimeFunction(std::function(&fun0));
-    auto x = RuntimeObject(2.2);
+    auto x = Reflect::DynamicObject(2.2);
     auto r = f(x);
     EXPECT_EQ(r.size(), 1);
-    EXPECT_EQ(r[0].cast<int>(), 2);
+    EXPECT_EQ(Reflect::cast<int>(r[0]), 2);
 }
 
 TEST_F(RuntimeFunctionTest, CallOperator)
 {
     auto f = RuntimeFunction(Foo());
-    auto x = RuntimeObject(1.1);
+    auto x = Reflect::DynamicObject(1.1);
     auto r = f(x);
     EXPECT_EQ(r.size(), 1);
-    EXPECT_NEAR(r[0].cast<double>(), 3.3, 1e-10);
+    EXPECT_NEAR(Reflect::cast<double>(r[0]), 3.3, 1e-10);
 }

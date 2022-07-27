@@ -39,7 +39,7 @@ public:
          , documentation(doc)
         {}
 
-        std::function<parametric::compute_node_ptr<RuntimeAlgorithm>(std::initializer_list<Feature<RuntimeObject>> const&)> factory;
+        std::function<parametric::compute_node_ptr<RuntimeAlgorithm>(std::initializer_list<Feature<Reflect::DynamicObject>> const&)> factory;
         std::string documentation;
     };
 

@@ -60,7 +60,7 @@ public:
 TEST_F(RuntimeFeatureTest, Conversions)
 {
     RuntimeFeature x("MyStruct", 0.33);
-    EXPECT_NEAR(x.value().get("val").cast<double>(), 0.33, 1e-12);
+    EXPECT_NEAR(x.value().get_as<double>("val"), 0.33, 1e-12);
 
     // Feature<RuntimeObject> -> Feature<T>
     Feature<MyStruct> y(x);
@@ -68,7 +68,7 @@ TEST_F(RuntimeFeatureTest, Conversions)
 
     // Feature<T> -> Feature<RuntimeObject> 
     RuntimeFeature z(y);
-    EXPECT_NEAR(z.value().get("val").cast<double>(), 0.33, 1e-12);
+    EXPECT_NEAR(z.value().get_as<double>("val"), 0.33, 1e-12);
 }
 
 TEST_F(RuntimeFeatureTest, get)
@@ -76,11 +76,11 @@ TEST_F(RuntimeFeatureTest, get)
     Feature x("MyStruct", 0.5);
 
     Feature v = x.get("val")->get();
-    EXPECT_EQ(v.value().cast<double>(), 0.5);
+    EXPECT_EQ(Reflect::cast<double>(v.value()), 0.5);
 
      x.access_value().set("val", 0.3);
      EXPECT_FALSE(v.is_valid());
-     EXPECT_EQ(v.value().cast<double>(), 0.3);
+     EXPECT_EQ(Reflect::cast<double>(v.value()), 0.3);
 
 }
 
@@ -92,17 +92,17 @@ TEST_F(RuntimeFeatureTest, invoke)
     Feature v = x.invoke("times", factor)->get();
     
     EXPECT_FALSE(v.is_valid());
-    EXPECT_NEAR(v.value().cast<double>(), 1.5, 1e-12);
+    EXPECT_NEAR(Reflect::cast<double>(v.value()), 1.5, 1e-12);
     EXPECT_TRUE(v.is_valid());
 
     x.access_value().set("val", 0.3);
     EXPECT_FALSE(v.is_valid());
-    EXPECT_NEAR(v.value().cast<double>(), 0.9, 1e-12);
+    EXPECT_NEAR(Reflect::cast<double>(v.value()), 0.9, 1e-12);
     EXPECT_TRUE(v.is_valid());
 
-    factor.access_value() = (RuntimeObject)2.;
+    factor.access_value() = 2.;
     EXPECT_FALSE(v.is_valid());
-    EXPECT_NEAR(v.value().cast<double>(), 0.6, 1e-12);
+    EXPECT_NEAR(Reflect::cast<double>(v.value()), 0.6, 1e-12);
     EXPECT_TRUE(v.is_valid());
 }
 
@@ -111,5 +111,5 @@ TEST_F(RuntimeFeatureTest, invoke_nonConstMemberFun)
     Feature x("MyStruct", 0.5);
     Feature factor("double", 3.);
     Feature v = x.invoke("timesc", factor)->get();
-    EXPECT_THROW(v.value(), Reflect::disregards_qualifier);
+    EXPECT_THROW(v.value(), Reflect::BadCastException);
 }

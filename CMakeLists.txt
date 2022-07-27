@@ -36,8 +36,6 @@ set(grunk_SRC
     grunk/dynamic/FunctionRegistry.cpp
     grunk/dynamic/RuntimeFeature.h
     grunk/dynamic/RuntimeFeature.cpp
-    grunk/dynamic/RuntimeObject.h
-    grunk/dynamic/RuntimeObject.cpp
     grunk/dynamic/RuntimeFunction.h
     grunk/dynamic/RuntimeFunction.cpp
     grunk/grunk.h
