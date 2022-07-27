@@ -53,6 +53,8 @@ test-debug:
 create-package-debug:
   tags:
     - docker
+  only:
+    - main
   stage: deploy
   dependencies:
     - test-debug
