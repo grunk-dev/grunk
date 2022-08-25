@@ -1,7 +1,6 @@
 #include <gtest/gtest.h>
 
-#include <parametric/core.hpp>
-#include <grunk/Algorithm.h>
+#include <grunk/core/Algorithm.h>
 
 using namespace grunk;
 
@@ -12,6 +11,10 @@ struct MyDouble {
 
     MyDouble(double v) : val{v} {}
 
+    double const& value_ref() const {
+        return val;
+    }
+
     double val;
 };
 
@@ -21,35 +24,27 @@ MyDouble add(MyDouble const& l, MyDouble const& r) {
     return MyDouble(l.val + r.val);
 }
 
+struct Point {
+    Point(double xin, double yin) : x(xin), y(yin) {}
+    double x;
+    double y;
+};
+
+// simple multi-output function
+std::tuple<double, double> get_components(Point const& p){
+    return std::make_tuple(p.x, p.y);
+}
+
 } //namespace Algorithm_test
 
 using namespace Algorithm_test;
 
 
-class AlgorithmTest : public ::testing::Test 
+TEST(AlgorithmTest, Basic)
 {
-public:
-
-    static void SetUpTestCase() {
-        Reflect::Reflect<double>("double");
-
-        Reflect::Reflect<MyDouble>("MyDouble")
-        .AddConstructor<double>()
-        .AddDataMember(&MyDouble::val, "val");
-    } 
-
-    static void TearDownTestCase() {
-        Reflect::GetTypeRegistry().clear();
-    } 
-};
-
-TEST_F(AlgorithmTest, BasicUsage)
-{
-    auto f = RuntimeFunction(&add);
-
     // l and r are the root input nodes
-    auto l = Feature("MyDouble", 0.2);
-    auto r = Feature("MyDouble", 0.1);
+    auto l = Feature(MyDouble(0.2));
+    auto r = Feature(MyDouble(0.1));
 
     // a depends on l and r, b depends on a and r
     //    
@@ -59,23 +54,23 @@ TEST_F(AlgorithmTest, BasicUsage)
     //       \  |
     //         b
     //
-    auto a = new_algorithm(f, {l, r})->get();
-    auto b = new_algorithm(f, {a, r})->get();
+    auto a = eval(&add, l, r)->get();
+    auto b = eval(&add, a, r)->get();
 
     // nothing has been computed yet, we just registered the feature tree
     EXPECT_FALSE(a.is_valid());
     EXPECT_FALSE(b.is_valid());
 
     // evaluating b should trigger evaluation of the entire tree
-    EXPECT_NEAR(b.Value().Get("val").cast<double>(), 0.4, 1e-12);
+    EXPECT_NEAR(b.value().val, 0.4, 1e-12);
 
     EXPECT_TRUE(a.is_valid());
     EXPECT_TRUE(b.is_valid());
 
-    EXPECT_NEAR(a.Value().Get("val").cast<double>(), 0.3, 1e-12);
+    EXPECT_NEAR(a.value().val, 0.3, 1e-12);
 
     // reseting a root node should invalidate the entire tree
-    l.AccessValue().Set("val", 0.5); 
+    l.access_value().val = 0.5; 
 
     // TODO: using set_value() instead of change_value() does not seem to work
 
@@ -83,14 +78,30 @@ TEST_F(AlgorithmTest, BasicUsage)
     EXPECT_FALSE(b.is_valid());
 
     // evaluating b should trigger evaluation of the entire tree
-    EXPECT_NEAR(b.Value().Get("val").cast<double>(), 0.7, 1e-12);
+    EXPECT_NEAR(b.value().val, 0.7, 1e-12);
 
     EXPECT_TRUE(a.is_valid());
     EXPECT_TRUE(b.is_valid());
 
-    EXPECT_NEAR(a.Value().Get("val").cast<double>(), 0.6, 1e-12);
+    EXPECT_NEAR(a.value().val, 0.6, 1e-12);
 }
 
-// TODO: test Algorithm for multi-output runtime function
 
-// TODO: Can we test, that only referentially transparent functions are allowed?
+TEST(AlgorithmTest, MultiOutput)
+{
+    auto f = &get_components;
+
+    auto i = Feature(Point(0.2, 0.6));
+    auto x = eval(f, i)->get<0>();
+    auto y = eval(f, i)->get<1>();
+
+    EXPECT_EQ(x.value(), 0.2);
+    EXPECT_EQ(y.value(), 0.6);
+
+    i.access_value().y = 0.7;
+    
+    EXPECT_FALSE(x.is_valid());
+    EXPECT_FALSE(y.is_valid());
+
+    EXPECT_EQ(y.value(), 0.7);
+}

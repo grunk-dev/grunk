@@ -75,3 +75,6 @@ breathe_default_project = "grunk"
 
 #source_parsers = {".md": "M2RParser"}
 source_suffix = [".rst", ".md"]
+
+# remove the grunk namespace from the index in the documentation
+cpp_index_common_prefix = ['grunk::']

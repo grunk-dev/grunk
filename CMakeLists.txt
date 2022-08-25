@@ -20,23 +20,31 @@ find_package(reflect REQUIRED)
 # Windows specific: export all symbols
 set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
 
-# create a library and add source files
-add_library(grunk grunk/plugins/api.h
-                  grunk/plugins/PluginRegistry.h
-                  grunk/plugins/PluginRegistry.cpp
-                  grunk/plugins/StdPlugin.h 
-                  grunk/plugins/StdPlugin.cpp
-                  grunk/Algorithm.h
-                  grunk/Algorithm.cpp
-                  grunk/FunctionRegistry.h
-                  grunk/FunctionRegistry.cpp
-                  grunk/Feature.h
-                  grunk/Feature.cpp
-                  grunk/RuntimeObject.h
-                  grunk/RuntimeObject.cpp
-                  grunk/RuntimeFunction.h
-                  grunk/RuntimeFunction.cpp
+set(grunk_SRC
+    grunk/core/Algorithm.h
+    grunk/core/Algorithm.cpp
+    grunk/core/Feature.h
+    grunk/core/Feature.cpp
+    grunk/plugins/IPlugin.h
+    grunk/plugins/PluginRegistry.h
+    grunk/plugins/PluginRegistry.cpp
+    grunk/plugins/StdPlugin.h 
+    grunk/plugins/StdPlugin.cpp
+    grunk/dynamic/RuntimeAlgorithm.h
+    grunk/dynamic/RuntimeAlgorithm.cpp
+    grunk/dynamic/FunctionRegistry.h
+    grunk/dynamic/FunctionRegistry.cpp
+    grunk/dynamic/RuntimeFeature.h
+    grunk/dynamic/RuntimeFeature.cpp
+    grunk/dynamic/RuntimeObject.h
+    grunk/dynamic/RuntimeObject.cpp
+    grunk/dynamic/RuntimeFunction.h
+    grunk/dynamic/RuntimeFunction.cpp
+    grunk/grunk.h
 )
+
+# create a library and add source files
+add_library(grunk ${grunk_SRC})
 
 target_compile_features(grunk PUBLIC cxx_std_17)
 target_link_libraries(grunk PUBLIC parametric::parametric 

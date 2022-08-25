@@ -2,11 +2,6 @@
 
 namespace grunk {
 
-FunctionRegistry::~FunctionRegistry()
-{
-    clear();
-}
-
 void FunctionRegistry::clear()
 {
     algorithmMap.clear();
@@ -22,14 +17,9 @@ FunctionRegistry::Entry const& FunctionRegistry::operator[](std::string const& k
     return algorithmMap.at(key);
 }
 
-FunctionRegistry& GetFunctionRegistry() {
+FunctionRegistry& get_function_registry() {
     static FunctionRegistry registry;
     return registry;
-}
-
-parametric::compute_node_ptr<Algorithm> Eval(std::string const& name, std::initializer_list<Feature> const& args)
-{
-    return GetFunctionRegistry()[name].factory(args);
 }
 
 } // namespace grunk

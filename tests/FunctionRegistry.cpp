@@ -1,6 +1,6 @@
 #include <gtest/gtest.h>
 
-#include <grunk/FunctionRegistry.h>
+#include <grunk/dynamic/FunctionRegistry.h>
 
 using namespace grunk;
 
@@ -35,12 +35,12 @@ public:
         .AddConstructor<double>()
         .AddDataMember(&MyDouble::val, "val");
 
-        RegisterFunction("add", &add);
+        grunk::register_function(&add, "add");
     } 
 
     static void TearDownTestCase() {
         Reflect::GetTypeRegistry().clear();
-        grunk::GetFunctionRegistry().clear();
+        grunk::get_function_registry().clear();
     } 
 };
 
@@ -49,13 +49,13 @@ TEST_F(FunctionRegistryTest, BasicUsage)
     Feature l("MyDouble", 3.3);
     Feature r("MyDouble", 2.2);
 
-    auto a = Eval("add", {l, r})->get();
-    auto b = Eval("add", {a, r})->get();
+    auto a = eval("add", l, r)->get();
+    auto b = eval("add", a, r)->get();
 
     EXPECT_FALSE(a.is_valid());
     EXPECT_FALSE(b.is_valid());
 
-    EXPECT_NEAR(b.Value().Get("val").cast<double>(), 7.7, 1e-12);
+    EXPECT_NEAR(b.value().get("val").cast<double>(), 7.7, 1e-12);
 
     EXPECT_TRUE(a.is_valid());
     EXPECT_TRUE(b.is_valid());

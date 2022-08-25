@@ -1,11 +1,19 @@
 #pragma once
 
-#include "api.h"
+#include "IPlugin.h"
 
 namespace grunk {
 
 
-// The grunk "standard library plugin" reflects primitive types etc
+/**
+ * @brief The grunk "standard plugin".
+ *
+ * This plugin is always loaded first. 
+ * It registers C++ primitive types and functions
+ *
+ * @ingroup plugin
+ * 
+ */
 class StdPlugin: public grunk::IPlugin
 {
 public:
