@@ -4,12 +4,21 @@
  * This file contains the declaration and implementation of RuntimeFunctions
  */
 
+/**
+ * @defgroup dynamic Functions and Classes for dynamic mode
+ */
+
+/**
+ * @defgroup dynamic_advanced Advanced Functions and Classes for dynamic mode
+ */
+
+
 #pragma once
 
 #include <functional>
 #include <vector>
 
-#include "RuntimeObject.h"
+#include <reflect/Reflect.hpp>
 
 namespace grunk {
 
@@ -196,14 +205,14 @@ struct function_traits<F&&> : public function_traits<F>
 } // namespace details
 
 
-// turns any function into a function taking RuntimeObjects and returns a vector of RuntimeObjects.
+// turns any function into a function taking Reflect::DynamicObjects and returns a vector of Reflect::DynamicObjects.
 // For "normal" functions the vector has 1 element. For void functions the vector is empty. For functions
 // returning tuples, the vector has as many elements as the tuple.
 /**
  * @brief Given any kind of function, this class represents a version of that function
- * that maps RuntimeObjects onto RuntimeObjects.
+ * that maps Reflect::DynamicObjects onto Reflect::DynamicObjects.
  *
- * It returns an std::vector<RuntimeObject>. For "normal" functions the vector 
+ * It returns an std::vector<Reflect::DynamicObject>. For "normal" functions the vector 
  * has 1 element. For void functions the vector is empty. For functions returning 
  * tuples, the vector has as many elements as the tuple.
  *
@@ -243,14 +252,14 @@ public:
     {}
     
     /**
-     * @brief Evaluates the function given RuntimeObjects
+     * @brief Evaluates the function given Reflect::DynamicObjects
      * 
-     * @tparam Inputs RuntimeObjects to be passed to the wrapped function
-     * @param inputs RuntimeObjects to be passed to the wrapped function
-     * @return std::vector<RuntimeObject> The return value(s) of the wrapped function
+     * @tparam Inputs Reflect::DynamicObjects to be passed to the wrapped function
+     * @param inputs Reflect::DynamicObjects to be passed to the wrapped function
+     * @return std::vector<Reflect::DynamicObject> The return value(s) of the wrapped function
      */
     template <typename... Inputs, typename Indices = std::make_index_sequence<sizeof...(Inputs)>>
-    std::vector<RuntimeObject> operator()(Inputs&&... inputs) const
+    std::vector<Reflect::DynamicObject> operator()(Inputs&&... inputs) const
     {
        return call(Indices{}, std::forward<Inputs>(inputs)...);
     }
@@ -260,19 +269,19 @@ private:
      * @brief An internal helper function to call the wrapped function using
      * the indices trick. 
      * 
-     * @tparam Inputs The RuntimeObjects on which the wrapped function shall be called
+     * @tparam Inputs The Reflect::DynamicObjects on which the wrapped function shall be called
      * @tparam Is The indices of the arguments
-     * @param inputs The RuntimeObjects on which the wrapped function shall be called
-     * @return std::vector<RuntimeObject> The return value(s) of the wrapped function.
+     * @param inputs The Reflect::DynamicObjects on which the wrapped function shall be called
+     * @return std::vector<Reflect::DynamicObject> The return value(s) of the wrapped function.
      */
     template <typename... Inputs, size_t... Is>
-    std::vector<RuntimeObject> call(std::index_sequence<Is...>, Inputs&&... inputs) const
+    std::vector<Reflect::DynamicObject> call(std::index_sequence<Is...>, Inputs&&... inputs) const
     {
 
         auto invoke = [this](Inputs&... i){
             return std::invoke(
                 std::forward<F>(fun),
-                i.template cast<typename details::function_traits<F>::template argument<Is>::type>()...
+                Reflect::cast<typename details::function_traits<F>::template argument<Is>::type>(i)...
             ); 
         };
 
@@ -287,16 +296,16 @@ private:
             auto ret = invoke(inputs...);
 
             if constexpr (numOutputs > 1) {
-                // ... if the return type is a tuple, store results in a vector of RuntimeObjects
+                // ... if the return type is a tuple, store results in a vector of Reflect::DynamicObjects
                 return std::apply([](auto&&... elems){
-                    return std::vector<RuntimeObject>{(RuntimeObject)std::forward<decltype(elems)>(elems)...};
+                    return std::vector<Reflect::DynamicObject>{Reflect::DynamicObject(std::move(elems))...};
                     }, 
                     std::forward<decltype(ret)>(ret)
                 );
             }
             else {
                 // ... if the return type is not a tuple, store the result in a one element vector
-                return std::vector<RuntimeObject>(1, (RuntimeObject)ret);
+                return std::vector<Reflect::DynamicObject>(1, Reflect::DynamicObject(std::move(ret)));
             }
         }
     }

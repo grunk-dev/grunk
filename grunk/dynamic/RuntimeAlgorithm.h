@@ -19,8 +19,8 @@ namespace details {
 
     /**
      * @brief This is a helper class that let's us evaluate a RuntimeFunction
-     * given a std::vector<RuntimeObject> as argument, rather than providing 
-     * all RuntimeObjects individually as argument.
+     * given a std::vector<Reflect::DynamicObject> as argument, rather than providing 
+     * all Reflect::DynamicObjects individually as argument.
      * 
      * @tparam F The type of the wrapped function
      */
@@ -29,8 +29,8 @@ namespace details {
     {
     public:
 
-        using InputsVec = std::vector<std::reference_wrapper<RuntimeObject const>>;
-        using OutputsVec = std::vector<RuntimeObject>;
+        using InputsVec = std::vector<std::reference_wrapper<Reflect::DynamicObject const>>;
+        using OutputsVec = std::vector<Reflect::DynamicObject>;
         
         /**
          * @brief Construct a new RuntimeFunctionWrapper object from any (non-mutable) function
@@ -42,7 +42,7 @@ namespace details {
         {}
 
         /**
-         * @brief Evaluates the RuntimeFunction given an std::vector of RuntimeObjects
+         * @brief Evaluates the RuntimeFunction given an std::vector of Reflect::DynamicObjects
          * 
          * @param inputs The vector of input arguments
          * @return OutputsVec The vector of output arguments
@@ -74,13 +74,13 @@ namespace details {
     /**
      * @brief RTAlgInputs is the input type of a RuntimeAlgorithm
      */
-    using RTAlgInputs = std::vector<std::reference_wrapper<RuntimeObject const>>;
+    using RTAlgInputs = std::vector<std::reference_wrapper<Reflect::DynamicObject const>>;
 
     /**
      * @brief RTAlgOuptuts is the output type of a RuntimeAlgorithm
      * 
      */
-    using RTAlgOutputs = std::vector<RuntimeObject>;
+    using RTAlgOutputs = std::vector<Reflect::DynamicObject>;
 
     /**
      * @brief RTAlgFunction is the function wrapped by a RuntimeAlgorithm
@@ -134,7 +134,7 @@ private:
             depends_on(i.param);
         }
         for (auto& o: outputs){
-            computes(o, parametric::param<RuntimeObject>(""));
+            computes(o, parametric::param<Reflect::DynamicObject>(""));
         }
     }
 
@@ -162,7 +162,7 @@ public:
         // move the output values to the output nodes
         for (size_t i=0; i < outputs.size(); ++i) {
             if (!outputs[i].expired()) {
-                outputs[i].set_value(std::move(outputs_vals[i]));
+                outputs[i].set_value(outputs_vals[i].copy());
             }
         }
     }
@@ -181,15 +181,15 @@ public:
      * @return decltype(auto) a Feature wrapping the output of index Idx
      */
     template <size_t Idx = 0>
-    Feature<RuntimeObject> get() const
+    Feature<Reflect::DynamicObject> get() const
     {
-        return Feature<RuntimeObject>(outputs[Idx]);
+        return Feature<Reflect::DynamicObject>(outputs[Idx]);
     }
 
 private:
     details::RTAlgFunction function;
     std::vector<RuntimeFeature> const inputs;
-    std::vector<parametric::OutputParam<RuntimeObject>> mutable outputs;
+    std::vector<parametric::OutputParam<Reflect::DynamicObject>> mutable outputs;
 };
 
 /**
@@ -232,7 +232,7 @@ struct RuntimeAlgorithmFactory
      * @return RuntimeAlgorithmPtr The returned compute_node_ptr wrapping a RuntimeAlgorithm
      */
     template <typename F>
-    static RuntimeAlgorithmPtr new_algorithm(RuntimeFunction<F> const& fun, std::initializer_list<Feature<RuntimeObject>> const& args)
+    static RuntimeAlgorithmPtr new_algorithm(RuntimeFunction<F> const& fun, std::initializer_list<Feature<Reflect::DynamicObject>> const& args)
     {
         return RuntimeAlgorithmPtr(new RuntimeAlgorithm(fun, args));
     }
@@ -275,7 +275,7 @@ RuntimeAlgorithmPtr eval(RuntimeFunction<F> const& fun, Feature<Args> const&... 
  * @ingroup dynamic_advanced
  */
 template <typename F>
-RuntimeAlgorithmPtr eval(RuntimeFunction<F> const& fun, std::initializer_list<Feature<RuntimeObject>> const& args)
+RuntimeAlgorithmPtr eval(RuntimeFunction<F> const& fun, std::initializer_list<Feature<Reflect::DynamicObject>> const& args)
 {
     return details::RuntimeAlgorithmFactory::new_algorithm(fun, args);
 }

@@ -1,7 +1,7 @@
 /**
  * @file RuntimeFeature.h
  *
- * This file contains the template specialization of Feature for RuntimeObjects
+ * This file contains the template specialization of Feature for Reflect::DynamicObjects
  */
 
 #pragma once
@@ -11,7 +11,7 @@
 namespace grunk {
 
 /**
- * @brief template specialization of Feature for RuntimeObjects
+ * @brief template specialization of Feature for Reflect::DynamicObjects
  *
  * In addition to the dependency management provided by the parametric library,
  * this class provides an interface to retrieve data members and invoke member
@@ -21,7 +21,7 @@ namespace grunk {
  * @ingroup dynamic  
  */
 template <>
-class Feature<RuntimeObject> : public FeatureBase<RuntimeObject>
+class Feature<Reflect::DynamicObject> : public FeatureBase<Reflect::DynamicObject>
 {
 public:
 
@@ -38,7 +38,7 @@ public:
      */
     template <typename... Args>
     Feature(const char* typeName, Args&&... args)
-     : FeatureBase<RuntimeObject>(make_rto(typeName, std::forward<Args>(args)...))
+     : FeatureBase<Reflect::DynamicObject>(Reflect::make_dynamic(typeName, std::forward<Args>(args)...))
     {}
 
     /**
@@ -46,31 +46,31 @@ public:
      * 
      * @param p The parametric::param<T> to be wrapped in a Feature
      */
-    Feature(parametric::param<RuntimeObject>&& p)
-     : FeatureBase<RuntimeObject>(std::forward<parametric::param<RuntimeObject>>(p))
+    Feature(parametric::param<Reflect::DynamicObject>&& p)
+     : FeatureBase<Reflect::DynamicObject>(std::forward<parametric::param<Reflect::DynamicObject>>(p))
     {}
 
     /**
-     * @brief Construct a new RuntimeFeature given an RuntimeObject
+     * @brief Construct a new RuntimeFeature given an Reflect::DynamicObject
      * 
-     * @param o The input RuntimeObject
+     * @param o The input Reflect::DynamicObject
      */
-    explicit Feature(RuntimeObject&& o)
-     : FeatureBase(std::forward<RuntimeObject>(o))
+    explicit Feature(Reflect::DynamicObject&& o)
+     : FeatureBase(std::forward<Reflect::DynamicObject>(o))
     {}
 
     /**
      * @brief Converting constructor from a Feature<T>, where T is not
-     * a RuntimeObject
+     * a Reflect::DynamicObject
      * 
      * @tparam T The type wrapped by the incoming Feature<T>
      * @param f The input feature to be converted to a RuntimeFeature
      */
     template <typename T,
-              typename = std::enable_if_t<!std::is_same_v<RuntimeObject, T>>
+              typename = std::enable_if_t<!std::is_same_v<Reflect::DynamicObject, T>>
     >
     Feature(Feature<T> const& f)
-     : Feature(RuntimeObject(f.value()))
+     : Feature(Reflect::DynamicObject(f.value()))
     {}
 
     /**
@@ -79,10 +79,10 @@ public:
      * @tparam T The type of the object to be wrapped
      * @return Feature<T> The converted Feature<T>
      */
-    template <typename T, typename = std::enable_if_t<!std::is_same_v<T, RuntimeObject>>>
+    template <typename T, typename = std::enable_if_t<!std::is_same_v<T, Reflect::DynamicObject>>>
     operator Feature<T>() const
     {
-        return Feature<T>(this->param.value().cast<T>());
+        return Feature<T>(Reflect::cast<T>(this->param.value()));
     }
 
     /**
@@ -98,7 +98,7 @@ public:
     decltype(auto) get(std::string const& memberName) const
     {
         return eval(
-            [=](RuntimeObject const& wrapped){
+            [=](Reflect::DynamicObject const& wrapped){
                 return wrapped.get(memberName);
             },
             *this
@@ -118,7 +118,7 @@ public:
     decltype(auto) invoke(std::string const& memberFunName, Feature<Args> const&... args) const
     {
         return eval(
-            [=](RuntimeObject const& wrapped, auto const&... arguments){
+            [=](Reflect::DynamicObject const& wrapped, auto const&... arguments){
                 return wrapped.invoke(memberFunName, arguments...);
             },
             *this,
@@ -134,12 +134,12 @@ public:
  * @tparam Args The constructor arguments
  */
 template <typename... Args>
-Feature(std::string const&, Args&&...) -> Feature<RuntimeObject>;
+Feature(std::string const&, Args&&...) -> Feature<Reflect::DynamicObject>;
 
 /**
  * @brief typedef for RuntimeFeature
  * @ingroup dynamic
  */
-using RuntimeFeature = Feature<RuntimeObject>;
+using RuntimeFeature = Feature<Reflect::DynamicObject>;
 
 }

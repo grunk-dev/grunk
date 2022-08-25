@@ -3,23 +3,23 @@ Design Principles
 =================
 
 grunk's core functionality is designed around two pairs of classes:
- * :ref:`RuntimeObjects and RuntimeFunctions<design-dynamic-sublanguage>`
+ * :ref:`DynamicObjects and RuntimeFunctions<design-dynamic-sublanguage>`
  * :ref:`Features and Algorithms<design-features-algorithms>`
 
 .. _design-dynamic-sublanguage:
 
-RuntimeObjects and RuntimeFunctions
+DynamicObjects and RuntimeFunctions
 =====================================
 
 C++ is a statically typed language and all types must be determined at 
 compile time. To be able to load user defined feature types at runtime and 
 do something with them, grunk works with type-erased objects 
-called ``RuntimeObject`` as well as ``RuntimeFunction``\s that accept and 
-return ``RuntimeObject``\s. In a way, ``RuntimeObject``\s and 
+called ``DynamicObject`` as well as ``RuntimeFunction``\s that accept and 
+return ``DynamicObject``\s. In a way, ``DynamicObject``\s and 
 ``RuntimeFunction``\s provide a minimalistic dynamically typed sublanguage
 in C++. 
 
-Basically, a ``RuntimeObject`` is an 
+Basically, a ``DynamicObject`` is an 
 `std::any <https://en.cppreference.com/w/cpp/utility/any>`_ on steroids: 
 In addition to the type-erased object, it stores a type descriptor with 
 some functionality for accessing constructors as well as data members and 
@@ -29,14 +29,14 @@ provides the correspong feature type. For this, grunk uses the
 `reflect <https://gitlab.dlr.de/paradigms/reflect>`_ library.
 
 A ``RuntimeFunction`` creates a function accepting and returning 
-``RuntimeObject``\s from any function accepting and returning types, which 
+``DynamicObject``\s from any function accepting and returning types, which 
 have previously been *reflected*. 
 
 Why not use a dynamically typed scripting language like python from the 
 start? Firstly, python would be a big dependency for grunk and would hinder 
 the integrability. Most features of Python are not needed for grunk. It 
 should be easy to use grunk as a fairly light-weight C++ library. Secondly, 
-both the ``RuntimeObject``\s and python's ability to be dynamically typed 
+both the ``DynamicObject``\s and python's ability to be dynamically typed 
 come at a performance overhead because types must be resolved at runtime 
 via type-erasure and runtime polymorphism techniques. Using a minimalistic 
 sublanguage in C++ gives us fine-grained control over just how much dynamic 
@@ -47,15 +47,23 @@ typing we need.
 Features and Algorithms
 =======================
 
-As a user of grunk, you will work with ``Feature``\s and ``Algorithm``\s 
-rather than ``RuntimeObject``\s and ``RuntimeFunction``\s. 
+To understand how grunks dynamic typing system works, it is useful to know 
+about `DynamicObject``\s and ``RuntimeFunction``\s.
 
-A ``Feature`` is a node in a *feature tree*, which wraps an instance of a 
-``RuntimeObject``. ``Feature``\s can be independent - in which case they 
+As a user of grunk however, you will work with ``Feature``\s and ``Algorithm``\s 
+rather than ``DynamicObject``\s and ``RuntimeFunction``\s.
+
+A ``Feature`` is a node in a *feature tree*. It is a class template that can 
+either wrap an instance of any class or - if dynamic typing is needed - an instance 
+of a ``DynamicObject``. The latter is the case, if custom types from a plugin shall be used.
+
+``Feature``\s can be independent - in which case they 
 serve as input parameters of your model, or they can be the result of 
 ``Algorithm``\s.
 
-An ``Algorithm`` wraps a ``RuntimeFunction``. ``Algorithm``\s can be applied 
+An ``Algorithm`` represents a calcuation step. Just like a ``Feature``, it is a class
+template that can either wrap any function or - if dynamic typing is needed - a 
+``RuntimeFunction``. ``Algorithm``\s can be applied 
 to ``Feature``\s just like a functions can be applied to its inputs. The 
 main difference is, that when the ``Algorithm`` is applied, no calculation 
 is performed. Instead, the data dependencies between the ``Algorithm``\s 
