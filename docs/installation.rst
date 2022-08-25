@@ -73,7 +73,7 @@ Building from source
 
 .. _prerequisites:
 
-Dependencies
+Requirements
 ============
 
 You need cmake as well as a C++17 compliant compiler to build grunk from 
@@ -88,10 +88,10 @@ In addition, grunk depends on the packages ``boost``, ``reflect`` and
   for the dynamic type system in grunk, see the :ref:`design principles<design-dynamic-sublanguage>`
   section of this documentation. 
 - `parametric <https://gitlab.dlr.de/paradigms/parametric>`_: This is the 
-  library used to track the data dependencies of the feature treeusing a 
+  library used to track the data dependencies of the feature tree using a 
   special kind of memoization approach.
 
-The easiest way to install the dependencies is via
+The easiest way to install the requirements is via
 conan. Make sure you setup 
 conan to use the paradigms gitlab package registry, see the 
 :ref:`Installation <setup-conan>` section.
@@ -112,7 +112,7 @@ conan to use the paradigms gitlab package registry, see the
 Building using CMake
 ====================
   
-- Enter the following commands to install the dependencies and build grunk 
+- Enter the following commands to build grunk 
   in debug mode from source using the generator `ninja`. If you haven't 
   already done so in the :ref:`steps above <prerequisites>`, create 
   a build directory and navigate to it.
@@ -156,4 +156,5 @@ Running the unit tests
 Building this documentation
 ===========================
 
-To Do
+This documentation is built by default as part of the build process. You can find the 
+generated html files in ``build/docs/html/``.

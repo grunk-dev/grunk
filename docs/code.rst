@@ -29,8 +29,22 @@ A ``Feature`` represents any kind of feature in the feature tree.
 Given any kind of *referentially transparent* function and some input features
 from the feature tree, the function ``eval`` registeres the evaluation
 of the given function for the given features as input in the feature tree.
+
+.. code-block:: cpp
+
+   grunk::Feature<double> l(3.3);
+   grunk::Feature<double> r(2.2);
+   auto res = grunk::eval(std::add, l, r);
+
+
+
 The output features can be queried from the returned `AlgorithmPtr` instance, see
-also the :ref:`advanced section <advanced>`
+also the :ref:`advanced section <advanced>`.
+
+.. code-block:: cpp
+
+   auto r = res->get(); // retrieve the first (and in this case only) output of the calcuation
+   std::cout<<r.value()<<std::endl; // evaluate the result, thus triggering the calculation
 
 .. doxygengroup:: static
    :content-only:
@@ -47,8 +61,17 @@ and an overload of the ``eval`` function.
 
 The main difference is that this class and function now are called with the string 
 representation of types and functions that do not need to be known at compile time.
+
+.. code-block:: cpp
+
+   grunk::Feature l("double", 3.3);
+   grunk::Feature r("double", 2.2);
+   auto res = grunk::eval("add", l, r);
+   auto r = res->get(); // retrieve the first (and in this case only) output of the calcuation
+   std::cout<<Reflect::cast<double>(r.value())<<std::endl; // evaluate the result, thus triggering the calculation
+
 The types and functions must be registered from plugins loaded at run time, see also 
-the :ref:`plugin section <plugin-system>` of this documentation
+the :ref:`plugin section <plugin-system>` of this documentation.
 
 .. doxygengroup:: dynamic
    :content-only:

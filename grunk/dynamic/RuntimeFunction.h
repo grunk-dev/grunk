@@ -4,6 +4,15 @@
  * This file contains the declaration and implementation of RuntimeFunctions
  */
 
+/**
+ * @defgroup dynamic Functions and Classes for dynamic mode
+ */
+
+/**
+ * @defgroup dynamic_advanced Advanced Functions and Classes for dynamic mode
+ */
+
+
 #pragma once
 
 #include <functional>
