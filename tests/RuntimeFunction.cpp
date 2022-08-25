@@ -29,6 +29,10 @@ struct Foo {
     int val {3};
 };
 
+// void function
+void hello_world() {
+    std::cout<<"Hello World\n";
+}
 
 // normal function
 int fun0(double x) {
@@ -65,6 +69,14 @@ public:
     } 
 };
 
+TEST_F(RuntimeFunctionTest, voidFunction){
+    auto f = RuntimeFunction(&hello_world);
+    testing::internal::CaptureStdout();
+    auto r = f();
+    std::string output = testing::internal::GetCapturedStdout();
+    EXPECT_EQ(output, "Hello World\n");
+    EXPECT_EQ(r.size(), 0);
+}
 
 TEST_F(RuntimeFunctionTest, FunctionPointer)
 {
