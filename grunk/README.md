@@ -19,9 +19,9 @@ A `Feature` is a node in the feature tree representing any kind of object. This 
 
 ## dynamic
 
-This directory contains the implementation of grunk's dynamic typing system. It contains the implementation of `RuntimeObject`s, which can be created from reflected types using the [reflect](https://gitlab.dlr.de/paradigms/reflect) library as well as `RuntimeFunction`s, which wrap normal functions but map `RuntimeObject`s as inputs to `RuntimeObject`s.
+This directory contains the implementation of grunk's dynamic typing system. It contains the implementation of `RuntimeFunction`s, which wrap normal functions but map `Reflect::DynamicObject`s as inputs to `DynamicObject`s.
 
-The directory also contains implementations of `RuntimeAlgorithm` as a template specialization of an `Algorithm` wrapping a `RuntimeFunction` as well as `RuntimeFeature`, which is a template specialization of a `Feature` wrapping a `RuntimeObject`.
+The directory also contains implementations of `RuntimeAlgorithm` as a template specialization of an `Algorithm` wrapping a `RuntimeFunction` as well as `RuntimeFeature`, which is a template specialization of a `Feature` wrapping a `DynamicObject`.
 
 Finally, it contains the implementation of the `FunctionRegistry`, which allows plugin authors to register functions with grunk and create `RuntimeAlgorithm` instances from it.
 
