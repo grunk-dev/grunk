@@ -4,7 +4,7 @@
 
 using namespace grunk;
 
-namespace RuntimeFunction_test {
+namespace {
 
 // a class with one const and one non-const member function
 struct Foo {
@@ -40,9 +40,7 @@ std::tuple<int, double> fun1(std::string const& in){
     return std::make_tuple(4, 4.2);
 }
 
-} //namespace RuntimeFunction_test
-
-using namespace RuntimeFunction_test;
+} // anonymous namespace
 
 class RuntimeFunctionTest : public ::testing::Test 
 {
@@ -51,7 +49,13 @@ public:
     static void SetUpTestCase() {
         Reflect::Reflect<double>("double");
         Reflect::Reflect<int>("int");
+        Reflect::Reflect<float>("float")
+        .AddConversion<double>();
+
         Reflect::Reflect<std::string>("string");
+
+        Reflect::Reflect<const char*>("cstring")
+        .AddConversion<std::string>();
 
         Reflect::Reflect<Foo>("Foo")
         .AddDataMember(&Foo::val, "val")
@@ -156,4 +160,22 @@ TEST_F(RuntimeFunctionTest, CallOperator)
     auto r = f(x);
     EXPECT_EQ(r.size(), 1);
     EXPECT_NEAR(Reflect::cast<double>(r[0]), 3.3, 1e-10);
+}
+
+TEST_F(RuntimeFunctionTest, ArgumentConversion)
+{
+    auto f2 = RuntimeFunction(&fun0);
+    float y2 = 4.2;
+    auto x2 = Reflect::DynamicObject(y2);
+    auto r2 = f2(x2);
+    EXPECT_EQ(r2.size(), 1);
+    EXPECT_EQ(Reflect::cast<int>(r2[0]), 4);
+
+    auto f1 = RuntimeFunction(&fun1);
+    const char* y1 = "constcharpointer";
+    auto x1 = Reflect::DynamicObject(y1);
+    auto r1 = f1(x1);
+    EXPECT_EQ(r1.size(), 2);
+    EXPECT_EQ(Reflect::cast<int   >(r1[0]), 4);
+    EXPECT_EQ(Reflect::cast<double>(r1[1]), 4.2);
 }
