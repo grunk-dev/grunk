@@ -12,6 +12,7 @@
 #include <parametric/core.hpp>
 
 #include <grunk/dynamic/RuntimeFunction.h>
+#include <type_traits>
 
 namespace grunk {
 
@@ -180,6 +181,47 @@ public:
     Feature(parametric::param<T>&& p)
      : FeatureBase<T>(std::forward<parametric::param<T>>(p))
     {}
+
+    /**
+     * @brief Construct a new Feature<T> object given constructor arguments
+     * Feature<Args>..., where T is constructable from Args...
+     *
+     * Example: 
+     * @code
+     *
+     * struct Foo {
+     *      Foo(double, int){}
+     * };
+     *
+     * Feature<double> x(4.2);
+     * Feature<int> y(13);
+     *
+     * Feature<Foo> z(x, y);
+     * \endcode
+     *
+     * Whenever one of the constructor arguments x or y changes, the Feature z will 
+     * be marked for lazy reconstruction.
+     * 
+     * @tparam Args Constructor argument types for T
+     * @param args input Features for the constructor of T
+     */
+    template <
+        typename... Args,
+        typename = std::enable_if_t<!(std::is_same_v<Args, Reflect::DynamicObject> || ...)>
+    >
+    Feature(Feature<Args> const&... args)
+     : Feature(
+        eval(
+            [](Args const&... in){
+
+                static_assert(std::is_constructible_v<T, Args...>, "T must be constructable from Args\n.");
+                
+                return T(in...);
+            }, 
+            args...
+        )->get()
+       )
+    {};
 
     /**
      * @brief retrieve a data member of the wrapped object and 
