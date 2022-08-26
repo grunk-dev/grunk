@@ -10,6 +10,25 @@
 
 namespace grunk {
 
+namespace details {
+
+/**
+ * @brief is_feature_v returns false if the input type is not a Feature template realization
+ * 
+ * @tparam typename any ol' type
+ */
+template<typename> constexpr bool is_feature_v = false;
+
+/**
+ * @brief is_feature_v returns true, if the input template argument is a Feature template realization
+ * 
+ * @tparam T the element type of the Feature
+ */
+template<typename T>
+constexpr bool is_feature_v<Feature<T>> = true;
+
+} // namespace details
+
 /**
  * @brief template specialization of Feature for Reflect::DynamicObjects
  *
@@ -36,9 +55,53 @@ public:
      * @param typeName The string representation of the reflected type
      * @param args The constructor arguments
      */
-    template <typename... Args>
+    template <
+        typename... Args,
+        typename = std::enable_if_t<!(details::is_feature_v<std::decay_t<Args>> || ...)>
+    >
     Feature(const char* typeName, Args&&... args)
      : FeatureBase<Reflect::DynamicObject>(Reflect::make_dynamic(typeName, std::forward<Args>(args)...))
+    {}
+
+
+    /**
+     * @brief Construct a new RuntimeFeature object given constructor arguments
+     * Feature<Args>..., where T is constructable from Args...
+     *
+     * Example: 
+     * @code
+     *
+     * struct Foo {
+     *      Foo(double, int){}
+     * };
+     *
+     * Feature<double> x(4.2);
+     * Feature<int> y(13);
+     *
+     * RuntimeFeature z("Foo", x, y);
+     * \endcode
+     *
+     * Whenever one of the constructor arguments x or y changes, the Feature z will 
+     * be marked for lazy reconstruction.
+     *
+     * Caveat: We cannot pass RuntimeFeatures as input arguments, because this would
+     * not allow grunk to deduce the correct Constructor arguments to select
+     * the correct constructor.
+     * 
+     * @tparam Args Constructor argument types for the type to be constructed
+     * @param typeName The string representation of the reflected type
+     * @param args input Features for the constructor for the type to b constructed 
+     */
+    template <typename... Args>
+    Feature(const char* typeName, Feature<Args> const&... args)
+     : Feature(
+        eval(
+            [=](Args const&... in){
+                return Reflect::make_dynamic(typeName, in...);
+            },
+            args...
+        )->get()
+     )
     {}
 
     /**

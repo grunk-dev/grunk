@@ -57,6 +57,22 @@ public:
     } 
 };
 
+TEST_F(RuntimeFeatureTest, ctor)
+{
+    Feature<double> x(0.25);
+    RuntimeFeature y("MyStruct", x);
+
+    EXPECT_FALSE(y.is_valid());
+    EXPECT_EQ(Reflect::cast<MyStruct>(y.value()).val, 0.25);
+    EXPECT_TRUE(y.is_valid());
+
+    x.access_value() = 0.75;
+
+    EXPECT_FALSE(y.is_valid());
+    EXPECT_EQ(Reflect::cast<MyStruct>(y.value()).val, 0.75);
+    EXPECT_TRUE(y.is_valid());
+}
+
 TEST_F(RuntimeFeatureTest, Conversions)
 {
     RuntimeFeature x("MyStruct", 0.33);
