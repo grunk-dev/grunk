@@ -185,6 +185,18 @@ struct AlgorithmFactory
 
 };
 
+template <typename F,
+          typename = std::enable_if_t<
+            !std::is_convertible_v<std::decay_t<F>, std::string>
+            && !details::is_runtime_function_v<std::decay_t<F>>
+          >,
+          typename... Args>
+AlgorithmPtr<F, Args...> eval(F const& fun, Feature<Args> const&... args)
+{
+    return details::AlgorithmFactory::new_algorithm(fun, args...);
+}
+
+
 } //namespace details
 
 /**
@@ -203,11 +215,19 @@ struct AlgorithmFactory
  * @ingroup static
  */
 template <typename F,
-          typename, // default-value (enable_if) declared in Feature.h
+          typename,
           typename... Args>
-AlgorithmPtr<F, Args...> eval(F const& fun, Feature<Args> const&... args)
+decltype(auto) eval(F const& fun, Args&&... args)
 {
-    return details::AlgorithmFactory::new_algorithm(fun, args...);
+    auto to_feature = [](auto&& arg){
+        using Arg = std::decay_t<decltype(arg)>;
+        if constexpr (details::is_feature_v<Arg>){
+            return arg;
+        } else {
+            return Feature(std::forward<Arg>(arg));
+        }
+    };
+    return details::eval(fun, to_feature(args)...);
 }
 
 } //namespace grunk
