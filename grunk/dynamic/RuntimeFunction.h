@@ -52,10 +52,13 @@ constexpr size_t num_values() {
     if constexpr (details::is_tuple_v<T>) {
         return std::tuple_size_v<T>;
     }
-    else {
+    else if constexpr (std::is_void_v<T>) {
+        return 0;
+    } else {
         return 1;
     }
 }
+
 
 // function_traits gets the argument types of a callable object
 // as seen on http://functionalcpp.wordpress.com/2013/08/05/function-traits/
