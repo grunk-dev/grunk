@@ -256,9 +256,17 @@ struct RuntimeAlgorithmFactory
  * @ingroup dynamic_advanced
  */
 template <typename F, typename... Args>
-RuntimeAlgorithmPtr eval(RuntimeFunction<F> const& fun, Feature<Args> const&... args)
+decltype(auto) eval(RuntimeFunction<F> const& fun, Args&&... args)
 {
-    return details::RuntimeAlgorithmFactory::new_algorithm(fun, {args...});
+    auto to_feature = [](auto&& arg){
+        using Arg = std::decay_t<decltype(arg)>;
+        if constexpr (details::is_feature_v<Arg>){
+            return arg;
+        } else {
+            return Feature(std::forward<Arg>(arg));
+        }
+    };
+    return eval(fun, {to_feature(args)...});
 }
 
 /**
