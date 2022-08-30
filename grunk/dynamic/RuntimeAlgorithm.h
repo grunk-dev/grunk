@@ -246,6 +246,10 @@ struct RuntimeAlgorithmFactory
  * @brief Given a function and some features in the feature tree, this 
  * function creates a RuntimeAlgoritm instance representing the evaluation
  * of the input function for the input features.
+ *
+ * This function accepts features as arguments for the functions, as well
+ * as instances that are not wrapped in features. Internally, the latter will
+ * be wrapped in an unnamed/anonymous feature
  * 
  * @tparam F The type of the function to be wrapped. This can be any referentially transparent function, 
              In particular, the function must be invokable on const 

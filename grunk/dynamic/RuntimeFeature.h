@@ -10,25 +10,6 @@
 
 namespace grunk {
 
-namespace details {
-
-/**
- * @brief is_feature_v returns false if the input type is not a Feature template realization
- * 
- * @tparam typename any ol' type
- */
-template<typename> constexpr bool is_feature_v = false;
-
-/**
- * @brief is_feature_v returns true, if the input template argument is a Feature template realization
- * 
- * @tparam T the element type of the Feature
- */
-template<typename T>
-constexpr bool is_feature_v<Feature<T>> = true;
-
-} // namespace details
-
 /**
  * @brief template specialization of Feature for Reflect::DynamicObjects
  *

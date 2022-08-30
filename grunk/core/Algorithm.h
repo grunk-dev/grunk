@@ -185,6 +185,21 @@ struct AlgorithmFactory
 
 };
 
+/**
+ * @brief Given a function and some features in the feature tree, this 
+ * function creates an Algorithm instance representing the evaluation
+ * of the input function for the input features.
+ *
+ * This function accepts only features as arguments to the given function.
+ * 
+ * @tparam F The type of the function to be wrapped. This can be any referentially transparent function, 
+             In particular, the function must be invokable on const 
+             references.
+ * @tparam Args The types of the arguments expected by the input function
+ * @param fun The input function
+ * @param args The input features of the feature tree
+ * @return AlgorithmPtr<F, Args...> A special pointer type wrapping an Algorithm instance.
+ */
 template <typename F,
           typename = std::enable_if_t<
             !std::is_convertible_v<std::decay_t<F>, std::string>
@@ -203,6 +218,10 @@ AlgorithmPtr<F, Args...> eval(F const& fun, Feature<Args> const&... args)
  * @brief Given a function and some features in the feature tree, this 
  * function creates an Algorithm instance representing the evaluation
  * of the input function for the input features.
+ *
+ * This function accepts features as arguments for the functions, as well
+ * as instances that are not wrapped in features. Internally, the latter will
+ * be wrapped in an unnamed/anonymous feature
  * 
  * @tparam F The type of the function to be wrapped. This can be any referentially transparent function, 
              In particular, the function must be invokable on const 
