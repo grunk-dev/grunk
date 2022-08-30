@@ -13,6 +13,7 @@ set(CMAKE_PREFIX_PATH ${CMAKE_BINARY_DIR} ${CMAKE_PREFIX_PATH})
 set(BUILD_SHARED_LIBS  ON)
 
 # find dependencies
+find_package(jsoncpp REQUIRED)
 find_package(Boost REQUIRED COMPONENTS headers)
 find_package(parametric REQUIRED)
 find_package(reflect REQUIRED)
@@ -25,6 +26,8 @@ set(grunk_SRC
     grunk/core/Algorithm.cpp
     grunk/core/Feature.h
     grunk/core/Feature.cpp
+    grunk/io/io.h 
+    grunk/io/io.cpp
     grunk/plugins/IPlugin.h
     grunk/plugins/PluginRegistry.h
     grunk/plugins/PluginRegistry.cpp
@@ -45,7 +48,8 @@ set(grunk_SRC
 add_library(grunk ${grunk_SRC})
 
 target_compile_features(grunk PUBLIC cxx_std_17)
-target_link_libraries(grunk PUBLIC parametric::parametric 
+target_link_libraries(grunk PUBLIC jsoncpp::jsoncpp
+                                   parametric::parametric 
                                    Boost::headers
                                    reflect::reflect
                                    ${CMAKE_DL_LIBS})
