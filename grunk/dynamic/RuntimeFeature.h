@@ -125,6 +125,12 @@ public:
     /**
      * @brief Converting constructor from a Feature<T>, where T is not
      * a Reflect::DynamicObject
+     *
+     * <b>Caution:</b> The converted RuntimeFeature will hold a reference
+     * to the value held by the input Feature. This means that the input Feature
+     * must outlive the converted RuntimeFeature. If this is not the case, it is
+     * better to explicitly construct a new RuntimeFeature instead of using
+     * this converting constructor.
      * 
      * @tparam T The type wrapped by the incoming Feature<T>
      * @param f The input feature to be converted to a RuntimeFeature

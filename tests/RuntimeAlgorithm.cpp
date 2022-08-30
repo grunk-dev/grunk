@@ -174,11 +174,11 @@ TEST_F(RuntimeAlgorithmTest, UnnamedFeature)
 
     EXPECT_FALSE(z.is_valid());
     EXPECT_NEAR(Reflect::cast<double>(z.value()), 0.9, 1e-15);
-    // EXPECT_TRUE(z.is_valid());
+    EXPECT_TRUE(z.is_valid());
 
-    // x.access_value() = 0.6;  // change named feature
+    x.access_value() = 0.6;  // change named feature
 
-    // EXPECT_FALSE(z.is_valid());
-    // EXPECT_NEAR(Reflect::cast<double>(z.value()), 0.8, 1e-15);
-    // EXPECT_TRUE(z.is_valid());
+    EXPECT_FALSE(z.is_valid());
+    EXPECT_NEAR(Reflect::cast<double>(z.value()), 0.8, 1e-15);
+    EXPECT_TRUE(z.is_valid());
 }

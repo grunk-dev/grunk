@@ -108,7 +108,7 @@ public:
      * @param p a parametric::param<T>
      */
     FeatureBase(parametric::param<T>&& p)
-     : param(p)
+     : param(std::forward<parametric::param<T>>(p))
     {}
 
     /**

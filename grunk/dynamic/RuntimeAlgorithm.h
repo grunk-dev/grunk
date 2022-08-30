@@ -6,6 +6,7 @@
 
 #pragma once
 
+#include <initializer_list>
 #include <vector>
 #include <iterator>
 
@@ -263,7 +264,7 @@ decltype(auto) eval(RuntimeFunction<F> const& fun, Args&&... args)
         if constexpr (details::is_feature_v<Arg>){
             return arg;
         } else {
-            return Feature(std::forward<Arg>(arg));
+            return Feature(Reflect::DynamicObject(std::forward<Arg>(arg)));
         }
     };
     return eval(fun, {to_feature(args)...});
