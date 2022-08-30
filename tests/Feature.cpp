@@ -4,7 +4,7 @@
 
 using namespace grunk;
 
-namespace feature_test {
+namespace {
 
 struct MyDouble {
     double val {0.75};
@@ -28,9 +28,23 @@ struct MyStruct {
     double val;
 };
 
-} //namespace feature_test
+} //anonymous namespace
 
-using namespace feature_test;
+TEST(FeatureTest, ctor)
+{
+    Feature<double> x(0.25);
+    Feature<MyStruct> y(x);
+
+    EXPECT_FALSE(y.is_valid());
+    EXPECT_EQ(y.value().val, 0.25);
+    EXPECT_TRUE(y.is_valid());
+
+    x.access_value() = 0.75;
+
+    EXPECT_FALSE(y.is_valid());
+    EXPECT_EQ(y.value().val, 0.75);
+    EXPECT_TRUE(y.is_valid());
+}
 
 TEST(FeatureTest, get)
 {
