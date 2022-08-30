@@ -5,3 +5,4 @@
 #include <grunk/plugins/PluginRegistry.h>
 #include <grunk/dynamic/RuntimeFeature.h>
 #include <grunk/dynamic/RuntimeAlgorithm.h>
+#include <grunk/io/io.h>

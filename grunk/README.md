@@ -23,6 +23,11 @@ This directory contains specializations of `Algorithm` and `Feature`, when
 used together with grunk's dynamic typing system based on the `reflect` 
 library. 
 
+## io
+
+This directory contains the implementation of File I/O, that is reading 
+and writing to a parametric file in the JSON format.
+
 ## plugins
 
 This directory contains the implementation of the plugin system. You can find the implementation of the `PluginRegistry`, the interface class `IPlugin` that is to be used by plugin authors and the `StdPlugin`, that is always loaded and registers C++ standard types and functions.
