@@ -188,7 +188,7 @@ public:
     decltype(auto) invoke(std::string const& memberFunName, Feature<Args> const&... args) const
     {
         return eval(
-            param().id() + "." + memberFunName, 
+            param().id() + "::" + memberFunName, // TODO: How would we name this by default?
             [=](Reflect::DynamicObject const& wrapped, auto const&... arguments){
                 return wrapped.invoke(memberFunName, arguments...);
             },
