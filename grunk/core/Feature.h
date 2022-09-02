@@ -124,6 +124,19 @@ public:
     }
 
     /**
+     * @brief returns the id of the feature
+     * 
+     * @return std::string 
+     */
+    std::string id() const {
+        return m_param.id();
+    }
+
+    void set_id(std::string const& s) {
+        m_param.set_id(s);
+    }
+
+    /**
      * @brief returns a non-const reference to the feature. 
      * 
      * This triggers invalidation of all descendents in the feature tree.

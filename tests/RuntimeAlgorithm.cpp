@@ -83,6 +83,9 @@ TEST_F(RuntimeAlgorithmTest, Basic)
     // nothing has been computed yet, we just registered the feature tree
     EXPECT_FALSE(a.is_valid());
     EXPECT_FALSE(b.is_valid());
+    
+    EXPECT_EQ(a.id(), "a");
+    EXPECT_EQ(b.id(), "b");
 
     // evaluating b should trigger evaluation of the entire tree
     EXPECT_NEAR(b.value().get_as<double>("val"), 0.4, 1e-12);
@@ -131,9 +134,21 @@ TEST_F(RuntimeAlgorithmTest, MultiOutput)
     auto f = grunk::RuntimeFunction(&get_components);
 
     auto i = Feature("i", "Point", 0.2, 0.6);
-    auto fun = eval("components", f, i);
-    auto x = fun->get<0>();
-    auto y = fun->get<1>();
+    auto o = eval("o", f, i);
+    auto x = o->get<0>();
+    auto y = o->get<1>();
+
+    // test default output feature ids
+    EXPECT_EQ(x.id(), "o::0");
+    EXPECT_EQ(y.id(), "o::1");
+
+    // test renaming feature ids
+    x.set_id("x");
+    y.set_id("y");
+    EXPECT_EQ(x.id(), "x");
+    EXPECT_EQ(y.id(), "y");
+    EXPECT_EQ(o->get<0>().id(), "x");
+    EXPECT_EQ(o->get<1>().id(), "y");
 
     EXPECT_EQ(Reflect::cast<double>(x.value()), 0.2);
     EXPECT_EQ(Reflect::cast<double>(y.value()), 0.6);
