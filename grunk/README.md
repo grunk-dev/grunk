@@ -26,7 +26,7 @@ library.
 ## io
 
 This directory contains the implementation of File I/O, that is reading 
-and writing to a parametric file in the JSON format.
+and writing to a parametric file.
 
 ## plugins
 

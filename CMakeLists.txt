@@ -13,7 +13,7 @@ set(CMAKE_PREFIX_PATH ${CMAKE_BINARY_DIR} ${CMAKE_PREFIX_PATH})
 set(BUILD_SHARED_LIBS  ON)
 
 # find dependencies
-find_package(jsoncpp REQUIRED)
+find_package(yaml-cpp REQUIRED)
 find_package(Boost REQUIRED COMPONENTS headers)
 find_package(parametric REQUIRED)
 find_package(reflect REQUIRED)
@@ -44,7 +44,7 @@ set(grunk_SRC
 add_library(grunk ${grunk_SRC})
 
 target_compile_features(grunk PUBLIC cxx_std_17)
-target_link_libraries(grunk PUBLIC jsoncpp::jsoncpp
+target_link_libraries(grunk PUBLIC yaml-cpp::yaml-cpp
                                    parametric::parametric 
                                    Boost::headers
                                    reflect::reflect

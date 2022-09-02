@@ -9,7 +9,7 @@
 #include <vector>
 #include <iterator>
 
-#include <json/json.h>
+#include <yaml-cpp/yaml.h>
 
 #include <grunk/core/Algorithm.h>
 #include <grunk/dynamic/RuntimeFeature.h>
@@ -140,16 +140,17 @@ public:
         // - This class should know about the registered name of the function
         //   and throw an error, if the function is not registered
 
-        Json::Value j;
-        j["function"] = "function_name (To Do!)";
+        YAML::Node y;
+        y["function"] = "function_name (To Do!)";
         for (auto const& input : inputs){
-            j["inputs"].append(input.param().id());
+            y["inputs"].push_back(input.param().id());
         }
         for (auto const& output : outputs){
-            j["outputs"].append(output.param().id());
+            y["outputs"].push_back(output.param().id());
         }
-        Json::FastWriter writer;
-        return writer.write(j);
+        YAML::Emitter out;
+        out << y;
+        return out.c_str();
     }
 
 private:
