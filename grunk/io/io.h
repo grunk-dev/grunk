@@ -72,11 +72,13 @@ struct topo_sort {
 
 namespace parametric {
 
-std::string serialize(double v) {
+template <>
+std::string serialize(double const& v) {
     return YAML::Node(v).as<std::string>();
 }
 
-std::string serialize(int v) {
+template <>
+std::string serialize(int const& v) {
     return YAML::Node(v).as<std::string>();
 }
 
@@ -165,7 +167,6 @@ YAML::Node parse_feature_tree(Feature<Args> const&... args)
     //TODO: Required plugins
     root["requires"]["grunk"] = "0.2.16";
     root["requires"]["pluginA"] = "0.1.1";
-    root["requires"]["pluginB"] = "2.5";
     
     ([&](auto const& node){
         parse_feature(node, root);
