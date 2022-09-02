@@ -9,6 +9,8 @@
 #include <vector>
 #include <iterator>
 
+#include <json/json.h>
+
 #include <grunk/core/Algorithm.h>
 #include <grunk/dynamic/RuntimeFeature.h>
 
@@ -52,16 +54,29 @@ private:
      * @param fun A const pointer to a Reflect::Function
      * @param in The input RuntimeFeatures
      */
+<<<<<<< HEAD
     Algorithm(Reflect::DynamicFunction const& fun, std::initializer_list<RuntimeFeature> const& in)
      : function(fun)
+=======
+    template <typename F>
+    Algorithm(std::string const& id, RuntimeFunction<F> const& fun, std::initializer_list<RuntimeFeature> const& in)
+     : function(details::RuntimeFunctionWrapper<F>(fun))
+>>>>>>> 9307593 (more file i/o experimentin)
      , inputs{in}
      , outputs(function.NumOutputs())
     {
+        set_id(id);
         for (auto& i: inputs){
-            depends_on(i.param);
+            depends_on(i.param());
         }
-        for (auto& o: outputs){
-            computes(o, parametric::param<Reflect::DynamicObject>(""));
+        constexpr size_t n_outputs = RuntimeFunction<F>::numOutputs;
+
+        for (size_t i=0; i<n_outputs; ++i){
+            std::string output_id = id;
+            if (n_outputs > 1)             {
+                output_id += "::" + std::to_string(i);
+            } 
+            computes(outputs[i], parametric::param<Reflect::DynamicObject>(output_id));
         }
     }
 
@@ -78,7 +93,11 @@ public:
         std::transform(inputs.begin(),
                     inputs.end(),
                     std::back_inserter(inputs_vec),
+<<<<<<< HEAD
                     [](auto const& in_feature) { return in_feature.param.value(); }
+=======
+                    [](auto const& in_feature) { return std::cref(in_feature.param().value()); }
+>>>>>>> 9307593 (more file i/o experimentin)
         );
 
         // call the wrapped function
@@ -111,6 +130,26 @@ public:
     Feature<Reflect::DynamicObject> get() const
     {
         return Feature<Reflect::DynamicObject>(outputs[Idx]);
+    }
+
+    std::string serialize() const override final
+    {
+        //TODO: 
+        // - This function should call a private function that creates
+        //   an instance of json::value and convert it to string
+        // - This class should know about the registered name of the function
+        //   and throw an error, if the function is not registered
+
+        Json::Value j;
+        j["function"] = "function_name (To Do!)";
+        for (auto const& input : inputs){
+            j["inputs"].append(input.param().id());
+        }
+        for (auto const& output : outputs){
+            j["outputs"].append(output.param().id());
+        }
+        Json::FastWriter writer;
+        return writer.write(j);
     }
 
 private:
@@ -157,9 +196,13 @@ struct RuntimeAlgorithmFactory
      * @param args The input features
      * @return RuntimeAlgorithmPtr The returned compute_node_ptr wrapping a RuntimeAlgorithm
      */
-    static RuntimeAlgorithmPtr new_algorithm(Reflect::DynamicFunction const& fun, std::initializer_list<Feature<Reflect::DynamicObject>> const& args)
+    static RuntimeAlgorithmPtr new_algorithm(
+        std::string const& id, 
+        Reflect::DynamicFunction const& fun, 
+        std::initializer_list<Feature<Reflect::DynamicObject>> const& args
+    )
     {
-        return RuntimeAlgorithmPtr(new RuntimeAlgorithm(fun, args));
+        return RuntimeAlgorithmPtr(new RuntimeAlgorithm(id, fun, args));;
     }
 
 };
@@ -177,10 +220,15 @@ struct RuntimeAlgorithmFactory
  * @return RuntimeAlgorithmPtr A special pointer type wrapping a RuntimeAlgorithm instance.
  * @ingroup dynamic_advanced
  */
+<<<<<<< HEAD
 template <typename... Args>
 RuntimeAlgorithmPtr eval(Reflect::DynamicFunction const& fun, Feature<Args> const&... args)
+=======
+template <typename F, typename... Args>
+RuntimeAlgorithmPtr eval(std::string const& id, RuntimeFunction<F> const& fun, Feature<Args> const&... args)
+>>>>>>> 9307593 (more file i/o experimentin)
 {
-    return details::RuntimeAlgorithmFactory::new_algorithm(fun, {args...});
+    return details::RuntimeAlgorithmFactory::new_algorithm(id, fun, {args...});
 }
 
 /**
@@ -196,9 +244,14 @@ RuntimeAlgorithmPtr eval(Reflect::DynamicFunction const& fun, Feature<Args> cons
  * @return RuntimeAlgorithmPtr A special pointer type wrapping a RuntimeAlgorithm instance.
  * @ingroup dynamic_advanced
  */
+<<<<<<< HEAD
 RuntimeAlgorithmPtr eval(Reflect::DynamicFunction const& fun, std::initializer_list<Feature<Reflect::DynamicObject>> const& args)
+=======
+template <typename F>
+RuntimeAlgorithmPtr eval(std::string const& id, RuntimeFunction<F> const& fun, std::initializer_list<Feature<Reflect::DynamicObject>> const& args)
+>>>>>>> 9307593 (more file i/o experimentin)
 {
-    return details::RuntimeAlgorithmFactory::new_algorithm(fun, args);
+    return details::RuntimeAlgorithmFactory::new_algorithm(id, fun, args);
 }
 
 /**

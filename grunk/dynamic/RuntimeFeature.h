@@ -64,12 +64,9 @@ public:
      * @param typeName The string representation of the reflected type
      * @param args The constructor arguments
      */
-    template <
-        typename... Args,
-        typename = std::enable_if_t<!(details::is_feature_v<std::decay_t<Args>> || ...)>
-    >
-    Feature(const char* typeName, Args&&... args)
-     : FeatureBase<Reflect::DynamicObject>(Reflect::make_dynamic(typeName, std::forward<Args>(args)...))
+    template <typename... Args>
+    Feature(std::string const& id, const char* typeName, Args&&... args)
+     : FeatureBase<Reflect::DynamicObject>(id, Reflect::make_dynamic(typeName, std::forward<Args>(args)...))
     {}
 
 
@@ -127,8 +124,8 @@ public:
      * 
      * @param o The input Reflect::DynamicObject
      */
-    explicit Feature(Reflect::DynamicObject&& o)
-     : FeatureBase(std::forward<Reflect::DynamicObject>(o))
+    explicit Feature(std::string const& id, Reflect::DynamicObject&& o)
+     : FeatureBase(id, std::forward<Reflect::DynamicObject>(o))
     {}
 
     /**
@@ -142,7 +139,7 @@ public:
               typename = std::enable_if_t<!std::is_same_v<Reflect::DynamicObject, T>>
     >
     Feature(Feature<T> const& f)
-     : Feature(Reflect::DynamicObject(f.value()))
+     : Feature(f.param().id(), Reflect::DynamicObject(f.value()))
     {}
 
     /**
@@ -154,7 +151,7 @@ public:
     template <typename T, typename = std::enable_if_t<!std::is_same_v<T, Reflect::DynamicObject>>>
     operator Feature<T>() const
     {
-        return Feature<T>(Reflect::cast<T>(this->param.value()));
+        return Feature<T>(param().id(), Reflect::cast<T>(this->param().value()));
     }
 
     /**
@@ -170,6 +167,7 @@ public:
     decltype(auto) get(std::string const& memberName) const
     {
         return eval(
+            param().id() + "." + memberName, 
             [=](Reflect::DynamicObject const& wrapped){
                 return wrapped.get(memberName);
             },
@@ -190,6 +188,7 @@ public:
     decltype(auto) invoke(std::string const& memberFunName, Feature<Args> const&... args) const
     {
         return eval(
+            param().id() + "." + memberFunName, 
             [=](Reflect::DynamicObject const& wrapped, auto const&... arguments){
                 return wrapped.invoke(memberFunName, arguments...);
             },

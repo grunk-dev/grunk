@@ -75,21 +75,23 @@ TEST_F(RuntimeFeatureTest, ctor)
 
 TEST_F(RuntimeFeatureTest, Conversions)
 {
-    RuntimeFeature x("MyStruct", 0.33);
+    RuntimeFeature x("x", "MyStruct", 0.33);
     EXPECT_NEAR(x.value().get_as<double>("val"), 0.33, 1e-12);
 
     // Feature<RuntimeObject> -> Feature<T>
     Feature<MyStruct> y(x);
     EXPECT_NEAR(y.value().val, 0.33, 1e-12);
+    EXPECT_EQ(y.param().id(), "x");
 
     // Feature<T> -> Feature<RuntimeObject> 
     RuntimeFeature z(y);
     EXPECT_NEAR(z.value().get_as<double>("val"), 0.33, 1e-12);
+    EXPECT_EQ(z.param().id(), "x");
 }
 
 TEST_F(RuntimeFeatureTest, get)
 {
-    Feature x("MyStruct", 0.5);
+    Feature x("x", "MyStruct", 0.5);
 
     Feature v = x.get("val")->get();
     EXPECT_EQ(Reflect::cast<double>(v.value()), 0.5);
@@ -102,8 +104,8 @@ TEST_F(RuntimeFeatureTest, get)
 
 TEST_F(RuntimeFeatureTest, invoke)
 {
-    Feature x("MyStruct", 0.5);
-    Feature factor("double", 3.);
+    Feature x("x", "MyStruct", 0.5);
+    Feature factor("factor", "double", 3.);
 
     Feature v = x.invoke("times", factor)->get();
     
@@ -124,8 +126,8 @@ TEST_F(RuntimeFeatureTest, invoke)
 
 TEST_F(RuntimeFeatureTest, invoke_nonConstMemberFun)
 {
-    Feature x("MyStruct", 0.5);
-    Feature factor("double", 3.);
+    Feature x("x", "MyStruct", 0.5);
+    Feature factor("factor", "double", 3.);
     Feature v = x.invoke("timesc", factor)->get();
     EXPECT_THROW(v.value(), Reflect::BadCastException);
 }
