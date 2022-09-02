@@ -43,8 +43,8 @@ using namespace Algorithm_test;
 TEST(AlgorithmTest, Basic)
 {
     // l and r are the root input nodes
-    auto l = Feature(MyDouble(0.2));
-    auto r = Feature(MyDouble(0.1));
+    auto l = Feature("l", MyDouble(0.2));
+    auto r = Feature("r", MyDouble(0.1));
 
     // a depends on l and r, b depends on a and r
     //    
@@ -54,8 +54,8 @@ TEST(AlgorithmTest, Basic)
     //       \  |
     //         b
     //
-    auto a = eval(&add, l, r)->get();
-    auto b = eval(&add, a, r)->get();
+    auto a = eval("a", &add, l, r)->get();
+    auto b = eval("b", &add, a, r)->get();
 
     // nothing has been computed yet, we just registered the feature tree
     EXPECT_FALSE(a.is_valid());
@@ -91,9 +91,9 @@ TEST(AlgorithmTest, MultiOutput)
 {
     auto f = &get_components;
 
-    auto i = Feature(Point(0.2, 0.6));
-    auto x = eval(f, i)->get<0>();
-    auto y = eval(f, i)->get<1>();
+    auto i = Feature("i", Point(0.2, 0.6));
+    auto x = eval("x", f, i)->get<0>();
+    auto y = eval("y", f, i)->get<1>();
 
     EXPECT_EQ(x.value(), 0.2);
     EXPECT_EQ(y.value(), 0.6);

@@ -72,12 +72,13 @@ public:
      * @param f  the function to be wrapped
      * @param args The arguments of the function wrapped in Feature instances
      */
-    Algorithm(F const& f, Feature<Args> const&... args) 
+    Algorithm(std::string const& id, F const& f, Feature<Args> const&... args) 
      : function(f)
      , in{std::make_tuple(args...)}
     {
-        std::apply([=](Feature<Args> const&... feature){ (...,depends_on(feature.param)); }, in);
-        computes(out, parametric::param<ReturnType>(""));
+        std::apply([=](Feature<Args> const&... feature){ (...,depends_on(feature.param())); }, in);
+        computes(out, parametric::param<ReturnType>(id));
+        set_id(id);
     }
 
 public:
@@ -114,8 +115,17 @@ public:
             return Feature<ReturnType>(out);
         }
         else {
-            return grunk::eval([](ReturnType const& tuple){ return std::get<Idx>(tuple); }, Feature<ReturnType>(out))->get();
+            return grunk::eval(
+                out.param().id() + "::" + std::to_string(Idx),
+                [](ReturnType const& tuple){ return std::get<Idx>(tuple); }, 
+                Feature<ReturnType>(out)
+            )->get();
         }
+    }
+
+    std::string serialize() const override final
+    {
+        throw std::logic_error("Only Algorithms wrapping a registered dynamic function can be serialized\n");
     }
 
 private:
@@ -178,9 +188,9 @@ struct AlgorithmFactory
      */
     template <typename F,
               typename... Args>
-    static AlgorithmPtr<F, Args...> new_algorithm(F const& fun, Feature<Args> const&... args)
+    static AlgorithmPtr<F, Args...> new_algorithm(std::string const& id, F const& fun, Feature<Args> const&... args)
     {
-        return AlgorithmPtr<F, Args...>(new Algorithm<F, Args...>(fun, args...));
+        return AlgorithmPtr<F, Args...>(new Algorithm<F, Args...>(id, fun, args...));
     }
 
 };
@@ -205,9 +215,9 @@ struct AlgorithmFactory
 template <typename F,
           typename, // default-value (enable_if) declared in Feature.h
           typename... Args>
-AlgorithmPtr<F, Args...> eval(F const& fun, Feature<Args> const&... args)
+AlgorithmPtr<F, Args...> eval(std::string const& id, F const& fun, Feature<Args> const&... args)
 {
-    return details::AlgorithmFactory::new_algorithm(fun, args...);
+    return details::AlgorithmFactory::new_algorithm(id, fun, args...);
 }
 
 } //namespace grunk

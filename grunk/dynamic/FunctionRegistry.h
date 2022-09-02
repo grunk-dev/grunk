@@ -39,7 +39,7 @@ public:
          , documentation(doc)
         {}
 
-        std::function<parametric::compute_node_ptr<RuntimeAlgorithm>(std::initializer_list<Feature<Reflect::DynamicObject>> const&)> factory;
+        std::function<parametric::compute_node_ptr<RuntimeAlgorithm>(std::string const&, std::initializer_list<Feature<Reflect::DynamicObject>> const&)> factory;
         std::string documentation;
     };
 
@@ -105,8 +105,8 @@ void register_function(F&& f,
     registry.insert(
         name,
         {
-            [=](auto& args) {
-                return eval(func, args);
+            [=](std::string const& id, auto& args) {
+                return eval(id, func, args);
             },
             doc
         }
@@ -127,9 +127,9 @@ void register_function(F&& f,
  * @ingroup dynamic
  */
 template <typename... Args>
-RuntimeAlgorithmPtr eval(std::string const& name, Feature<Args> const&... args)
+RuntimeAlgorithmPtr eval(std::string const& id, std::string const& name, Feature<Args> const&... args)
 {
-    return get_function_registry()[name].factory({args...});
+    return get_function_registry()[name].factory(id, {args...});
 }
 
 } //namespace grunk

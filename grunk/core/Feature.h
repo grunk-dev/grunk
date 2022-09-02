@@ -57,7 +57,7 @@ template <typename F,
             && !details::is_runtime_function_v<std::decay_t<F>>
           >,
           typename... Args>
-AlgorithmPtr<F, Args...> eval(F const& fun, Feature<Args> const&... args);
+AlgorithmPtr<F, Args...> eval(std::string const& id, F const& fun, Feature<Args> const&... args);
 
 /**
  * @brief A base class used by Feature<T> and the template specialization
@@ -81,8 +81,8 @@ public:
      * 
      * @param t The instance to be wrapped inside this feature
      */
-    FeatureBase(T&& t)
-     : param(parametric::new_param(std::forward<T>(t)))
+    FeatureBase(std::string const& id, T&& t)
+     : m_param(parametric::new_param(std::forward<T>(t)), id)
     {}
 
     /**
@@ -91,7 +91,7 @@ public:
      * @param p a parametric::param<T>
      */
     FeatureBase(parametric::param<T>&& p)
-     : param(p)
+     : m_param(p)
     {}
 
     /**
@@ -107,7 +107,7 @@ public:
      */
     bool is_valid() const
     {
-        return param.is_valid();
+        return m_param.is_valid();
     }
 
     /**
@@ -120,7 +120,7 @@ public:
      */
     T const& value() const
     {
-        return param.value();
+        return m_param.value();
     }
 
     /**
@@ -137,12 +137,21 @@ public:
      */
     T& access_value()
     {
-        return param.change_value();
+        return m_param.change_value();
+    }
+
+    /**
+     * @brief returns a 
+     * 
+     * @return parametric::param<T> const& 
+     */
+    parametric::param<T> const& param() const {
+        return m_param;
     }
 
 protected:
 
-    parametric::param<T> param;
+    parametric::param<T> m_param;
 };
 
 /**
@@ -168,8 +177,8 @@ public:
      * 
      * @param t The object to be wrapped
      */
-    Feature(T&& t)
-     : FeatureBase<T>(std::forward<T>(t))
+    Feature(std::string const& id, T&& t)
+     : FeatureBase<T>(id, std::forward<T>(t))
     {}
 
     /**
@@ -196,6 +205,7 @@ public:
     decltype(auto) get(MemberPtr ptr) const
     {
         return eval(
+            "", //To Do
             [=](auto const& wrapped){ 
                 return wrapped.*ptr; 
             }, 
@@ -217,6 +227,7 @@ public:
     decltype(auto) invoke(MemberFunPtr funPtr, Feature<Args> const&... args) const
     {
         return eval(
+            "", // TO DO
             [=](T const& wrapped, auto const&... arguments){
                 return (wrapped.*funPtr)(arguments...);
             },
@@ -232,7 +243,7 @@ public:
  * @tparam T The type of the wrapped object
  */
 template <typename T>
-Feature(T&&) -> Feature<T>;
+Feature(std::string const&, T&&) -> Feature<T>;
 
 } //namespace grunk
 

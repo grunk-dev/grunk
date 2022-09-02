@@ -66,8 +66,8 @@ TEST_F(RuntimeAlgorithmTest, Basic)
     auto f = RuntimeFunction(&add);
 
     // l and r are the root input nodes
-    auto l = Feature("MyDouble", 0.2);
-    auto r = Feature("MyDouble", 0.1);
+    auto l = Feature("l", "MyDouble", 0.2);
+    auto r = Feature("r", "MyDouble", 0.1);
 
     // a depends on l and r, b depends on a and r
     //    
@@ -77,8 +77,8 @@ TEST_F(RuntimeAlgorithmTest, Basic)
     //       \  |
     //         b
     //
-    auto a = eval(f, l, r)->get();
-    auto b = eval(f, a, r)->get();
+    auto a = eval("a", f, l, r)->get();
+    auto b = eval("b", f, a, r)->get();
 
     // nothing has been computed yet, we just registered the feature tree
     EXPECT_FALSE(a.is_valid());
@@ -113,16 +113,16 @@ TEST_F(RuntimeAlgorithmTest, PassNonRumtimeFeatureToRuntimeAlgorithm)
 {
     auto f = RuntimeFunction(&add);
 
-    auto lr = Feature("MyDouble", 0.2);
-    auto lc = Feature(MyDouble(0.2));
-    auto rc = Feature(MyDouble(0.1));
+    auto lr = Feature("lr", "MyDouble", 0.2);
+    auto lc = Feature("lc", MyDouble(0.2));
+    auto rc = Feature("rc", MyDouble(0.1));
 
     // (RuntimeFeature, Feature<T>) -> RuntimeAlgorithm
-    auto ret1 = eval(f, lr, rc)->get();
+    auto ret1 = eval("ret1", f, lr, rc)->get();
     EXPECT_NEAR(ret1.value().get_as<double>("val"), 0.3, 1e-12);
 
     // (Feature<T>, Feature<T>) -> RuntimeAlgorithm
-    auto ret2 = eval(f, lc, rc)->get();
+    auto ret2 = eval("ret2", f, lc, rc)->get();
     EXPECT_NEAR(ret2.value().get_as<double>("val"), 0.3, 1e-12);
 }
 
@@ -130,8 +130,8 @@ TEST_F(RuntimeAlgorithmTest, MultiOutput)
 {
     auto f = grunk::RuntimeFunction(&get_components);
 
-    auto i = Feature("Point", 0.2, 0.6);
-    auto fun = eval(f, i);
+    auto i = Feature("i", "Point", 0.2, 0.6);
+    auto fun = eval("components", f, i);
     auto x = fun->get<0>();
     auto y = fun->get<1>();
 

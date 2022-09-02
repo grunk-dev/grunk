@@ -46,11 +46,11 @@ public:
 
 TEST_F(FunctionRegistryTest, BasicUsage)
 {
-    Feature l("MyDouble", 3.3);
-    Feature r("MyDouble", 2.2);
+    Feature l("l", "MyDouble", 3.3);
+    Feature r("r", "MyDouble", 2.2);
 
-    auto a = eval("add", l, r)->get();
-    auto b = eval("add", a, r)->get();
+    auto a = eval("a", "add", l, r)->get();
+    auto b = eval("b", "add", a, r)->get();
 
     EXPECT_FALSE(a.is_valid());
     EXPECT_FALSE(b.is_valid());
