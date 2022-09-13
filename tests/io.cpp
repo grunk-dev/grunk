@@ -38,6 +38,6 @@ TEST_F(IOTest, simple)
     auto c = eval("c", "plus", a, b)->get();
     auto d = eval("d", "plus", c, a)->get();
 
-    std::string res = serialize(d,a,c,b);
+    std::string res = serialize(a,d,c,b);
     std::cout << res << std::endl;
 }

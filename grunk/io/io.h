@@ -6,70 +6,6 @@
 #include <initializer_list>
 #include <stack>
 
-namespace {
-
-struct topo_sort {
-
-    using Stack = std::stack<YAML::Node const*>;
-    using Visited = std::unordered_map<std::string, bool>;
-
-    Visited visited;
-    YAML::Node const& steps;
-    YAML::Node out;
-
-    topo_sort(YAML::Node const& root_params, YAML::Node const& stps)
-        : steps(stps)
-    {
-        // Mark all the vertices as not visited, except for the root nodes
-        for(YAML::const_iterator it=root_params.begin();it!=root_params.end();++it) {
-            visited[it->first.as<std::string>()] = true;
-        }
-
-
-        for (auto const& step : steps){
-            if (!visited[step["outputs"][0].as<std::string>()]) {
-                topo_sort_(step);
-            }
-        }
-
-        // can this be improved? std::reverse doesn't work, because YAML iterators aren't
-        // bidiretional
-        YAML::Node tmp;
-        for(int i = out.size()-1; i>=0; --i ){
-            tmp.push_back(out[i]);
-        }
-        out = tmp;
-    }
-
-    void topo_sort_(YAML::Node const& step)
-    {
-        for (auto const& output : step["outputs"]) {
-            visited[output.as<std::string>()] = true;
-        }
-        for (auto const& input: step["inputs"]) {
-            if (!visited[input.as<std::string>()]){
-
-                [&]{
-                // find step producing input and recurse
-                for (auto const& s : steps){
-                    for (auto const& output : step["outputs"]){
-                        if (output.as<std::string>() == input.as<std::string>()){
-                            topo_sort_(s);
-                            return; // we use a lambda and return so we can break out of two nested for-loops
-                        }
-                    }
-                }
-                }();
-            }
-        }
-        out.push_back(step);
-    }
-
-    YAML::Node operator()() { return out; };
-};
-
-} // anonymous namespace
-
 namespace parametric {
 
 template <>
@@ -99,34 +35,25 @@ namespace grunk {
 
 namespace details {
 
+using Visited = std::unordered_map<parametric::DAGNode const*, bool>;
+
 template <typename Arg>
-void parse_feature(Feature<Arg> const& arg, YAML::Node& yaml_root)
+void parse_feature(Feature<Arg> const& arg, YAML::Node& yaml_root, Visited& visited)
 {
 
     class ToStringVisitor
     {
     public:
-        ToStringVisitor(YAML::Node& root)
-         : yaml(root)
-        {}
+        ToStringVisitor(YAML::Node& r, Visited& v)
+         : root(r)
+         , visited(v)
+        {};
 
         void visit(parametric::DAGNode const& n, size_t depth)
         {
-
             // check if the node has already been parsed...
-
-            // ... as a root parameter
-            if (yaml["parameters"][n.id()]) {
+            if (visited[&n]) {
                 return;
-            }
-
-            // ... as an output of a calculation
-            for( auto itr = yaml["steps"].begin(); itr != yaml["steps"].end() ; ++itr ) {
-                for (auto const& output : (*itr)["outputs"]) {
-                    if (output.as<std::string>() == n.id() ) {
-                        return;
-                    }
-                }
             }
 
             if (std::string str = n.serialize(); !str.empty()){
@@ -136,20 +63,32 @@ void parse_feature(Feature<Arg> const& arg, YAML::Node& yaml_root)
                 bool is_parameter = ((depth % 2) == 0);
 
                 if (is_parameter) {
-                    yaml["parameters"][n.id()] = node;
+                    root["parameters"][n.id()] = node;
                 }
                 else {
                     // is algorithm
-                    yaml["steps"].push_back(node);
+                    steps.push(node);
                 }
+            }
+
+            visited[&n] = true;
+        }
+
+        // unwinding the steps makes sure that we write the steps in topological order
+        void unwind_steps() {
+            while (!steps.empty()) {
+                root["steps"].push_back(steps.top());
+                steps.pop();
             }
         }
 
     private:
-        YAML::Node& yaml;
+        Visited& visited;
+        std::stack<YAML::Node> steps;
+        YAML::Node& root;
     };
     
-    ToStringVisitor visitor(yaml_root);
+    ToStringVisitor visitor(yaml_root, visited);
     
     auto const& node = *(arg.param().node_pointer());
     node.accept(
@@ -157,24 +96,22 @@ void parse_feature(Feature<Arg> const& arg, YAML::Node& yaml_root)
         0,
         parametric::DAGNode::Direction::up
     );
+    visitor.unwind_steps();
 }
 
 template <typename... Args>
 YAML::Node parse_feature_tree(Feature<Args> const&... args)
 {
     YAML::Node root;
+    Visited visited;
 
     //TODO: Required plugins
-    root["requires"]["grunk"] = "0.2.16";
-    root["requires"]["pluginA"] = "0.1.1";
+    root["uses"]["grunk"] = "0.2.16";
+    root["uses"]["pluginA"] = "0.1.1";
     
     ([&](auto const& node){
-        parse_feature(node, root);
+        parse_feature(node, root, visited);
     }(args), ...);
-    
-    //TODO: topological sort for steps
-    
-    root["steps"] = topo_sort(root["parameters"], root["steps"])();
 
     return root;
 }
