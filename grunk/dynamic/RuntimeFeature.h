@@ -4,6 +4,15 @@
  * This file contains the template specialization of Feature for Reflect::DynamicObjects
  */
 
+/**
+ * @defgroup dynamic Functions and Classes for dynamic mode
+ */
+
+/**
+ * @defgroup dynamic_advanced Advanced Functions and Classes for dynamic mode
+ */
+
+
 #pragma once
 
 #include <grunk/core/Feature.h>
