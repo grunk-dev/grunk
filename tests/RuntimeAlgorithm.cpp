@@ -64,7 +64,7 @@ public:
 
 TEST_F(RuntimeAlgorithmTest, Basic)
 {
-    auto f = RuntimeFunction(&add);
+    auto f = Reflect::FunctionImpl(&add, "add");
 
     // l and r are the root input nodes
     auto l = Feature("MyDouble", 0.2);
@@ -112,7 +112,7 @@ TEST_F(RuntimeAlgorithmTest, Basic)
 
 TEST_F(RuntimeAlgorithmTest, PassNonRumtimeFeatureToRuntimeAlgorithm)
 {
-    auto f = RuntimeFunction(&add);
+    auto f = Reflect::FunctionImpl(&add, "add");
 
     auto lr = Feature("MyDouble", 0.2);
     auto lc = Feature(MyDouble(0.2));
@@ -129,7 +129,7 @@ TEST_F(RuntimeAlgorithmTest, PassNonRumtimeFeatureToRuntimeAlgorithm)
 
 TEST_F(RuntimeAlgorithmTest, MultiOutput)
 {
-    auto f = grunk::RuntimeFunction(&get_components);
+    auto f = Reflect::FunctionImpl(&get_components, "get_components");
 
     auto i = Feature("Point", 0.2, 0.6);
     auto fun = eval(f, i);
