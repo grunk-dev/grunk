@@ -131,7 +131,7 @@ public:
         //   and throw an error, if the function is not registered
 
         YAML::Node y;
-        y["function"] = "function_name (To Do!)";
+        y["function"] = function.GetName();
         for (auto const& input : inputs){
             y["inputs"].push_back(input.param().id());
         }
