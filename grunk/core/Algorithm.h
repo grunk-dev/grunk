@@ -116,12 +116,18 @@ public:
                 static_assert(Idx == 0, "get with Index>0 only allowed for Algorithms returning a tuple.");
                 return Feature<ReturnType>(out);
             } else {
-                return grunk::eval([](ReturnType const& vec){ return vec[Idx]; }, Feature<ReturnType>(out))->get();
+                //TODO: Why do we need to "eval" this again? Isn't this overkill a bit?
+                return grunk::eval(
+                    out.param().id() + "[" + std::to_string(Idx) + "]",
+                    [](ReturnType const& vec){ return vec[Idx]; }, 
+                    Feature<ReturnType>(out)
+                )->get();
             }
         }
         else {
+            //TODO: Why do we need to "eval" this again? Isn't this overkill a bit?
             return grunk::eval(
-                out.param().id() + "::" + std::to_string(Idx),
+                out.param().id() + "[" + std::to_string(Idx) + "]",
                 [](ReturnType const& tuple){ return std::get<Idx>(tuple); }, 
                 Feature<ReturnType>(out)
             )->get();

@@ -54,14 +54,8 @@ private:
      * @param fun A const pointer to a Reflect::Function
      * @param in The input RuntimeFeatures
      */
-<<<<<<< HEAD
-    Algorithm(Reflect::DynamicFunction const& fun, std::initializer_list<RuntimeFeature> const& in)
+    Algorithm(std::string const& id, Reflect::DynamicFunction const& fun, std::initializer_list<RuntimeFeature> const& in)
      : function(fun)
-=======
-    template <typename F>
-    Algorithm(std::string const& id, RuntimeFunction<F> const& fun, std::initializer_list<RuntimeFeature> const& in)
-     : function(details::RuntimeFunctionWrapper<F>(fun))
->>>>>>> 9307593 (more file i/o experimentin)
      , inputs{in}
      , outputs(function.NumOutputs())
     {
@@ -69,8 +63,8 @@ private:
         for (auto& i: inputs){
             depends_on(i.param());
         }
-        constexpr size_t n_outputs = RuntimeFunction<F>::numOutputs;
 
+        size_t n_outputs = function.NumOutputs();
         for (size_t i=0; i<n_outputs; ++i){
             std::string output_id = id;
             if (n_outputs > 1)             {
@@ -93,11 +87,7 @@ public:
         std::transform(inputs.begin(),
                     inputs.end(),
                     std::back_inserter(inputs_vec),
-<<<<<<< HEAD
-                    [](auto const& in_feature) { return in_feature.param.value(); }
-=======
-                    [](auto const& in_feature) { return std::cref(in_feature.param().value()); }
->>>>>>> 9307593 (more file i/o experimentin)
+                    [](auto const& in_feature) { return in_feature.param().value(); }
         );
 
         // call the wrapped function
@@ -221,13 +211,8 @@ struct RuntimeAlgorithmFactory
  * @return RuntimeAlgorithmPtr A special pointer type wrapping a RuntimeAlgorithm instance.
  * @ingroup dynamic_advanced
  */
-<<<<<<< HEAD
 template <typename... Args>
-RuntimeAlgorithmPtr eval(Reflect::DynamicFunction const& fun, Feature<Args> const&... args)
-=======
-template <typename F, typename... Args>
-RuntimeAlgorithmPtr eval(std::string const& id, RuntimeFunction<F> const& fun, Feature<Args> const&... args)
->>>>>>> 9307593 (more file i/o experimentin)
+RuntimeAlgorithmPtr eval(std::string const& id, Reflect::DynamicFunction const& fun, Feature<Args> const&... args)
 {
     return details::RuntimeAlgorithmFactory::new_algorithm(id, fun, {args...});
 }
@@ -245,15 +230,7 @@ RuntimeAlgorithmPtr eval(std::string const& id, RuntimeFunction<F> const& fun, F
  * @return RuntimeAlgorithmPtr A special pointer type wrapping a RuntimeAlgorithm instance.
  * @ingroup dynamic_advanced
  */
-<<<<<<< HEAD
-RuntimeAlgorithmPtr eval(Reflect::DynamicFunction const& fun, std::initializer_list<Feature<Reflect::DynamicObject>> const& args)
-=======
-template <typename F>
-RuntimeAlgorithmPtr eval(std::string const& id, RuntimeFunction<F> const& fun, std::initializer_list<Feature<Reflect::DynamicObject>> const& args)
->>>>>>> 9307593 (more file i/o experimentin)
-{
-    return details::RuntimeAlgorithmFactory::new_algorithm(id, fun, args);
-}
+RuntimeAlgorithmPtr eval(std::string const& id, Reflect::DynamicFunction const& fun, std::initializer_list<Feature<Reflect::DynamicObject>> const& args);
 
 /**
  * @brief Given a string identifier of a function, that has previously been registered
@@ -269,10 +246,10 @@ RuntimeAlgorithmPtr eval(std::string const& id, RuntimeFunction<F> const& fun, s
  * @ingroup dynamic
  */
 template <typename... Args>
-RuntimeAlgorithmPtr eval(std::string const& name, Feature<Args> const&... args)
+RuntimeAlgorithmPtr eval(std::string const& id, std::string const& name, Feature<Args> const&... args)
 {
     auto const& f = Reflect::GetFunctionRegistry().Resolve(name);
-    return eval(f, args...);
+    return eval(id, f, args...);
 }
 
 } // namespace grunk

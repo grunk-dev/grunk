@@ -36,24 +36,19 @@ using AlgorithmPtr = parametric::compute_node_ptr<Algorithm<F, Args...>>;
 namespace details {
 
     /**
-     * @brief evaluates to false if a type is not a Reflect::DynamicFunction
+     * @brief evaluates to true if a type is derived from Reflect::DynamicFunction
      * 
      * @tparam typename the type to be checked.
      */
-    template<typename> constexpr bool is_dynamic_function_v = false;
-
-    /**
-     * @brief evaluates to true if a type is Reflect::DynamicFunction
-     */
-    template<>
-    constexpr bool is_dynamic_function_v<Reflect::DynamicFunction> = true;
+    template<typename T> constexpr bool is_dynamic_function_v = 
+        std::is_base_of_v<Reflect::DynamicFunction, std::decay_t<T>>;
 }
 
 // forward declaration
 template <typename F,
           typename = std::enable_if_t<
             !std::is_convertible_v<std::decay_t<F>, std::string>
-            && !details::is_dynamic_function_v<std::decay_t<F>>
+            && !details::is_dynamic_function_v<F>
           >,
           typename... Args>
 AlgorithmPtr<F, Args...> eval(std::string const& id, F const& fun, Feature<Args> const&... args);
@@ -229,9 +224,10 @@ public:
         typename... Args,
         typename = std::enable_if_t<!(std::is_same_v<Args, Reflect::DynamicObject> || ...)>
     >
-    Feature(Feature<Args> const&... args)
+    Feature(std::string const& id, Feature<Args> const&... args)
      : Feature(
         eval(
+            id,
             [](Args const&... in){
 
                 static_assert(std::is_constructible_v<T, Args...>, "T must be constructable from Args\n.");

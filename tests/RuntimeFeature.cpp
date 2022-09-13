@@ -59,8 +59,8 @@ public:
 
 TEST_F(RuntimeFeatureTest, ctor)
 {
-    Feature<double> x(0.25);
-    RuntimeFeature y("MyStruct", x);
+    Feature<double> x("x", 0.25);
+    RuntimeFeature y("y", "MyStruct", x);
 
     EXPECT_FALSE(y.is_valid());
     EXPECT_EQ(Reflect::cast<MyStruct>(y.value()).val, 0.25);

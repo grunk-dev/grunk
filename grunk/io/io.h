@@ -90,7 +90,7 @@ std::string serialize(std::string const& v) {
 template <>
 std::string serialize(Reflect::DynamicObject const& v)
 {
-    return Reflect::cast<std::string>(v.invoke("serialize"));
+    return Reflect::cast<std::string>(v.invoke("serialize")[0]);
 }
 
 } // namespace parametric

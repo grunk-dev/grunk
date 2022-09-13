@@ -65,8 +65,8 @@ public:
      * @param args The constructor arguments
      */
     template <typename... Args>
-    Feature(std::string const& id, const char* typeName, Args&&... args)
-     : FeatureBase<Reflect::DynamicObject>(id, Reflect::make_dynamic(typeName, std::forward<Args>(args)...))
+    Feature(std::string const& id, const char* typeName, Args const&... args)
+     : FeatureBase<Reflect::DynamicObject>(id, Reflect::make_dynamic(typeName, args...))
     {}
 
 
@@ -99,9 +99,10 @@ public:
      * @param args input Features for the constructor for the type to b constructed 
      */
     template <typename... Args>
-    Feature(const char* typeName, Feature<Args> const&... args)
+    Feature(std::string const& id, const char* typeName, Feature<Args> const&... args)
      : Feature(
         eval(
+            id,
             [=](Args const&... in){
                 return Reflect::make_dynamic(typeName, in...);
             },

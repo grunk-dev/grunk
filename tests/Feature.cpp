@@ -32,8 +32,8 @@ struct MyStruct {
 
 TEST(FeatureTest, ctor)
 {
-    Feature<double> x(0.25);
-    Feature<MyStruct> y(x);
+    Feature<double> x("x", 0.25);
+    Feature<MyStruct> y("y", x);
 
     EXPECT_FALSE(y.is_valid());
     EXPECT_EQ(y.value().val, 0.25);
