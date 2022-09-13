@@ -95,4 +95,10 @@ PluginRegistry::~PluginRegistry()
     Reflect::GetTypeRegistry().clear();
 }
 
+PluginRegistry& get_plugin_registry()
+{
+    static auto registry = PluginRegistry();
+    return registry;
+}
+
 } //namespace grunk

@@ -68,6 +68,15 @@ public:
      */
     void load_all();
 
+    /**
+     * @brief 
+     * 
+     */
+     PluginMap const& plugins() const
+     {
+        return loaded_plugins;
+     }
+
 private:
 
     /**
@@ -80,10 +89,6 @@ private:
     PluginMap loaded_plugins;
 };
 
-PluginRegistry& get_plugin_registry()
-{
-    static auto registry = PluginRegistry();
-    return registry;
-}
+PluginRegistry& get_plugin_registry();
 
 } //namespace grunk

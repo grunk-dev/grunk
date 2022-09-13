@@ -1,6 +1,7 @@
 #pragma once 
 
 #include <grunk/core/Feature.h>
+#include <grunk/plugins/PluginRegistry.h>
 
 #include <yaml-cpp/yaml.h>
 #include <initializer_list>
@@ -105,13 +106,18 @@ YAML::Node parse_feature_tree(Feature<Args> const&... args)
     YAML::Node root;
     Visited visited;
 
-    //TODO: Required plugins
+    //write grunk version
     root["uses"]["grunk"] = "0.2.16";
-    root["uses"]["pluginA"] = "0.1.1";
     
     ([&](auto const& node){
         parse_feature(node, root, visited);
     }(args), ...);
+
+    // write loaded plugins
+    auto const& registry = get_plugin_registry();
+    for(auto const& [name, entry] : registry.plugins()){
+        root["uses"][name] = entry.plugin->version();
+    }
 
     return root;
 }
