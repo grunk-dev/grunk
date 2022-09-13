@@ -36,17 +36,17 @@ using AlgorithmPtr = parametric::compute_node_ptr<Algorithm<F, Args...>>;
 namespace details {
 
     /**
-     * @brief evaluates to false if a type is not a Reflect::Function
+     * @brief evaluates to false if a type is not a Reflect::DynamicFunction
      * 
      * @tparam typename the type to be checked.
      */
     template<typename> constexpr bool is_dynamic_function_v = false;
 
     /**
-     * @brief evaluates to true if a type is Reflect::Function
+     * @brief evaluates to true if a type is Reflect::DynamicFunction
      */
     template<>
-    constexpr bool is_dynamic_function_v<Reflect::Function> = true;
+    constexpr bool is_dynamic_function_v<Reflect::DynamicFunction> = true;
 }
 
 // forward declaration

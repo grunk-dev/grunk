@@ -41,8 +41,11 @@ namespace grunk {
  *
  * @ingroup plugin
  */
-template<typename T>
-const auto register_type = Reflect::Reflect<T>;
+ template <typename T>
+ decltype(auto) register_type(std::string const& name)
+ {
+    return Reflect::Reflect<T>(name);
+ }
 
 /**
  * @brief register_function is a function alias for Reflect::RegisterFunction<F> from
@@ -52,8 +55,11 @@ const auto register_type = Reflect::Reflect<T>;
  *
  * @ingroup plugin
  */
-template<typename F>
-const auto register_function = Reflect::RegisterFunction<F>;
+template <typename F>
+void register_function(F&& f, std::string const& name)
+{
+    return Reflect::RegisterFunction(std::forward<F>(f), name);
+}
 
 
 /**

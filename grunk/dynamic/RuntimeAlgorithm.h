@@ -38,7 +38,7 @@ namespace details {
  * @ingroup dynamic_advanced
  */
 template <>
-class Algorithm<Reflect::Function> : public parametric::ComputeNode
+class Algorithm<Reflect::DynamicFunction> : public parametric::ComputeNode
 {
 
     friend struct details::RuntimeAlgorithmFactory;
@@ -52,7 +52,7 @@ private:
      * @param fun A const pointer to a Reflect::Function
      * @param in The input RuntimeFeatures
      */
-    Algorithm(Reflect::Function const& fun, std::initializer_list<RuntimeFeature> const& in)
+    Algorithm(Reflect::DynamicFunction const& fun, std::initializer_list<RuntimeFeature> const& in)
      : function(fun)
      , inputs{in}
      , outputs(function.NumOutputs())
@@ -114,7 +114,7 @@ public:
     }
 
 private:
-    Reflect::Function const& function;
+    Reflect::DynamicFunction const& function;
     std::vector<RuntimeFeature> const inputs;
     std::vector<parametric::OutputParam<Reflect::DynamicObject>> mutable outputs;
 };
@@ -123,13 +123,13 @@ private:
  * @brief typedef for an Algorithm wrapping a RuntimeFunction
  * @ingroup dynamic_advanced
  */
-using RuntimeAlgorithm = Algorithm<Reflect::Function>;
+using RuntimeAlgorithm = Algorithm<Reflect::DynamicFunction>;
 
 /**
  * @brief A parametric::compute_node_ptr wrapping a RuntimeAlgorithm
  * @ingroup dynamic_advanced
  */
-using RuntimeAlgorithmPtr = AlgorithmPtr<Reflect::Function>;
+using RuntimeAlgorithmPtr = AlgorithmPtr<Reflect::DynamicFunction>;
 
 namespace details {
 
@@ -157,7 +157,7 @@ struct RuntimeAlgorithmFactory
      * @param args The input features
      * @return RuntimeAlgorithmPtr The returned compute_node_ptr wrapping a RuntimeAlgorithm
      */
-    static RuntimeAlgorithmPtr new_algorithm(Reflect::Function const& fun, std::initializer_list<Feature<Reflect::DynamicObject>> const& args)
+    static RuntimeAlgorithmPtr new_algorithm(Reflect::DynamicFunction const& fun, std::initializer_list<Feature<Reflect::DynamicObject>> const& args)
     {
         return RuntimeAlgorithmPtr(new RuntimeAlgorithm(fun, args));
     }
@@ -178,7 +178,7 @@ struct RuntimeAlgorithmFactory
  * @ingroup dynamic_advanced
  */
 template <typename... Args>
-RuntimeAlgorithmPtr eval(Reflect::Function const& fun, Feature<Args> const&... args)
+RuntimeAlgorithmPtr eval(Reflect::DynamicFunction const& fun, Feature<Args> const&... args)
 {
     return details::RuntimeAlgorithmFactory::new_algorithm(fun, {args...});
 }
@@ -196,7 +196,7 @@ RuntimeAlgorithmPtr eval(Reflect::Function const& fun, Feature<Args> const&... a
  * @return RuntimeAlgorithmPtr A special pointer type wrapping a RuntimeAlgorithm instance.
  * @ingroup dynamic_advanced
  */
-RuntimeAlgorithmPtr eval(Reflect::Function const& fun, std::initializer_list<Feature<Reflect::DynamicObject>> const& args)
+RuntimeAlgorithmPtr eval(Reflect::DynamicFunction const& fun, std::initializer_list<Feature<Reflect::DynamicObject>> const& args)
 {
     return details::RuntimeAlgorithmFactory::new_algorithm(fun, args);
 }
