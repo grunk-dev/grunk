@@ -11,7 +11,7 @@
 
 #include <parametric/core.hpp>
 
-#include <grunk/dynamic/RuntimeFunction.h>
+#include <reflect/Reflect.hpp>
 #include <type_traits>
 
 namespace grunk {
@@ -36,26 +36,24 @@ using AlgorithmPtr = parametric::compute_node_ptr<Algorithm<F, Args...>>;
 namespace details {
 
     /**
-     * @brief evaluates to false if a type is not RuntimeFunction
+     * @brief evaluates to false if a type is not a Reflect::Function
      * 
      * @tparam typename the type to be checked.
      */
-    template<typename> constexpr bool is_runtime_function_v = false;
+    template<typename> constexpr bool is_dynamic_function_v = false;
 
     /**
-     * @brief evaluates to true if a type is RuntimeFunction<F>
-     * 
-     * @tparam F The function wrapped by the RuntimeFunction
+     * @brief evaluates to true if a type is Reflect::Function
      */
-    template<typename F>
-    constexpr bool is_runtime_function_v<RuntimeFunction<F>> = true;
+    template<>
+    constexpr bool is_dynamic_function_v<Reflect::Function> = true;
 }
 
 // forward declaration
 template <typename F,
           typename = std::enable_if_t<
             !std::is_convertible_v<std::decay_t<F>, std::string>
-            && !details::is_runtime_function_v<std::decay_t<F>>
+            && !details::is_dynamic_function_v<std::decay_t<F>>
           >,
           typename... Args>
 AlgorithmPtr<F, Args...> eval(F const& fun, Feature<Args> const&... args);

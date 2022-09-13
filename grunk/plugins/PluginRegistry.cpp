@@ -82,7 +82,7 @@ PluginRegistry::~PluginRegistry()
 
     // Or: Figure out why plugins have to stay alive at all and check if this can 
     // be circumvented somehow.
-    get_function_registry().clear();
+    Reflect::GetFunctionRegistry().clear();
     Reflect::GetTypeRegistry().clear();
 }
 
