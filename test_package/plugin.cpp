@@ -19,6 +19,11 @@ public:
         return "MyPlugin";
     }
 
+    virtual std::string version() const override final
+    {
+        return "1.0.0";
+    }
+
     virtual void init() const override final 
     {
         // register types

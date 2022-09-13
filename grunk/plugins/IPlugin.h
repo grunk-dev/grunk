@@ -79,6 +79,13 @@ struct IPlugin
     virtual std::string name() const = 0;
 
     /**
+     * @brief This function must return the version of the 
+     * plugin in accordance to SemVer 2.0
+     * 
+     */
+     virtual std::string version() const = 0;
+
+    /**
      * @brief plugin authors should call register_type and register_function 
      * in the body of this function. It is called as soon as the plugin is
      * loaded.

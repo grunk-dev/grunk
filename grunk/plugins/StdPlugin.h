@@ -20,6 +20,8 @@ public:
 
     virtual std::string name() const override final;
 
+    virtual std::string version() const override final;
+
     virtual void init() const override final;
 
 };

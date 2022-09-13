@@ -3,9 +3,14 @@
 namespace grunk {
 
 std::string StdPlugin::name() const
-    {
-        return "Std";
-    }
+{
+    return "Std";
+}
+
+std::string StdPlugin::version() const 
+{
+    return "To.Do";
+}
 
 void StdPlugin::init() const
 {

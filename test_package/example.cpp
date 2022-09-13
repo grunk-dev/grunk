@@ -7,15 +7,17 @@
 int main(int argc, char* argv[]) {
 
     // Create engine and query info about loaded plugins
-    grunk::PluginRegistry plugins(argv[1]);
+    auto& plugins = grunk::get_plugin_registry();
+    plugins.prepend_path(argv[1]);
+    plugins.load_all();
 
     std::cout << "\n\nUnique plugins " << plugins.count() << ":\n";
     plugins.print_plugins();
     std::cout<<std::endl;
 
     // set two parameters
-    grunk::Feature l("MyDouble", 3.3);
-    grunk::Feature r("MyDouble", 2.2);
+    grunk::Feature l("l", "MyDouble", 3.3);
+    grunk::Feature r("r", "MyDouble", 2.2);
 
     std::cout << "l = " << l.value().get_as<double>("value") << ", "
               << "r = " << r.value().get_as<double>("value")
@@ -25,8 +27,8 @@ int main(int argc, char* argv[]) {
     std::cout << "a = l + r, " 
               << "b = a + r" << std::endl;
 
-    auto a = grunk::eval("add", l, r)->get();
-    auto b = grunk::eval("add", a, r)->get();
+    auto a = grunk::eval("a", "add", l, r)->get();
+    auto b = grunk::eval("b", "add", a, r)->get();
 
     // nothing should have happened yet
     std::cout << std::boolalpha << "a.is_valid() = " << a.is_valid() << std::endl;

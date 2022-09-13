@@ -6,39 +6,43 @@
 
 namespace grunk {
 
-PluginRegistry::PluginRegistry(const std::filesystem::path& plugins_dir)
-    : plugins_directory(plugins_dir)
+PluginRegistry::PluginRegistry()
 {
     // insert "standard library plugin"
     auto s = std::make_unique<StdPlugin>();
     s->init();
+}
 
-    // load all other plugins
-    load_all();
+void PluginRegistry::prepend_path(std::string const& dir)
+{
+    path.insert(path.begin(), dir);
 }
 
 void PluginRegistry::load_all() {
+
     namespace fs = std::filesystem;
 
     // Searching a folder for files with '.so' or '.dll' extension
-    fs::recursive_directory_iterator endit;
-    for (fs::recursive_directory_iterator it(plugins_directory); it != endit; ++it) {
+    for(auto const& plugins_directory : path) {
+        fs::recursive_directory_iterator endit;
+        for (fs::recursive_directory_iterator it(plugins_directory); it != endit; ++it) {
 
-        if (!fs::is_regular_file(*it)) {
-            continue;
-        }
-
-        auto ext = it->path().extension().string();
-        if ( ext == ".dll" || ext == ".so" )  {
-
-            boost::dll::fs::error_code error;
-            boost::dll::shared_library lib(it->path(), error);
-            if (error) {
+            if (!fs::is_regular_file(*it)) {
                 continue;
             }
 
-            if (lib.has("create_grunk_plugin")) {
-                insert_plugin(std::move(lib));
+            auto ext = it->path().extension().string();
+            if ( ext == ".dll" || ext == ".so" )  {
+
+                boost::dll::fs::error_code error;
+                boost::dll::shared_library lib(it->path(), error);
+                if (error) {
+                    continue;
+                }
+
+                if (lib.has("create_grunk_plugin")) {
+                    insert_plugin(std::move(lib));
+                }
             }
         }
     }
@@ -52,19 +56,24 @@ void PluginRegistry::insert_plugin(BOOST_RV_REF(boost::dll::shared_library) lib)
         lib,
         "create_grunk_plugin"
     );
-    std::unique_ptr<IPlugin> plugin = creator();
-    std::string name = plugin->name();
+
+    Entry e;
+    e.plugin = creator();
+    e.library = std::move(lib);
+
+    // insert the plugin
+    std::string name = e.plugin->name();
+    auto [it, inserted] = loaded_plugins.try_emplace(name, std::move(e));
 
     // register the plugin, if it hasn't been registered yet
-    if (auto it = loaded_plugins.find(name); it == loaded_plugins.end()) {
-        plugin->init();
-        loaded_plugins[name] = std::move(lib);
+    if (inserted) {
+        it->second.plugin->init();
     }
 }
 
 void PluginRegistry::print_plugins() const {
-    for (const auto& [name, plugin] : loaded_plugins) {
-            std::cout << '[' << name << "]\n";
+    for (const auto& [name, entry] : loaded_plugins) {
+            std::cout << name << ": " << entry.plugin->version() << "\n";
     }
 }
 
