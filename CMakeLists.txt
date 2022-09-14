@@ -1,5 +1,6 @@
 cmake_minimum_required(VERSION 3.13)
-project(grunk)
+
+project(grunk VERSION 0.1.0)
 
 set(CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake" ${CMAKE_MODULE_PATH})
 
@@ -51,7 +52,13 @@ target_link_libraries(grunk PUBLIC yaml-cpp::yaml-cpp
                                    ${CMAKE_DL_LIBS})
 target_include_directories(grunk PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>
   $<INSTALL_INTERFACE:include/grunk> 
+)
+
+configure_file(
+        ${CMAKE_CURRENT_SOURCE_DIR}/grunk/version.h.in 
+        ${CMAKE_CURRENT_BINARY_DIR}/grunk/version.h
 )
 
 include(GNUInstallDirs)
@@ -62,7 +69,7 @@ if (GRUNK_TESTS)
         add_subdirectory(tests)
 endif()
 
-# install binaries
+# install grunk
 install(TARGETS grunk
         RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
         LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
@@ -70,8 +77,8 @@ install(TARGETS grunk
 )
 
 # install headers
-install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/grunk
-        DESTINATION include/grunk
+install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/grunk ${CMAKE_CURRENT_BINARY_DIR}/grunk
+        DESTINATION include
         FILES_MATCHING
-        REGEX ".*\\.(h|hpp|hxx|inl)"
+        REGEX ".*\\.(h|hpp|hxx|inl)$"
 )

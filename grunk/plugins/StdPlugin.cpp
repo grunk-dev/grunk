@@ -1,4 +1,5 @@
-#include "StdPlugin.h"
+#include <grunk/plugins/StdPlugin.h>
+#include <grunk/version.h>
 
 namespace grunk {
 
@@ -9,7 +10,7 @@ std::string StdPlugin::name() const
 
 std::string StdPlugin::version() const 
 {
-    return "To.Do";
+    return grunk_VERSION;
 }
 
 void StdPlugin::init() const

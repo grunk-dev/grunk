@@ -2,6 +2,7 @@
 
 #include <grunk/core/Feature.h>
 #include <grunk/plugins/PluginRegistry.h>
+#include <grunk/version.h>
 
 #include <yaml-cpp/yaml.h>
 #include <initializer_list>
@@ -107,7 +108,7 @@ YAML::Node parse_feature_tree(Feature<Args> const&... args)
     Visited visited;
 
     //write grunk version
-    root["uses"]["grunk"] = "0.2.16";
+    root["uses"]["grunk"] = grunk_VERSION;
     
     ([&](auto const& node){
         parse_feature(node, root, visited);

@@ -1,0 +1,7 @@
+#pragma once
+
+// grunk version is set by CMake
+#define grunk_VERSION_MAJOR @grunk_VERSION_MAJOR@
+#define grunk_VERSION_MINOR @grunk_VERSION_MINOR@
+#define grunk_VERSION_PATCH @grunk_VERSION_PATCH@
+#define grunk_VERSION "@grunk_VERSION@"

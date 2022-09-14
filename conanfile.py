@@ -1,9 +1,18 @@
 from conans import ConanFile, CMake
+from conans.tools import load
+import re
 
+def get_version():
+    try:
+        content = load("CMakeLists.txt")
+        version = re.search("project\(grunk VERSION (.*)\)", content).group(1)
+        return version.strip()
+    except Exception as e:
+        return None
 
 class GrunkConan(ConanFile):
     name = "grunk"
-    version = "0.1"
+    version = get_version()
     license = "<Put the package license here>"
     author = "<Put your name here> <And your email here>"
     url = "<Package recipe repository url here, for issues about the package>"
