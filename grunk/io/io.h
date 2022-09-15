@@ -27,8 +27,14 @@ std::string serialize(std::string const& v) {
 
 template <>
 std::string serialize(Reflect::DynamicObject const& v)
-{
-    return Reflect::cast<std::string>(v.invoke("serialize")[0]);
+{ 
+    auto serialized = 
+        Reflect::cast<YAML::Node>(v.invoke("serialize")[0]);
+
+    YAML::Node out;
+    out["type"] = v.get_type_descriptor()->GetName();
+    out["value"] = serialized;
+    return YAML::Dump(out);
 }
 
 } // namespace parametric
@@ -125,8 +131,8 @@ YAML::Node parse_feature_tree(Feature<Args> const&... args)
 
 } //namespace details
 
-template <typename... Args>
-std::string serialize(Feature<Args> const&... args)
+template <typename ... Args>
+std::string to_string(Feature<Args> const&... args)
 {
     YAML::Emitter out;
     out << details::parse_feature_tree(args...);

@@ -1,5 +1,6 @@
 #include <grunk/plugins/StdPlugin.h>
 #include <grunk/version.h>
+#include <yaml-cpp/yaml.h>
 
 namespace grunk {
 
@@ -19,7 +20,12 @@ void StdPlugin::init() const
 
     register_type<int>("int");
     
-    register_type<double>("double");
+    register_type<double>("double")
+    .AddConstructor<double>()
+    .AddMemberFunction(
+        [](double const& v){ return YAML::Node(v); }, 
+        "serialize"
+    );
 
     register_type<std::string>("string");
     

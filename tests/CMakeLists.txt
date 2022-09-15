@@ -20,5 +20,8 @@ set(TESTSOURCES
   RuntimeFeature.cpp
 )
 
+add_library(SimplePlugin SHARED plugin_simple.cpp)
+target_link_libraries(SimplePlugin PRIVATE grunk)
+
 add_executable(runUnitTests ${TESTSOURCES})
 target_link_libraries(runUnitTests PRIVATE grunk gtest_main)

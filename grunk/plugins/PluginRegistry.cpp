@@ -49,6 +49,11 @@ void PluginRegistry::load_all() {
 
 }
 
+void PluginRegistry::unload_all()
+{
+    loaded_plugins.clear();
+}
+
 void PluginRegistry::insert_plugin(BOOST_RV_REF(boost::dll::shared_library) lib)
 {
     using PluginFactoryFunc = std::unique_ptr<IPlugin>();
