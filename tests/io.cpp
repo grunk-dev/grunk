@@ -63,7 +63,6 @@ TEST_F(IOTest, simple_plugin)
 }
 
 // To Do:
-//  - segfault in plugin registry dtor
 //  - test serialize overloads and specializations of basic types, algorithms
 //  - actually test something in basic and simple_plugin
 //  - test error message if overload or specialization is missing.
