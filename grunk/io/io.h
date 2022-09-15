@@ -7,6 +7,7 @@
 #include <yaml-cpp/yaml.h>
 #include <initializer_list>
 #include <stack>
+#include <fstream>
 
 namespace parametric {
 
@@ -22,7 +23,7 @@ std::string serialize(int const& v) {
 
 template <>
 std::string serialize(std::string const& v) {
-    return YAML::Node(v).as<std::string>();
+    return v;
 }
 
 template <>
@@ -137,6 +138,13 @@ std::string to_string(Feature<Args> const&... args)
     YAML::Emitter out;
     out << details::parse_feature_tree(args...);
     return out.c_str();
+}
+
+template <typename... Args>
+void write(std::string const& filename, Feature<Args> const&... args)
+{
+    std::ofstream fout(filename);
+    fout << to_string(args...);
 }
 
 } //namespace grunk
