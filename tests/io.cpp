@@ -85,9 +85,9 @@ TEST_F(IOTest, serialize_node)
     EXPECT_EQ(zn, "");
 }
 
-TEST_F(IOTest, parse_feature_tree_empty)
+TEST_F(IOTest, feature_tree_to_yaml_empty)
 {
-    auto x = details::parse_feature_tree();
+    auto x = details::feature_tree_to_yaml();
 
     // there should be just one node called "uses"
     EXPECT_EQ(x.size(), 1);
@@ -105,6 +105,50 @@ TEST_F(IOTest, parse_feature_tree_empty)
     EXPECT_EQ(uses["SimplePlugin"].as<std::string>(), "1.2.3");
 }
 
+/**
+ * @brief use this utility function to test serialization of a 
+ * tree with topology and node names
+ *
+ *  c = func(a,b); d=func(c,a)
+ *
+ * where the function name and type name of a and b may differ. 
+ * The nodes a and b must serialize to a double (could be e.g.
+ * double, or MyDouble from SimplePlugin)
+ * 
+ * @param node 
+ * @param function_name 
+ */
+void test_basic_tree(
+    YAML::Node const& node, 
+    std::string const& function_name, 
+    std::string const& type_name
+)
+{
+    EXPECT_EQ(node.size(), 3);
+    EXPECT_EQ(node["parameters"].size(), 2);
+    EXPECT_EQ(node["parameters"]["a"].size(), 2);
+    EXPECT_EQ(node["parameters"]["a"]["type"].as<std::string>(), type_name);
+    EXPECT_NEAR(node["parameters"]["a"]["value"].as<double>(), 0.2, 1e-6);
+    EXPECT_EQ(node["parameters"]["b"].size(), 2);
+    EXPECT_EQ(node["parameters"]["b"]["type"].as<std::string>(), type_name);
+    EXPECT_NEAR(node["parameters"]["b"]["value"].as<double>(), 0.1, 1e-6);
+    EXPECT_EQ(node["steps"].size(), 2);
+    EXPECT_EQ(node["steps"][0].size(), 3);
+    EXPECT_EQ(node["steps"][0]["function"].as<std::string>(), function_name);
+    EXPECT_EQ(node["steps"][0]["inputs"].size(), 2);
+    EXPECT_EQ(node["steps"][0]["inputs"][0].as<std::string>(), "a");
+    EXPECT_EQ(node["steps"][0]["inputs"][1].as<std::string>(), "b");
+    EXPECT_EQ(node["steps"][0]["outputs"].size(), 1);
+    EXPECT_EQ(node["steps"][0]["outputs"][0].as<std::string>(), "c");
+    EXPECT_EQ(node["steps"][1].size(), 3);
+    EXPECT_EQ(node["steps"][1]["function"].as<std::string>(), function_name);
+    EXPECT_EQ(node["steps"][1]["inputs"].size(), 2);
+    EXPECT_EQ(node["steps"][1]["inputs"][0].as<std::string>(), "c");
+    EXPECT_EQ(node["steps"][1]["inputs"][1].as<std::string>(), "a");
+    EXPECT_EQ(node["steps"][1]["outputs"].size(), 1);
+    EXPECT_EQ(node["steps"][1]["outputs"][0].as<std::string>(), "d");
+}
+
 TEST_F(IOTest, basic)
 {
     auto a = Feature("a", "double", 0.2);
@@ -112,30 +156,8 @@ TEST_F(IOTest, basic)
     auto c = eval("c", "plus", a, b)->get();
     auto d = eval("d", "plus", c, a)->get();
 
-    auto y = details::parse_feature_tree(d);
-    EXPECT_EQ(y.size(), 3);
-    EXPECT_EQ(y["parameters"].size(), 2);
-    EXPECT_EQ(y["parameters"]["a"].size(), 2);
-    EXPECT_EQ(y["parameters"]["a"]["type"].as<std::string>(), "double");
-    EXPECT_NEAR(y["parameters"]["a"]["value"].as<double>(), 0.2, 1e-6);
-    EXPECT_EQ(y["parameters"]["b"].size(), 2);
-    EXPECT_EQ(y["parameters"]["b"]["type"].as<std::string>(), "double");
-    EXPECT_NEAR(y["parameters"]["b"]["value"].as<double>(), 0.1, 1e-6);
-    EXPECT_EQ(y["steps"].size(), 2);
-    EXPECT_EQ(y["steps"][0].size(), 3);
-    EXPECT_EQ(y["steps"][0]["function"].as<std::string>(), "plus");
-    EXPECT_EQ(y["steps"][0]["inputs"].size(), 2);
-    EXPECT_EQ(y["steps"][0]["inputs"][0].as<std::string>(), "a");
-    EXPECT_EQ(y["steps"][0]["inputs"][1].as<std::string>(), "b");
-    EXPECT_EQ(y["steps"][0]["outputs"].size(), 1);
-    EXPECT_EQ(y["steps"][0]["outputs"][0].as<std::string>(), "c");
-    EXPECT_EQ(y["steps"][1].size(), 3);
-    EXPECT_EQ(y["steps"][1]["function"].as<std::string>(), "plus");
-    EXPECT_EQ(y["steps"][1]["inputs"].size(), 2);
-    EXPECT_EQ(y["steps"][1]["inputs"][0].as<std::string>(), "c");
-    EXPECT_EQ(y["steps"][1]["inputs"][1].as<std::string>(), "a");
-    EXPECT_EQ(y["steps"][1]["outputs"].size(), 1);
-    EXPECT_EQ(y["steps"][1]["outputs"][0].as<std::string>(), "d");
+    auto y = details::feature_tree_to_yaml(d);
+    test_basic_tree(y, "plus", "double");
 
     // adding nodes that d depends on shouldn't 
     // alter the output
@@ -154,30 +176,8 @@ TEST_F(IOTest, simple_plugin)
     auto c = eval("c", "add", a, b)->get();
     auto d = eval("d", "add", c, a)->get();
 
-    auto y = details::parse_feature_tree(d);
-    EXPECT_EQ(y.size(), 3);
-    EXPECT_EQ(y["parameters"].size(), 2);
-    EXPECT_EQ(y["parameters"]["a"].size(), 2);
-    EXPECT_EQ(y["parameters"]["a"]["type"].as<std::string>(), "MyDouble");
-    EXPECT_NEAR(y["parameters"]["a"]["value"].as<double>(), 0.2, 1e-6);
-    EXPECT_EQ(y["parameters"]["b"].size(), 2);
-    EXPECT_EQ(y["parameters"]["b"]["type"].as<std::string>(), "MyDouble");
-    EXPECT_NEAR(y["parameters"]["b"]["value"].as<double>(), 0.1, 1e-6);
-    EXPECT_EQ(y["steps"].size(), 2);
-    EXPECT_EQ(y["steps"][0].size(), 3);
-    EXPECT_EQ(y["steps"][0]["function"].as<std::string>(), "add");
-    EXPECT_EQ(y["steps"][0]["inputs"].size(), 2);
-    EXPECT_EQ(y["steps"][0]["inputs"][0].as<std::string>(), "a");
-    EXPECT_EQ(y["steps"][0]["inputs"][1].as<std::string>(), "b");
-    EXPECT_EQ(y["steps"][0]["outputs"].size(), 1);
-    EXPECT_EQ(y["steps"][0]["outputs"][0].as<std::string>(), "c");
-    EXPECT_EQ(y["steps"][1].size(), 3);
-    EXPECT_EQ(y["steps"][1]["function"].as<std::string>(), "add");
-    EXPECT_EQ(y["steps"][1]["inputs"].size(), 2);
-    EXPECT_EQ(y["steps"][1]["inputs"][0].as<std::string>(), "c");
-    EXPECT_EQ(y["steps"][1]["inputs"][1].as<std::string>(), "a");
-    EXPECT_EQ(y["steps"][1]["outputs"].size(), 1);
-    EXPECT_EQ(y["steps"][1]["outputs"][0].as<std::string>(), "d");
+    auto y = details::feature_tree_to_yaml(d);
+    test_basic_tree(y, "add", "MyDouble");
 }
 
 TEST_F(IOTest, write)
@@ -190,13 +190,37 @@ TEST_F(IOTest, write)
         write("test.gk", d);
     }
 
-    YAML::LoadFile("test.gk");
+    auto y = YAML::LoadFile("test.gk");
+    test_basic_tree(y, "plus", "double");
+}
+
+TEST_F(IOTest, write_const_iterable_container)
+{
+    {
+        auto a = Feature("a", "double", 0.2);
+        auto b = Feature("b", "double", 0.1);
+        auto c = eval("c", "plus", a, b)->get();
+        auto d = eval("d", "plus", c, a)->get();
+
+        std::vector<RuntimeFeature> v{a,b,c,d};
+        write("test_vector.gk", v);
+
+        std::unordered_map<std::string, RuntimeFeature> m;
+        m.insert({"a", a});
+        m.insert({"b", b});
+        m.insert({"c", c});
+        m.insert({"d", d});
+        write("test_unordered_map.gk", m);
+    }
+
+    auto yv = YAML::LoadFile("test_vector.gk");
+    test_basic_tree(yv, "plus", "double");
+
+    auto ym = YAML::LoadFile("test_unordered_map.gk");
+    test_basic_tree(ym, "plus", "double");
 }
 
 // To Do:
-//  - test writing to file: results by making a reusable functions from the test before
-//  - test writing given any const iterable constainer of RuntimeFeatures
-//  - test reading from file 
 //  - test deserializing a type
 //  - test deserialize error on nonexistent function
 //  - test deserialize error on nonexistent type
