@@ -49,12 +49,12 @@ private:
 
     /**
      * @brief Construct a new RuntimeAlgorithm given a RuntimeFunction<F> and 
-     * an std::initializer_list of RuntimeFeatures.
+     * an std::vector of RuntimeFeatures.
      * 
      * @param fun A const pointer to a Reflect::Function
      * @param in The input RuntimeFeatures
      */
-    Algorithm(std::string const& id, Reflect::DynamicFunction const& fun, std::initializer_list<RuntimeFeature> const& in)
+    Algorithm(std::string const& id, Reflect::DynamicFunction const& fun, std::vector<RuntimeFeature> const& in)
      : function(fun)
      , inputs{in}
      , outputs(function.NumOutputs())
@@ -104,6 +104,15 @@ public:
     }
 
     /**
+     * @brief returns the number of outputs
+     * 
+     * @return size_t the number of outputs
+     */
+    size_t number_of_outputs() const {
+        return outputs.size();
+    }
+
+    /**
      * @brief returns the output(s) of the function wrapped in RuntimeFeature instances.
      *
      * If the wrapped function returns an std::tuple, each element in this 
@@ -113,13 +122,19 @@ public:
      * If the wrapped function returns something other than an std::tuple, 
      * there will be just one output.
      * 
-     * @tparam Idx The index of the output. Defaults to zero.
+     * @param Iix The index of the output. Defaults to zero.
      * @return decltype(auto) a Feature wrapping the output of index Idx
      */
-    template <size_t Idx = 0>
-    Feature<Reflect::DynamicObject> get() const
+    RuntimeFeature get(size_t idx = 0) const
     {
-        return Feature<Reflect::DynamicObject>(outputs[Idx]);
+        return RuntimeFeature(outputs[idx]);
+    }
+
+    // for consistency with static get
+    template <size_t Idx = 0>
+    RuntimeFeature get() const
+    {
+        return get(Idx);
     }
 
     std::string serialize() const override final
@@ -181,7 +196,7 @@ struct RuntimeAlgorithmFactory
 {
     /**
      * @brief Returns a new RuntimeAlgorithmPtr given a RuntimeFunction and an
-     * initializer list of RuntimeFeatures
+     * vector of RuntimeFeatures
      * 
      * @param fun The Reflect::function to be wrapped
      * @param args The input features
@@ -190,10 +205,10 @@ struct RuntimeAlgorithmFactory
     static RuntimeAlgorithmPtr new_algorithm(
         std::string const& id, 
         Reflect::DynamicFunction const& fun, 
-        std::initializer_list<Feature<Reflect::DynamicObject>> const& args
+        std::vector<RuntimeFeature> const& args
     )
     {
-        return RuntimeAlgorithmPtr(new RuntimeAlgorithm(id, fun, args));;
+        return RuntimeAlgorithmPtr(new RuntimeAlgorithm(id, fun, args));
     }
 
 };
@@ -218,7 +233,7 @@ RuntimeAlgorithmPtr eval(std::string const& id, Reflect::DynamicFunction const& 
 }
 
 /**
- * @brief Given a function and an initializer list of features in the feature 
+ * @brief Given a function and a vector of features in the feature 
  * tree, this function creates a RuntimeAlgoritm instance representing the 
  * evaluation of the input function for the input features.
  * 
@@ -230,7 +245,7 @@ RuntimeAlgorithmPtr eval(std::string const& id, Reflect::DynamicFunction const& 
  * @return RuntimeAlgorithmPtr A special pointer type wrapping a RuntimeAlgorithm instance.
  * @ingroup dynamic_advanced
  */
-RuntimeAlgorithmPtr eval(std::string const& id, Reflect::DynamicFunction const& fun, std::initializer_list<Feature<Reflect::DynamicObject>> const& args);
+RuntimeAlgorithmPtr eval(std::string const& id, Reflect::DynamicFunction const& fun, std::vector<RuntimeFeature> const& args);
 
 /**
  * @brief Given a string identifier of a function, that has previously been registered
@@ -251,5 +266,7 @@ RuntimeAlgorithmPtr eval(std::string const& id, std::string const& name, Feature
     auto const& f = Reflect::GetFunctionRegistry().Resolve(name);
     return eval(id, f, args...);
 }
+
+RuntimeAlgorithmPtr eval(std::string const& id, std::string const& name, std::vector<RuntimeFeature> const& args);
 
 } // namespace grunk

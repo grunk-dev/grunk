@@ -4,6 +4,7 @@
 #include <grunk/plugins/PluginRegistry.h>
 #include <grunk/version.h>
 
+#include <stdexcept>
 #include <utility>
 #include <yaml-cpp/yaml.h>
 #include <initializer_list>
@@ -42,6 +43,19 @@ std::string serialize(Reflect::DynamicObject const& v)
 } // namespace parametric
 
 namespace grunk {
+
+using namespace std::string_literals;
+
+class io_error : public std::exception
+{
+public:
+    io_error(std::string const& msg);
+    const char *what() const noexcept override;
+
+    std::string get_message() const;
+private:
+    std::string mMessage;
+};
 
 namespace details {
 
@@ -200,21 +214,19 @@ void write(std::string const& filename, Args const&... args)
     fout << to_string(args...);
 }
 
+using FeatureContainer = std::unordered_map<std::string, RuntimeFeature>;
+
+namespace details {
 
 Reflect::DynamicObject deserialize(
     std::string const& type_name,
     YAML::Node const & yaml_node
-)
-{
-    Reflect::TypeDescriptor const* descr = Reflect::Resolve(type_name);
-    if (!descr){
-        // throw an error
-    }
-    auto const* deserialize = descr->GetMemberFunction("deserialize");
-    if (!deserialize) {
-        // throw an error
-    }
-    return (*deserialize)(yaml_node)[0];
-}
+);
+
+FeatureContainer yaml_to_feature_tree(YAML::Node const& root);
+
+} // namespace details
+
+FeatureContainer read(std::string filename);
 
 } //namespace grunk

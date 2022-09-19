@@ -4,6 +4,18 @@
 
 using namespace grunk;
 
+namespace {
+
+struct NonSerializable
+{
+    // needs non-default ctor (for now, until 
+    // https://gitlab.dlr.de/paradigms/grunk/-/issues/39 gets fixed)
+    NonSerializable(int v) : value(v) {}
+    int value;
+};
+
+}
+
 class IOTest : public ::testing::Test 
 {
 public:
@@ -14,6 +26,9 @@ public:
         plugins.prepend_path(".");
         plugins.load_all();
 
+        register_type<NonSerializable>("NonSerializable")
+        .AddConstructor<int>();
+
         register_function(
             [](double const& l, double const& r){ return l+r;}, 
             "plus"
@@ -21,6 +36,12 @@ public:
     } 
 
 };
+
+TEST_F(IOTest, no_serialize_method)
+{
+    auto x = Feature("x", "NonSerializable", 42);
+    EXPECT_THROW(x.param().node_pointer()->serialize(), std::invalid_argument);
+}
 
 TEST_F(IOTest, serialize_type)
 {
@@ -205,7 +226,7 @@ TEST_F(IOTest, write_const_iterable_container)
         std::vector<RuntimeFeature> v{a,b,c,d};
         write("test_vector.gk", v);
 
-        std::unordered_map<std::string, RuntimeFeature> m;
+        FeatureContainer m;
         m.insert({"a", a});
         m.insert({"b", b});
         m.insert({"c", c});
@@ -226,7 +247,7 @@ TEST_F(IOTest, deserialize_double)
     y["type"] = "double";
     y["value"] = 0.9876;
 
-    auto d = deserialize(
+    auto d = details::deserialize(
         y["type"].as<std::string>(),
         y["value"]
     );
@@ -239,7 +260,7 @@ TEST_F(IOTest, deserialize_simple_plugin_MyDouble)
     y["type"] = "MyDouble";
     y["value"] = 0.55557;
 
-    auto md = deserialize(
+    auto md = details::deserialize(
         y["type"].as<std::string>(),
         y["value"]
     );
@@ -247,9 +268,73 @@ TEST_F(IOTest, deserialize_simple_plugin_MyDouble)
     EXPECT_NEAR(Reflect::cast<double>(d), 0.55557, 1e-7);
 }
 
+TEST_F(IOTest, no_deserialize_method)
+{
+    YAML::Node y;
+    y["type"] = "NonSerializable";
+    y["value"] = "doesnt matter what I write here";
+
+    EXPECT_THROW(
+        details::deserialize(
+            y["type"].as<std::string>(),
+            y["value"]
+        ),
+        grunk::io_error
+    );
+}
+
+TEST_F(IOTest, deserialize_non_existing_type)
+{
+    YAML::Node y;
+    y["type"] = "NonExistentType";
+    y["value"] = 0.33;
+
+    EXPECT_THROW(
+        details::deserialize(
+            y["type"].as<std::string>(),
+            y["value"]
+        ),
+        grunk::io_error
+    );
+}
+
+TEST_F(IOTest, roundtrip_write_read)
+{
+    {
+        auto a = Feature("a", "double", 0.2);
+        auto b = Feature("b", "double", 0.1);
+        auto c = eval("c", "plus", a, b)->get();
+        auto d = eval("d", "plus", c, a)->get();
+        write("test.gk", d);
+    }
+
+    {
+        auto features = read("test.gk");
+        EXPECT_EQ(features.size(), 4);
+        EXPECT_NEAR(Reflect::cast<double>(features.at("d").value()), 0.5, 1e-7);
+        EXPECT_NEAR(Reflect::cast<double>(features.at("c").value()), 0.3, 1e-7);
+        EXPECT_NEAR(Reflect::cast<double>(features.at("b").value()), 0.1, 1e-7);
+        EXPECT_NEAR(Reflect::cast<double>(features.at("a").value()), 0.2, 1e-7);
+    }
+}
+
+TEST_F(IOTest, roundtrip_read_write)
+{
+    auto features = read("test_data/simple_test.gk");
+
+    EXPECT_EQ(features.size(), 4);
+    EXPECT_NEAR(Reflect::cast<double>(features.at("d").value().get("value")), 0.5, 1e-7);
+    EXPECT_NEAR(Reflect::cast<double>(features.at("c").value().get("value")), 0.3, 1e-7);
+    EXPECT_NEAR(Reflect::cast<double>(features.at("b").value().get("value")), 0.1, 1e-7);
+    EXPECT_NEAR(Reflect::cast<double>(features.at("a").value().get("value")), 0.2, 1e-7);
+
+    auto y = details::feature_tree_to_yaml(features.at("d"));
+    test_basic_tree(y, "add", "MyDouble");
+}
+
 // To Do:
-//  - test serialize error on nonexistent serialize method
-//  - test deserialize error on nonexistent function
-//  - test deserialize error on nonexistent type
-//  - test roundtrip starting from tree
-//  - test roundtrip starting from file
+// - test grunk::read errors for:
+//   - non existent function
+//   - nonexistent type
+//   - no topological order
+//   - simple stuff like no uses field etc.
