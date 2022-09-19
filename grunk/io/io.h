@@ -10,8 +10,6 @@
 #include <stack>
 #include <fstream>
 
-#include <iostream>
-
 namespace parametric {
 
 template <>
@@ -200,6 +198,23 @@ void write(std::string const& filename, Args const&... args)
 {
     std::ofstream fout(filename);
     fout << to_string(args...);
+}
+
+
+Reflect::DynamicObject deserialize(
+    std::string const& type_name,
+    YAML::Node const & yaml_node
+)
+{
+    Reflect::TypeDescriptor const* descr = Reflect::Resolve(type_name);
+    if (!descr){
+        // throw an error
+    }
+    auto const* deserialize = descr->GetMemberFunction("deserialize");
+    if (!deserialize) {
+        // throw an error
+    }
+    return (*deserialize)(yaml_node)[0];
 }
 
 } //namespace grunk

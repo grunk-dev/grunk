@@ -220,8 +220,35 @@ TEST_F(IOTest, write_const_iterable_container)
     test_basic_tree(ym, "plus", "double");
 }
 
+TEST_F(IOTest, deserialize_double)
+{
+    YAML::Node y;
+    y["type"] = "double";
+    y["value"] = 0.9876;
+
+    auto d = deserialize(
+        y["type"].as<std::string>(),
+        y["value"]
+    );
+    EXPECT_NEAR(Reflect::cast<double>(d), 0.9876, 1e-7);
+}
+
+TEST_F(IOTest, deserialize_simple_plugin_MyDouble)
+{
+    YAML::Node y;
+    y["type"] = "MyDouble";
+    y["value"] = 0.55557;
+
+    auto md = deserialize(
+        y["type"].as<std::string>(),
+        y["value"]
+    );
+    auto d = md.get("value");
+    EXPECT_NEAR(Reflect::cast<double>(d), 0.55557, 1e-7);
+}
+
 // To Do:
-//  - test deserializing a type
+//  - test serialize error on nonexistent serialize method
 //  - test deserialize error on nonexistent function
 //  - test deserialize error on nonexistent type
 //  - test roundtrip starting from tree

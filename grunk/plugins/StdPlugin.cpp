@@ -25,6 +25,10 @@ void StdPlugin::init() const
     .AddMemberFunction(
         [](double const& v){ return YAML::Node(v); }, 
         "serialize"
+    )
+    .AddMemberFunction(
+        [](YAML::Node const& y){ return y.as<double>(); },
+        "deserialize"
     );
 
     register_type<std::string>("string");

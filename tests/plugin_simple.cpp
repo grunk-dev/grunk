@@ -37,6 +37,12 @@ public:
                 return out;
             },
             "serialize"
+        )
+        .AddMemberFunction(
+            [](YAML::Node const& y){
+                return MyDouble(y.as<double>());
+            },
+            "deserialize"
         );
 
         // register functions
