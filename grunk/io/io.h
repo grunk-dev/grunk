@@ -337,9 +337,8 @@ YAML::Node feature_tree_to_yaml(Feature<Args> const&... args)
 
 /**
  * @brief given a list of ``Feature``s, this function serializes
- * these features together with all their ancestors to string, whic 
- * is interpretable by a yaml interpreter. This representation makes
- * the re-generation of the input features reconstructable.
+ * these features together with all their ancestors to string, which 
+ * is interpretable by a yaml interpreter.
  * 
  * @tparam Args the types stored in the input ``Feature``s
  * @param args The input ``Feature``s
@@ -357,18 +356,15 @@ std::string to_string(Feature<Args> const&... args)
 
 /**
  * @brief given a container of ``Feature``s, this function serializes
- * these features together with all their ancestors to string, whic 
- * is interpretable by a yaml interpreter. This representation makes
- * the re-generation of the input features reconstructable.
+ * these features together with all their ancestors to string, which 
+ * is interpretable by a yaml interpreter.
  * 
  * @tparam Container the type of the container. The container type
  *                   must be iterable. Both list-like containers and
  *                   map-like containers are supported. For the latter, 
  *                   the keys are ignored.
- * @tparam Container,
- * typename 
- * @param features 
- * @return std::string 
+ * @param features The input ``Feature``s
+ * @return std::string he output string, interpretable as yaml
  *
  * @ingroup fileio
  */
@@ -409,6 +405,7 @@ void write(std::string const& filename, Args const&... args)
  * It is a typedef for an unordered_map, where the keys are the ids
  * of the features.
  * 
+ * @ingroup fileio
  */
 using FeatureContainer = std::unordered_map<std::string, RuntimeFeature>;
 
@@ -434,8 +431,6 @@ Reflect::DynamicObject deserialize(
  * 
  * @param root The YAML::Node
  * @return FeatureContainer The resulting feature tree.
- *
- * @ingroup fileio
  */
 FeatureContainer yaml_to_feature_tree(YAML::Node const& root);
 

@@ -18,11 +18,12 @@ that adds two ``double``\s and is a bit talkative about it.
        return l + r;
    };
 
-Instead of directly evaluating this function grunk let's you 
-delay the evaluation of the function until the result is queried.
+grunk let's you delay the evaluation of the function until the result is queried.
 
 .. code-block:: cpp
-   
+
+   #include <grunk/grunk.h>
+
    auto o = grunk::eval("o", &add, 1.2, 40.8)->get();
    
    std::cout << "Until here, nothing has happened" << std::endl;
@@ -37,29 +38,22 @@ delay the evaluation of the function until the result is queried.
    42
    42
 
-In the first line no computation takes place, ``add`` is not called. Instead, 
-a new ``Algorithm`` is created using ``grunk::eval``.
-This algorithm get's the label "o", a function (pointer) and two arguments
-that shall be passed into the function. With `->get()` we retrieve a handle
-to the first (and in this case only) output of the function call, which is of
+In the first line no computation takes place, the function ``add`` is not evaluated.
+Instead, 
+a new ``Algorithm`` instance ``o`` is created using ``grunk::eval``.
+The arguments are the label ``"o"``, a function pointer ``&add`` and two arguments
+that shall be passed into the function. With ``->get()`` we retrieve a handle
+to the first (and in this case only) output of the algorithm, which is of
 type ``Feature<double>``. 
 
-Internally, `o` depends on the compute node created
+Internally, ``o`` depends on the algorithm created
 by ``grunk::eval``, which in turn depends on two ``Feature<double>`` instances, 
-one holding the value `1.2` and the other the value `40.8`. With this dependency 
-information, grunk can delay the compuation to the point when ``o.value()`` 
-is called. At this time, the function must be evaluated and the result, `42` is 
-stored in `o`. The next time the value is queried, the compuation is not repeated,
+one holding the value ``1.2`` and the other the value ``40.8``. With this dependency 
+information, grunk can delay the computation to the point when ``o.value()`` 
+is called. At this time, the function must be evaluated and the result, ``42``, is 
+stored in ``o``. The next time the value is queried, the compuation is not repeated,
 the cached result is returned. This is called **lazy evaluation**, because computations 
 are delayed until the last point possible and only necessary calculations are performed.
-
-This comes with the trade-off of having to store dependency information, but it pays of
-for functions that are computationally more expensive than the ``add`` function from 
-this example.
-
-Conceptually, the ``Feature<double>`` correspond to a node in a *directed acyclic graph* 
-(DAG). This graph is often called a **feature tree**. grunk retaints these feature trees 
-by retaining parent-child relations in the ``Feature<T>`` instances.
 
 Let's modify the above code example a bit. 
 
@@ -72,15 +66,13 @@ Let's modify the above code example a bit.
    auto a = grunk::eval("a", &add, x, y)->get();
    auto b = grunk::eval("b", &add, a, z)->get();
 
-We have created three independent features `x,y,z`. The feature
-`a` is the result of adding `x` and `y` and the feature `b` is the 
-result of adding `a` and `z`. Instead of storing the ``Algorithm`` instances
-in variables, we retrieve the output features directly. Also, we explicitly 
-name all features with strings passed as the first argument.
+We have created three independent features ``x,y,z``. The feature
+``a`` is the result of adding ``x`` and ``y`` and the feature ``b`` is the 
+result of adding ``a`` and ``z``.
 
-If we would now query the value of `a`, `b` would 
-not be computed, because `a` does not depend on `b`. If instead,
-we were to query the value of `b`, `a` would have to be computed first. 
+If we would now query the value of ``a``, ``b`` would 
+not be computed, because ``a`` does not depend on ``b``. If instead,
+we were to query the value of ``b``, ``a`` would have to be computed first. 
 Let's try this:
 
 .. code-block:: cpp
@@ -93,8 +85,8 @@ Let's try this:
    Adding 16.4 and 25.6
    42
 
-If I now were to change `z`, `b` would have to be recomputed the 
-next time its value is queried. `a` which does not depend on `z`
+If we now were to change ``z``, ``b`` would have to be recomputed the 
+next time its value is queried. ``a`` which does not depend on ``z``
 does not need to be recomputed.
 
 .. code-block:: cpp
@@ -110,7 +102,7 @@ does not need to be recomputed.
    Adding 16.4 and 24.2
    40.6
 
-If I were to change `x`, both `a` and `b` have to be re-computed and 
+If we were to change ``x``, both ``a`` and ``b`` have to be re-computed and 
 grunk knows this:
 
 .. code-block:: cpp 
@@ -129,6 +121,17 @@ grunk knows this:
 
 This functionality of only invalidating those features, that depend 
 on a changed feature is called **automatic invalidation**. 
+
+Lazy evaluation and automatic invalidation come with the trade-off of having to 
+store dependency information, but it pays of
+for big workflows with many computationally expensive functions. This becomes especially 
+apparent in explorative design or automated optimization workflows, where input parameters 
+can be expected to be altered frequently.
+
+Conceptually, the ``Feature<double>`` correspond to a node in a *directed acyclic graph* 
+(DAG). This graph is often called a **feature tree**. grunk retains these feature trees 
+by retaining parent-child relations in the ``Feature<T>`` instances.
+
 
 .. _using-plugins:
 
@@ -149,14 +152,14 @@ using our ``add`` function from above, we now want to build a feature tree with 
 ``SomePluginA::add`` and ``SomePluginB::multiply``, both taking instances of 
 ``SomePluginA::MyDouble`` as arguments. 
 
-Let's assume that we have both plugins `libSomePluginA.so` and `libSomePluginB.so` in the 
-directory `/home/jan/grun_plugins/` *(Note that on Windows the file extension would be .dll)*. 
-Then we can load the plugins using the ``PluginRegistry`` and use these functions. 
+Let's assume that we have both plugins ``libSomePluginA.so`` and ``libSomePluginB.so`` in the 
+directory ``/home/jan/grunk_plugins/`` *(Note that on Windows the file extension would be .dll)*. 
+We can load the plugins using the ``PluginRegistry``. 
 
 .. code-block:: cpp
    
    auto& plugins = grunk::get_plugin_registry();
-   plugins.prepend_path("/home/jan/grun_plugins/");
+   plugins.prepend_path("/home/jan/grunk_plugins/");
    plugins.load_all();
 
    grunk::Feature x("x", "SomePluginA::MyDouble", 4.3);
@@ -168,7 +171,7 @@ Then we can load the plugins using the ``PluginRegistry`` and use these function
 
 When working with plugins, I 
 have to use grunk's :ref:`dynamic mode<dynamic-mode>`, while the :ref:`first example<getting-started>` used grunk's 
-:ref:`static mode<static-mode>`. All features of the above feature tree are now instances of ``Feature<Reflect::DynamicObject>``, 
+:ref:`static mode<static-mode>`. In essence, this means that all features of the above feature tree are now instances of ``Feature<Reflect::DynamicObject>``, 
 se also :ref:`design principles<design-dynamic-sublanguage>`. Because the plugins are loaded
 at runtime, the calling code does not know about the type ``SomePluginA::MyDouble`` and the 
 functions ``SomePluginA::add`` and ``SomePluginB::multiply`` directly. Instead, it relies on 
@@ -235,15 +238,15 @@ The file will then have the following contents:
 
 All information needed to reproduce the output of ``b`` gets written into the file in 
 yaml format. The steps are sorted in topological order, which means they can be performed
-from first two last step. The function ``grunk::write`` accepts any number of ``Feature`` 
+in the same order. The function ``grunk::write`` accepts any number of ``Feature`` 
 instances or an iterable collection of ``Feature`` instances. The following commands all 
-yield the same file:
+yield the same file *(except for the order of independent parameters)*:
 
 .. code-block:: cpp 
    
    grunk::write("/home/jan/my_grunk_files/simple.gk", b);
    grunk::write("/home/jan/my_grunk_files/simple.gk", b, a, x, y, z);
-   grunk::write("/home/jan/my_grunk_files/simple.gk", b, z);
+   grunk::write("/home/jan/my_grunk_files/simple.gk", z, b);
 
    std::vector<RuntimeFeature> vec{a,b,x};
    grunk::write("/home/jan/my_grunk_files/simple.gk", vec);
@@ -302,7 +305,7 @@ make available in our grunk interface.
 
 .. code-block:: cpp 
 
-   class SimplePlugin: public grunk::IPlugin
+   class SomePluginA: public grunk::IPlugin
    {
    public:
    
@@ -343,9 +346,9 @@ make available in our grunk interface.
        }
    
    };
-   GRUNK_REGISTER_PLUGIN(SimplePlugin)
+   GRUNK_REGISTER_PLUGIN(SomePluginA)
 
-After creating the derived class ``SimplePlugin``, we need to register the plugin using 
+After creating the derived class ``SomePluginA``, we need to register the plugin using 
 the C macro ``GRUNK_REGISTER_PLUGIN``. If the compilation unit containing this code 
 is compiled to a shared library, the plugin can be used in grunk.
 
@@ -353,8 +356,10 @@ Let us take a closer look at the body of the ``init`` function.
 
 First, the type 
 ``MyDouble`` is registered with the call to ``grunk::register_type``. It is given a 
-name to look up the type in grunk's type registry. Though this is not necessary 
-for grunk's plugin system, we are letting the type registy know about the 
+name to look up the type in grunk's type registry. 
+
+Though this is not necessary 
+for grunk's plugin system, we are letting the type registry know about the 
 constructor taking a ``double`` with ``AddConstructor``. This allows users of grunk to 
 create instances of ``MyDouble``, even if the plugin is loaded at runtime and the calling 
 program does not know about the existence of ``MyDouble`` at compile time. 
@@ -365,22 +370,31 @@ with the string identifier "value", and this was already used in the example
 
 If ``MyDouble`` had any public member functions, we could register them using 
 ``AddMemberFunction``. But ``AddMemberFunction`` is more powerful: We can use it to 
-add functions as member functions, even if they don't exist in the definition of the type. 
-If this function takes a reference to ``MyDouble`` as first argument, it behaves like a normal
+add free functions as methods, even if they don't exist in the definition of the type. 
+If this free function takes a reference to ``MyDouble`` as first argument, it behaves like a normal
 member function. If it does not, it behaves like a static member function. 
 
-In the above code block, we are adding the normal member function ``serialize`` that 
+In the above code block, we are adding the free function ``serialize`` as a method to 
+``MyDouble`` using ``AddMemberFunction``. The free function 
 creates a ``YAML::Node`` (see `yaml-cpp <https://github.com/jbeder/yaml-cpp>`_) from an 
-instance of this type. In this example, the ``YAML::Node`` is very simple. It only holds the 
-contained value as a ``double``. This information is enough to uniquely transorm an instance 
+instance of ``MyDouble``. In this example, the ``YAML::Node`` is very simple: It only holds the 
+``MyDouble::value`` as a ``double``. This information is enough to uniquely transform an instance 
 of ``MyDouble`` to yaml and back again.
 
-In addition, a static member function is added called ``deserialize``. This method takes 
-a ``YAML::Node`` and creates an instance of the type. 
+In addition, a "static" member function is added called ``deserialize``. This method takes 
+a ``YAML::Node`` and creates an instance of ``MyDouble``. 
 
-Adding these ``serialize`` and ``deserialize`` methods to a type is mandatory, if 
-* it should be possible to use this type as a root parameter of a grunk feature tree *and*
-* it should be possible to write and read this feature tree to/from a grunk file.
+Adding the functions
+
+.. code-block:: cpp
+   
+   YAML::Node serialize(Type const&);
+   Type deserialize(YAML::Node const&);
+
+as member functions to a type ``Type`` is mandatory, if 
+
+ * it should be possible to use ``Type`` instances as a root parameter of a grunk feature tree **and**
+ * it should be possible to write and read feature trees with ``Type`` instances as root parameters to/from a grunk file.
 
 Finally, in the last line of the ``init`` function, the function ``add`` is registered by a 
 call to ``register_function``. It is given a string identifier for lookup in grunk's function
