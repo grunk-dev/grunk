@@ -1,6 +1,5 @@
 #pragma once
 
-//TODO: Put this in CMAKE?
 #define BOOST_DLL_USE_STD_FS 1
 
 #include <boost/dll/shared_library.hpp>

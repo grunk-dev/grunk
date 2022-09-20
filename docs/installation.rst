@@ -153,7 +153,8 @@ Running the unit tests
 
     .. code-block:: console
 
-       ./tests/runUnitTests
+      cd tests
+       ./runUnitTests
 
 Building this documentation
 ===========================
