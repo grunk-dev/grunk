@@ -4,7 +4,7 @@
  * This file contains all routines needed for reading a feature tree
  * from a yaml file and writing a feature tree to a yaml file
  * 
- * @defgroup file_io
+ * @defgroup fileio
  * 
  */
 
@@ -336,16 +336,16 @@ YAML::Node feature_tree_to_yaml(Feature<Args> const&... args)
 } //namespace details
 
 /**
- * @brief given a list of ``Feature``\s, this function serializes
+ * @brief given a list of ``Feature``s, this function serializes
  * these features together with all their ancestors to string, whic 
  * is interpretable by a yaml interpreter. This representation makes
  * the re-generation of the input features reconstructable.
  * 
- * @tparam Args the types stored in the input ``Feature``\s
- * @param args The input ``Feature``\s
+ * @tparam Args the types stored in the input ``Feature``s
+ * @param args The input ``Feature``s
  * @return std::string the output string, interpretable as yaml
  *
- * @ingroup file_io
+ * @ingroup fileio
  */
 template <typename ... Args>
 std::string to_string(Feature<Args> const&... args)
@@ -356,7 +356,7 @@ std::string to_string(Feature<Args> const&... args)
 }
 
 /**
- * @brief given a container of ``Feature``\s, this function serializes
+ * @brief given a container of ``Feature``s, this function serializes
  * these features together with all their ancestors to string, whic 
  * is interpretable by a yaml interpreter. This representation makes
  * the re-generation of the input features reconstructable.
@@ -370,7 +370,7 @@ std::string to_string(Feature<Args> const&... args)
  * @param features 
  * @return std::string 
  *
- * @ingroup file_io
+ * @ingroup fileio
  */
 template <
     typename Container,
@@ -384,16 +384,16 @@ std::string to_string(Container const& features)
 }
 
 /**
- * @brief given a list of ``Feature``\s, this function serializes
+ * @brief given a list of ``Feature``s, this function serializes
  * these features together with all their ancestors to a yaml file.
  * 
- * @tparam Args Accepted are either ``Feature<T>``\s, or a container 
- *              storing ``Feature<T>``\s. In the latter case, 
+ * @tparam Args Accepted are either ``Feature<T>``s, or a container 
+ *              storing ``Feature<T>``s. In the latter case, 
  *              the container must be iterable.
  * @param filename the filename of the output file
  * @param args the features to be serialized to yaml.
  *
- * @ingroup file_io
+ * @ingroup fileio
  */
 template <typename... Args>
 void write(std::string const& filename, Args const&... args)
@@ -435,7 +435,7 @@ Reflect::DynamicObject deserialize(
  * @param root The YAML::Node
  * @return FeatureContainer The resulting feature tree.
  *
- * @ingroup file_io
+ * @ingroup fileio
  */
 FeatureContainer yaml_to_feature_tree(YAML::Node const& root);
 
@@ -447,7 +447,7 @@ FeatureContainer yaml_to_feature_tree(YAML::Node const& root);
  * @param filename The file to be parsed
  * @return FeatureContainer the resulting feature tree
  *
- * @ingroup file_io
+ * @ingroup fileio
  */
 FeatureContainer read(std::string filename);
 
