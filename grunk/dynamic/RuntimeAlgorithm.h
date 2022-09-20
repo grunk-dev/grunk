@@ -6,6 +6,7 @@
 
 #pragma once
 
+#include <stdexcept>
 #include <vector>
 #include <iterator>
 
@@ -263,8 +264,8 @@ RuntimeAlgorithmPtr eval(std::string const& id, Reflect::DynamicFunction const& 
 template <typename... Args>
 RuntimeAlgorithmPtr eval(std::string const& id, std::string const& name, Feature<Args> const&... args)
 {
-    auto const& f = Reflect::GetFunctionRegistry().Resolve(name);
-    return eval(id, f, args...);
+        auto const& f = Reflect::GetFunctionRegistry().Resolve(name);
+        return eval(id, f, args...);
 }
 
 RuntimeAlgorithmPtr eval(std::string const& id, std::string const& name, std::vector<RuntimeFeature> const& args);

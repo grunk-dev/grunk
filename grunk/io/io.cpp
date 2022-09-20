@@ -34,7 +34,17 @@ Reflect::DynamicObject deserialize(
     if (!deserialize) {
         throw io_error("type "s + type_name + " does not have a (static) \"deserialize\" method. Please refer to the grunk documentation");
     }
-    return (*deserialize)(yaml_node)[0];
+    try {
+        return (*deserialize)(yaml_node)[0];
+    }
+    catch (std::exception& e) {
+        throw io_error(
+            "Could not deserialize field \"value\"\n\n" + Dump(yaml_node)
+            + "\n\nto an instance of type \"" + type_name
+            + "\". Caught an exception with description: \""
+            + e.what() + "\" while trying."
+        );
+    }
 }
 
 FeatureContainer yaml_to_feature_tree(YAML::Node const& root)
@@ -102,7 +112,11 @@ FeatureContainer yaml_to_feature_tree(YAML::Node const& root)
                     auto input_name = (*inputs_it).as<std::string>();
                     auto feature_it = features.find(input_name);
                     if (feature_it == std::end(features)) {
-                        throw io_error("Error parsing input "s + input_name + " for function call to " + function_name);
+                        throw io_error(
+                            "Could not find input "s
+                             + input_name + " for function call to " + function_name
+                             + ". Are the steps in the correct topological order?"
+                        );
                     }
                     input_vec.push_back(feature_it->second);
                 }

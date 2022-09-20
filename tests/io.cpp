@@ -1,6 +1,7 @@
 #include <gtest/gtest.h>
 
 #include <grunk/grunk.h>
+#include <stdexcept>
 
 using namespace grunk;
 
@@ -298,6 +299,141 @@ TEST_F(IOTest, deserialize_non_existing_type)
     );
 }
 
+TEST_F(IOTest, deserialize_no_uses_block)
+{
+    YAML::Node root;
+    EXPECT_THROW(
+        details::yaml_to_feature_tree(root),
+        grunk::io_error
+    );
+}
+
+TEST_F(IOTest, deserialize_missing_field_type)
+{
+    YAML::Node root;
+
+
+    YAML::Node uses;
+    uses["grunk"] = grunk_VERSION;
+    root["uses"] = uses;
+
+    YAML::Node parameters;
+    YAML::Node a;
+    auto da = Reflect::DynamicObject(13.2);
+    a["value"] = Reflect::cast<YAML::Node>(da.invoke("serialize")[0]);
+    parameters["a"] = a;
+    root["parameters"] = parameters;
+
+    EXPECT_THROW(
+        details::yaml_to_feature_tree(root), 
+        grunk::io_error
+    );
+}
+
+TEST_F(IOTest, deserialize_missing_field_value)
+{
+    YAML::Node root;
+
+
+    YAML::Node uses;
+    uses["grunk"] = grunk_VERSION;
+    root["uses"] = uses;
+
+    YAML::Node parameters;
+    YAML::Node a;
+    auto da = Reflect::DynamicObject(13.2);
+    a["type"] = "double";
+    parameters["a"] = a;
+    root["parameters"] = parameters;
+
+    EXPECT_THROW(
+        details::yaml_to_feature_tree(root), 
+        grunk::io_error
+    );
+}
+
+TEST_F(IOTest, deserialize_wrong_field_value)
+{
+    YAML::Node root;
+
+
+    YAML::Node uses;
+    uses["grunk"] = grunk_VERSION;
+    root["uses"] = uses;
+
+    YAML::Node parameters;
+    YAML::Node a;
+    a["type"] = "double";
+    a["value"] = "Hello World";
+    parameters["a"] = a;
+    root["parameters"] = parameters;
+
+    EXPECT_THROW(
+        details::yaml_to_feature_tree(root), 
+        grunk::io_error
+    );
+}
+
+TEST_F(IOTest, deserialize_non_existing_function)
+{
+    YAML::Node root;
+    
+    YAML::Node uses;
+    uses["grunk"] = grunk_VERSION;
+    root["uses"] = uses;
+
+    YAML::Node parameters;
+    parameters["a"] = YAML::Load(parametric::serialize(Reflect::DynamicObject(13.2)));
+    parameters["b"] = YAML::Load(parametric::serialize(Reflect::DynamicObject(11.8)));
+    root["parameters"] = parameters;
+
+    YAML::Node steps;
+
+    YAML::Node step;
+    step["function"] = "spunck";
+    step["inputs"] = std::vector<std::string>{"a", "b"};
+    step["outputs"] = std::vector<std::string>{"c"};
+    steps.push_back(step);
+    root["steps"] = steps;
+
+    EXPECT_THROW(
+        details::yaml_to_feature_tree(root),
+        std::out_of_range
+    );
+}
+
+TEST_F(IOTest, deserialize_no_topo_order)
+{
+    YAML::Node root;
+    
+    YAML::Node uses;
+    uses["grunk"] = grunk_VERSION;
+    root["uses"] = uses;
+
+    YAML::Node parameters;
+    parameters["a"] = YAML::Load(parametric::serialize(Reflect::DynamicObject(13.2)));
+    parameters["b"] = YAML::Load(parametric::serialize(Reflect::DynamicObject(11.8)));
+    root["parameters"] = parameters;
+
+    YAML::Node steps;
+
+    YAML::Node step2;
+    step2["function"] = "add";
+    step2["inputs"] = std::vector<std::string>{"a", "c"};
+    step2["outputs"] = std::vector<std::string>{"d"};
+    steps.push_back(step2);
+
+    YAML::Node step1;
+    step1["function"] = "add";
+    step1["inputs"] = std::vector<std::string>{"a", "b"};
+    step1["outputs"] = std::vector<std::string>{"c"};
+    steps.push_back(step1);
+
+    root["steps"] = steps;
+
+    EXPECT_THROW(details::yaml_to_feature_tree(root), grunk::io_error);
+}
+
 TEST_F(IOTest, roundtrip_write_read)
 {
     {
@@ -331,10 +467,3 @@ TEST_F(IOTest, roundtrip_read_write)
     auto y = details::feature_tree_to_yaml(features.at("d"));
     test_basic_tree(y, "add", "MyDouble");
 }
-
-// To Do:
-// - test grunk::read errors for:
-//   - non existent function
-//   - nonexistent type
-//   - no topological order
-//   - simple stuff like no uses field etc.
