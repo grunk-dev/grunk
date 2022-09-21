@@ -261,7 +261,7 @@ reconstructed, as long as the two plugins have been loaded:
    plugins.load_all();
 
    auto features = grunk::read("/home/jan/my_grunk_files/simple.gk")
-   auto b = features["b"];
+   auto b = features.at("b");
    auto b_result = Reflect::cast<double>(b.value().get("value"));
    std::cout << b_result << std::endl;
 

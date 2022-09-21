@@ -3,60 +3,72 @@
 
 #include <grunk/grunk.h>
 
+double add(double const& l, double const& r) {
+    std::cout << "Adding " << l << " and " << r << std::endl;
+    return l + r;
+}
 
 int main(int argc, char* argv[]) {
 
-    // Create engine and query info about loaded plugins
+    {
+        grunk::Feature x("x", 1.2);
+        grunk::Feature y("y", 15.2);
+        grunk::Feature z("z", 25.6);
+
+        auto a = grunk::eval("a", &add, x, y)->get();
+        auto b = grunk::eval("b", &add, a, z)->get();
+
+        std::cout << "Until here, nothing has happened" << std::endl;
+
+        // calculations are performed when the output is queried
+        std::cout << b.value() << std::endl;
+
+        // when the output is queried again, the result is retrieved from cache
+        std::cout << b.value() << std::endl;
+
+        // changing z only requires the re-calculation of b, not of a
+        std::cout << "Changing z ...\n";
+        z.access_value() = 24.2;
+        std::cout  << b.value() << std::endl;
+
+        // changing x only requires the re-calculation of both a and b
+        std::cout << "Changing x ...\n";
+        x.access_value() = 2.6;
+        std::cout  << b.value() << std::endl;
+    }
+
+    // load plugins
     auto& plugins = grunk::get_plugin_registry();
     plugins.prepend_path(argv[1]);
     plugins.load_all();
 
-    std::cout << "\n\nUnique plugins " << plugins.count() << ":\n";
-    plugins.print_plugins();
-    std::cout<<std::endl;
+    {
+        std::cout << "\n\nUnique plugins " << plugins.count() << ":\n";
+        plugins.print_plugins();
+        std::cout<<std::endl;
 
-    // set two parameters
-    grunk::Feature l("l", "MyDouble", 3.3);
-    grunk::Feature r("r", "MyDouble", 2.2);
+        // use plugin types
+        grunk::Feature x("x", "MyDouble", 4.3);
+        grunk::Feature y("y", "MyDouble", 3.3);
+        grunk::Feature z("z", "MyDouble", 2.0);
 
-    std::cout << "l = " << l.value().get_as<double>("value") << ", "
-              << "r = " << r.value().get_as<double>("value")
-              << std::endl;
+        // use plugin functions
+        auto a = grunk::eval("a", "add", x, y)->get();
+        auto b = grunk::eval("b", "multiply", a, z)->get();
 
-    // evaluate some functions on the parameters
-    std::cout << "a = l + r, " 
-              << "b = a + r" << std::endl;
+        auto b_result = Reflect::cast<double>(b.value().get("value"));
+        std::cout << b_result << std::endl;
 
-    auto a = grunk::eval("a", "add", l, r)->get();
-    auto b = grunk::eval("b", "add", a, r)->get();
+        // write to grunk file
+        grunk::write("simple.gk", b);
+    }
 
-    // nothing should have happened yet
-    std::cout << std::boolalpha << "a.is_valid() = " << a.is_valid() << std::endl;
-    std::cout << std::boolalpha << "b.is_valid() = " << b.is_valid() << std::endl;
+    {
+        std::cout << "Reading from file ...\n";
+        auto features = grunk::read("simple.gk");
+        auto b = features.at("b");
+        auto b_result = Reflect::cast<double>(b.value().get("value"));
+        std::cout << b_result << std::endl;
+    }
 
-    // querying a should evaulate the first addition
-    std::cout << "a = " << a.value().get_as<double>("value") << std::endl;
-
-    // a is valid, b is invalid
-    std::cout << std::boolalpha << "a.is_valid() = " << a.is_valid() << std::endl;
-    std::cout << std::boolalpha << "b.is_valid() = " << b.is_valid() << std::endl;
-
-    // querying b should evaluate second addition
-    std::cout << "b = " << b.value().get_as<double>("value") << std::endl;
-
-    std::cout << std::boolalpha << "a.is_valid() = " << a.is_valid() << std::endl;
-    std::cout << std::boolalpha << "b.is_valid() = " << b.is_valid() << std::endl;
-
-    // reseting a root parameter invalidates feature tree
-    l.access_value().set("value", 0.5);
-    std::cout << "l = " << l.value().get_as<double>("value") << std::endl;
-
-    std::cout << std::boolalpha << "a.is_valid() = " << a.is_valid() << std::endl;
-    std::cout << std::boolalpha << "b.is_valid() = " << b.is_valid() << std::endl;
-
-    // querying b should evaluate both additions
-    std::cout << "b = " << b.value().get_as<double>("value") << std::endl;
-
-    std::cout << std::boolalpha << "a.is_valid() = " << a.is_valid() << std::endl;
-    std::cout << std::boolalpha << "b.is_valid() = " << b.is_valid() << std::endl;
 }

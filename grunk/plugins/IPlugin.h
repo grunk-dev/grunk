@@ -56,9 +56,9 @@ namespace grunk {
  * @ingroup plugin
  */
 template <typename F>
-void register_function(F&& f, std::string const& name)
+void register_function(F&& f, std::string const& name, std::string const& doc = "")
 {
-    return Reflect::RegisterFunction(std::forward<F>(f), name);
+    return Reflect::RegisterFunction(std::forward<F>(f), name, doc);
 }
 
 
