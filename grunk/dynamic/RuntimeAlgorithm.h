@@ -154,6 +154,8 @@ public:
         for (auto const& output : outputs){
             y["outputs"].push_back(output.param().id());
         }
+        y["inputs"].SetStyle(YAML::EmitterStyle::Flow);
+        y["outputs"].SetStyle(YAML::EmitterStyle::Flow);
         YAML::Emitter out;
         out << y;
         return out.c_str();
