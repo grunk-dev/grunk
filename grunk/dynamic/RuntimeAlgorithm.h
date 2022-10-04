@@ -140,11 +140,6 @@ public:
 
     std::string serialize() const override final
     {
-        //TODO: 
-        // - This function should call a private function that creates
-        //   an instance of json::value and convert it to string
-        // - This class should know about the registered name of the function
-        //   and throw an error, if the function is not registered
 
         YAML::Node y;
         y["function"] = function.GetName();
