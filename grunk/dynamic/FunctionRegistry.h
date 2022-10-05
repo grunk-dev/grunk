@@ -118,6 +118,10 @@ void register_function(F&& f,
  * in the static function registry as well as input features of the feature tree, 
  * this function represents the evaluation of the registered function when it gets 
  * passed the input features.
+ *
+ * This function accepts features as arguments for the functions, as well
+ * as instances that are not wrapped in features. Internally, the latter will
+ * be wrapped in an unnamed/anonymous feature
  * 
  * @tparam Args The types of the arguments expected by the registered function
  * @param name The string identifier of the registered function

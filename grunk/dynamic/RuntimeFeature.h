@@ -10,25 +10,6 @@
 
 namespace grunk {
 
-namespace details {
-
-/**
- * @brief is_feature_v returns false if the input type is not a Feature template realization
- * 
- * @tparam typename any ol' type
- */
-template<typename> constexpr bool is_feature_v = false;
-
-/**
- * @brief is_feature_v returns true, if the input template argument is a Feature template realization
- * 
- * @tparam T the element type of the Feature
- */
-template<typename T>
-constexpr bool is_feature_v<Feature<T>> = true;
-
-} // namespace details
-
 /**
  * @brief template specialization of Feature for Reflect::DynamicObjects
  *
@@ -125,6 +106,12 @@ public:
     /**
      * @brief Converting constructor from a Feature<T>, where T is not
      * a Reflect::DynamicObject
+     *
+     * <b>Caution:</b> The converted RuntimeFeature will hold a reference
+     * to the value held by the input Feature. This means that the input Feature
+     * must outlive the converted RuntimeFeature. If this is not the case, it is
+     * better to explicitly construct a new RuntimeFeature instead of using
+     * this converting constructor.
      * 
      * @tparam T The type wrapped by the incoming Feature<T>
      * @param f The input feature to be converted to a RuntimeFeature

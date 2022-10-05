@@ -44,7 +44,8 @@ class RuntimeAlgorithmTest : public ::testing::Test
 public:
 
     static void SetUpTestCase() {
-        Reflect::Reflect<double>("double");
+        Reflect::Reflect<double>("double")
+        .AddConstructor<double>();
 
         Reflect::Reflect<MyDouble>("MyDouble")
         .AddConstructor<double>()
@@ -144,4 +145,22 @@ TEST_F(RuntimeAlgorithmTest, MultiOutput)
     EXPECT_FALSE(y.is_valid());
 
     EXPECT_EQ(Reflect::cast<double>(y.value()), 0.7);
+}
+
+TEST_F(RuntimeAlgorithmTest, UnnamedFeature)
+{
+    auto f = RuntimeFunction(std::plus<double>());
+
+    auto x = Feature("double", 0.7); // x is a named feature
+    auto z = eval(f, x, 0.2)->get(); // 0.2 is an unnamed feature
+
+    EXPECT_FALSE(z.is_valid());
+    EXPECT_NEAR(Reflect::cast<double>(z.value()), 0.9, 1e-15);
+    EXPECT_TRUE(z.is_valid());
+
+    x.access_value() = 0.6;  // change named feature
+
+    EXPECT_FALSE(z.is_valid());
+    EXPECT_NEAR(Reflect::cast<double>(z.value()), 0.8, 1e-15);
+    EXPECT_TRUE(z.is_valid());
 }
