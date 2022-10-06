@@ -208,7 +208,7 @@ struct AlgorithmFactory
 template <typename F,
           typename = std::enable_if_t<
             !std::is_convertible_v<std::decay_t<F>, std::string>
-            && !details::is_runtime_function_v<std::decay_t<F>>
+            && !details::is_dynamic_function_v<std::decay_t<F>>
           >,
           typename... Args>
 AlgorithmPtr<F, Args...> eval(F const& fun, Feature<Args> const&... args)

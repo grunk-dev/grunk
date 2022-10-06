@@ -149,7 +149,7 @@ TEST_F(RuntimeAlgorithmTest, MultiOutput)
 
 TEST_F(RuntimeAlgorithmTest, UnnamedFeature)
 {
-    auto f = RuntimeFunction(std::plus<double>());
+    auto f = Reflect::Function(std::plus<double>(), "plus");
 
     auto x = Feature("double", 0.7); // x is a named feature
     auto z = eval(f, x, 0.2)->get(); // 0.2 is an unnamed feature
