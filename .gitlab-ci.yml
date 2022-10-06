@@ -17,7 +17,7 @@ build-debug:
   before_script:
     - *conan_setup  
     - sudo apt-get -qq update && sudo apt -qq -y install make git doxygen python3-pip
-    - pip3 install 'Sphinx>=2.4.0,<3.0.0' sphinx-rtd-theme 'breathe<4.15.0' m2r 'mistune==0.8.4' 'Jinja2<3.1'
+    - pip3 install 'Sphinx>=2.4.0,<3.0.0' sphinx-rtd-theme 'breathe<4.15.0' m2r 'mistune' 'Jinja2<3.1'
   script:
     - mkdir build && cd build
     - conan install .. -s build_type=Debug -b missing
@@ -50,7 +50,8 @@ test-debug:
     - conan install .. --generator=virtualrunenv -s build_type=Debug -b missing
     - chmod a+x activate_run.sh
     - ./activate_run.sh
-    - ./tests/runUnitTests
+    - cd tests
+    - ./runUnitTests
 
 create-package-debug:
   tags:
