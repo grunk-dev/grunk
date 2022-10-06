@@ -3,20 +3,20 @@ Design Principles
 =================
 
 grunk's core functionality is designed around two pairs of classes:
- * :ref:`DynamicObjects and RuntimeFunctions<design-dynamic-sublanguage>`
+ * :ref:`DynamicObjects and DynamicFunctions<design-dynamic-sublanguage>`
  * :ref:`Features and Algorithms<design-features-algorithms>`
 
 .. _design-dynamic-sublanguage:
 
-DynamicObjects and RuntimeFunctions
-=====================================
+DynamicObjects and DynamicFunctions
+===================================
 
 C++ is a statically typed language and all types must be determined at 
 compile time. To be able to load user defined feature types at runtime and 
 do something with them, grunk works with type-erased objects 
-called ``DynamicObject`` as well as ``RuntimeFunction``\s that accept and 
+called ``DynamicObject`` as well as ``DynamicFunction``\s that accept and 
 return ``DynamicObject``\s. In a way, ``DynamicObject``\s and 
-``RuntimeFunction``\s provide a minimalistic dynamically typed sublanguage
+``DynamicFunction``\s provide a minimalistic dynamically typed sublanguage
 in C++. 
 
 Basically, a ``DynamicObject`` is an 
@@ -24,13 +24,20 @@ Basically, a ``DynamicObject`` is an
 In addition to the type-erased object, it stores a type descriptor with 
 some functionality for accessing constructors as well as data members and 
 member functions. This type descriptor must be created once by *reflecting* 
-the actual C++ type. This is done at compile time of the plugin that 
-provides the correspong feature type. For this, grunk uses the 
-`reflect <https://gitlab.dlr.de/paradigms/reflect>`_ library.
+the actual C++ type. This is done at compile time of a plugin, if it  
+provides the corresponding feature type as part of its interface. 
 
-A ``RuntimeFunction`` creates a function accepting and returning 
-``DynamicObject``\s from any function accepting and returning types, which 
-have previously been *reflected*. 
+A ``DynamicFunction`` wraps any kind of normal function, but it accepts and returns 
+``DynamicObject``\s. The types in the signature of the function must have 
+previously been *reflected*. 
+
+If a function returns a ``std::tuple``, the
+corresponding ``DynamicFunction`` will return a vector of
+``DynamicObject``s. This facilitates the use of multi-output functions in 
+the dynamic typing system.
+
+For its dynamic typing system, grunk uses the 
+`reflect <https://gitlab.dlr.de/paradigms/reflect>`_ library.
 
 Why not use a dynamically typed scripting language like python from the 
 start? Firstly, python would be a big dependency for grunk and would hinder 
@@ -48,10 +55,10 @@ Features and Algorithms
 =======================
 
 To understand how grunks dynamic typing system works, it is useful to know 
-about `DynamicObject``\s and ``RuntimeFunction``\s.
+about `DynamicObject``\s and ``DynamicFunction``\s.
 
 As a user of grunk however, you will work with ``Feature``\s and ``Algorithm``\s 
-rather than ``DynamicObject``\s and ``RuntimeFunction``\s.
+rather than ``DynamicObject``\s and ``DynamicFunction``\s.
 
 A ``Feature`` is a node in a *feature tree*. It is a class template that can 
 either wrap an instance of any class or - if dynamic typing is needed - an instance 
@@ -63,7 +70,7 @@ serve as input parameters of your model, or they can be the result of
 
 An ``Algorithm`` represents a calcuation step. Just like a ``Feature``, it is a class
 template that can either wrap any function or - if dynamic typing is needed - a 
-``RuntimeFunction``. ``Algorithm``\s can be applied 
+``DynamicFunction``. ``Algorithm``\s can be applied 
 to ``Feature``\s just like a functions can be applied to its inputs. The 
 main difference is, that when the ``Algorithm`` is applied, no calculation 
 is performed. Instead, the data dependencies between the ``Algorithm``\s 

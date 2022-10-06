@@ -64,7 +64,7 @@ public:
 
 TEST_F(RuntimeAlgorithmTest, Basic)
 {
-    auto f = RuntimeFunction(&add);
+    auto f = Reflect::Function(&add, "add");
 
     // l and r are the root input nodes
     auto l = Feature("MyDouble", 0.2);
@@ -112,7 +112,7 @@ TEST_F(RuntimeAlgorithmTest, Basic)
 
 TEST_F(RuntimeAlgorithmTest, PassNonRumtimeFeatureToRuntimeAlgorithm)
 {
-    auto f = RuntimeFunction(&add);
+    auto f = Reflect::Function(&add, "add");
 
     auto lr = Feature("MyDouble", 0.2);
     auto lc = Feature(MyDouble(0.2));
@@ -129,7 +129,7 @@ TEST_F(RuntimeAlgorithmTest, PassNonRumtimeFeatureToRuntimeAlgorithm)
 
 TEST_F(RuntimeAlgorithmTest, MultiOutput)
 {
-    auto f = grunk::RuntimeFunction(&get_components);
+    auto f = Reflect::Function(&get_components, "get_components");
 
     auto i = Feature("Point", 0.2, 0.6);
     auto fun = eval(f, i);
@@ -149,7 +149,7 @@ TEST_F(RuntimeAlgorithmTest, MultiOutput)
 
 TEST_F(RuntimeAlgorithmTest, UnnamedFeature)
 {
-    auto f = RuntimeFunction(std::plus<double>());
+    auto f = Reflect::Function(std::plus<double>(), "plus");
 
     auto x = Feature("double", 0.7); // x is a named feature
     auto z = eval(f, x, 0.2)->get(); // 0.2 is an unnamed feature

@@ -12,9 +12,8 @@
 //TODO: Put this in CMAKE?
 #define BOOST_DLL_USE_STD_FS 1
 
+#include <reflect/Reflect.hpp>
 #include <boost/dll/alias.hpp> 
-
-#include <grunk/dynamic/FunctionRegistry.h>
 
 /**
  * @brief The macro GRUNK_REGISTER_PLUGIN must be used by plugin authors to 
@@ -42,8 +41,26 @@ namespace grunk {
  *
  * @ingroup plugin
  */
-template<typename T>
-const auto register_type = Reflect::Reflect<T>;
+ template <typename T>
+ decltype(auto) register_type(std::string const& name)
+ {
+    return Reflect::Reflect<T>(name);
+ }
+
+/**
+ * @brief register_function is a function alias for Reflect::RegisterFunction<F> from
+ * the reflect library
+ * 
+ * @tparam F the type of fucntion to be reflected/registered
+ *
+ * @ingroup plugin
+ */
+template <typename F>
+void register_function(F&& f, std::string const& name)
+{
+    return Reflect::RegisterFunction(std::forward<F>(f), name);
+}
+
 
 /**
  * @brief The Plugin interface. All plugin authors must derive their plugin 

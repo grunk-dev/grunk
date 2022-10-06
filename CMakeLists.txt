@@ -32,12 +32,8 @@ set(grunk_SRC
     grunk/plugins/StdPlugin.cpp
     grunk/dynamic/RuntimeAlgorithm.h
     grunk/dynamic/RuntimeAlgorithm.cpp
-    grunk/dynamic/FunctionRegistry.h
-    grunk/dynamic/FunctionRegistry.cpp
     grunk/dynamic/RuntimeFeature.h
     grunk/dynamic/RuntimeFeature.cpp
-    grunk/dynamic/RuntimeFunction.h
-    grunk/dynamic/RuntimeFunction.cpp
     grunk/grunk.h
 )
 

@@ -29,7 +29,7 @@ public:
 
         // register functions
 
-        grunk::register_function(&add, "add", "adds two MyDouble values");
+        grunk::register_function(&add, "add");
     }
 
 };

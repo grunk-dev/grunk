@@ -15,10 +15,8 @@ set(TESTSOURCES
   testmain.cpp
   Algorithm.cpp
   RuntimeAlgorithm.cpp
-  FunctionRegistry.cpp
   Feature.cpp
   RuntimeFeature.cpp
-  RuntimeFunction.cpp
 )
 
 add_executable(runUnitTests ${TESTSOURCES})
