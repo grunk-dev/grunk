@@ -56,6 +56,8 @@ test-debug:
 create-package-debug:
   tags:
     - docker
+  except:
+    - main
   stage: deploy
   dependencies:
     - test-debug
@@ -63,9 +65,8 @@ create-package-debug:
     - *conan_setup  
   script:
     - conan create . paradigms/testing -s build_type=Debug
-    - conan upload grunk/0.1@paradigms/testing --all --remote=gitlab
 
-upload-package-debug:
+create-and-upload-package-debug:
   tags:
     - docker
   only:
@@ -76,7 +77,8 @@ upload-package-debug:
   before_script:
     - *conan_setup  
   script:
-    - conan upload grunk/0.1@paradigms/testing --all --remote=gitlab
+    - conan create . paradigms/testing -s build_type=Debug
+    - conan upload grunk/0.1.0@paradigms/testing --all --remote=gitlab #TODO: parse version from CMakeLists
     
 docs:
   stage: deploy
