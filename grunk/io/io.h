@@ -81,8 +81,8 @@ std::string serialize(Reflect::DynamicObject const& v)
         Reflect::cast<YAML::Node>(v.invoke("serialize")[0]);
 
     YAML::Node out;
-    out["type"] = v.get_type_descriptor()->GetName();
-    out["value"] = serialized;
+    auto key = v.get_type_descriptor()->GetName();
+    out[key] = serialized;
     return YAML::Dump(out);
 }
 
@@ -196,6 +196,7 @@ void parse_feature(Feature<Arg> const& arg, YAML::Node& yaml_root, Visited& visi
                 bool is_parameter = ((depth % 2) == 0);
 
                 if (is_parameter) {
+                    node.SetStyle(YAML::EmitterStyle::Flow);
                     root["parameters"][n.id()] = node;
                 }
                 else {

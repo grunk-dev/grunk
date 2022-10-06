@@ -80,33 +80,35 @@ FeatureContainer yaml_to_feature_tree(YAML::Node const& root)
         for (YAML::const_iterator it=parameters.begin();it!=parameters.end();++it) {
             auto name = it->first.as<std::string>();
 
-            auto type = it->second["type"];
-            if (!type) {
-                throw io_error("Missing field \"type\" for parameter "s + name + ".");
+            if (it->second.size() > 1) {
+                throw io_error("Cannot parse parameter \"" + name + "\": Too many keys.");
             }
+            
+            YAML::const_iterator p = it->second.begin();
 
-            auto value = it->second["value"];
-            if (!value) {
-                throw io_error("Missing field \"value\" for parameter "s + name + ".");
-            }
 
-            auto object = deserialize(type.as<std::string>(), value);
+            auto type = p->first.as<std::string>();
+            auto value = p->second;
+
+            auto object = deserialize(type, value);
             features.emplace(name, RuntimeFeature(name, std::move(object)));
         }
     }
 
     if (auto const steps = root["steps"]; steps)
     {
-        for (YAML::const_iterator it=steps.begin(); it!=steps.end(); ++it) {
-            
-            auto const function = (*it)["function"];
-            if (!function) {
-                throw io_error("Currently, only \"function\" steps are supported");
+        for (size_t i = 0; i < steps.size(); i++) {
+
+            if (steps[i].size() > 1) {
+                throw io_error("Cannot parse step \"" + std::to_string(i) + "\": Too many keys.");
             }
-            auto const function_name = function.as<std::string>();
+
+            YAML::const_iterator p = steps[i].begin();
+            
+            auto const function_name = p->first.as<std::string>();
 
             std::vector<RuntimeFeature> input_vec;
-            auto const inputs = (*it)["inputs"];
+            auto const inputs = p->second["inputs"];
             if (inputs) {
                 for (YAML::const_iterator inputs_it=inputs.begin(); inputs_it!=inputs.end(); ++inputs_it) {
                     auto input_name = (*inputs_it).as<std::string>();
@@ -124,7 +126,7 @@ FeatureContainer yaml_to_feature_tree(YAML::Node const& root)
 
             auto comp_node = grunk::eval("", function_name, std::move(input_vec));
 
-            auto const outputs = (*it)["outputs"];
+            auto const outputs = p->second["outputs"];
             if (!outputs)
             {
                 throw io_error("No outputs specified for function call of "s + function_name);

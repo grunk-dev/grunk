@@ -143,15 +143,15 @@ public:
     {
 
         YAML::Node y;
-        y["function"] = function.GetName();
-        for (auto const& input : inputs){
-            y["inputs"].push_back(input.param().id());
-        }
+        y[function.GetName()] = YAML::Node();
+        auto yf = y[function.GetName()];
         for (auto const& output : outputs){
-            y["outputs"].push_back(output.param().id());
+            yf["outputs"].push_back(output.param().id());
         }
-        y["inputs"].SetStyle(YAML::EmitterStyle::Flow);
-        y["outputs"].SetStyle(YAML::EmitterStyle::Flow);
+        for (auto const& input : inputs){
+            yf["inputs"].push_back(input.param().id());
+        }
+        yf.SetStyle(YAML::EmitterStyle::Flow);
         YAML::Emitter out;
         out << y;
         return out.c_str();

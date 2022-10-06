@@ -213,28 +213,12 @@ The file will then have the following contents:
      SomePluginA: 2.4.19
      SomePluginB: 1.3.0
    parameters:
-     x:
-       type: "SomePluginA::MyDouble"
-       value: 4.3
-     y:
-       type: "SomePluginA::MyDouble"
-       value: 3.3
-     z:
-       type: "SomePluginA::MyDouble"
-       value: 2.0
+     x: { SomePluginA::MyDouble: 4.3 }
+     y: { SomePluginA::MyDouble: 3.3 }
+     z: { SomePluginA::MyDouble: 2.0 }
     steps:
-    - function: "SomePluginA::add"
-      inputs:
-      - x
-      - y
-      outputs:
-      - a
-    - function: "SomePluginB::multiply"
-      inputs:
-      - a
-      - z
-      outputs:
-      - b 
+    - SomePluginA::add: { outputs: [a], inputs: [x,y] }
+    - SomePluginB::multiply: { outputs: [b], inputs: [a, z] }
 
 All information needed to reproduce the output of ``b`` gets written into the file in 
 yaml format. The steps are sorted in topological order, which means they can be performed

@@ -2,22 +2,8 @@ uses:
   grunk: 0.1.0
   SimplePlugin: 1.2.3
 parameters:
-  a:
-    type: MyDouble
-    value: 0.20000000000000001
-  b:
-    type: MyDouble
-    value: 0.10000000000000001
+  a: { MyDouble: 0.2 }
+  b: { MyDouble: 0.1 }
 steps:
-  - function: add
-    inputs:
-      - a
-      - b
-    outputs:
-      - c
-  - function: add
-    inputs:
-      - c
-      - a
-    outputs:
-      - d
+  - add: { outputs: [c], inputs: [a, b]}
+  - add: { outputs: [d], inputs: [c, a]}
