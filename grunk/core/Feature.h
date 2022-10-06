@@ -36,22 +36,35 @@ using AlgorithmPtr = parametric::compute_node_ptr<Algorithm<F, Args...>>;
 namespace details {
 
     /**
-     * @brief evaluates to true if a type is derived from Reflect::DynamicFunction
-     * 
-     * @tparam typename the type to be checked.
+    * @brief is_feature_v returns false if the input type is not a Feature template realization
+    * 
+    * @tparam typename any ol' type
+    */
+    template<typename> constexpr bool is_feature_v = false;
+
+    /**
+    * @brief is_feature_v returns true, if the input template argument is a Feature template realization
+    * 
+    * @tparam T the element type of the Feature
+    */
+    template<typename T>
+    constexpr bool is_feature_v<Feature<T>> = true;
+
+    /**
+     * @brief evaluates to true if a type is Reflect::DynamicFunction
      */
-    template<typename T> constexpr bool is_dynamic_function_v = 
-        std::is_base_of_v<Reflect::DynamicFunction, std::decay_t<T>>;
+    template<typename F>
+    constexpr bool is_dynamic_function_v = std::is_base_of_v<Reflect::DynamicFunction, F>;
 }
 
 // forward declaration
 template <typename F,
           typename = std::enable_if_t<
             !std::is_convertible_v<std::decay_t<F>, std::string>
-            && !details::is_dynamic_function_v<F>
+            && !details::is_dynamic_function_v<std::decay_t<F>>
           >,
           typename... Args>
-AlgorithmPtr<F, Args...> eval(std::string const& id, F const& fun, Feature<Args> const&... args);
+decltype(auto) eval(std::string const& id, F const& fun, Args&&... args);
 
 /**
  * @brief A base class used by Feature<T> and the template specialization
@@ -85,7 +98,7 @@ public:
      * @param p a parametric::param<T>
      */
     FeatureBase(parametric::param<T>&& p)
-     : m_param(p)
+     : m_param(std::forward<parametric::param<T>>(p))
     {}
 
     /**

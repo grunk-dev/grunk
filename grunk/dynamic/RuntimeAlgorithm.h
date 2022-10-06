@@ -7,6 +7,7 @@
 #pragma once
 
 #include <stdexcept>
+#include <initializer_list>
 #include <vector>
 #include <iterator>
 
@@ -68,8 +69,8 @@ private:
         size_t n_outputs = function.NumOutputs();
         for (size_t i=0; i<n_outputs; ++i){
             std::string output_id = id;
-            if (n_outputs > 1)             {
-                output_id += "::" + std::to_string(i);
+            if (n_outputs > 1) {
+                output_id += "[" + std::to_string(i) + "]";
             } 
             computes(outputs[i], parametric::param<Reflect::DynamicObject>(output_id));
         }
@@ -214,23 +215,6 @@ struct RuntimeAlgorithmFactory
 } //namespace details
 
 /**
- * @brief Given a function and some features in the feature tree, this 
- * function creates a RuntimeAlgoritm instance representing the evaluation
- * of the input function for the input features.
- * 
- * @tparam Args The types of the arguments expected by the input function
- * @param fun The input function
- * @param args The input features of the feature tree
- * @return RuntimeAlgorithmPtr A special pointer type wrapping a RuntimeAlgorithm instance.
- * @ingroup dynamic_advanced
- */
-template <typename... Args>
-RuntimeAlgorithmPtr eval(std::string const& id, Reflect::DynamicFunction const& fun, Feature<Args> const&... args)
-{
-    return details::RuntimeAlgorithmFactory::new_algorithm(id, fun, {args...});
-}
-
-/**
  * @brief Given a function and a vector of features in the feature 
  * tree, this function creates a RuntimeAlgoritm instance representing the 
  * evaluation of the input function for the input features.
@@ -244,6 +228,38 @@ RuntimeAlgorithmPtr eval(std::string const& id, Reflect::DynamicFunction const& 
  * @ingroup dynamic_advanced
  */
 RuntimeAlgorithmPtr eval(std::string const& id, Reflect::DynamicFunction const& fun, std::vector<RuntimeFeature> const& args);
+
+/**
+ * @brief Given a function and some features in the feature tree, this 
+ * function creates a RuntimeAlgoritm instance representing the evaluation
+ * of the input function for the input features.
+ *
+ * This function accepts features as arguments for the functions, as well
+ * as instances that are not wrapped in features. Internally, the latter will
+ * be wrapped in an unnamed/anonymous feature
+ * 
+ * @tparam Args The types of the arguments expected by the input function
+ * @param fun The input function
+ * @param args The input features of the feature tree
+ * @return RuntimeAlgorithmPtr A special pointer type wrapping a RuntimeAlgorithm instance.
+ * @ingroup dynamic_advanced
+ */
+template <
+    typename... Args,
+    typename = std::enable_if_t<!(sizeof...(Args) == 1 && (std::is_same_v<std::vector<RuntimeFeature>, std::decay_t<Args>> && ...))>
+>
+RuntimeAlgorithmPtr eval(std::string const& id, Reflect::DynamicFunction const& fun, Args&&... args)
+{
+    auto to_feature = [](auto&& arg){
+        using Arg = std::decay_t<decltype(arg)>;
+        if constexpr (details::is_feature_v<Arg>){
+            return arg;
+        } else {
+            return Feature("", Reflect::DynamicObject(std::forward<Arg>(arg))); //TODO: Until we properly support unnamed features, this will be an empty string
+        }
+    };
+    return eval(id, fun, std::vector<RuntimeFeature>{to_feature(std::forward<Args>(args))...});
+}
 
 /**
  * @brief Given a string identifier of a function, that has previously been registered

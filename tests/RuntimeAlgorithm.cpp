@@ -44,7 +44,8 @@ class RuntimeAlgorithmTest : public ::testing::Test
 public:
 
     static void SetUpTestCase() {
-        Reflect::Reflect<double>("double");
+        Reflect::Reflect<double>("double")
+        .AddConstructor<double>();
 
         Reflect::Reflect<MyDouble>("MyDouble")
         .AddConstructor<double>()
@@ -77,7 +78,7 @@ TEST_F(RuntimeAlgorithmTest, Basic)
     //       \  |
     //         b
     //
-    auto a = eval("a", f, l, r)->get();
+    auto a = eval("a", f, l, r)->get(); 
     auto b = eval("b", f, a, r)->get();
 
     // nothing has been computed yet, we just registered the feature tree
@@ -139,8 +140,8 @@ TEST_F(RuntimeAlgorithmTest, MultiOutput)
     auto y = o->get<1>();
 
     // test default output feature ids
-    EXPECT_EQ(x.id(), "o::0");
-    EXPECT_EQ(y.id(), "o::1");
+    EXPECT_EQ(x.id(), "o[0]");
+    EXPECT_EQ(y.id(), "o[1]");
 
     // test renaming feature ids
     x.set_id("x");
@@ -159,4 +160,22 @@ TEST_F(RuntimeAlgorithmTest, MultiOutput)
     EXPECT_FALSE(y.is_valid());
 
     EXPECT_EQ(Reflect::cast<double>(y.value()), 0.7);
+}
+
+TEST_F(RuntimeAlgorithmTest, UnnamedFeature)
+{
+    auto f = Reflect::Function(std::plus<double>(), "plus");
+
+    auto x = Feature("x", "double", 0.7); // x is a named feature
+    auto z = eval("z", f, x, 0.2)->get(); // 0.2 is an unnamed feature
+
+    EXPECT_FALSE(z.is_valid());
+    EXPECT_NEAR(Reflect::cast<double>(z.value()), 0.9, 1e-15);
+    EXPECT_TRUE(z.is_valid());
+
+    x.access_value() = 0.6;  // change named feature
+
+    EXPECT_FALSE(z.is_valid());
+    EXPECT_NEAR(Reflect::cast<double>(z.value()), 0.8, 1e-15);
+    EXPECT_TRUE(z.is_valid());
 }

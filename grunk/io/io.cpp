@@ -122,7 +122,7 @@ FeatureContainer yaml_to_feature_tree(YAML::Node const& root)
                 }
             }
 
-            auto comp_node = eval("", function_name, input_vec);
+            auto comp_node = grunk::eval("", function_name, std::move(input_vec));
 
             auto const outputs = (*it)["outputs"];
             if (!outputs)

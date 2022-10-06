@@ -2,7 +2,7 @@
 
 namespace grunk {
 
-RuntimeAlgorithmPtr eval(std::string const& id, Reflect::DynamicFunction const& fun, std::vector<Feature<Reflect::DynamicObject>> const& args)
+RuntimeAlgorithmPtr eval(std::string const& id, Reflect::DynamicFunction const& fun, std::vector<RuntimeFeature> const& args)
 {
     return details::RuntimeAlgorithmFactory::new_algorithm(id, fun, args);
 }

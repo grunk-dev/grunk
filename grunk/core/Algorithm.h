@@ -116,7 +116,6 @@ public:
                 static_assert(Idx == 0, "get with Index>0 only allowed for Algorithms returning a tuple.");
                 return Feature<ReturnType>(out);
             } else {
-                //TODO: Why do we need to "eval" this again? Isn't this overkill a bit?
                 return grunk::eval(
                     out.param().id() + "[" + std::to_string(Idx) + "]",
                     [](ReturnType const& vec){ return vec[Idx]; }, 
@@ -206,12 +205,43 @@ struct AlgorithmFactory
 
 };
 
+/**
+ * @brief Given a function and some features in the feature tree, this 
+ * function creates an Algorithm instance representing the evaluation
+ * of the input function for the input features.
+ *
+ * This function accepts only features as arguments to the given function.
+ * 
+ * @tparam F The type of the function to be wrapped. This can be any referentially transparent function, 
+             In particular, the function must be invokable on const 
+             references.
+ * @tparam Args The types of the arguments expected by the input function
+ * @param fun The input function
+ * @param args The input features of the feature tree
+ * @return AlgorithmPtr<F, Args...> A special pointer type wrapping an Algorithm instance.
+ */
+template <typename F,
+          typename = std::enable_if_t<
+            !std::is_convertible_v<std::decay_t<F>, std::string>
+            && !details::is_dynamic_function_v<std::decay_t<F>>
+          >,
+          typename... Args>
+AlgorithmPtr<F, Args...> eval(std::string const& id, F const& fun, Feature<Args> const&... args)
+{
+    return details::AlgorithmFactory::new_algorithm(id, fun, args...);
+}
+
+
 } //namespace details
 
 /**
  * @brief Given a function and some features in the feature tree, this 
  * function creates an Algorithm instance representing the evaluation
  * of the input function for the input features.
+ *
+ * This function accepts features as arguments for the functions, as well
+ * as instances that are not wrapped in features. Internally, the latter will
+ * be wrapped in an unnamed/anonymous feature
  * 
  * @tparam F The type of the function to be wrapped. This can be any referentially transparent function, 
              In particular, the function must be invokable on const 
@@ -224,11 +254,19 @@ struct AlgorithmFactory
  * @ingroup static
  */
 template <typename F,
-          typename, // default-value (enable_if) declared in Feature.h
+          typename,
           typename... Args>
-AlgorithmPtr<F, Args...> eval(std::string const& id, F const& fun, Feature<Args> const&... args)
+decltype(auto) eval(std::string const& id, F const& fun, Args&&... args)
 {
-    return details::AlgorithmFactory::new_algorithm(id, fun, args...);
+    auto to_feature = [](auto&& arg){
+        using Arg = std::decay_t<decltype(arg)>;
+        if constexpr (details::is_feature_v<Arg>){
+            return arg;
+        } else {
+            return Feature("", std::forward<Arg>(arg)); //TODO: Until we properly support unnamed features, this will be an empty string
+        }
+    };
+    return details::eval(id, fun, to_feature(args)...);
 }
 
 } //namespace grunk
