@@ -56,6 +56,18 @@ test-debug:
 create-package-debug:
   tags:
     - docker
+  stage: deploy
+  dependencies:
+    - test-debug
+  before_script:
+    - *conan_setup  
+  script:
+    - conan create . paradigms/testing -s build_type=Debug
+    - conan upload grunk/0.1@paradigms/testing --all --remote=gitlab
+
+upload-package-debug:
+  tags:
+    - docker
   only:
     - main
   stage: deploy
@@ -64,7 +76,6 @@ create-package-debug:
   before_script:
     - *conan_setup  
   script:
-    - conan create . paradigms/testing -s build_type=Debug
     - conan upload grunk/0.1@paradigms/testing --all --remote=gitlab
     
 docs:
