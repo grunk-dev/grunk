@@ -2,8 +2,8 @@ uses:
   grunk: 0.1.0
   SimplePlugin: 1.2.3
 parameters:
-  a: { MyDouble: 0.2 }
-  b: { MyDouble: 0.1 }
+  a: !<MyDouble> 0.2
+  b: !<MyDouble> 0.1
 steps:
-  - add: { outputs: [c], inputs: [a, b]}
-  - add: { outputs: [d], inputs: [c, a]}
+  - !<add> [ [c], [a, b] ]
+  - !<add> [ [d], [c, a] ]

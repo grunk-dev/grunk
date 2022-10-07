@@ -13,6 +13,11 @@
 
 #include <yaml-cpp/yaml.h>
 
+// we need to preserve yaml tags properly, this is currently not 
+// possible due to a bug in yaml-cpp, see
+// see https://github.com/jbeder/yaml-cpp/issues/1142
+#define YAML_TAG_WORKAROUND
+
 #include <grunk/core/Algorithm.h>
 #include <grunk/dynamic/RuntimeFeature.h>
 
@@ -143,17 +148,30 @@ public:
     {
 
         YAML::Node y;
-        y[function.GetName()] = YAML::Node();
-        auto yf = y[function.GetName()];
+
+        // outputs
+        y.push_back(YAML::Node());
         for (auto const& output : outputs){
-            yf["outputs"].push_back(output.param().id());
+            y[0].push_back(output.param().id());
         }
+
+        // inputs
+        y.push_back(YAML::Node());
         for (auto const& input : inputs){
-            yf["inputs"].push_back(input.param().id());
+            y[1].push_back(input.param().id());
         }
-        yf.SetStyle(YAML::EmitterStyle::Flow);
+        y.SetStyle(YAML::EmitterStyle::Flow);
         YAML::Emitter out;
-        out << y;
+
+#ifdef YAML_TAG_WORKAROUND
+        YAML::Node x;
+        x["tag"] = function.GetName();
+        x["value"] = y;
+        out << x;
+#else 
+        auto tag = YAML::LocalTag(function.GetName());
+        out << tag << y;
+#endif
         return out.c_str();
     }
 

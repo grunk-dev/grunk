@@ -80,10 +80,19 @@ std::string serialize(Reflect::DynamicObject const& v)
     auto serialized = 
         Reflect::cast<YAML::Node>(v.invoke("serialize")[0]);
 
-    YAML::Node out;
-    auto key = v.get_type_descriptor()->GetName();
-    out[key] = serialized;
-    return YAML::Dump(out);
+    YAML::Node out = serialized;
+    YAML::Emitter e;
+
+#ifdef YAML_TAG_WORKAROUND
+    YAML::Node x;
+    x["tag"] = v.get_type_descriptor()->GetName();
+    x["value"] = out;
+    e << x;
+#else
+    auto tag = YAML::LocalTag(v.get_type_descriptor()->GetName());
+    e << tag << out;
+#endif
+    return e.c_str();
 }
 
 } // namespace parametric
@@ -97,7 +106,7 @@ using namespace std::string_literals;
  */
 class io_error : public std::exception
 {
-public:
+public: 
     /**
      * @brief Construct a new io error object from an error message
      * 
@@ -191,7 +200,13 @@ void parse_feature(Feature<Arg> const& arg, YAML::Node& yaml_root, Visited& visi
 
             if (std::string str = n.serialize(); !str.empty()){
 
+#ifdef YAML_TAG_WORKAROUND
+                auto nnode = YAML::Load(str);
+                YAML::Node node = nnode["value"];
+                node.SetTag(nnode["tag"].as<std::string>());
+#else
                 auto node =  YAML::Load(str);
+#endif
 
                 bool is_parameter = ((depth % 2) == 0);
 

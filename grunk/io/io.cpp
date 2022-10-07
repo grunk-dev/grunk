@@ -30,16 +30,16 @@ Reflect::DynamicObject deserialize(
         // throw an error
         throw io_error("Unknown type "s + type_name);
     }
-    auto const* deserialize = descr->GetMemberFunction("deserialize");
-    if (!deserialize) {
+    auto const* deserializer = descr->GetMemberFunction("deserialize");
+    if (!deserializer) {
         throw io_error("type "s + type_name + " does not have a (static) \"deserialize\" method. Please refer to the grunk documentation");
     }
     try {
-        return (*deserialize)(yaml_node)[0];
+        return (*deserializer)(yaml_node)[0];
     }
     catch (std::exception& e) {
         throw io_error(
-            "Could not deserialize field \"value\"\n\n" + Dump(yaml_node)
+            "Could not deserialize yaml node\n\n" + Dump(yaml_node)
             + "\n\nto an instance of type \"" + type_name
             + "\". Caught an exception with description: \""
             + e.what() + "\" while trying."
@@ -77,18 +77,11 @@ FeatureContainer yaml_to_feature_tree(YAML::Node const& root)
     FeatureContainer features;
 
     if (auto const parameters = root["parameters"]; parameters) {
-        for (YAML::const_iterator it=parameters.begin();it!=parameters.end();++it) {
-            auto name = it->first.as<std::string>();
-
-            if (it->second.size() > 1) {
-                throw io_error("Cannot parse parameter \"" + name + "\": Too many keys.");
-            }
+        for (YAML::const_iterator it=parameters.begin();it!=parameters.end();++it ) {
             
-            YAML::const_iterator p = it->second.begin();
-
-
-            auto type = p->first.as<std::string>();
-            auto value = p->second;
+            auto name = it->first.as<std::string>();
+            auto type = it->second.Tag();
+            auto value = it->second;
 
             auto object = deserialize(type, value);
             features.emplace(name, RuntimeFeature(name, std::move(object)));
@@ -98,46 +91,34 @@ FeatureContainer yaml_to_feature_tree(YAML::Node const& root)
     if (auto const steps = root["steps"]; steps)
     {
         for (size_t i = 0; i < steps.size(); i++) {
-
-            if (steps[i].size() > 1) {
-                throw io_error("Cannot parse step \"" + std::to_string(i) + "\": Too many keys.");
-            }
-
-            YAML::const_iterator p = steps[i].begin();
             
-            auto const function_name = p->first.as<std::string>();
+            auto const function_name = steps[i].Tag();
 
             std::vector<RuntimeFeature> input_vec;
-            auto const inputs = p->second["inputs"];
-            if (inputs) {
-                for (YAML::const_iterator inputs_it=inputs.begin(); inputs_it!=inputs.end(); ++inputs_it) {
-                    auto input_name = (*inputs_it).as<std::string>();
-                    auto feature_it = features.find(input_name);
-                    if (feature_it == std::end(features)) {
-                        throw io_error(
-                            "Could not find input "s
-                             + input_name + " for function call to " + function_name
-                             + ". Are the steps in the correct topological order?"
-                        );
-                    }
-                    input_vec.push_back(feature_it->second);
+            auto const inputs = steps[i][1];
+            for (auto const& input: inputs) {
+                auto input_name = input.as<std::string>();
+                auto feature_it = features.find(input_name);
+                if (feature_it == std::end(features)) {
+                    throw io_error(
+                        "Could not find input "s
+                            + input_name + " for function call to " + function_name
+                            + ". Are the steps in the correct topological order?"
+                    );
                 }
+                input_vec.push_back(feature_it->second);
             }
 
             auto comp_node = grunk::eval("", function_name, std::move(input_vec));
 
-            auto const outputs = p->second["outputs"];
-            if (!outputs)
-            {
-                throw io_error("No outputs specified for function call of "s + function_name);
-            }
-            if (!outputs.size() == comp_node->number_of_outputs()) {
+            auto const outputs = steps[i][0];
+            if (outputs.size() != comp_node->number_of_outputs()) {
                 throw io_error("Number of given outputs doesn't match number of outputs of function "s + function_name);
             }
 
             size_t idx = 0;
-            for (YAML::const_iterator outputs_it=outputs.begin(); outputs_it!=outputs.end(); ++outputs_it) {
-                auto output_name = (*outputs_it).as<std::string>();
+            for (auto const& node : outputs) {
+                auto output_name = node.as<std::string>();
                 auto output = comp_node->get(idx++);
                 output.set_id(output_name);
                 features.emplace(output_name, output);

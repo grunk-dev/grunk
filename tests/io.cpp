@@ -65,8 +65,14 @@ TEST_F(IOTest, serialize_type)
     auto x = Reflect::DynamicObject(1.23);
     auto sx = parametric::serialize(x);
     auto y = YAML::Load(sx);
-    EXPECT_EQ(y.size(), 1);
-    EXPECT_NEAR(y["double"].as<double>(), 1.23, 1e-6);
+#ifdef YAML_TAG_WORKAROUND
+    EXPECT_EQ(y.size(), 2);
+    EXPECT_EQ(y["tag"].as<std::string>(), "double");
+    EXPECT_NEAR(y["value"].as<double>(), 1.23, 1e-6);
+#else 
+    EXPECT_EQ(y.Tag(), "double");
+    EXPECT_NEAR(y.as<double>(), 1.23, 1e-6);
+#endif
 
     // type without serialize specialization
     EXPECT_THROW(parametric::serialize([]{}), std::logic_error);
@@ -90,13 +96,36 @@ TEST_F(IOTest, serialize_node)
     // compute node
     auto szc = z->serialize();
     auto yc = YAML::Load(szc);
-    EXPECT_EQ(yc.size(), 1);
-    EXPECT_EQ(yc["add"].size(), 2);
-    EXPECT_EQ(yc["add"]["inputs"].size(), 2);
-    EXPECT_EQ(yc["add"]["inputs"][0].as<std::string>(), "x");
-    EXPECT_EQ(yc["add"]["inputs"][1].as<std::string>(), "y");
-    EXPECT_EQ(yc["add"]["outputs"].size(), 1);
-    EXPECT_EQ(yc["add"]["outputs"][0].as<std::string>(), "z");
+#ifdef YAML_TAG_WORKAROUND
+    EXPECT_EQ(yc.size(), 2);
+    EXPECT_EQ(yc["tag"].as<std::string>(), "add");
+
+    //two arrays, one for outputs one for inputs
+    EXPECT_EQ(yc["value"].size(), 2);
+
+    //outputs
+    EXPECT_EQ(yc["value"][0].size(), 1);
+    EXPECT_EQ(yc["value"][0][0].as<std::string>(), "z");
+
+    //inputs
+    EXPECT_EQ(yc["value"][1].size(), 2);
+    EXPECT_EQ(yc["value"][1][0].as<std::string>(), "x");
+    EXPECT_EQ(yc["value"][1][1].as<std::string>(), "y");
+#else 
+    EXPECT_EQ(yc.Tag(), "add");
+
+    //two arrays, one for outputs one for inputs
+    EXPECT_EQ(yc.size(), 2);
+
+    //outputs
+    EXPECT_EQ(yc[0].size(), 1);
+    EXPECT_EQ(yc[0][0].as<std::string>(), "z");
+
+    //inputs
+    EXPECT_EQ(yc[1].size(), 2);
+    EXPECT_EQ(yc[1][0].as<std::string>(), "x");
+    EXPECT_EQ(yc[1][1].as<std::string>(), "y");
+#endif
 
     // Can't serialize algorithm with non registered function
     EXPECT_THROW(w->serialize(), std::logic_error);
@@ -147,23 +176,28 @@ void test_basic_tree(
 {
     EXPECT_EQ(node.size(), 3);
     EXPECT_EQ(node["parameters"].size(), 2);
-    EXPECT_EQ(node["parameters"]["a"].size(), 1);
-    EXPECT_NEAR(node["parameters"]["a"][type_name].as<double>(), 0.2, 1e-6);
-    EXPECT_EQ(node["parameters"]["b"].size(), 1);
-    EXPECT_NEAR(node["parameters"]["b"][type_name].as<double>(), 0.1, 1e-6);
+    EXPECT_EQ(node["parameters"]["a"].Tag(), type_name);
+    EXPECT_NEAR(node["parameters"]["a"].as<double>(), 0.2, 1e-6);
+    EXPECT_EQ(node["parameters"]["b"].Tag(), type_name);
+    EXPECT_NEAR(node["parameters"]["b"].as<double>(), 0.1, 1e-6);
+    
     EXPECT_EQ(node["steps"].size(), 2);
-    EXPECT_EQ(node["steps"][0].size(), 1);
-    EXPECT_EQ(node["steps"][0][function_name]["inputs"].size(), 2);
-    EXPECT_EQ(node["steps"][0][function_name]["inputs"][0].as<std::string>(), "a");
-    EXPECT_EQ(node["steps"][0][function_name]["inputs"][1].as<std::string>(), "b");
-    EXPECT_EQ(node["steps"][0][function_name]["outputs"].size(), 1);
-    EXPECT_EQ(node["steps"][0][function_name]["outputs"][0].as<std::string>(), "c");
-    EXPECT_EQ(node["steps"][1].size(), 1);
-    EXPECT_EQ(node["steps"][1][function_name]["inputs"].size(), 2);
-    EXPECT_EQ(node["steps"][1][function_name]["inputs"][0].as<std::string>(), "c");
-    EXPECT_EQ(node["steps"][1][function_name]["inputs"][1].as<std::string>(), "a");
-    EXPECT_EQ(node["steps"][1][function_name]["outputs"].size(), 1);
-    EXPECT_EQ(node["steps"][1][function_name]["outputs"][0].as<std::string>(), "d");
+ 
+    auto step1 = node["steps"][0];
+    EXPECT_EQ(step1.Tag(), function_name);
+    EXPECT_EQ(step1[0].size(), 1);
+    EXPECT_EQ(step1[0][0].as<std::string>(), "c");
+    EXPECT_EQ(step1[1].size(), 2);
+    EXPECT_EQ(step1[1][0].as<std::string>(), "a");
+    EXPECT_EQ(step1[1][1].as<std::string>(), "b");
+
+    auto step2 = node["steps"][1];
+    EXPECT_EQ(step2.Tag(), function_name);
+    EXPECT_EQ(step2[0].size(), 1);
+    EXPECT_EQ(step2[0][0].as<std::string>(), "d");
+    EXPECT_EQ(step2[1].size(), 2);
+    EXPECT_EQ(step2[1][0].as<std::string>(), "c");
+    EXPECT_EQ(step2[1][1].as<std::string>(), "a");
 }
 
 TEST_F(IOTest, basic)
@@ -303,61 +337,6 @@ TEST_F(IOTest, deserialize_no_uses_block)
     );
 }
 
-TEST_F(IOTest, deserialize_parameter_too_many_keys)
-{
-    YAML::Node root;
-
-
-    YAML::Node uses;
-    uses["grunk"] = grunk_VERSION;
-    root["uses"] = uses;
-
-    YAML::Node parameters;
-    YAML::Node a;
-    auto da = Reflect::DynamicObject(13.2);
-    a["double"] = Reflect::cast<YAML::Node>(da.invoke("serialize")[0]);
-    a["other"] = "I shoudnt be here";
-    parameters["a"] = a;
-    root["parameters"] = parameters;
-
-    EXPECT_THROW(
-        details::yaml_to_feature_tree(root), 
-        grunk::io_error
-    );
-}
-
-TEST_F(IOTest, deserialize_step_too_many_keys)
-{
-    YAML::Node root;
-
-
-    YAML::Node uses;
-    uses["grunk"] = grunk_VERSION;
-    root["uses"] = uses;
-
-    YAML::Node parameters;
-    parameters["x"] = YAML::Load(parametric::serialize(Reflect::DynamicObject(13.2)));
-    parameters["y"] = YAML::Load(parametric::serialize(Reflect::DynamicObject(11.8)));
-    root["parameters"] = parameters;
-
-    YAML::Node steps;
-    YAML::Node a;
-    a["add"] = YAML::Node();
-    a["add"]["inputs"] = YAML::Node();
-    a["add"]["inputs"].push_back("x");
-    a["add"]["inputs"].push_back("y");
-    a["add"]["outputs"] = YAML::Node();
-    a["add"]["outputs"].push_back("z");
-    a["other"] = "I shouldnt be here";
-    steps.push_back(a);
-    root["steps"] = steps;
-
-    EXPECT_THROW(
-        details::yaml_to_feature_tree(root), 
-        grunk::io_error
-    );
-}
-
 TEST_F(IOTest, deserialize_wrong_value)
 {
     YAML::Node root;
@@ -368,8 +347,8 @@ TEST_F(IOTest, deserialize_wrong_value)
     root["uses"] = uses;
 
     YAML::Node parameters;
-    YAML::Node a;
-    a["double"] = "Hello World";
+    auto a = YAML::Node("Hello World");
+    a.SetTag("double");
     parameters["a"] = a;
     root["parameters"] = parameters;
 
@@ -388,16 +367,25 @@ TEST_F(IOTest, deserialize_non_existing_function)
     root["uses"] = uses;
 
     YAML::Node parameters;
+#ifdef YAML_TAG_WORKAROUND
+    auto as = YAML::Load(parametric::serialize(Reflect::DynamicObject(13.2)));
+    parameters["a"] = as["value"];
+    parameters["a"].SetTag(as["tag"].as<std::string>());
+    auto bs = YAML::Load(parametric::serialize(Reflect::DynamicObject(11.8)));
+    parameters["b"] = bs["value"];
+    parameters["b"].SetTag(bs["tag"].as<std::string>());
+#else 
     parameters["a"] = YAML::Load(parametric::serialize(Reflect::DynamicObject(13.2)));
     parameters["b"] = YAML::Load(parametric::serialize(Reflect::DynamicObject(11.8)));
+#endif
     root["parameters"] = parameters;
 
     YAML::Node steps;
 
     YAML::Node step;
     step["spunck"] = YAML::Node();
-    step["spunck"]["inputs"] = std::vector<std::string>{"a", "b"};
-    step["spunck"]["outputs"] = std::vector<std::string>{"c"};
+    step["spunck"].push_back(std::vector<std::string>{"c"});
+    step["spunck"].push_back(std::vector<std::string>{"a", "b"});
     steps.push_back(step);
     root["steps"] = steps;
 
