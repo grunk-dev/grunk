@@ -216,10 +216,10 @@ TEST_F(IOTest, write)
         auto b = Feature("b", "double", 0.1);
         auto c = eval("c", "plus", a, b)->get();
         auto d = eval("d", "plus", c, a)->get();
-        write("test.gk", d);
+        write("test.grr", d);
     }
 
-    auto y = YAML::LoadFile("test.gk");
+    auto y = YAML::LoadFile("test.grr");
     test_basic_tree(y, "plus", "double");
 }
 
@@ -232,20 +232,20 @@ TEST_F(IOTest, write_const_iterable_container)
         auto d = eval("d", "plus", c, a)->get();
 
         std::vector<RuntimeFeature> v{a,b,c,d};
-        write("test_vector.gk", v);
+        write("test_vector.grr", v);
 
         FeatureContainer m;
         m.insert({"a", a});
         m.insert({"b", b});
         m.insert({"c", c});
         m.insert({"d", d});
-        write("test_unordered_map.gk", m);
+        write("test_unordered_map.grr", m);
     }
 
-    auto yv = YAML::LoadFile("test_vector.gk");
+    auto yv = YAML::LoadFile("test_vector.grr");
     test_basic_tree(yv, "plus", "double");
 
-    auto ym = YAML::LoadFile("test_unordered_map.gk");
+    auto ym = YAML::LoadFile("test_unordered_map.grr");
     test_basic_tree(ym, "plus", "double");
 }
 
@@ -399,6 +399,47 @@ TEST_F(IOTest, deserialize_no_topo_order)
     );
 }
 
+TEST_F(IOTest, write_duplicate_name)
+{
+    // duplicate name in parameters
+    {
+        auto a = Feature("a", "double", 0.2);
+        auto b = Feature("a", "double", 0.1);
+
+        EXPECT_THROW(
+            details::feature_tree_to_yaml(a, b),
+            grunk::io_error
+        );
+    }
+
+    // duplicate name in steps
+    {
+        auto a = Feature("a", "double", 0.2);
+        auto b = Feature("b", "double", 0.1);
+        auto c = eval("a", "plus", a, b)->get();
+        auto d = eval("d", "plus", b, a)->get();
+
+        EXPECT_THROW(
+            details::feature_tree_to_yaml(d, c),
+            grunk::io_error
+        );
+    }
+}
+
+TEST_F(IOTest, read_duplicate_name)
+{
+
+    EXPECT_THROW(
+        read("test_data/simple_test_duplicate_name_parameter.grr"),
+        grunk::io_error
+    );
+
+    EXPECT_THROW(
+        read("test_data/simple_test_duplicate_name_step.grr"),
+        grunk::io_error
+    );
+}
+
 TEST_F(IOTest, roundtrip_write_read)
 {
     {
@@ -406,11 +447,11 @@ TEST_F(IOTest, roundtrip_write_read)
         auto b = Feature("b", "double", 0.1);
         auto c = eval("c", "plus", a, b)->get();
         auto d = eval("d", "plus", c, a)->get();
-        write("test.gk", d);
+        write("test.grr", d);
     }
 
     {
-        auto features = read("test.gk");
+        auto features = read("test.grr");
         EXPECT_EQ(features.size(), 4);
         EXPECT_NEAR(Reflect::cast<double>(features.at("d").value()), 0.5, 1e-7);
         EXPECT_NEAR(Reflect::cast<double>(features.at("c").value()), 0.3, 1e-7);
@@ -421,7 +462,7 @@ TEST_F(IOTest, roundtrip_write_read)
 
 TEST_F(IOTest, roundtrip_read_write)
 {
-    auto features = read("test_data/simple_test.gk");
+    auto features = read("test_data/simple_test.grr");
 
     EXPECT_EQ(features.size(), 4);
     EXPECT_NEAR(Reflect::cast<double>(features.at("d").value().get("value")), 0.5, 1e-7);

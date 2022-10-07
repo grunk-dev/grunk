@@ -197,14 +197,14 @@ type that I can deal with:
 Reading and writing to file
 ===========================
 
-We can write the feature tree from the :ref:`previous section<using-plugins>` to a file 
-with the command
+We can write the feature tree from the :ref:`previous section<using-plugins>` to a file, 
+the *grunk recipe*, with the command
 
 .. code-block:: cpp
    
-   grunk::write("/home/jan/my_grunk_files/simple.gk", b);
+   grunk::write("/home/jan/my_grunk_files/simple.grr", b);
 
-The file will then have the following contents:
+The grunk recipe will have the following contents:
 
 .. code-block:: yaml 
    
@@ -221,19 +221,19 @@ The file will then have the following contents:
     - !<SomePluginB::multiply> [ [b], [a, z] ]
 
 All information needed to reproduce the output of ``b`` gets written into the file in 
-yaml format. The steps are sorted in topological order, which means they can be performed
-in the same order. The function ``grunk::write`` accepts any number of ``Feature`` 
+yaml format. The steps are sorted in topological order, that is in the order in which an 
+evaluation is possible. The function ``grunk::write`` accepts any number of ``Feature`` 
 instances or an iterable collection of ``Feature`` instances. The following commands all 
 yield the same file *(except for the order of independent parameters)*:
 
 .. code-block:: cpp 
    
-   grunk::write("/home/jan/my_grunk_files/simple.gk", b);
-   grunk::write("/home/jan/my_grunk_files/simple.gk", b, a, x, y, z);
-   grunk::write("/home/jan/my_grunk_files/simple.gk", z, b);
+   grunk::write("/home/jan/my_grunk_files/simple.grr", b);
+   grunk::write("/home/jan/my_grunk_files/simple.grr", b, a, x, y, z);
+   grunk::write("/home/jan/my_grunk_files/simple.grr", z, b);
 
    std::vector<RuntimeFeature> vec{a,b,x};
-   grunk::write("/home/jan/my_grunk_files/simple.gk", vec);
+   grunk::write("/home/jan/my_grunk_files/simple.grr", vec);
 
 The file can then be read by grunk and the feature tree can be 
 reconstructed, as long as the two plugins have been loaded:
@@ -244,7 +244,7 @@ reconstructed, as long as the two plugins have been loaded:
    plugins.prepend_path("/home/jan/grun_plugins/");
    plugins.load_all();
 
-   auto features = grunk::read("/home/jan/my_grunk_files/simple.gk")
+   auto features = grunk::read("/home/jan/my_grunk_files/simple.grr")
    auto b = features.at("b");
    auto b_result = Reflect::cast<double>(b.value().get("value"));
    std::cout << b_result << std::endl;

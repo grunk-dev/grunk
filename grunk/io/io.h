@@ -134,6 +134,39 @@ namespace details {
 using Visited = std::unordered_map<parametric::DAGNode const*, bool>;
 
 /**
+ * @brief checks a YAML tree for duplicate feature names
+ * 
+ * @param root The root node of the YAML representation
+ * @return true if the tree has unique feature names
+ * @return false otherwise
+ */
+bool has_unique_feature_names(YAML::Node const& root){
+
+    std::unordered_map<std::string, bool> ids;
+    
+    if (root["parameters"]) {
+        for (auto const& p : root["parameters"]) {
+            std::string id = p.first.as<std::string>();
+            ids[id] = true;
+        }
+    }
+
+    if (root["steps"]) {
+        for (auto const& s : root["steps"]) {
+            for (auto const& output : s[0]) {
+                std::string id = output.as<std::string>();
+                if (ids.find(id) != ids.end()) {
+                    return false;
+                }
+                ids[id] = true;
+            }
+        }
+    }
+
+    return true;
+}
+
+/**
  * @brief parses a Feature<Arg> for any given type arg to yaml. While doing so
  * it parses recursively all ancestors of the feature, that is all parametric::ComputeNodes
  * and all parameters the input feature depends on.
@@ -166,7 +199,7 @@ void parse_feature(Feature<Arg> const& arg, YAML::Node& yaml_root, Visited& visi
         */
         ToStringVisitor(YAML::Node& r, Visited& v)
          : root(r)
-         , visited(v)
+         , m_visited(v)
         {};
 
         /**
@@ -187,7 +220,7 @@ void parse_feature(Feature<Arg> const& arg, YAML::Node& yaml_root, Visited& visi
         void visit(parametric::DAGNode const& n, size_t depth)
         {
             // check if the node has already been parsed...
-            if (visited[&n]) {
+            if (visited(&n)) {
                 return;
             }
 
@@ -198,6 +231,15 @@ void parse_feature(Feature<Arg> const& arg, YAML::Node& yaml_root, Visited& visi
                 bool is_parameter = ((depth % 2) == 0);
 
                 if (is_parameter) {
+
+
+                    if (root["parameters"][n.id()]) {
+                        throw io_error(
+                            "The feature tree does not have unique feature names. Found duplicate parameter \""
+                            + n.id() + "\"."
+                        );
+                    }
+
                     node.SetStyle(YAML::EmitterStyle::Flow);
                     root["parameters"][n.id()] = node;
                 }
@@ -207,7 +249,7 @@ void parse_feature(Feature<Arg> const& arg, YAML::Node& yaml_root, Visited& visi
                 }
             }
 
-            visited[&n] = true;
+            m_visited[&n] = true;
         }
 
         /**
@@ -224,7 +266,12 @@ void parse_feature(Feature<Arg> const& arg, YAML::Node& yaml_root, Visited& visi
         }
 
     private:
-        Visited& visited;
+
+        bool visited(parametric::DAGNode const* key) {
+            return (m_visited.find(key) != m_visited.end());
+        }
+
+        Visited& m_visited;
         std::stack<YAML::Node> steps;
         YAML::Node& root;
     };
@@ -295,7 +342,7 @@ template <
 YAML::Node feature_tree_to_yaml(Container const& features)
 {
     YAML::Node root;
-    Visited visited;
+    Visited visited;    
 
     //write grunk version
     root["uses"]["grunk"] = grunk_VERSION;
@@ -311,6 +358,10 @@ YAML::Node feature_tree_to_yaml(Container const& features)
             // container is vector/list like
             parse_feature(value, root, visited);
         }
+    }
+
+    if (!has_unique_feature_names(root)) {
+        throw io_error("The feature tree does not have unique feature names.");
     }
 
     // write loaded plugins

@@ -83,6 +83,10 @@ FeatureContainer yaml_to_feature_tree(YAML::Node const& root)
             auto type = it->second.Tag();
             auto value = it->second;
 
+            if (features.find(name) != features.end()) {
+                throw io_error("Error parsing parameters. A parameter with name \"" + name + "\" already exists.");
+            }
+
             auto object = deserialize(type, value);
             features.emplace(name, RuntimeFeature(name, std::move(object)));
         }
@@ -119,6 +123,11 @@ FeatureContainer yaml_to_feature_tree(YAML::Node const& root)
             size_t idx = 0;
             for (auto const& node : outputs) {
                 auto output_name = node.as<std::string>();
+
+                if (features.find(output_name) != features.end()) {
+                    throw io_error("Error parsing step " + std::to_string(idx) + ": A parameter with name \"" + output_name + "\" already exists.");
+                }
+
                 auto output = comp_node->get(idx++);
                 output.set_id(output_name);
                 features.emplace(output_name, output);
