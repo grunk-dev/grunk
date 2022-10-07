@@ -83,15 +83,8 @@ std::string serialize(Reflect::DynamicObject const& v)
     YAML::Node out = serialized;
     YAML::Emitter e;
 
-#ifdef YAML_TAG_WORKAROUND
-    YAML::Node x;
-    x["tag"] = v.get_type_descriptor()->GetName();
-    x["value"] = out;
-    e << x;
-#else
-    auto tag = YAML::LocalTag(v.get_type_descriptor()->GetName());
+    auto tag = YAML::VerbatimTag(v.get_type_descriptor()->GetName());
     e << tag << out;
-#endif
     return e.c_str();
 }
 
@@ -200,13 +193,7 @@ void parse_feature(Feature<Arg> const& arg, YAML::Node& yaml_root, Visited& visi
 
             if (std::string str = n.serialize(); !str.empty()){
 
-#ifdef YAML_TAG_WORKAROUND
-                auto nnode = YAML::Load(str);
-                YAML::Node node = nnode["value"];
-                node.SetTag(nnode["tag"].as<std::string>());
-#else
                 auto node =  YAML::Load(str);
-#endif
 
                 bool is_parameter = ((depth % 2) == 0);
 
