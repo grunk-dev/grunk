@@ -18,7 +18,7 @@ that adds two ``double``\s and is a bit talkative about it.
        return l + r;
    };
 
-grunk let's you delay the evaluation of the function until the result is queried.
+grunk lets you delay the evaluation of the function until the result is queried.
 
 .. code-block:: cpp
 
@@ -123,7 +123,7 @@ This functionality of only invalidating those features, that depend
 on a changed feature is called **automatic invalidation**. 
 
 Lazy evaluation and automatic invalidation come with the trade-off of having to 
-store dependency information, but it pays of
+store dependency information, but it pays off
 for big workflows with many computationally expensive functions. This becomes especially 
 apparent in explorative design or automated optimization workflows, where input parameters 
 can be expected to be altered frequently.
@@ -172,7 +172,7 @@ We can load the plugins using the ``PluginRegistry``.
 When working with plugins, I 
 have to use grunk's :ref:`dynamic mode<dynamic-mode>`, while the :ref:`first example<getting-started>` used grunk's 
 :ref:`static mode<static-mode>`. In essence, this means that all features of the above feature tree are now instances of ``Feature<Reflect::DynamicObject>``, 
-se also :ref:`design principles<design-dynamic-sublanguage>`. Because the plugins are loaded
+see also :ref:`design principles<design-dynamic-sublanguage>`. Because the plugins are loaded
 at runtime, the calling code does not know about the type ``SomePluginA::MyDouble`` and the 
 functions ``SomePluginA::add`` and ``SomePluginB::multiply`` directly. Instead, it relies on 
 a runtime reflection system used by grunk's plugin system. 
