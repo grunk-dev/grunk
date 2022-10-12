@@ -67,8 +67,8 @@ TEST_F(RuntimeAlgorithmTest, Basic)
     auto f = Reflect::Function(&add, "add");
 
     // l and r are the root input nodes
-    auto l = Feature("MyDouble", 0.2);
-    auto r = Feature("MyDouble", 0.1);
+    auto l = Feature("l", "MyDouble", 0.2);
+    auto r = Feature("r", "MyDouble", 0.1);
 
     // a depends on l and r, b depends on a and r
     //    
@@ -78,12 +78,15 @@ TEST_F(RuntimeAlgorithmTest, Basic)
     //       \  |
     //         b
     //
-    auto a = eval(f, l, r)->get();
-    auto b = eval(f, a, r)->get();
+    auto a = eval("a", f, l, r)->get(); 
+    auto b = eval("b", f, a, r)->get();
 
     // nothing has been computed yet, we just registered the feature tree
     EXPECT_FALSE(a.is_valid());
     EXPECT_FALSE(b.is_valid());
+    
+    EXPECT_EQ(a.id(), "a");
+    EXPECT_EQ(b.id(), "b");
 
     // evaluating b should trigger evaluation of the entire tree
     EXPECT_NEAR(b.value().get_as<double>("val"), 0.4, 1e-12);
@@ -114,16 +117,16 @@ TEST_F(RuntimeAlgorithmTest, PassNonRumtimeFeatureToRuntimeAlgorithm)
 {
     auto f = Reflect::Function(&add, "add");
 
-    auto lr = Feature("MyDouble", 0.2);
-    auto lc = Feature(MyDouble(0.2));
-    auto rc = Feature(MyDouble(0.1));
+    auto lr = Feature("lr", "MyDouble", 0.2);
+    auto lc = Feature("lc", MyDouble(0.2));
+    auto rc = Feature("rc", MyDouble(0.1));
 
     // (RuntimeFeature, Feature<T>) -> RuntimeAlgorithm
-    auto ret1 = eval(f, lr, rc)->get();
+    auto ret1 = eval("ret1", f, lr, rc)->get();
     EXPECT_NEAR(ret1.value().get_as<double>("val"), 0.3, 1e-12);
 
     // (Feature<T>, Feature<T>) -> RuntimeAlgorithm
-    auto ret2 = eval(f, lc, rc)->get();
+    auto ret2 = eval("ret2", f, lc, rc)->get();
     EXPECT_NEAR(ret2.value().get_as<double>("val"), 0.3, 1e-12);
 }
 
@@ -131,10 +134,22 @@ TEST_F(RuntimeAlgorithmTest, MultiOutput)
 {
     auto f = Reflect::Function(&get_components, "get_components");
 
-    auto i = Feature("Point", 0.2, 0.6);
-    auto fun = eval(f, i);
-    auto x = fun->get<0>();
-    auto y = fun->get<1>();
+    auto i = Feature("i", "Point", 0.2, 0.6);
+    auto o = eval("o", f, i);
+    auto x = o->get<0>();
+    auto y = o->get<1>();
+
+    // test default output feature ids
+    EXPECT_EQ(x.id(), "o[0]");
+    EXPECT_EQ(y.id(), "o[1]");
+
+    // test renaming feature ids
+    x.set_id("x");
+    y.set_id("y");
+    EXPECT_EQ(x.id(), "x");
+    EXPECT_EQ(y.id(), "y");
+    EXPECT_EQ(o->get<0>().id(), "x");
+    EXPECT_EQ(o->get<1>().id(), "y");
 
     EXPECT_EQ(Reflect::cast<double>(x.value()), 0.2);
     EXPECT_EQ(Reflect::cast<double>(y.value()), 0.6);
@@ -151,8 +166,8 @@ TEST_F(RuntimeAlgorithmTest, UnnamedFeature)
 {
     auto f = Reflect::Function(std::plus<double>(), "plus");
 
-    auto x = Feature("double", 0.7); // x is a named feature
-    auto z = eval(f, x, 0.2)->get(); // 0.2 is an unnamed feature
+    auto x = Feature("x", "double", 0.7); // x is a named feature
+    auto z = eval("z", f, x, 0.2)->get(); // 0.2 is an unnamed feature
 
     EXPECT_FALSE(z.is_valid());
     EXPECT_NEAR(Reflect::cast<double>(z.value()), 0.9, 1e-15);

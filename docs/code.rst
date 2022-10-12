@@ -32,9 +32,9 @@ of the given function for the given features as input in the feature tree.
 
 .. code-block:: cpp
 
-   grunk::Feature<double> l(3.3);
-   grunk::Feature<double> r(2.2);
-   auto res = grunk::eval(std::add, l, r);
+   grunk::Feature<double> l("l", 3.3);
+   grunk::Feature<double> r("r", 2.2);
+   auto res = grunk::eval("o", std::add, l, r);
 
 
 
@@ -43,8 +43,8 @@ also the :ref:`advanced section <advanced>`.
 
 .. code-block:: cpp
 
-   auto r = res->get(); // retrieve the first (and in this case only) output of the calcuation
-   std::cout<<r.value()<<std::endl; // evaluate the result, thus triggering the calculation
+   auto o = res->get(); // retrieve the first (and in this case only) output of the calcuation
+   std::cout<<o.value()<<std::endl; // evaluate the result, thus triggering the calculation
 
 .. doxygengroup:: static
    :content-only:
@@ -64,19 +64,31 @@ representation of types and functions that do not need to be known at compile ti
 
 .. code-block:: cpp
 
-   grunk::Feature l("double", 3.3);
-   grunk::Feature r("double", 2.2);
-   auto res = grunk::eval("add", l, r);
-   auto r = res->get(); // retrieve the first (and in this case only) output of the calcuation
+   grunk::Feature l("l", "double", 3.3);
+   grunk::Feature r("r", "double", 2.2);
+   auto res = grunk::eval("o", "add", l, r);
+   auto o = res->get(); // retrieve the first (and in this case only) output of the calcuation
    std::cout<<Reflect::cast<double>(r.value())<<std::endl; // evaluate the result, thus triggering the calculation
 
 The types and functions must be registered from plugins loaded at run time, see also 
-the :ref:`plugin section <plugin-system>` of this documentation.
+the :ref:`plugin section <plugin-system>` of this documentation or the 
+:ref:`corresponding section<using-plugins>` under Usage.
 
 .. doxygengroup:: dynamic
    :content-only:
    :members:
 
+.. _file-io:
+
+File I/O
+========
+
+This section documents all functions and classes of grunk's file i/o. This includes
+all functionality to reading and writing a feature tree from/to a yaml file.
+
+.. doxygengroup:: fileio
+   :content-only:
+   :members:
 
 .. _plugin-system:
 

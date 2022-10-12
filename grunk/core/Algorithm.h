@@ -72,12 +72,13 @@ public:
      * @param f  the function to be wrapped
      * @param args The arguments of the function wrapped in Feature instances
      */
-    Algorithm(F const& f, Feature<Args> const&... args) 
+    Algorithm(std::string const& id, F const& f, Feature<Args> const&... args) 
      : function(f)
      , in{std::make_tuple(args...)}
     {
-        std::apply([=](Feature<Args> const&... feature){ (...,depends_on(feature.param)); }, in);
-        computes(out, parametric::param<ReturnType>(""));
+        std::apply([=](Feature<Args> const&... feature){ (...,depends_on(feature.param())); }, in);
+        computes(out, parametric::param<ReturnType>(id));
+        set_id(id);
     }
 
 public:
@@ -115,12 +116,26 @@ public:
                 static_assert(Idx == 0, "get with Index>0 only allowed for Algorithms returning a tuple.");
                 return Feature<ReturnType>(out);
             } else {
-                return grunk::eval([](ReturnType const& vec){ return vec[Idx]; }, Feature<ReturnType>(out))->get();
+                return grunk::eval(
+                    out.param().id() + "[" + std::to_string(Idx) + "]",
+                    [](ReturnType const& vec){ return vec[Idx]; }, 
+                    Feature<ReturnType>(out)
+                )->get();
             }
         }
         else {
-            return grunk::eval([](ReturnType const& tuple){ return std::get<Idx>(tuple); }, Feature<ReturnType>(out))->get();
+            //TODO: Why do we need to "eval" this again? Isn't this overkill a bit?
+            return grunk::eval(
+                out.param().id() + "[" + std::to_string(Idx) + "]",
+                [](ReturnType const& tuple){ return std::get<Idx>(tuple); }, 
+                Feature<ReturnType>(out)
+            )->get();
         }
+    }
+
+    std::string serialize() const override final
+    {
+        throw std::logic_error("Only Algorithms wrapping a registered dynamic function can be serialized\n");
     }
 
 private:
@@ -183,9 +198,9 @@ struct AlgorithmFactory
      */
     template <typename F,
               typename... Args>
-    static AlgorithmPtr<F, Args...> new_algorithm(F const& fun, Feature<Args> const&... args)
+    static AlgorithmPtr<F, Args...> new_algorithm(std::string const& id, F const& fun, Feature<Args> const&... args)
     {
-        return AlgorithmPtr<F, Args...>(new Algorithm<F, Args...>(fun, args...));
+        return AlgorithmPtr<F, Args...>(new Algorithm<F, Args...>(id, fun, args...));
     }
 
 };
@@ -211,9 +226,9 @@ template <typename F,
             && !details::is_dynamic_function_v<std::decay_t<F>>
           >,
           typename... Args>
-AlgorithmPtr<F, Args...> eval(F const& fun, Feature<Args> const&... args)
+AlgorithmPtr<F, Args...> eval(std::string const& id, F const& fun, Feature<Args> const&... args)
 {
-    return details::AlgorithmFactory::new_algorithm(fun, args...);
+    return details::AlgorithmFactory::new_algorithm(id, fun, args...);
 }
 
 
@@ -241,17 +256,17 @@ AlgorithmPtr<F, Args...> eval(F const& fun, Feature<Args> const&... args)
 template <typename F,
           typename,
           typename... Args>
-decltype(auto) eval(F const& fun, Args&&... args)
+decltype(auto) eval(std::string const& id, F const& fun, Args&&... args)
 {
     auto to_feature = [](auto&& arg){
         using Arg = std::decay_t<decltype(arg)>;
         if constexpr (details::is_feature_v<Arg>){
             return arg;
         } else {
-            return Feature(std::forward<Arg>(arg));
+            return Feature("", std::forward<Arg>(arg)); //TODO: Until we properly support unnamed features, this will be an empty string
         }
     };
-    return details::eval(fun, to_feature(args)...);
+    return details::eval(id, fun, to_feature(args)...);
 }
 
 } //namespace grunk

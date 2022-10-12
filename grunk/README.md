@@ -4,8 +4,7 @@ The source code of grunk is organized as follows:
 
 ## grunk.h
 
-This is a convenience header that exposes everything from the public API of
-grunk.
+This is a convenience header that exposes everything from the public API of grunk.
 
 ## core
 
@@ -22,6 +21,10 @@ A `Feature` is a node in the feature tree representing any kind of object. This 
 This directory contains specializations of `Algorithm` and `Feature`, when 
 used together with grunk's dynamic typing system based on the `reflect` 
 library. 
+
+## io
+
+This directory contains the implementation of File I/O. Specifically, the functions `grunk::read` and `grunk::write` are implemented here.
 
 ## plugins
 

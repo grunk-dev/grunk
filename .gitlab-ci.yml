@@ -50,9 +50,23 @@ test-debug:
     - conan install .. --generator=virtualrunenv -s build_type=Debug -b missing
     - chmod a+x activate_run.sh
     - ./activate_run.sh
-    - ./tests/runUnitTests
+    - cd tests
+    - ./runUnitTests
 
 create-package-debug:
+  tags:
+    - docker
+  except:
+    - main
+  stage: deploy
+  dependencies:
+    - test-debug
+  before_script:
+    - *conan_setup  
+  script:
+    - conan create . paradigms/testing -s build_type=Debug
+
+create-and-upload-package-debug:
   tags:
     - docker
   only:
@@ -64,7 +78,7 @@ create-package-debug:
     - *conan_setup  
   script:
     - conan create . paradigms/testing -s build_type=Debug
-    - conan upload grunk/0.1@paradigms/testing --all --remote=gitlab
+    - conan upload grunk/0.1.0@paradigms/testing --all --remote=gitlab #TODO: parse version from CMakeLists
     
 docs:
   stage: deploy

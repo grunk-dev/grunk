@@ -84,6 +84,8 @@ In addition, grunk depends on the packages ``boost``, ``reflect`` and
 
 - `boost <https://www.boost.org/>`_: grunk uses the header-only boost::dll library
   for its plugin system.
+- `yaml-cpp <https://github.com/jbeder/yaml-cpp>`_: grunk uses yaml-cpp for reading and writing
+  a parametric file in YAML format.
 - `reflect <https://gitlab.dlr.de/paradigms/reflect>`_: This is a simple C++ type reflection library used 
   for the dynamic type system in grunk, see the :ref:`design principles<design-dynamic-sublanguage>`
   section of this documentation. 
@@ -151,7 +153,8 @@ Running the unit tests
 
     .. code-block:: console
 
-       ./tests/runUnitTests
+      cd tests
+       ./runUnitTests
 
 Building this documentation
 ===========================

@@ -32,8 +32,8 @@ struct MyStruct {
 
 TEST(FeatureTest, ctor)
 {
-    Feature<double> x(0.25);
-    Feature<MyStruct> y(x);
+    Feature<double> x("x", 0.25);
+    Feature<MyStruct> y("y", x);
 
     EXPECT_FALSE(y.is_valid());
     EXPECT_EQ(y.value().val, 0.25);
@@ -48,7 +48,7 @@ TEST(FeatureTest, ctor)
 
 TEST(FeatureTest, get)
 {
-    Feature x(MyStruct(0.5));
+    Feature x("x", MyStruct(0.5));
 
     Feature v = x.get(&MyStruct::val)->get();
     EXPECT_EQ(v.value(), 0.5);
@@ -61,8 +61,8 @@ TEST(FeatureTest, get)
 
 TEST(FeatureTest, invoke)
 {
-    Feature x(MyStruct(0.5));
-    Feature factor(3.);
+    Feature x("x", MyStruct(0.5));
+    Feature factor("factor", 3.);
 
     Feature v = x.invoke(&MyStruct::times, factor)->get();
     

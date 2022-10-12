@@ -56,9 +56,9 @@ namespace grunk {
  * @ingroup plugin
  */
 template <typename F>
-void register_function(F&& f, std::string const& name)
+void register_function(F&& f, std::string const& name, std::string const& doc = "")
 {
-    return Reflect::RegisterFunction(std::forward<F>(f), name);
+    return Reflect::RegisterFunction(std::forward<F>(f), name, doc);
 }
 
 
@@ -77,6 +77,13 @@ struct IPlugin
      * @return std::string The name of the plugin
      */
     virtual std::string name() const = 0;
+
+    /**
+     * @brief This function must return the version of the 
+     * plugin in accordance to SemVer 2.0
+     * 
+     */
+     virtual std::string version() const = 0;
 
     /**
      * @brief plugin authors should call register_type and register_function 

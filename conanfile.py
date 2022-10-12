@@ -1,9 +1,18 @@
 from conans import ConanFile, CMake
+from conans.tools import load
+import re
 
+def get_version():
+    try:
+        content = load("CMakeLists.txt")
+        version = re.search("project\(grunk VERSION (.*)\)", content).group(1)
+        return version.strip()
+    except Exception as e:
+        return None
 
 class GrunkConan(ConanFile):
     name = "grunk"
-    version = "0.1"
+    version = get_version()
     license = "<Put the package license here>"
     author = "<Put your name here> <And your email here>"
     url = "<Package recipe repository url here, for issues about the package>"
@@ -13,7 +22,7 @@ class GrunkConan(ConanFile):
     options = {"shared": [True], "fPIC": [True, False]}
     default_options = {"shared": True, "fPIC": True}
     generators = "cmake_find_package"
-    requires = "boost/1.78.0", "parametric/0.1@paradigms/testing", "reflect/0.1@paradigms/testing"
+    requires = "yaml-cpp/0.7.0", "boost/1.78.0", "parametric/0.1@paradigms/testing", "reflect/0.1@paradigms/testing"
     exports_sources = "*"
 
     def config_options(self):
