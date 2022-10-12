@@ -73,7 +73,7 @@ TEST_F(IOTest, serialize_type)
     EXPECT_THROW(parametric::serialize([]{}), std::logic_error);
 }
 
-TEST_F(IOTest, serialize_node)
+TEST_F(IOTest, serialize_DAGNode)
 {
     // test overwrites of virtual DAGNode::serialize
     auto x = Feature("x", 0.2);
