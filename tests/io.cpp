@@ -251,26 +251,24 @@ TEST_F(IOTest, write_const_iterable_container)
 
 TEST_F(IOTest, deserialize_double)
 {
-    YAML::Node y;
-    y["double"] = 0.9876;
+    auto y = YAML::Node(0.9876);
+    y.SetTag("double");
 
-    YAML::const_iterator it=y.begin();
     auto d = details::deserialize(
-        it->first.as<std::string>(),
-        it->second
+        y.Tag(),
+        y
     );
     EXPECT_NEAR(Reflect::cast<double>(d), 0.9876, 1e-7);
 }
 
 TEST_F(IOTest, deserialize_simple_plugin_MyDouble)
 {
-    YAML::Node y;
-    y["MyDouble"] = 0.55557;
+    auto y = YAML::Node(0.55557);
+    y.SetTag("MyDouble");
 
-    YAML::const_iterator it=y.begin();
     auto md = details::deserialize(
-        it->first.as<std::string>(),
-        it->second
+        y.Tag(),
+        y
     );
     auto d = md.get("value");
     EXPECT_NEAR(Reflect::cast<double>(d), 0.55557, 1e-7);
@@ -278,14 +276,13 @@ TEST_F(IOTest, deserialize_simple_plugin_MyDouble)
 
 TEST_F(IOTest, no_deserialize_method)
 {
-    YAML::Node y;
-    y["NonSerializable"] = "doesnt matter what I write here";
+    auto y = YAML::Node("doesnt matter what I write here");
+    y.SetTag("NonSerializable");
 
-    YAML::const_iterator it=y.begin();
     EXPECT_THROW(
         details::deserialize(
-            it->first.as<std::string>(),
-            it->second
+            y.Tag(),
+            y
         ),
         grunk::io_error
     );
@@ -293,14 +290,13 @@ TEST_F(IOTest, no_deserialize_method)
 
 TEST_F(IOTest, deserialize_non_existing_type)
 {
-    YAML::Node y;
-    y["NonExistentType"] = 0.33;
+    auto y= YAML::Node(0.33);
+    y.SetTag("NonExistentType");
 
-    YAML::const_iterator it=y.begin();
     EXPECT_THROW(
         details::deserialize(
-            it->first.as<std::string>(),
-            it->second
+            y.Tag(),
+            y
         ),
         grunk::io_error
     );
@@ -351,10 +347,10 @@ TEST_F(IOTest, deserialize_non_existing_function)
 
     YAML::Node steps;
 
-    YAML::Node step;
-    step["spunck"] = YAML::Node();
-    step["spunck"].push_back(std::vector<std::string>{"c"});
-    step["spunck"].push_back(std::vector<std::string>{"a", "b"});
+    YAML::Node step = YAML::Node();
+    step.SetTag("spunck");
+    step.push_back(std::vector<std::string>{"c"});
+    step.push_back(std::vector<std::string>{"a", "b"});
     steps.push_back(step);
     root["steps"] = steps;
 
