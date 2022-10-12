@@ -77,8 +77,10 @@ create-and-upload-package-debug:
   before_script:
     - *conan_setup  
   script:
+      # parse version string from cmake
+    - GRUNK_VERSION = $(grep -oP "project\(grunk VERSION \K(.*)+(?=\))" CMakeLists.txt)
     - conan create . paradigms/testing -s build_type=Debug
-    - conan upload grunk/0.1.0@paradigms/testing --all --remote=gitlab #TODO: parse version from CMakeLists
+    - conan upload grunk/$GRUNK_VERSION --all --remote=gitlab
     
 docs:
   stage: deploy
