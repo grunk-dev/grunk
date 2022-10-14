@@ -24,20 +24,6 @@
 namespace parametric {
 
 /**
- * @brief template specialization of parametric::serialize for double
- *
- * With this, root parameters of this type can be serialized to yaml
- * 
- * @tparam  empty -> this is a full template specialization
- * @param v The value to be serialized
- * @return std::string string representation of the yaml node
- */
-template <>
-std::string serialize(double const& v) {
-    return YAML::Node(v).as<std::string>();
-}
-
-/**
  * @brief template specialization of parametric::serialize for int
  *
  * With this, root parameters of this type can be serialized to yaml
@@ -47,7 +33,21 @@ std::string serialize(double const& v) {
  * @return std::string string representation of the yaml node
  */
 template <>
-std::string serialize(int const& v) {
+inline std::string serialize(int const& v) {
+    return YAML::Node(v).as<std::string>();
+}
+
+/**
+ * @brief template specialization of parametric::serialize for double
+ *
+ * With this, root parameters of this type can be serialized to yaml
+ * 
+ * @tparam  empty -> this is a full template specialization
+ * @param v The value to be serialized
+ * @return std::string string representation of the yaml node
+ */
+template <>
+inline std::string serialize(double const& v) {
     return YAML::Node(v).as<std::string>();
 }
 
@@ -61,7 +61,7 @@ std::string serialize(int const& v) {
  * @return std::string string representation of the yaml node
  */
 template <>
-std::string serialize(std::string const& v) {
+inline std::string serialize(std::string const& v) {
     return v;
 }
 
@@ -75,7 +75,7 @@ std::string serialize(std::string const& v) {
  * @return std::string string representation of the yaml node
  */
 template <>
-std::string serialize(Reflect::DynamicObject const& v)
+inline std::string serialize(Reflect::DynamicObject const& v)
 { 
     auto serialized = 
         Reflect::cast<YAML::Node>(v.invoke("serialize")[0]);
@@ -140,31 +140,7 @@ using Visited = std::unordered_map<parametric::DAGNode const*, bool>;
  * @return true if the tree has unique feature names
  * @return false otherwise
  */
-bool has_unique_feature_names(YAML::Node const& root){
-
-    std::unordered_map<std::string, bool> ids;
-    
-    if (root["parameters"]) {
-        for (auto const& p : root["parameters"]) {
-            std::string id = p.first.as<std::string>();
-            ids[id] = true;
-        }
-    }
-
-    if (root["steps"]) {
-        for (auto const& s : root["steps"]) {
-            for (auto const& output : s[0]) {
-                std::string id = output.as<std::string>();
-                if (ids.find(id) != ids.end()) {
-                    return false;
-                }
-                ids[id] = true;
-            }
-        }
-    }
-
-    return true;
-}
+bool has_unique_feature_names(YAML::Node const& root);
 
 /**
  * @brief parses a Feature<Arg> for any given type arg to yaml. While doing so
