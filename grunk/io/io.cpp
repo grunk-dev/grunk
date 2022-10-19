@@ -20,6 +20,32 @@ std::string io_error::get_message() const
 
 namespace details {
 
+bool has_unique_feature_names(YAML::Node const& root){
+
+    std::unordered_map<std::string, bool> ids;
+    
+    if (root["parameters"]) {
+        for (auto const& p : root["parameters"]) {
+            std::string id = p.first.as<std::string>();
+            ids[id] = true;
+        }
+    }
+
+    if (root["steps"]) {
+        for (auto const& s : root["steps"]) {
+            for (auto const& output : s[0]) {
+                std::string id = output.as<std::string>();
+                if (ids.find(id) != ids.end()) {
+                    return false;
+                }
+                ids[id] = true;
+            }
+        }
+    }
+
+    return true;
+}
+
 Reflect::DynamicObject deserialize(
     std::string const& type_name,
     YAML::Node const & yaml_node

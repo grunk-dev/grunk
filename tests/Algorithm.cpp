@@ -1,6 +1,6 @@
 #include <gtest/gtest.h>
 
-#include <grunk/core/Algorithm.h>
+#include <grunk/grunk.h>
 
 using namespace grunk;
 
