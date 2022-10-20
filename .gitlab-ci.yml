@@ -13,6 +13,7 @@ image: conanio/gcc9
 build-debug:
   tags:
     - docker
+    - ubuntu
   stage: build
   before_script:
     - *conan_setup  
@@ -40,6 +41,7 @@ build-debug:
 test-debug:
   tags:
     - docker
+    - ubuntu
   stage: test
   dependencies:
     - build-debug
@@ -56,6 +58,7 @@ test-debug:
 create-package-debug:
   tags:
     - docker
+    - ubuntu
   except:
     - main
   stage: deploy
@@ -69,6 +72,7 @@ create-package-debug:
 create-and-upload-package-debug:
   tags:
     - docker
+    - ubuntu
   only:
     - main
   stage: deploy
@@ -78,15 +82,16 @@ create-and-upload-package-debug:
     - *conan_setup  
   script:
       # parse version string from cmake
-    - GRUNK_VERSION = $(grep -oP "project\(grunk VERSION \K(.*)+(?=\))" CMakeLists.txt)
+    - GRUNK_VERSION=$(grep -oP "project\(grunk VERSION \K(.*)+(?=\))" CMakeLists.txt)
     - conan create . paradigms/testing -s build_type=Debug
-    - conan upload grunk/$GRUNK_VERSION --all --remote=gitlab
+    - conan upload -c grunk/$GRUNK_VERSION --all --remote=gitlab
     
 docs:
   stage: deploy
   image: ubuntu:18.04
   tags:
     - docker
+    - ubuntu
   dependencies:
     - build-debug
   script:
@@ -103,6 +108,7 @@ pages:
   image: ubuntu:18.04
   tags:
     - docker
+    - ubuntu
   script:
     - mv build/docs/html public
   artifacts:
