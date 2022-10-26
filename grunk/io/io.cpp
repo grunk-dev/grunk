@@ -59,6 +59,11 @@ Reflect::DynamicObject deserialize(
         // convert to io error
         throw io_error(e.what());
     }
+
+    if (!descr) {
+        throw io_error("Failed to resolve type with name\""s + type_name + "\".");
+    }
+
     auto const* deserializer = descr->GetMemberFunction("deserialize");
     if (!deserializer) {
         throw io_error("type "s + type_name + " does not have a (static) \"deserialize\" method. Please refer to the grunk documentation");
