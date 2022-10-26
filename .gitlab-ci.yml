@@ -124,6 +124,7 @@ test-windows:
   - windows
   - docker
   image: abrarov/msvc-$COMPILER
+  before_script: *configure_msvc
   stage: test
   script:
   - conan install .. --generator=virtualrunenv -s build_type=$BUILD_TYPE -b missing -pr:b=default
