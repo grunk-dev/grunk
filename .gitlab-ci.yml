@@ -53,6 +53,8 @@
   - $env:Path = "C:\Program Files\Conan\conan;$env:Path"
   - conan remote add gitlab https://gitlab.dlr.de/api/v4/projects/21487/packages/conan
   - conan user ci_user -r gitlab -p ${CI_JOB_TOKEN}
+# For some reasone I seem to need this on MSVC 15 2017
+  - $env:PreferredToolArchitecture = "x64"
 
 
 # CI Jobs
