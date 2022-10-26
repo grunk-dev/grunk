@@ -60,7 +60,7 @@ build-ubuntu:
   stage: build
   before_script: 
   - *configure_conan_ubuntu
-  - sudo apt-get -qq update && sudo apt -qq -y install doxygen
+  - sudo apt-get -qq update && sudo apt-get -qq -y install doxygen
   - pip3 install 'Sphinx>=2.4.0,<3.0.0' sphinx-rtd-theme 'breathe<4.15.0' m2r 'mistune==0.8.4' 'Jinja2<3.1'
   - export ASAN_FLAGS="-fsanitize=address -fsanitize-recover=address -fno-omit-frame-pointer"
   script:
@@ -70,10 +70,11 @@ build-ubuntu:
   # install the latest dev versions of reflect and parametric and overwrite the FindXXX.cmake files
   - conan install -g cmake_find_package -s build_type=$BUILD_TYPE -b missing "reflect/0.1.0@paradigms/testing"
   - conan install -g cmake_find_package -s build_type=$BUILD_TYPE -b missing "parametric/0.2.0@paradigms/testing"
-  - cmake .. -DCMAKE_BUILD_TYPE=$BUILD_TYPE
-             -DGRUNK_TESTS=ON
-             -DGRUNK_BUILD_DOCS=ON 
-             -DCMAKE_CXX_FLAGS="${ASAN_FLAGS}"
+  - |
+    cmake .. -DCMAKE_BUILD_TYPE=$BUILD_TYPE           \
+             -DGRUNK_TESTS=ON                         \
+             -DGRUNK_BUILD_DOCS=ON                    \
+             -DCMAKE_CXX_FLAGS="${ASAN_FLAGS}"        \
              -DCMAKE_EXE_LINKER_FLAGS="${ASAN_FLAGS}"
   - make -j
   - cmake --build . --target Sphinx
