@@ -25,6 +25,7 @@ target_link_libraries(SimplePlugin PRIVATE grunk)
 
 add_executable(runUnitTests ${TESTSOURCES})
 target_link_libraries(runUnitTests PRIVATE grunk gtest_main)
+add_dependencies(runUnitTests SimplePlugin)
 
 add_custom_command(
   TARGET runUnitTests POST_BUILD
