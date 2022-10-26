@@ -51,6 +51,8 @@
   - choco install conan -y
 # 5. Add conan to Path. I don't understand why I have to set the path explicitly and can't just call refreshenv in Powershell...
   - $env:Path = "C:\Program Files\Conan\conan;$env:Path"
+  - conan remote add gitlab https://gitlab.dlr.de/api/v4/projects/21487/packages/conan
+  - conan user ci_user -r gitlab -p ${CI_JOB_TOKEN}
 
 
 # CI Jobs
@@ -99,26 +101,37 @@ test-ubuntu:
   <<: *ubuntu_config
 
 
+build-windows:
+  #note: variables BUILD_DIR, BUILD_TYPE and COMPILER will be populated thru yaml anchor "windows_config"
+  stage: build
+  before_script: *configure_msvc
+  script:
+  - mkdir $BUILD_DIR
+  - cd $BUILD_DIR
+  - conan install .. -s build_type=$BUILD_TYPE -b missing -pr:b=default
+  - cmake ..
+  - cmake --build . --config $BUILD_TYPE
+  artifacts:
+    paths:
+    - $BUILD_DIR
+  <<: *windows_config
+
+test-windows:
+  #note: variables BUILD_DIR, BUILD_TYPE and COMPILER will be populated thru yaml anchor "windows_config"
+  tags:
+  - windows
+  - docker
+  image: abrarov/msvc-$COMPILER
+  stage: test
+  script:
+  - conan install .. --generator=virtualrunenv -s build_type=$BUILD_TYPE -b missing -pr:b=default
+  - ./activate_run.ps1
+  - cd tests\$BUILD_TYPE
+  - ./runUnitTests
+  <<: *windows_config
+
 # OLD
 
-
-# # run tests using the binary built before
-# test-debug:
-#   tags:
-#     - docker
-#     - ubuntu
-#   stage: test
-#   dependencies:
-#     - build-debug
-#   before_script:
-#     - *conan_setup  
-#   script:
-#     - cd build
-#     - conan install .. --generator=virtualrunenv -s build_type=Debug -b missing
-#     - chmod a+x activate_run.sh
-#     - ./activate_run.sh
-#     - cd tests
-#     - ./runUnitTests
 
 # create-package-debug:
 #   tags:
