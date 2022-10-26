@@ -66,7 +66,7 @@ build-ubuntu:
   script:
   - mkdir $BUILD_DIR && cd $BUILD_DIR
   # install dependencies according to conanfile
-  - conan install .. -s build_type=$BUILD_TYPE -b missing
+  - conan install .. -s build_type=$BUILD_TYPE -b missing -pr:b=default
   # install the latest dev versions of reflect and parametric and overwrite the FindXXX.cmake files
   - conan install -g cmake_find_package -s build_type=$BUILD_TYPE -b missing "reflect/0.1.0@paradigms/testing"
   - conan install -g cmake_find_package -s build_type=$BUILD_TYPE -b missing "parametric/0.2.0@paradigms/testing"
@@ -151,7 +151,7 @@ docs:
     - docker
     - ubuntu
   script:
-    - mv  build-Release-gcc7/docs/html grunk-docs
+    - mv  build-Release-gcc8/docs/html grunk-docs
     - tar czf grunk-docs.tar.gz grunk-docs
   artifacts:
     paths:
@@ -166,7 +166,7 @@ pages:
     - docker
     - ubuntu
   script:
-    - mv build-Release-gcc7/docs/html public
+    - mv build-Release-gcc8/docs/html public
   artifacts:
     paths:
       - public
