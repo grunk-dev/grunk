@@ -68,8 +68,8 @@ build-ubuntu:
   # install dependencies according to conanfile
   - conan install .. -s build_type=Debug -b missing
   # install the latest dev versions of reflect and parametric and overwrite the FindXXX.cmake files
-  - conan install -g cmake_find_package -s build_type=$BUILD_TYPE -b missing "reflect/[>=0.1.0]@paradigms/testing"
-  - conan install -g cmake_find_package -s build_type=$BUILD_TYPE -b missing "parametric/[>=0.1.0]@paradigms/testing"
+  - conan install -g cmake_find_package -s build_type=$BUILD_TYPE -b missing "reflect/0.1.0@paradigms/testing"
+  - conan install -g cmake_find_package -s build_type=$BUILD_TYPE -b missing "parametric/0.2.0@paradigms/testing"
   - cmake .. -DCMAKE_BUILD_TYPE=$BUILD_TYPE
              -DGRUNK_TESTS=ON
              -DGRUNK_BUILD_DOCS=ON 
