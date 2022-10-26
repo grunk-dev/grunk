@@ -45,11 +45,11 @@ set(grunk_SRC
 add_library(grunk ${grunk_SRC})
 
 target_compile_features(grunk PUBLIC cxx_std_17)
-target_link_libraries(grunk PUBLIC yaml-cpp::yaml-cpp
+target_link_libraries(grunk PUBLIC ${CMAKE_DL_LIBS}
                                    parametric::parametric 
-                                   Boost::headers
                                    reflect::reflect
-                                   ${CMAKE_DL_LIBS})
+                                   Boost::headers
+                                   yaml-cpp::yaml-cpp)
 target_include_directories(grunk PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
   $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>
