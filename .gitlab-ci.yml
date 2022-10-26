@@ -127,6 +127,7 @@ test-windows:
   before_script: *configure_msvc
   stage: test
   script:
+  - cd $BUILD_DIR
   - conan install .. --generator=virtualrunenv -s build_type=$BUILD_TYPE -b missing -pr:b=default
   - ./activate_run.ps1
   - cd tests\$BUILD_TYPE
