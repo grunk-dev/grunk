@@ -67,9 +67,6 @@ build-ubuntu:
   - mkdir $BUILD_DIR && cd $BUILD_DIR
   # install dependencies according to conanfile
   - conan install .. -s build_type=$BUILD_TYPE -b missing -pr:b=default
-  # install the latest dev versions of reflect and parametric and overwrite the FindXXX.cmake files
-  - conan install -g cmake_find_package -s build_type=$BUILD_TYPE -b missing "reflect/0.1.0@paradigms/testing"
-  - conan install -g cmake_find_package -s build_type=$BUILD_TYPE -b missing "parametric/0.2.0@paradigms/testing"
   - |
     cmake .. -DCMAKE_BUILD_TYPE=$BUILD_TYPE           \
              -DGRUNK_TESTS=ON                         \
@@ -91,8 +88,13 @@ test-ubuntu:
   - docker
   image: conanio/$COMPILER-ubuntu18.04
   stage: test
+  before_script: *configure_conan_ubuntu
   script:
-  - cd $BUILD_DIR/tests
+  - cd $BUILD_DIR
+  - conan install .. --generator=virtualrunenv -s build_type=$BUILD_TYPE -b missing -pr:b=default
+  - chmod a+x activate_run.sh
+  - ./activate_run.sh
+  - cd tests
   - ./runUnitTests
   <<: *ubuntu_config
 
