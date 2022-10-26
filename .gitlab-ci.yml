@@ -111,8 +111,8 @@ build-windows:
   - mkdir $BUILD_DIR
   - cd $BUILD_DIR
   - conan install .. -s build_type=$BUILD_TYPE -b missing -pr:b=default
-  - cmake .. -A x64
-  - cmake --build . --config $BUILD_TYPE
+  - cmake .. -A x64 -DCMAKE_INSTALL_PREFIX=install -DGRUNK_TESTS=ON 
+  - cmake --build . --target runUnitTests -j --config $BUILD_TYPE
   artifacts:
     paths:
     - $BUILD_DIR
