@@ -32,7 +32,7 @@
 # setup and update conan profile. Specifically, for GCC and Clang set compiler.libcxx
   - |
     conan profile new default --detect --force
-    if [ $COMPILER == *"gcc"* ] || [ $COMPILER == *"clang"* ]; then 
+    if [[ $COMPILER == *"gcc"* ]] || [[ $COMPILER == *"clang"* ]]; then 
       conan profile update settings.compiler.libcxx=libstdc++11 default
     fi; 
 # add Gitlab remote and login using CI credentials
