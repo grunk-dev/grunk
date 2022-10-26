@@ -154,7 +154,7 @@ docs:
     - docker
     - ubuntu
   script:
-    - mv  build-Release-gcc8/docs/html grunk-docs
+    - mv  build-Release-gcc9/docs/html grunk-docs
     - tar czf grunk-docs.tar.gz grunk-docs
   artifacts:
     paths:
@@ -169,7 +169,7 @@ pages:
     - docker
     - ubuntu
   script:
-    - mv build-Release-gcc8/docs/html public
+    - mv build-Release-gcc9/docs/html public
   artifacts:
     paths:
       - public
