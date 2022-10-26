@@ -51,10 +51,13 @@ Reflect::DynamicObject deserialize(
     YAML::Node const & yaml_node
 )
 {
-    Reflect::TypeDescriptor const* descr = Reflect::Resolve(type_name);
-    if (!descr){
-        // throw an error
-        throw io_error("Unknown type "s + type_name);
+    Reflect::TypeDescriptor const* descr = nullptr;
+    try {
+        descr = Reflect::Resolve(type_name);
+    } catch(std::out_of_range const& e)
+    {
+        // convert to io error
+        throw io_error(e.what());
     }
     auto const* deserializer = descr->GetMemberFunction("deserialize");
     if (!deserializer) {

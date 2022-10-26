@@ -1,90 +1,148 @@
-image: conanio/gcc9
+# YAML anchors
 
-# TODO: debug & release builds for several clang and gcc versions, windows CI
+.ubuntu_config: &ubuntu_config
+  tags:
+  - ubuntu
+  - docker
+  image: conanio/$COMPILER-ubuntu18.04
+  variables:
+    BUILD_DIR: build-$BUILD_TYPE-$COMPILER
+  parallel:
+    matrix:
+     - BUILD_TYPE: [Debug, Release]
+       COMPILER: [gcc7, gcc12, clang10, clang14] # one old one new
 
-.conan_setup: &conan_setup
-# use new ABI by default
-  - conan profile new default --detect
-  - conan profile update settings.compiler.libcxx=libstdc++11 default
-# Add gitlab conan package registry and setup ser name and access token
+.windows_config: &windows_config
+  tags:
+  - windows
+  - docker
+  image: abrarov/msvc-$COMPILER
+  variables:
+    BUILD_DIR: build-$BUILD_TYPE-$COMPILER
+    #workaround: have had concurrency problems, where jobs use the same image https://gitlab.com/gitlab-org/gitlab-runner/-/issues/4793 and thus the same git repo
+    # using GIT_CLONE_PATH: $CI_BUILDS_DIR/$CI_CONCURRENT_ID/$CI_PROJECT_PATH is not unique, because for some reason both Debug builds get the same $CI_CONCURRENT_ID 0
+    # and both Release builds get the same $CI_CONCURRENT_ID 1.
+    GIT_CLONE_PATH: $CI_BUILDS_DIR/$BUILD_TYPE-$COMPILER/$CI_PROJECT_PATH
+  parallel:
+    matrix:
+     - BUILD_TYPE: [Debug, Release]
+       COMPILER: ["2017", "2022"] # one old one new
+
+.configure_conan_ubuntu: &configure_conan_ubuntu
+# setup and update conan profile. Specifically, for GCC and Clang set compiler.libcxx
+  - |
+    conan profile new default --detect --force
+    if [ $COMPILER == *"gcc"* ] || [ $COMPILER == *"clang"* ]; then 
+      conan profile update settings.compiler.libcxx=libstdc++11 default
+    fi; 
+# add Gitlab remote and login using CI credentials
   - conan remote add gitlab https://gitlab.dlr.de/api/v4/projects/21487/packages/conan
   - conan user ci_user -r gitlab -p ${CI_JOB_TOKEN}
 
-build-debug:
-  tags:
-    - docker
-    - ubuntu
+.configure_msvc: &configure_msvc
+# this is a bit hacky...
+# 1. call vcvars64.bat, which is in a different location depending on the compiler version
+# 2. create the environment in CMD and store the environment in a temporary file
+# 3. recreate the environment in Powershell from the temporary file.
+  - if ($COMPILER -eq 2017) { cmd.exe /c "call `"C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\VC\Auxiliary\Build\vcvars64.bat`" && set > %temp%\vcvars.txt" }
+  - if ($COMPILER -eq 2022) { cmd.exe /c "call `"C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Auxiliary\Build\vcvars64.bat`" && set > %temp%\vcvars.txt" }
+  - Get-Content "$env:temp\vcvars.txt" | Foreach-Object { if ($_ -match "^(.*?)=(.*)$") { Set-Content "env:\$($matches[1])" $matches[2] } }
+# 4. Install conan
+  - choco install conan -y
+# 5. Add conan to Path. I don't understand why I have to set the path explicitly and can't just call refreshenv in Powershell...
+  - $env:Path = "C:\Program Files\Conan\conan;$env:Path"
+
+
+# CI Jobs
+
+build-ubuntu:
+  #note: variables BUILD_DIR, BUILD_TYPE and COMPILER will be populated thru yaml anchor "ubuntu_config"
   stage: build
-  before_script:
-    - *conan_setup  
-    - sudo apt-get -qq update && sudo apt -qq -y install make git doxygen python3-pip
-    - pip3 install 'Sphinx>=2.4.0,<3.0.0' sphinx-rtd-theme 'breathe<4.15.0' m2r 'mistune==0.8.4' 'Jinja2<3.1'
+  before_script: 
+  - *configure_conan_ubuntu
+  - sudo apt-get -qq update && sudo apt -qq -y install doxygen
+  - pip3 install 'Sphinx>=2.4.0,<3.0.0' sphinx-rtd-theme 'breathe<4.15.0' m2r 'mistune==0.8.4' 'Jinja2<3.1'
+  - export ASAN_FLAGS="-fsanitize=address -fsanitize-recover=address -fno-omit-frame-pointer"
   script:
-    - mkdir build && cd build
-    - conan install .. -s build_type=Debug -b missing
-    - export ASAN_FLAGS="-fsanitize=address -fsanitize-recover=address -fno-omit-frame-pointer"
-    - cmake .. -DCMAKE_BUILD_TYPE=Debug
-               -DGRUNK_TESTS=ON
-               -DGRUNK_BUILD_DOCS=ON 
-               -DCMAKE_CXX_FLAGS="${ASAN_FLAGS}"
-               -DCMAKE_EXE_LINKER_FLAGS="${ASAN_FLAGS}"
-    - make -j
-    - cmake --build . --target Sphinx
+  - mkdir $BUILD_DIR && cd $BUILD_DIR
+  # install dependencies according to conanfile
+  - conan install .. -s build_type=Debug -b missing
+  # install the latest dev versions of reflect and parametric and overwrite the FindXXX.cmake files
+  - conan install -g cmake_find_package -s build_type=$BUILD_TYPE -b missing "reflect/[>=0.1.0]@paradigms/testing"
+  - conan install -g cmake_find_package -s build_type=$BUILD_TYPE -b missing "parametric/[>=0.1.0]@paradigms/testing"
+  - cmake .. -DCMAKE_BUILD_TYPE=$BUILD_TYPE
+             -DGRUNK_TESTS=ON
+             -DGRUNK_BUILD_DOCS=ON 
+             -DCMAKE_CXX_FLAGS="${ASAN_FLAGS}"
+             -DCMAKE_EXE_LINKER_FLAGS="${ASAN_FLAGS}"
+  - make -j
+  - cmake --build . --target Sphinx
   artifacts:
     paths:
-      - build
-      # cache:
-      #   paths:
-      #     - "*.o"
+    - $BUILD_DIR
+  <<: *ubuntu_config
 
-# run tests using the binary built before
-test-debug:
+
+test-ubuntu:
+  #note: variables BUILD_DIR, BUILD_TYPE and COMPILER will be populated thru yaml anchor "ubuntu_config"
   tags:
-    - docker
-    - ubuntu
+  - ubuntu
+  - docker
+  image: conanio/$COMPILER-ubuntu18.04
   stage: test
-  dependencies:
-    - build-debug
-  before_script:
-    - *conan_setup  
   script:
-    - cd build
-    - conan install .. --generator=virtualrunenv -s build_type=Debug -b missing
-    - chmod a+x activate_run.sh
-    - ./activate_run.sh
-    - cd tests
-    - ./runUnitTests
+  - cd $BUILD_DIR/tests
+  - ./runUnitTests
+  <<: *ubuntu_config
 
-create-package-debug:
-  tags:
-    - docker
-    - ubuntu
-  except:
-    - main
-  stage: deploy
-  dependencies:
-    - test-debug
-  before_script:
-    - *conan_setup  
-  script:
-    - conan create . paradigms/testing -s build_type=Debug
 
-create-and-upload-package-debug:
-  tags:
-    - docker
-    - ubuntu
-  only:
-    - main
-  stage: deploy
-  dependencies:
-    - test-debug
-  before_script:
-    - *conan_setup  
-  script:
-      # parse version string from cmake
-    - GRUNK_VERSION=$(grep -oP "project\(grunk VERSION \K(.*)+(?=\))" CMakeLists.txt)
-    - conan create . paradigms/testing -s build_type=Debug
-    - conan upload -c grunk/$GRUNK_VERSION --all --remote=gitlab
+# OLD
+
+
+# # run tests using the binary built before
+# test-debug:
+#   tags:
+#     - docker
+#     - ubuntu
+#   stage: test
+#   dependencies:
+#     - build-debug
+#   before_script:
+#     - *conan_setup  
+#   script:
+#     - cd build
+#     - conan install .. --generator=virtualrunenv -s build_type=Debug -b missing
+#     - chmod a+x activate_run.sh
+#     - ./activate_run.sh
+#     - cd tests
+#     - ./runUnitTests
+
+# create-package-debug:
+#   tags:
+#     - docker
+#     - ubuntu
+#   except:
+#     - main
+#   stage: deploy
+#   before_script:
+#     - *conan_setup  
+#   script:
+#     - conan create . paradigms/testing -s build_type=Debug
+
+# create-and-upload-package-debug:
+#   tags:
+#     - docker
+#     - ubuntu
+#   only:
+#     - main
+#   stage: deploy
+#   before_script:
+#     - *conan_setup  
+#   script:
+#       # parse version string from cmake
+#     - GRUNK_VERSION=$(grep -oP "project\(grunk VERSION \K(.*)+(?=\))" CMakeLists.txt)
+#     - conan create . paradigms/testing -s build_type=Debug
+#     - conan upload -c grunk/$GRUNK_VERSION --all --remote=gitlab
     
 docs:
   stage: deploy
@@ -92,10 +150,8 @@ docs:
   tags:
     - docker
     - ubuntu
-  dependencies:
-    - build-debug
   script:
-    - mv build/docs/html grunk-docs
+    - mv  build-Release-gcc7/docs/html grunk-docs
     - tar czf grunk-docs.tar.gz grunk-docs
   artifacts:
     paths:
@@ -110,7 +166,7 @@ pages:
     - docker
     - ubuntu
   script:
-    - mv build/docs/html public
+    - mv build-Release-gcc7/docs/html public
   artifacts:
     paths:
       - public
