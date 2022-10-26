@@ -89,9 +89,15 @@ namespace details {
     // factory function for concrete derived plugins.
     // This is used in the GRUNK_REGISTER_PLUGIN macro
     template <typename Plugin>
-    inline std::unique_ptr<Plugin> create() { \
-        return std::make_unique<Plugin>(); \
+    inline std::unique_ptr<IPlugin> create() {
+        return std::make_unique<Plugin>();
     };
+
+    // workaround for MS Visual Studio 15
+    template <typename T>
+    inline T identity(T t){
+        return std::move(t);
+    }
 
     using PluginFactoryFunc = std::unique_ptr<IPlugin>();
 
@@ -108,4 +114,4 @@ namespace details {
  */
 #define GRUNK_REGISTER_PLUGIN(name) \
     static_assert(std::is_default_constructible_v<name>); \
-    BOOST_DLL_ALIAS(grunk::details::create<name>, create_grunk_plugin)
+    BOOST_DLL_ALIAS(grunk::details::identity(grunk::details::create<name>), create_grunk_plugin)
