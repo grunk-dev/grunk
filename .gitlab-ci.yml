@@ -101,7 +101,7 @@ test-ubuntu:
   - cd $BUILD_DIR
   - conan install .. --generator=virtualrunenv -s build_type=$BUILD_TYPE -b missing -pr:b=default
   - chmod a+x activate_run.sh
-  - ./activate_run.sh
+  - source activate_run.sh
   - cd tests
   - ./runUnitTests
   <<: *ubuntu_config
@@ -133,7 +133,7 @@ test-windows:
   script:
   - cd $BUILD_DIR
   - conan install .. --generator=virtualrunenv -s build_type=$BUILD_TYPE -b missing -pr:b=default
-  - ./activate_run.ps1
+  - . activate_run.ps1
   - cd tests\$BUILD_TYPE
   - .\runUnitTests.exe
   <<: *windows_config
