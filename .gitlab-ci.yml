@@ -133,7 +133,9 @@ test-windows:
   script:
   - cd $BUILD_DIR
   - conan install .. --generator=virtualrunenv -s build_type=$BUILD_TYPE -b missing -pr:b=default
-  - . activate_run.ps1
+  # add googletest dll to path
+  - $env:Path = "$pwd\bin;$env:Path"
+  - .\activate_run.ps1
   - cd tests\$BUILD_TYPE
   - .\runUnitTests.exe
   <<: *windows_config
