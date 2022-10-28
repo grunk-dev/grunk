@@ -13,8 +13,7 @@
 #define BOOST_DLL_USE_STD_FS 1
 
 #include <reflect/Reflect.hpp>
-#include <boost/dll/alias.hpp> 
-#include <functional>
+#include <boost/dll/alias.hpp>
 
 
 namespace grunk {
