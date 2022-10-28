@@ -56,7 +56,7 @@ void PluginRegistry::unload_all()
 
 void PluginRegistry::insert_plugin(BOOST_RV_REF(boost::dll::shared_library) lib)
 {
-    auto creator = boost::dll::import_alias<details::PluginFactoryFunc>(
+    auto creator = boost::dll::import_alias<std::unique_ptr<IPlugin>(void)>(
         lib,
         "create_grunk_plugin"
     );

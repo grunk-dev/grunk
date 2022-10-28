@@ -10,6 +10,8 @@
   parallel:
     matrix:
      - BUILD_TYPE: [Debug, Release]
+     # gcc8 doesn't work because some templates aren't automatically deduced. can probably be fixed
+     # gcc7 doesn't work because of missing support of std::filesystem. We could probably live with boost::filesystem if we needed gcc7 support
        COMPILER: [gcc9, gcc12, clang10, clang14] # one old one new
 
 .windows_config: &windows_config
@@ -26,7 +28,9 @@
   parallel:
     matrix:
      - BUILD_TYPE: [Debug, Release]
-       COMPILER: ["2017", "2022"] # one old one new
+     # 2019 doesn't work because of a bug https://stackoverflow.com/questions/51967446/reinterpret-cast-cannot-convert-from-overloaded-function-to-intptr-t-with.
+     # can maybe be fixed at some other time
+       COMPILER: ["2022"] # one old one new
 
 .configure_conan_ubuntu: &configure_conan_ubuntu
 # setup and update conan profile. Specifically, for GCC and Clang set compiler.libcxx
@@ -97,7 +101,7 @@ test-ubuntu:
   - cd $BUILD_DIR
   - conan install .. --generator=virtualrunenv -s build_type=$BUILD_TYPE -b missing -pr:b=default
   - chmod a+x activate_run.sh
-  - ./activate_run.sh
+  - source activate_run.sh
   - cd tests
   - ./runUnitTests
   <<: *ubuntu_config
@@ -129,9 +133,9 @@ test-windows:
   script:
   - cd $BUILD_DIR
   - conan install .. --generator=virtualrunenv -s build_type=$BUILD_TYPE -b missing -pr:b=default
-  - ./activate_run.ps1
+  - . activate_run.ps1
   - cd tests\$BUILD_TYPE
-  - ./runUnitTests
+  - .\runUnitTests.exe
   <<: *windows_config
 
 # OLD

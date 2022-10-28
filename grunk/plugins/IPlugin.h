@@ -14,6 +14,7 @@
 
 #include <reflect/Reflect.hpp>
 #include <boost/dll/alias.hpp> 
+#include <functional>
 
 
 namespace grunk {
@@ -82,26 +83,20 @@ struct IPlugin
      * @brief Destroy the IPlugin object
      */
     virtual ~IPlugin(){}
-};
 
-namespace details {
-
-    // factory function for concrete derived plugins.
-    // This is used in the GRUNK_REGISTER_PLUGIN macro
+    /**
+     * @brief factory function for derived classes
+     * 
+     * @tparam Plugin The plugin to be created. Must be default-constructible and derived from IPlugin
+     * @return std::unique_ptr<IPlugin> the created plugin
+     */
     template <typename Plugin>
-    inline std::unique_ptr<IPlugin> create() {
+    inline static std::unique_ptr<IPlugin> create() {
+        static_assert(std::is_default_constructible_v<Plugin>, "Can only create default-constructible plugins.");
+        static_assert(std::is_base_of_v<IPlugin, Plugin>, "Can only create plugins derived from IPlugin");
         return std::make_unique<Plugin>();
     };
-
-    // workaround for MS Visual Studio 15
-    template <typename T>
-    inline T identity(T t){
-        return std::move(t);
-    }
-
-    using PluginFactoryFunc = std::unique_ptr<IPlugin>();
-
-} //namespace deteails 
+};
 
 } //namespace grunk
 
@@ -112,6 +107,4 @@ namespace details {
  * @ingroup plugin
  * 
  */
-#define GRUNK_REGISTER_PLUGIN(name) \
-    static_assert(std::is_default_constructible_v<name>); \
-    BOOST_DLL_ALIAS(grunk::details::identity(grunk::details::create<name>), create_grunk_plugin)
+#define GRUNK_REGISTER_PLUGIN(name) BOOST_DLL_ALIAS(grunk::IPlugin::create<name>, create_grunk_plugin)
