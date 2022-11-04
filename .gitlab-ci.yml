@@ -146,6 +146,7 @@ create-conan-package-ubuntu:
     - main
   stage: deploy
   before_script: *configure_conan_ubuntu
+  dependencies: []
   script:
   # I don't know why I have to explicitly set libcxx here for clang to pick it up...
     - conan create . -s compiler.libcxx=libstdc++11 -b missing -pr:b=default
@@ -159,6 +160,7 @@ create-and-upload-conan-package-ubuntu:
     - branches
   stage: deploy
   before_script: *configure_conan_ubuntu
+  dependencies: []
   script:
 # parse version string from cmake
     - GRUNK_VERSION=$(grep -oP "project\(grunk VERSION \K(.*)+(?=\))" CMakeLists.txt)
@@ -175,6 +177,7 @@ create-conan-package-windows:
     - main
   stage: deploy
   before_script: *configure_msvc
+  dependencies: []
   script:
     - conan create . -b missing -pr:b=default
   <<: *windows_config
@@ -187,42 +190,13 @@ create-and-upload-conan-package-windows:
     - branches
   stage: deploy
   before_script: *configure_msvc
+  dependencies: []
   script:
     - $GRUNK_VERSION=(Get-Content CMakeLists.txt | Select-String -Pattern "project\(grunk VERSION (.*)+(?=\))").Matches.Groups.Captures[1].Value
     - conan remote add gitlab ${CI_API_V4_URL}/projects/21487/packages/conan
     - CONAN_LOGIN_USERNAME=ci_user CONAN_PASSWORD=${CI_JOB_TOKEN} conan upload -c grunk/$GRUNK_VERSION --all --remote=gitlab
     - conan create . -b missing -pr:b=default
   <<: *windows_config
-
-# OLD
-
-
-# create-package-debug:
-#   tags:
-#     - docker
-#     - ubuntu
-#   except:
-#     - main
-#   stage: deploy
-#   before_script:
-#     - *conan_setup  
-#   script:
-#     - conan create . paradigms/testing -s build_type=Debug
-
-# create-and-upload-package-debug:
-#   tags:
-#     - docker
-#     - ubuntu
-#   only:
-#     - main
-#   stage: deploy
-#   before_script:
-#     - *conan_setup  
-#   script:
-#       # parse version string from cmake
-#     - GRUNK_VERSION=$(grep -oP "project\(grunk VERSION \K(.*)+(?=\))" CMakeLists.txt)
-#     - conan create . paradigms/testing -s build_type=Debug
-#     - conan upload -c grunk/$GRUNK_VERSION --all --remote=gitlab
     
 docs:
   stage: deploy
