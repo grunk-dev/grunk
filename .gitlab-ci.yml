@@ -12,7 +12,7 @@
      - BUILD_TYPE: [Debug, Release]
      # gcc8 doesn't work because some templates aren't automatically deduced. can probably be fixed
      # gcc7 doesn't work because of missing support of std::filesystem. We could probably live with boost::filesystem if we needed gcc7 support
-       COMPILER: [gcc9, gcc12, clang10, clang14] # one old one new
+       COMPILER: [gcc8, gcc12, clang10, clang14] # one old one new
 
 .windows_config: &windows_config
   tags:
