@@ -263,33 +263,29 @@ void parse_feature(Feature<Arg> const& arg, YAML::Node& yaml_root, Visited& visi
     visitor.unwind_steps();
 }
 
-/**
- * @brief Implementation of a SFINAE check if a type is iterable
- * 
- * @tparam T the type to be checked
- */
-template<class T>
-using is_iterable_impl = std::void_t<
-    std::enable_if_t<std::is_same_v<
-        decltype(std::begin(std::declval<T&>())), // has begin()
-        decltype(std::end(std::declval<T&>()))    // has end()
-    >>,                                      // ... begin() and end() are the same type ...
-    decltype(*begin(std::declval<T&>()))     // ... which can be dereferenced
->;
 
-/**
- * @brief A check if a type is iterable for SFINAE
- * 
- * @tparam T the type to be checked
- */
-template<class T, class = void>
-struct is_iterable : std::false_type {};
-
-template<class T>
-struct is_iterable<T, is_iterable_impl<T>> : std::true_type {};
-
-template<class T>
-constexpr bool is_iterable_v = is_iterable<T>::value;
+// Variable template that checks if a type has begin() and end() member functions
+// taken from the example at https://en.cppreference.com/w/cpp/types/void_t
+template <typename, typename = void>
+constexpr bool is_iterable{};
+  
+template <typename T>
+constexpr bool is_iterable<
+    T,
+    std::void_t< decltype(std::declval<T>().begin()),
+                 decltype(std::declval<T>().end())
+    >
+> = true;
+                                
+// An iterator trait those value_type is the value_type of the iterated container,
+// supports even back_insert_iterator (where value_type is void)
+template <typename T, typename = void>
+struct iterator_trait
+: std::iterator_traits<T> {};
+                                  
+template <typename T>
+struct iterator_trait<T, std::void_t<typename T::container_type>>
+: std::iterator_traits<typename T::container_type::iterator> {};
 
 /**
  * @brief A check if a type is std::pair for SFINAE
@@ -313,7 +309,7 @@ constexpr bool is_pair_v<std::pair<First, Second>> = true;
  */
 template <
     typename Container,
-    typename = std::enable_if_t<details::is_iterable_v<Container>>
+    typename = std::enable_if_t<is_iterable<Container>>
 >
 YAML::Node feature_tree_to_yaml(Container const& features)
 {
@@ -400,7 +396,7 @@ std::string to_string(Feature<Args> const&... args)
  */
 template <
     typename Container,
-    typename = std::enable_if_t<details::is_iterable_v<Container>>
+    typename = std::enable_if_t<details::is_iterable<Container>>
 >
 std::string to_string(Container const& features)
 {

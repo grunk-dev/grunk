@@ -99,6 +99,18 @@ struct IPlugin
 
 } //namespace grunk
 
+namespace {
+
+
+// MSVC-2017 Workaround from https://stackoverflow.com/questions/51967446/reinterpret-cast-cannot-convert-from-overloaded-function-to-intptr-t-with
+// this really does nothing:
+template<class R, class...Args>
+R(*to_fptr( R(*f)(Args...) ))(Args...) {
+    return f;
+}
+
+} // anonymous namespace
+
 /**
  * @brief The macro GRUNK_REGISTER_PLUGIN must be used by plugin authors to 
  * register the derived class from IPlugin with the plugin registry.
@@ -106,4 +118,4 @@ struct IPlugin
  * @ingroup plugin
  * 
  */
-#define GRUNK_REGISTER_PLUGIN(name) BOOST_DLL_ALIAS(grunk::IPlugin::create<name>, create_grunk_plugin)
+#define GRUNK_REGISTER_PLUGIN(name) BOOST_DLL_ALIAS(to_fptr(grunk::IPlugin::create<name>), create_grunk_plugin)
