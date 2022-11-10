@@ -115,7 +115,7 @@ TEST_F(IOTest, serialize_DAGNode)
 
 TEST_F(IOTest, feature_tree_to_yaml_empty)
 {
-    auto x = details::feature_tree_to_yaml();
+    auto x = details::feature_tree_to_yaml<std::vector<grunk::RuntimeFeature>>({});
 
     // there should be just one node called "uses"
     EXPECT_EQ(x.size(), 1);

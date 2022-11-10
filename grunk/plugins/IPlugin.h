@@ -13,7 +13,7 @@
 #define BOOST_DLL_USE_STD_FS 1
 
 #include <reflect/Reflect.hpp>
-#include <boost/dll/alias.hpp> 
+#include <boost/dll/alias.hpp>
 
 
 namespace grunk {
@@ -82,20 +82,20 @@ struct IPlugin
      * @brief Destroy the IPlugin object
      */
     virtual ~IPlugin(){}
-};
 
-namespace details {
-
-    // factory function for concrete derived plugins.
-    // This is used in the GRUNK_REGISTER_PLUGIN macro
+    /**
+     * @brief factory function for derived classes
+     * 
+     * @tparam Plugin The plugin to be created. Must be default-constructible and derived from IPlugin
+     * @return std::unique_ptr<IPlugin> the created plugin
+     */
     template <typename Plugin>
-    inline std::unique_ptr<Plugin> create() { \
-        return std::make_unique<Plugin>(); \
+    inline static std::unique_ptr<IPlugin> create() {
+        static_assert(std::is_default_constructible_v<Plugin>, "Can only create default-constructible plugins.");
+        static_assert(std::is_base_of_v<IPlugin, Plugin>, "Can only create plugins derived from IPlugin");
+        return std::make_unique<Plugin>();
     };
-
-    using PluginFactoryFunc = std::unique_ptr<IPlugin>();
-
-} //namespace deteails 
+};
 
 } //namespace grunk
 
@@ -106,6 +106,18 @@ namespace details {
  * @ingroup plugin
  * 
  */
-#define GRUNK_REGISTER_PLUGIN(name) \
-    static_assert(std::is_default_constructible_v<name>); \
-    BOOST_DLL_ALIAS(grunk::details::create<name>, create_grunk_plugin)
+#if (defined(_MSC_VER) &&_MSC_VER < 1920)
+namespace {
+
+// MSVC-2017 Workaround from https://stackoverflow.com/questions/51967446/reinterpret-cast-cannot-convert-from-overloaded-function-to-intptr-t-with
+// this really does nothing:
+template<class R, class...Args>
+R(*to_fptr( R(*f)(Args...) ))(Args...) {
+    return f;
+}
+
+} // anonymous namespace
+#define GRUNK_REGISTER_PLUGIN(name) BOOST_DLL_ALIAS(to_fptr(grunk::IPlugin::create<name>), create_grunk_plugin)
+#else
+#define GRUNK_REGISTER_PLUGIN(name) BOOST_DLL_ALIAS(grunk::IPlugin::create<name>, create_grunk_plugin)
+#endif
