@@ -15,9 +15,9 @@ set(TESTSOURCES
   testmain.cpp
   Action.cpp
   io.cpp
-  RuntimeAction.cpp
+  DynamicAction.cpp
   Feature.cpp
-  RuntimeFeature.cpp
+  DynamicFeature.cpp
 )
 
 add_library(SimplePlugin SHARED plugin_simple.cpp)

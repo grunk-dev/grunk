@@ -1,10 +1,10 @@
 #include <gtest/gtest.h>
 
-#include <grunk/dynamic/RuntimeFeature.hpp>
+#include <grunk/dynamic/DynamicFeature.hpp>
 
 using namespace grunk;
 
-namespace runtime_feature_test {
+namespace {
 
 struct MyDouble {
     double val {0.75};
@@ -28,11 +28,9 @@ struct MyStruct {
     double val;
 };
 
-} //namespace runtime_feature_test
+} //namespace
 
-using namespace runtime_feature_test;
-
-class RuntimeFeatureTest : public ::testing::Test 
+class DynamicFeatureTest : public ::testing::Test 
 {
 public:
 
@@ -57,10 +55,10 @@ public:
     } 
 };
 
-TEST_F(RuntimeFeatureTest, ctor)
+TEST_F(DynamicFeatureTest, ctor)
 {
     Feature<double> x("x", 0.25);
-    RuntimeFeature y("y", "MyStruct", x);
+    DynamicFeature y("y", "MyStruct", x);
 
     EXPECT_FALSE(y.is_valid());
     EXPECT_EQ(reflect::cast<MyStruct>(y.value()).val, 0.25);
@@ -73,23 +71,23 @@ TEST_F(RuntimeFeatureTest, ctor)
     EXPECT_TRUE(y.is_valid());
 }
 
-TEST_F(RuntimeFeatureTest, Conversions)
+TEST_F(DynamicFeatureTest, Conversions)
 {
-    RuntimeFeature x("x", "MyStruct", 0.33);
+    DynamicFeature x("x", "MyStruct", 0.33);
     EXPECT_NEAR(x.value().get_as<double>("val"), 0.33, 1e-12);
 
-    // Feature<RuntimeObject> -> Feature<T>
+    // Feature<DynamicObject> -> Feature<T>
     Feature<MyStruct> y(x);
     EXPECT_NEAR(y.value().val, 0.33, 1e-12);
     EXPECT_EQ(y.param().id(), "x");
 
-    // Feature<T> -> Feature<RuntimeObject> 
-    RuntimeFeature z(y);
+    // Feature<T> -> Feature<DynamicObject> 
+    DynamicFeature z(y);
     EXPECT_NEAR(z.value().get_as<double>("val"), 0.33, 1e-12);
     EXPECT_EQ(z.param().id(), "x");
 }
 
-TEST_F(RuntimeFeatureTest, get)
+TEST_F(DynamicFeatureTest, get)
 {
     Feature x("x", "MyStruct", 0.5);
 
@@ -102,7 +100,7 @@ TEST_F(RuntimeFeatureTest, get)
 
 }
 
-TEST_F(RuntimeFeatureTest, invoke)
+TEST_F(DynamicFeatureTest, invoke)
 {
     Feature x("x", "MyStruct", 0.5);
     Feature factor("factor", "double", 3.);
@@ -124,7 +122,7 @@ TEST_F(RuntimeFeatureTest, invoke)
     EXPECT_TRUE(v.is_valid());
 }
 
-TEST_F(RuntimeFeatureTest, invoke_nonConstMemberFun)
+TEST_F(DynamicFeatureTest, invoke_nonConstMemberFun)
 {
     Feature x("x", "MyStruct", 0.5);
     Feature factor("factor", "double", 3.);

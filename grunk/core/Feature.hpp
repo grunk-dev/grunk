@@ -68,7 +68,7 @@ decltype(auto) eval(std::string const& id, F const& fun, Args&&... args);
 
 /**
  * @brief A base class used by Feature<T> and the template specialization
- * Feature<RuntimeObject> aka RuntimeFeature.
+ * Feature<DynamicObject> aka DynamicFeature.
  *
  * This class implements the common interface for all template realizations.
  * 

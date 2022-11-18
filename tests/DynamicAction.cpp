@@ -1,6 +1,6 @@
 #include <gtest/gtest.h>
 
-#include <grunk/dynamic/RuntimeAction.hpp>
+#include <grunk/dynamic/DynamicAction.hpp>
 
 using namespace grunk;
 
@@ -38,7 +38,7 @@ std::tuple<double, double> get_components(Point const& p){
 } //namespace
 
 
-class RuntimeActionTest : public ::testing::Test 
+class DynamicActionTest : public ::testing::Test 
 {
 public:
 
@@ -61,7 +61,7 @@ public:
     } 
 };
 
-TEST_F(RuntimeActionTest, Basic)
+TEST_F(DynamicActionTest, Basic)
 {
     auto f = reflect::Callable(&add, "add");
 
@@ -112,7 +112,7 @@ TEST_F(RuntimeActionTest, Basic)
     EXPECT_NEAR(a.value().get_as<double>("val"), 0.6, 1e-12);
 }
 
-TEST_F(RuntimeActionTest, PassNonRumtimeFeatureToRuntimeAction)
+TEST_F(DynamicActionTest, PassNonRumtimeFeatureToDynamicAction)
 {
     auto f = reflect::Callable(&add, "add");
 
@@ -120,16 +120,16 @@ TEST_F(RuntimeActionTest, PassNonRumtimeFeatureToRuntimeAction)
     auto lc = Feature("lc", MyDouble(0.2));
     auto rc = Feature("rc", MyDouble(0.1));
 
-    // (RuntimeFeature, Feature<T>) -> RuntimeAction
+    // (DynamicFeature, Feature<T>) -> DynamicAction
     auto ret1 = eval("ret1", f, lr, rc)->get();
     EXPECT_NEAR(ret1.value().get_as<double>("val"), 0.3, 1e-12);
 
-    // (Feature<T>, Feature<T>) -> RuntimeAction
+    // (Feature<T>, Feature<T>) -> DynamicAction
     auto ret2 = eval("ret2", f, lc, rc)->get();
     EXPECT_NEAR(ret2.value().get_as<double>("val"), 0.3, 1e-12);
 }
 
-TEST_F(RuntimeActionTest, MultiOutput)
+TEST_F(DynamicActionTest, MultiOutput)
 {
     auto f = reflect::Callable(&get_components, "get_components");
 
@@ -161,7 +161,7 @@ TEST_F(RuntimeActionTest, MultiOutput)
     EXPECT_EQ(reflect::cast<double>(y.value()), 0.7);
 }
 
-TEST_F(RuntimeActionTest, UnnamedFeature)
+TEST_F(DynamicActionTest, UnnamedFeature)
 {
     auto f = reflect::Callable(std::plus<double>(), "plus");
 

@@ -1,4 +1,4 @@
-#include "RuntimeFeature.hpp"
+#include "DynamicFeature.hpp"
 
 namespace grunk {
 

@@ -115,7 +115,7 @@ TEST_F(IOTest, serialize_DAGNode)
 
 TEST_F(IOTest, feature_tree_to_yaml_empty)
 {
-    auto x = details::feature_tree_to_yaml<std::vector<grunk::RuntimeFeature>>({});
+    auto x = details::feature_tree_to_yaml<std::vector<grunk::DynamicFeature>>({});
 
     // there should be just one node called "uses"
     EXPECT_EQ(x.size(), 1);
@@ -231,7 +231,7 @@ TEST_F(IOTest, write_const_iterable_container)
         auto c = eval("c", "plus", a, b)->get();
         auto d = eval("d", "plus", c, a)->get();
 
-        std::vector<RuntimeFeature> v{a,b,c,d};
+        std::vector<DynamicFeature> v{a,b,c,d};
         write("test_vector.grr", v);
 
         FeatureContainer m;
