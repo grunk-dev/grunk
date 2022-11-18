@@ -13,7 +13,7 @@
 #include <parametric/core.hpp>
 #include <utility>
 
-#include "Feature.h"
+#include "Feature.hpp"
 
 namespace grunk {
 

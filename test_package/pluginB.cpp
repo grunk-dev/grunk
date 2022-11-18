@@ -1,5 +1,5 @@
 #include <pluginA.hpp>
-#include <grunk/grunk.h>
+#include <grunk/grunk.hpp>
 #include <iostream>
 
 MyDouble multiply(MyDouble const& l, MyDouble const& r) {

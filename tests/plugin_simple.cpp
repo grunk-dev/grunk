@@ -1,4 +1,4 @@
-#include <grunk/grunk.h>
+#include <grunk/grunk.hpp>
 
 struct MyDouble {
 

@@ -1,7 +1,7 @@
 #include <ios>
 #include <iostream>
 
-#include <grunk/grunk.h>
+#include <grunk/grunk.hpp>
 
 double add(double const& l, double const& r) {
     std::cout << "Adding " << l << " and " << r << std::endl;

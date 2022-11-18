@@ -1,4 +1,4 @@
-#include "RuntimeAlgorithm.h"
+#include "RuntimeAlgorithm.hpp"
 
 namespace grunk {
 

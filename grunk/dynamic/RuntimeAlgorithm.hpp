@@ -13,8 +13,8 @@
 
 #include <yaml-cpp/yaml.h>
 
-#include <grunk/core/Algorithm.h>
-#include <grunk/dynamic/RuntimeFeature.h>
+#include <grunk/core/Algorithm.hpp>
+#include <grunk/dynamic/RuntimeFeature.hpp>
 
 namespace grunk {
 

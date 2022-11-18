@@ -1,6 +1,6 @@
 #include <gtest/gtest.h>
 
-#include <grunk/dynamic/RuntimeFeature.h>
+#include <grunk/dynamic/RuntimeFeature.hpp>
 
 using namespace grunk;
 
