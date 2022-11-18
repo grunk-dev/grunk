@@ -38,22 +38,22 @@ public:
 
     static void SetUpTestCase() {
 
-        Reflect::Reflect<double>("double")
-        .AddConstructor<double>();
+        reflect::register_type<double>("double")
+        .add_constructor<double>();
 
-        Reflect::Reflect<MyDouble>("MyDouble")
-        .AddConstructor<>()
-        .AddDataMember(&MyDouble::val, "val");;
+        reflect::register_type<MyDouble>("MyDouble")
+        .add_constructor<>()
+        .add_data_member(&MyDouble::val, "val");;
 
-        Reflect::Reflect<MyStruct>("MyStruct")
-        .AddConstructor<double>()
-        .AddDataMember(&MyStruct::val, "val")
-        .AddMemberFunction(&MyStruct::times, "times")
-        .AddMemberFunction(&MyStruct::timesc, "timesc");
+        reflect::register_type<MyStruct>("MyStruct")
+        .add_constructor<double>()
+        .add_data_member(&MyStruct::val, "val")
+        .add_member_function(&MyStruct::times, "times")
+        .add_member_function(&MyStruct::timesc, "timesc");
     } 
 
     static void TearDownTestCase() {
-        Reflect::GetTypeRegistry().clear();
+        reflect::get_type_registry().clear();
     } 
 };
 
@@ -63,13 +63,13 @@ TEST_F(RuntimeFeatureTest, ctor)
     RuntimeFeature y("y", "MyStruct", x);
 
     EXPECT_FALSE(y.is_valid());
-    EXPECT_EQ(Reflect::cast<MyStruct>(y.value()).val, 0.25);
+    EXPECT_EQ(reflect::cast<MyStruct>(y.value()).val, 0.25);
     EXPECT_TRUE(y.is_valid());
 
     x.access_value() = 0.75;
 
     EXPECT_FALSE(y.is_valid());
-    EXPECT_EQ(Reflect::cast<MyStruct>(y.value()).val, 0.75);
+    EXPECT_EQ(reflect::cast<MyStruct>(y.value()).val, 0.75);
     EXPECT_TRUE(y.is_valid());
 }
 
@@ -94,11 +94,11 @@ TEST_F(RuntimeFeatureTest, get)
     Feature x("x", "MyStruct", 0.5);
 
     Feature v = x.get("val")->get();
-    EXPECT_EQ(Reflect::cast<double>(v.value()), 0.5);
+    EXPECT_EQ(reflect::cast<double>(v.value()), 0.5);
 
      x.access_value().set("val", 0.3);
      EXPECT_FALSE(v.is_valid());
-     EXPECT_EQ(Reflect::cast<double>(v.value()), 0.3);
+     EXPECT_EQ(reflect::cast<double>(v.value()), 0.3);
 
 }
 
@@ -110,17 +110,17 @@ TEST_F(RuntimeFeatureTest, invoke)
     Feature v = x.invoke("times", factor)->get();
     
     EXPECT_FALSE(v.is_valid());
-    EXPECT_NEAR(Reflect::cast<double>(v.value()), 1.5, 1e-12);
+    EXPECT_NEAR(reflect::cast<double>(v.value()), 1.5, 1e-12);
     EXPECT_TRUE(v.is_valid());
 
     x.access_value().set("val", 0.3);
     EXPECT_FALSE(v.is_valid());
-    EXPECT_NEAR(Reflect::cast<double>(v.value()), 0.9, 1e-12);
+    EXPECT_NEAR(reflect::cast<double>(v.value()), 0.9, 1e-12);
     EXPECT_TRUE(v.is_valid());
 
     factor.access_value() = 2.;
     EXPECT_FALSE(v.is_valid());
-    EXPECT_NEAR(Reflect::cast<double>(v.value()), 0.6, 1e-12);
+    EXPECT_NEAR(reflect::cast<double>(v.value()), 0.6, 1e-12);
     EXPECT_TRUE(v.is_valid());
 }
 
@@ -129,5 +129,5 @@ TEST_F(RuntimeFeatureTest, invoke_nonConstMemberFun)
     Feature x("x", "MyStruct", 0.5);
     Feature factor("factor", "double", 3.);
     Feature v = x.invoke("timesc", factor)->get();
-    EXPECT_THROW(v.value(), Reflect::BadCastException);
+    EXPECT_THROW(v.value(), reflect::BadCastException);
 }

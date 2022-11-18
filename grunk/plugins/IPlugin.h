@@ -12,7 +12,7 @@
 //TODO: Put this in CMAKE?
 #define BOOST_DLL_USE_STD_FS 1
 
-#include <reflect/Reflect.hpp>
+#include <reflect/reflect.hpp>
 #include <boost/dll/alias.hpp>
 
 
@@ -29,7 +29,7 @@ namespace grunk {
  template <typename T>
  decltype(auto) register_type(std::string const& name)
  {
-    return Reflect::Reflect<T>(name);
+    return reflect::register_type<T>(name);
  }
 
 /**
@@ -43,7 +43,7 @@ namespace grunk {
 template <typename F>
 void register_function(F&& f, std::string const& name, std::string const& doc = "")
 {
-    return Reflect::RegisterFunction(std::forward<F>(f), name, doc);
+    return reflect::register_function(std::forward<F>(f), name, doc);
 }
 
 

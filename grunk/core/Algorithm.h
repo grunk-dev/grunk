@@ -110,9 +110,9 @@ public:
     template <size_t Idx=0>
     decltype(auto) get() const
     {
-        if constexpr ( !Reflect::Details::is_tuple_v<ReturnType> ) {
+        if constexpr ( !reflect::details::is_tuple_v<ReturnType> ) {
 
-            if constexpr ( !std::is_same_v<std::vector<Reflect::DynamicObject>, std::decay_t<ReturnType>>) {
+            if constexpr ( !std::is_same_v<std::vector<reflect::DynamicObject>, std::decay_t<ReturnType>>) {
                 static_assert(Idx == 0, "get with Index>0 only allowed for Algorithms returning a tuple.");
                 return Feature<ReturnType>(out);
             } else {

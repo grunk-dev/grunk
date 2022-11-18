@@ -1,7 +1,7 @@
 /**
  * @file RuntimeFeature.h
  *
- * This file contains the template specialization of Feature for Reflect::DynamicObjects
+ * This file contains the template specialization of Feature for reflect::DynamicObjects
  */
 
 /**
@@ -20,7 +20,7 @@
 namespace grunk {
 
 /**
- * @brief template specialization of Feature for Reflect::DynamicObjects
+ * @brief template specialization of Feature for reflect::DynamicObjects
  *
  * In addition to the dependency management provided by the parametric library,
  * this class provides an interface to retrieve data members and invoke member
@@ -30,7 +30,7 @@ namespace grunk {
  * @ingroup dynamic  
  */
 template <>
-class Feature<Reflect::DynamicObject> : public FeatureBase<Reflect::DynamicObject>
+class Feature<reflect::DynamicObject> : public FeatureBase<reflect::DynamicObject>
 {
 public:
 
@@ -47,7 +47,7 @@ public:
      */
     template <typename... Args>
     Feature(std::string const& id, const char* typeName, Args const&... args)
-     : FeatureBase<Reflect::DynamicObject>(id, Reflect::make_dynamic(typeName, args...))
+     : FeatureBase<reflect::DynamicObject>(id, reflect::make_dynamic(typeName, args...))
     {}
 
 
@@ -85,7 +85,7 @@ public:
         eval(
             id,
             [=](Args const&... in){
-                return Reflect::make_dynamic(typeName, in...);
+                return reflect::make_dynamic(typeName, in...);
             },
             args...
         )->get()
@@ -97,22 +97,22 @@ public:
      * 
      * @param p The parametric::param<T> to be wrapped in a Feature
      */
-    Feature(parametric::param<Reflect::DynamicObject>&& p)
-     : FeatureBase<Reflect::DynamicObject>(std::forward<parametric::param<Reflect::DynamicObject>>(p))
+    Feature(parametric::param<reflect::DynamicObject>&& p)
+     : FeatureBase<reflect::DynamicObject>(std::forward<parametric::param<reflect::DynamicObject>>(p))
     {}
 
     /**
-     * @brief Construct a new RuntimeFeature given an Reflect::DynamicObject
+     * @brief Construct a new RuntimeFeature given an reflect::DynamicObject
      * 
-     * @param o The input Reflect::DynamicObject
+     * @param o The input reflect::DynamicObject
      */
-    explicit Feature(std::string const& id, Reflect::DynamicObject&& o)
-     : FeatureBase(id, std::forward<Reflect::DynamicObject>(o))
+    explicit Feature(std::string const& id, reflect::DynamicObject&& o)
+     : FeatureBase(id, std::forward<reflect::DynamicObject>(o))
     {}
 
     /**
      * @brief Converting constructor from a Feature<T>, where T is not
-     * a Reflect::DynamicObject
+     * a reflect::DynamicObject
      *
      * <b>Caution:</b> The converted RuntimeFeature will hold a reference
      * to the value held by the input Feature. This means that the input Feature
@@ -124,10 +124,10 @@ public:
      * @param f The input feature to be converted to a RuntimeFeature
      */
     template <typename T,
-              typename = std::enable_if_t<!std::is_same_v<Reflect::DynamicObject, T>>
+              typename = std::enable_if_t<!std::is_same_v<reflect::DynamicObject, T>>
     >
     Feature(Feature<T> const& f)
-     : Feature(f.param().id(), Reflect::DynamicObject(f.value()))
+     : Feature(f.param().id(), reflect::DynamicObject(f.value()))
     {}
 
     /**
@@ -136,10 +136,10 @@ public:
      * @tparam T The type of the object to be wrapped
      * @return Feature<T> The converted Feature<T>
      */
-    template <typename T, typename = std::enable_if_t<!std::is_same_v<T, Reflect::DynamicObject>>>
+    template <typename T, typename = std::enable_if_t<!std::is_same_v<T, reflect::DynamicObject>>>
     operator Feature<T>() const
     {
-        return Feature<T>(param().id(), Reflect::cast<T>(this->param().value()));
+        return Feature<T>(param().id(), reflect::cast<T>(this->param().value()));
     }
 
     /**
@@ -156,7 +156,7 @@ public:
     {
         return eval(
             param().id() + "." + memberName, 
-            [=](Reflect::DynamicObject const& wrapped){
+            [=](reflect::DynamicObject const& wrapped){
                 return wrapped.get(memberName);
             },
             *this
@@ -177,7 +177,7 @@ public:
     {
         return eval(
             param().id() + "::" + memberFunName, // TODO: How would we name this by default?
-            [=](Reflect::DynamicObject const& wrapped, auto const&... arguments){
+            [=](reflect::DynamicObject const& wrapped, auto const&... arguments){
                 return wrapped.invoke(memberFunName, arguments...);
             },
             *this,
@@ -193,12 +193,12 @@ public:
  * @tparam Args The constructor arguments
  */
 template <typename... Args>
-Feature(std::string const&, Args&&...) -> Feature<Reflect::DynamicObject>;
+Feature(std::string const&, Args&&...) -> Feature<reflect::DynamicObject>;
 
 /**
  * @brief typedef for RuntimeFeature
  * @ingroup dynamic
  */
-using RuntimeFeature = Feature<Reflect::DynamicObject>;
+using RuntimeFeature = Feature<reflect::DynamicObject>;
 
 }

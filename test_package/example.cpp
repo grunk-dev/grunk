@@ -56,7 +56,7 @@ int main(int argc, char* argv[]) {
         auto a = grunk::eval("a", "add", x, y)->get();
         auto b = grunk::eval("b", "multiply", a, z)->get();
 
-        auto b_result = Reflect::cast<double>(b.value().get("value"));
+        auto b_result = reflect::cast<double>(b.value().get("value"));
         std::cout << b_result << std::endl;
 
         // write to grunk file
@@ -67,7 +67,7 @@ int main(int argc, char* argv[]) {
         std::cout << "Reading from file ...\n";
         auto features = grunk::read("simple.gk");
         auto b = features.at("b");
-        auto b_result = Reflect::cast<double>(b.value().get("value"));
+        auto b_result = reflect::cast<double>(b.value().get("value"));
         std::cout << b_result << std::endl;
     }
 

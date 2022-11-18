@@ -75,15 +75,15 @@ inline std::string serialize(std::string const& v) {
  * @return std::string string representation of the yaml node
  */
 template <>
-inline std::string serialize(Reflect::DynamicObject const& v)
+inline std::string serialize(reflect::DynamicObject const& v)
 { 
     auto serialized = 
-        Reflect::cast<YAML::Node>(v.invoke("serialize")[0]);
+        reflect::cast<YAML::Node>(v.invoke("serialize")[0]);
 
     YAML::Node out = serialized;
     YAML::Emitter e;
 
-    auto tag = YAML::VerbatimTag(v.get_type_descriptor()->GetName());
+    auto tag = YAML::VerbatimTag(v.get_type_descriptor()->get_name());
     e << tag << out;
     return e.c_str();
 }
@@ -444,9 +444,9 @@ namespace details {
  *                  in the type registry and  a deserialize method must exist.
  * @param yaml_node The yaml node passed on to the deserialize method of 
  *                  the registered type with name type_name.
- * @return Reflect::DynamicObject the deserialized instance.
+ * @return reflect::DynamicObject the deserialized instance.
  */
-Reflect::DynamicObject deserialize(
+reflect::DynamicObject deserialize(
     std::string const& type_name,
     YAML::Node const & yaml_node
 );

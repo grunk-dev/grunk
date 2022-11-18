@@ -28,7 +28,7 @@ public:
         plugins.load_all();
 
         register_type<NonSerializable>("NonSerializable")
-        .AddConstructor<int>();
+        .add_constructor<int>();
 
         register_function(
             [](double const& l, double const& r){ return l+r;}, 
@@ -62,7 +62,7 @@ TEST_F(IOTest, serialize_type)
     EXPECT_EQ(s, "Hey Universe");
 
     // DynamicObject
-    auto x = Reflect::DynamicObject(1.23);
+    auto x = reflect::DynamicObject(1.23);
     auto sx = parametric::serialize(x);
     auto y = YAML::Load(sx);
 
@@ -258,7 +258,7 @@ TEST_F(IOTest, deserialize_double)
         y.Tag(),
         y
     );
-    EXPECT_NEAR(Reflect::cast<double>(d), 0.9876, 1e-7);
+    EXPECT_NEAR(reflect::cast<double>(d), 0.9876, 1e-7);
 }
 
 TEST_F(IOTest, deserialize_simple_plugin_MyDouble)
@@ -271,7 +271,7 @@ TEST_F(IOTest, deserialize_simple_plugin_MyDouble)
         y
     );
     auto d = md.get("value");
-    EXPECT_NEAR(Reflect::cast<double>(d), 0.55557, 1e-7);
+    EXPECT_NEAR(reflect::cast<double>(d), 0.55557, 1e-7);
 }
 
 TEST_F(IOTest, no_deserialize_method)
@@ -341,8 +341,8 @@ TEST_F(IOTest, deserialize_non_existing_function)
     root["uses"] = uses;
 
     YAML::Node parameters;
-    parameters["a"] = YAML::Load(parametric::serialize(Reflect::DynamicObject(13.2)));
-    parameters["b"] = YAML::Load(parametric::serialize(Reflect::DynamicObject(11.8)));
+    parameters["a"] = YAML::Load(parametric::serialize(reflect::DynamicObject(13.2)));
+    parameters["b"] = YAML::Load(parametric::serialize(reflect::DynamicObject(11.8)));
     root["parameters"] = parameters;
 
     YAML::Node steps;
@@ -369,8 +369,8 @@ TEST_F(IOTest, deserialize_no_topo_order)
     root["uses"] = uses;
 
     YAML::Node parameters;
-    parameters["a"] = YAML::Load(parametric::serialize(Reflect::DynamicObject(13.2)));
-    parameters["b"] = YAML::Load(parametric::serialize(Reflect::DynamicObject(11.8)));
+    parameters["a"] = YAML::Load(parametric::serialize(reflect::DynamicObject(13.2)));
+    parameters["b"] = YAML::Load(parametric::serialize(reflect::DynamicObject(11.8)));
     root["parameters"] = parameters;
 
     YAML::Node steps;
@@ -449,10 +449,10 @@ TEST_F(IOTest, roundtrip_write_read)
     {
         auto features = read("test.grr");
         EXPECT_EQ(features.size(), 4);
-        EXPECT_NEAR(Reflect::cast<double>(features.at("d").value()), 0.5, 1e-7);
-        EXPECT_NEAR(Reflect::cast<double>(features.at("c").value()), 0.3, 1e-7);
-        EXPECT_NEAR(Reflect::cast<double>(features.at("b").value()), 0.1, 1e-7);
-        EXPECT_NEAR(Reflect::cast<double>(features.at("a").value()), 0.2, 1e-7);
+        EXPECT_NEAR(reflect::cast<double>(features.at("d").value()), 0.5, 1e-7);
+        EXPECT_NEAR(reflect::cast<double>(features.at("c").value()), 0.3, 1e-7);
+        EXPECT_NEAR(reflect::cast<double>(features.at("b").value()), 0.1, 1e-7);
+        EXPECT_NEAR(reflect::cast<double>(features.at("a").value()), 0.2, 1e-7);
     }
 }
 
@@ -461,10 +461,10 @@ TEST_F(IOTest, roundtrip_read_write)
     auto features = read("test_data/simple_test.grr");
 
     EXPECT_EQ(features.size(), 4);
-    EXPECT_NEAR(Reflect::cast<double>(features.at("d").value().get("value")), 0.5, 1e-7);
-    EXPECT_NEAR(Reflect::cast<double>(features.at("c").value().get("value")), 0.3, 1e-7);
-    EXPECT_NEAR(Reflect::cast<double>(features.at("b").value().get("value")), 0.1, 1e-7);
-    EXPECT_NEAR(Reflect::cast<double>(features.at("a").value().get("value")), 0.2, 1e-7);
+    EXPECT_NEAR(reflect::cast<double>(features.at("d").value().get("value")), 0.5, 1e-7);
+    EXPECT_NEAR(reflect::cast<double>(features.at("c").value().get("value")), 0.3, 1e-7);
+    EXPECT_NEAR(reflect::cast<double>(features.at("b").value().get("value")), 0.1, 1e-7);
+    EXPECT_NEAR(reflect::cast<double>(features.at("a").value().get("value")), 0.2, 1e-7);
 
     auto y = details::feature_tree_to_yaml(features.at("d"));
     test_basic_tree(y, "add", "MyDouble");

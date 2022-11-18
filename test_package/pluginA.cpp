@@ -29,16 +29,16 @@ public:
         // register types
 
         grunk::register_type<MyDouble>("MyDouble")
-        .AddConstructor<double>()
-        .AddDataMember(&MyDouble::value, "value")
-        .AddMemberFunction(
+        .add_constructor<double>()
+        .add_data_member(&MyDouble::value, "value")
+        .add_member_function(
             [](MyDouble const& d){
                 YAML::Node out(d.value);
                 return out;
             },
             "serialize"
         )
-        .AddMemberFunction(
+        .add_member_function(
             [](YAML::Node const& y){
                 return MyDouble(y.as<double>());
             },

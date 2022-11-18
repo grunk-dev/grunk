@@ -42,7 +42,7 @@ namespace details {
  * @ingroup dynamic_advanced
  */
 template <>
-class Algorithm<Reflect::DynamicFunction> : public parametric::ComputeNode
+class Algorithm<reflect::DynamicFunction> : public parametric::ComputeNode
 {
 
     friend struct details::RuntimeAlgorithmFactory;
@@ -53,26 +53,26 @@ private:
      * @brief Construct a new RuntimeAlgorithm given a RuntimeFunction<F> and 
      * an std::vector of RuntimeFeatures.
      * 
-     * @param fun A const pointer to a Reflect::Function
+     * @param fun A const pointer to a reflect::Function
      * @param in The input RuntimeFeatures
      */
-    Algorithm(std::string const& id, Reflect::DynamicFunction const& fun, std::vector<RuntimeFeature> const& in)
+    Algorithm(std::string const& id, reflect::DynamicFunction const& fun, std::vector<RuntimeFeature> const& in)
      : function(fun)
      , inputs{in}
-     , outputs(function.NumOutputs())
+     , outputs(function.num_outputs())
     {
         set_id(id);
         for (auto& i: inputs){
             depends_on(i.param());
         }
 
-        size_t n_outputs = function.NumOutputs();
+        size_t n_outputs = function.num_outputs();
         for (size_t i=0; i<n_outputs; ++i){
             std::string output_id = id;
             if (n_outputs > 1) {
                 output_id += "[" + std::to_string(i) + "]";
             } 
-            computes(outputs[i], parametric::param<Reflect::DynamicObject>(output_id));
+            computes(outputs[i], parametric::param<reflect::DynamicObject>(output_id));
         }
     }
 
@@ -85,7 +85,7 @@ public:
     void eval() const override
     {
         // tranform input nodes to vector of runtime objects
-        std::vector<Reflect::DynamicObject> inputs_vec;
+        std::vector<reflect::DynamicObject> inputs_vec;
         std::transform(inputs.begin(),
                     inputs.end(),
                     std::back_inserter(inputs_vec),
@@ -93,7 +93,7 @@ public:
         );
 
         // call the wrapped function
-        auto outputs_vals = function.Invoke(inputs_vec);
+        auto outputs_vals = function.invoke(inputs_vec);
 
         assert(outputs_vals.size() == outputs.size());
         
@@ -158,28 +158,28 @@ public:
         y.SetStyle(YAML::EmitterStyle::Flow);
         YAML::Emitter out;
 
-        auto tag = YAML::VerbatimTag(function.GetName());
+        auto tag = YAML::VerbatimTag(function.get_name());
         out << tag << y;
         return out.c_str();
     }
 
 private:
-    Reflect::DynamicFunction const& function;
+    reflect::DynamicFunction const& function;
     std::vector<RuntimeFeature> const inputs;
-    std::vector<parametric::OutputParam<Reflect::DynamicObject>> mutable outputs;
+    std::vector<parametric::OutputParam<reflect::DynamicObject>> mutable outputs;
 };
 
 /**
  * @brief typedef for an Algorithm wrapping a RuntimeFunction
  * @ingroup dynamic_advanced
  */
-using RuntimeAlgorithm = Algorithm<Reflect::DynamicFunction>;
+using RuntimeAlgorithm = Algorithm<reflect::DynamicFunction>;
 
 /**
  * @brief A parametric::compute_node_ptr wrapping a RuntimeAlgorithm
  * @ingroup dynamic_advanced
  */
-using RuntimeAlgorithmPtr = AlgorithmPtr<Reflect::DynamicFunction>;
+using RuntimeAlgorithmPtr = AlgorithmPtr<reflect::DynamicFunction>;
 
 namespace details {
 
@@ -203,13 +203,13 @@ struct RuntimeAlgorithmFactory
      * @brief Returns a new RuntimeAlgorithmPtr given a RuntimeFunction and an
      * vector of RuntimeFeatures
      * 
-     * @param fun The Reflect::function to be wrapped
+     * @param fun The reflect::function to be wrapped
      * @param args The input features
      * @return RuntimeAlgorithmPtr The returned compute_node_ptr wrapping a RuntimeAlgorithm
      */
     static RuntimeAlgorithmPtr new_algorithm(
         std::string const& id, 
-        Reflect::DynamicFunction const& fun, 
+        reflect::DynamicFunction const& fun, 
         std::vector<RuntimeFeature> const& args
     )
     {
@@ -233,7 +233,7 @@ struct RuntimeAlgorithmFactory
  * @return RuntimeAlgorithmPtr A special pointer type wrapping a RuntimeAlgorithm instance.
  * @ingroup dynamic_advanced
  */
-RuntimeAlgorithmPtr eval(std::string const& id, Reflect::DynamicFunction const& fun, std::vector<RuntimeFeature> const& args);
+RuntimeAlgorithmPtr eval(std::string const& id, reflect::DynamicFunction const& fun, std::vector<RuntimeFeature> const& args);
 
 /**
  * @brief Given a function and some features in the feature tree, this 
@@ -254,14 +254,14 @@ template <
     typename... Args,
     typename = std::enable_if_t<!(sizeof...(Args) == 1 && (std::is_same_v<std::vector<RuntimeFeature>, std::decay_t<Args>> && ...))>
 >
-RuntimeAlgorithmPtr eval(std::string const& id, Reflect::DynamicFunction const& fun, Args&&... args)
+RuntimeAlgorithmPtr eval(std::string const& id, reflect::DynamicFunction const& fun, Args&&... args)
 {
     auto to_feature = [](auto&& arg){
         using Arg = std::decay_t<decltype(arg)>;
         if constexpr (details::is_feature_v<Arg>){
             return arg;
         } else {
-            return Feature("", Reflect::DynamicObject(std::forward<Arg>(arg))); //TODO: Until we properly support unnamed features, this will be an empty string
+            return Feature("", reflect::DynamicObject(std::forward<Arg>(arg))); //TODO: Until we properly support unnamed features, this will be an empty string
         }
     };
     return eval(id, fun, std::vector<RuntimeFeature>{to_feature(std::forward<Args>(args))...});
@@ -283,7 +283,7 @@ RuntimeAlgorithmPtr eval(std::string const& id, Reflect::DynamicFunction const& 
 template <typename... Args>
 RuntimeAlgorithmPtr eval(std::string const& id, std::string const& name, Feature<Args> const&... args)
 {
-        auto const& f = Reflect::GetFunctionRegistry().Resolve(name);
+        auto const& f = reflect::get_function_registry().resolve(name);
         return eval(id, f, args...);
 }
 

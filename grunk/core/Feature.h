@@ -11,7 +11,7 @@
 
 #include <parametric/core.hpp>
 
-#include <reflect/Reflect.hpp>
+#include <reflect/reflect.hpp>
 #include <type_traits>
 
 namespace grunk {
@@ -51,10 +51,10 @@ namespace details {
     constexpr bool is_feature_v<Feature<T>> = true;
 
     /**
-     * @brief evaluates to true if a type is Reflect::DynamicFunction
+     * @brief evaluates to true if a type is reflect::DynamicFunction
      */
     template<typename F>
-    constexpr bool is_dynamic_function_v = std::is_base_of_v<Reflect::DynamicFunction, F>;
+    constexpr bool is_dynamic_function_v = std::is_base_of_v<reflect::DynamicFunction, F>;
 }
 
 // forward declaration
@@ -235,7 +235,7 @@ public:
      */
     template <
         typename... Args,
-        typename = std::enable_if_t<!(std::is_same_v<Args, Reflect::DynamicObject> || ...)>
+        typename = std::enable_if_t<!(std::is_same_v<Args, reflect::DynamicObject> || ...)>
     >
     Feature(std::string const& id, Feature<Args> const&... args)
      : Feature(

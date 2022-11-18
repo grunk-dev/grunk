@@ -171,20 +171,20 @@ We can load the plugins using the ``PluginRegistry``.
 
 When working with plugins, I 
 have to use grunk's :ref:`dynamic mode<dynamic-mode>`, while the :ref:`first example<getting-started>` used grunk's 
-:ref:`static mode<static-mode>`. In essence, this means that all features of the above feature tree are now instances of ``Feature<Reflect::DynamicObject>``, 
+:ref:`static mode<static-mode>`. In essence, this means that all features of the above feature tree are now instances of ``Feature<reflect::DynamicObject>``, 
 see also :ref:`design principles<design-dynamic-sublanguage>`. Because the plugins are loaded
 at runtime, the calling code does not know about the type ``SomePluginA::MyDouble`` and the 
 functions ``SomePluginA::add`` and ``SomePluginB::multiply`` directly. Instead, it relies on 
 a runtime reflection system used by grunk's plugin system. 
 
-If I evaluate the tree by querying `b.value()`, I will retrieve an instance of ``Reflect::DynamicObject``.
+If I evaluate the tree by querying `b.value()`, I will retrieve an instance of ``reflect::DynamicObject``.
 Luckily, the type ``SomePluginA::MyDouble`` has a public data member called `value` which is of type
-`double`, see also the section on :ref:`writing plugins<writing-plugins>`. I can use ``Reflect::DynamicObject::get`` to retrieve this data member and then cast it to a 
+`double`, see also the section on :ref:`writing plugins<writing-plugins>`. I can use ``reflect::DynamicObject::get`` to retrieve this data member and then cast it to a 
 type that I can deal with:
 
 .. code-block:: cpp
   
-   auto b_result = Reflect::cast<double>(b.value().get("value"));
+   auto b_result = reflect::cast<double>(b.value().get("value"));
    std::cout << b_result << std::endl;
 
 .. code-block:: console
@@ -246,7 +246,7 @@ reconstructed, as long as the two plugins have been loaded:
 
    auto features = grunk::read("/home/jan/my_grunk_files/simple.grr")
    auto b = features.at("b");
-   auto b_result = Reflect::cast<double>(b.value().get("value"));
+   auto b_result = reflect::cast<double>(b.value().get("value"));
    std::cout << b_result << std::endl;
 
 .. code-block:: console
@@ -308,16 +308,16 @@ make available in our grunk interface.
            // register types
    
            grunk::register_type<MyDouble>("MyDouble")
-           .AddConstructor<double>()
-           .AddDataMember(&MyDouble::value, "value")
-           .AddMemberFunction(
+           .add_constructor<double>()
+           .add_data_member(&MyDouble::value, "value")
+           .add_member_function(
                [](MyDouble const& d){
                    YAML::Node out(d.value);
                    return out;
                },
                "serialize"
            )
-           .AddMemberFunction(
+           .add_member_function(
                [](YAML::Node const& y){
                    return MyDouble(y.as<double>());
                },
@@ -344,7 +344,7 @@ name to look up the type in grunk's type registry.
 
 Though this is not necessary 
 for grunk's plugin system, we are letting the type registry know about the 
-constructor taking a ``double`` with ``AddConstructor``. This allows users of grunk to 
+constructor taking a ``double`` with ``add_constructor``. This allows users of grunk to 
 create instances of ``MyDouble``, even if the plugin is loaded at runtime and the calling 
 program does not know about the existence of ``MyDouble`` at compile time. 
 
@@ -353,13 +353,13 @@ with the string identifier "value", and this was already used in the example
 :ref:`"Using Plugins"<using-plugins>`.
 
 If ``MyDouble`` had any public member functions, we could register them using 
-``AddMemberFunction``. But ``AddMemberFunction`` is more powerful: We can use it to 
+``add_member_function``. But ``add_member_function`` is more powerful: We can use it to 
 add free functions as methods, even if they don't exist in the definition of the type. 
 If this free function takes a reference to ``MyDouble`` as first argument, it behaves like a normal
 member function. If it does not, it behaves like a static member function. 
 
 In the above code block, we are adding the free function ``serialize`` as a method to 
-``MyDouble`` using ``AddMemberFunction``. The free function 
+``MyDouble`` using ``add_member_function``. The free function 
 creates a ``YAML::Node`` (see `yaml-cpp <https://github.com/jbeder/yaml-cpp>`_) from an 
 instance of ``MyDouble``. In this example, the ``YAML::Node`` is very simple: It only holds the 
 ``MyDouble::value`` as a ``double``. This information is enough to uniquely transform an instance 
