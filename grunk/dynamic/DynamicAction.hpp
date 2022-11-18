@@ -1,7 +1,7 @@
 /**
- * @file RuntimeAction.h
+ * @file DynamicAction.h
  * 
- * This file implements the template specialization of Action for RuntimeFunctions
+ * This file implements the template specialization of Action for DynamicFunctions
  */
 
 #pragma once
@@ -14,23 +14,23 @@
 #include <yaml-cpp/yaml.h>
 
 #include <grunk/core/Action.hpp>
-#include <grunk/dynamic/RuntimeFeature.hpp>
+#include <grunk/dynamic/DynamicFeature.hpp>
 
 namespace grunk {
 
 namespace details {
 
     //forward declaration
-    struct RuntimeActionFactory;
+    struct DynamicActionFactory;
 
 } // namespace details
 
 /**
- * @brief template specialization of Algoithm for RuntimeFunctions
+ * @brief template specialization of Algoithm for DynamicFunctions
  *
- * Given a function and a set of RuntimeFeature instances as inputs, a
- * RuntimeAction represents the calculation of the function from the 
- * arguments wrapped in the input RuntimeFeature instances.
+ * Given a function and a set of DynamicFeature instances as inputs, a
+ * DynamicAction represents the calculation of the function from the 
+ * arguments wrapped in the input DynamicFeature instances.
  *
  * The class has a private constructor, as it should always be created using the 
  * factory function ::grunk::eval.
@@ -45,18 +45,18 @@ template <>
 class Action<reflect::DynamicFunction> : public parametric::ComputeNode
 {
 
-    friend struct details::RuntimeActionFactory;
+    friend struct details::DynamicActionFactory;
 
 private:
 
     /**
-     * @brief Construct a new RuntimeAction given a RuntimeFunction<F> and 
-     * an std::vector of RuntimeFeatures.
+     * @brief Construct a new DynamicAction given a DynamicFunction<F> and 
+     * an std::vector of DynamicFeatures.
      * 
      * @param fun A const pointer to a reflect::Function
-     * @param in The input RuntimeFeatures
+     * @param in The input DynamicFeatures
      */
-    Action(std::string const& id, reflect::DynamicFunction const& fun, std::vector<RuntimeFeature> const& in)
+    Action(std::string const& id, reflect::DynamicFunction const& fun, std::vector<DynamicFeature> const& in)
      : function(fun)
      , inputs{in}
      , outputs(function.num_outputs())
@@ -84,7 +84,7 @@ public:
      */
     void eval() const override
     {
-        // tranform input nodes to vector of runtime objects
+        // tranform input nodes to vector of DynamicObjects
         std::vector<reflect::DynamicObject> inputs_vec;
         std::transform(inputs.begin(),
                     inputs.end(),
@@ -115,7 +115,7 @@ public:
     }
 
     /**
-     * @brief returns the output(s) of the function wrapped in RuntimeFeature instances.
+     * @brief returns the output(s) of the function wrapped in DynamicFeature instances.
      *
      * If the wrapped function returns an std::tuple, each element in this 
      * tuple is interpreted as an individual output of this action. This function
@@ -127,14 +127,14 @@ public:
      * @param Iix The index of the output. Defaults to zero.
      * @return decltype(auto) a Feature wrapping the output of index Idx
      */
-    RuntimeFeature get(size_t idx = 0) const
+    DynamicFeature get(size_t idx = 0) const
     {
-        return RuntimeFeature(outputs[idx]);
+        return DynamicFeature(outputs[idx]);
     }
 
     // for consistency with static get
     template <size_t Idx = 0>
-    RuntimeFeature get() const
+    DynamicFeature get() const
     {
         return get(Idx);
     }
@@ -165,21 +165,21 @@ public:
 
 private:
     reflect::DynamicFunction const& function;
-    std::vector<RuntimeFeature> const inputs;
+    std::vector<DynamicFeature> const inputs;
     std::vector<parametric::OutputParam<reflect::DynamicObject>> mutable outputs;
 };
 
 /**
- * @brief typedef for an Action wrapping a RuntimeFunction
+ * @brief typedef for an Action wrapping a DynamicFunction
  * @ingroup dynamic_advanced
  */
-using RuntimeAction = Action<reflect::DynamicFunction>;
+using DynamicAction = Action<reflect::DynamicFunction>;
 
 /**
- * @brief A parametric::compute_node_ptr wrapping a RuntimeAction
+ * @brief A parametric::compute_node_ptr wrapping a DynamicAction
  * @ingroup dynamic_advanced
  */
-using RuntimeActionPtr = ActionPtr<reflect::DynamicFunction>;
+using DynamicActionPtr = ActionPtr<reflect::DynamicFunction>;
 
 namespace details {
 
@@ -197,23 +197,23 @@ namespace details {
  * templated friend functions are a pain in the ass. This way we have a non-templated friend
  * struct with templated member functions.
  */
-struct RuntimeActionFactory
+struct DynamicActionFactory
 {
     /**
-     * @brief Returns a new RuntimeActionPtr given a RuntimeFunction and an
-     * vector of RuntimeFeatures
+     * @brief Returns a new DynamicActionPtr given a DynamicFunction and an
+     * vector of DynamicFeatures
      * 
      * @param fun The reflect::function to be wrapped
      * @param args The input features
-     * @return RuntimeActionPtr The returned compute_node_ptr wrapping a RuntimeAction
+     * @return DynamicActionPtr The returned compute_node_ptr wrapping a DynamicAction
      */
-    static RuntimeActionPtr new_action(
+    static DynamicActionPtr new_action(
         std::string const& id, 
         reflect::DynamicFunction const& fun, 
-        std::vector<RuntimeFeature> const& args
+        std::vector<DynamicFeature> const& args
     )
     {
-        return RuntimeActionPtr(new RuntimeAction(id, fun, args));
+        return DynamicActionPtr(new DynamicAction(id, fun, args));
     }
 
 };
@@ -222,7 +222,7 @@ struct RuntimeActionFactory
 
 /**
  * @brief Given a function and a vector of features in the feature 
- * tree, this function creates a RuntimeAlgoritm instance representing the 
+ * tree, this function creates a DynamicAlgoritm instance representing the 
  * evaluation of the input function for the input features.
  * 
  * @tparam F The type of the function to be wrapped. This can be any referentially transparent function, 
@@ -230,14 +230,14 @@ struct RuntimeActionFactory
              references.
  * @param fun The input function
  * @param args The input features of the feature tree
- * @return RuntimeActionPtr A special pointer type wrapping a RuntimeAction instance.
+ * @return DynamicActionPtr A special pointer type wrapping a DynamicAction instance.
  * @ingroup dynamic_advanced
  */
-RuntimeActionPtr eval(std::string const& id, reflect::DynamicFunction const& fun, std::vector<RuntimeFeature> const& args);
+DynamicActionPtr eval(std::string const& id, reflect::DynamicFunction const& fun, std::vector<DynamicFeature> const& args);
 
 /**
  * @brief Given a function and some features in the feature tree, this 
- * function creates a RuntimeAlgoritm instance representing the evaluation
+ * function creates a DynamicAlgoritm instance representing the evaluation
  * of the input function for the input features.
  *
  * This function accepts features as arguments for the functions, as well
@@ -247,14 +247,14 @@ RuntimeActionPtr eval(std::string const& id, reflect::DynamicFunction const& fun
  * @tparam Args The types of the arguments expected by the input function
  * @param fun The input function
  * @param args The input features of the feature tree
- * @return RuntimeActionPtr A special pointer type wrapping a RuntimeAction instance.
+ * @return DynamicActionPtr A special pointer type wrapping a DynamicAction instance.
  * @ingroup dynamic_advanced
  */
 template <
     typename... Args,
-    typename = std::enable_if_t<!(sizeof...(Args) == 1 && (std::is_same_v<std::vector<RuntimeFeature>, std::decay_t<Args>> && ...))>
+    typename = std::enable_if_t<!(sizeof...(Args) == 1 && (std::is_same_v<std::vector<DynamicFeature>, std::decay_t<Args>> && ...))>
 >
-RuntimeActionPtr eval(std::string const& id, reflect::DynamicFunction const& fun, Args&&... args)
+DynamicActionPtr eval(std::string const& id, reflect::DynamicFunction const& fun, Args&&... args)
 {
     auto to_feature = [](auto&& arg){
         using Arg = std::decay_t<decltype(arg)>;
@@ -264,7 +264,7 @@ RuntimeActionPtr eval(std::string const& id, reflect::DynamicFunction const& fun
             return Feature("", reflect::DynamicObject(std::forward<Arg>(arg))); //TODO: Until we properly support unnamed features, this will be an empty string
         }
     };
-    return eval(id, fun, std::vector<RuntimeFeature>{to_feature(std::forward<Args>(args))...});
+    return eval(id, fun, std::vector<DynamicFeature>{to_feature(std::forward<Args>(args))...});
 }
 
 /**
@@ -276,17 +276,17 @@ RuntimeActionPtr eval(std::string const& id, reflect::DynamicFunction const& fun
  * @tparam Args The types of the arguments expected by the registered function
  * @param name The string identifier of the registered function
  * @param args The input Features
- * @return RuntimeActionPtr A special pointer type wrapping the RuntimeAction
+ * @return DynamicActionPtr A special pointer type wrapping the DynamicAction
  *
  * @ingroup dynamic
  */
 template <typename... Args>
-RuntimeActionPtr eval(std::string const& id, std::string const& name, Feature<Args> const&... args)
+DynamicActionPtr eval(std::string const& id, std::string const& name, Feature<Args> const&... args)
 {
         auto const& f = reflect::get_function_registry().resolve(name);
         return eval(id, f, args...);
 }
 
-RuntimeActionPtr eval(std::string const& id, std::string const& name, std::vector<RuntimeFeature> const& args);
+DynamicActionPtr eval(std::string const& id, std::string const& name, std::vector<DynamicFeature> const& args);
 
 } // namespace grunk

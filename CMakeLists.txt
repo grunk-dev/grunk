@@ -34,10 +34,10 @@ set(grunk_SRC
     grunk/plugins/PluginRegistry.cpp
     grunk/plugins/StdPlugin.hpp
     grunk/plugins/StdPlugin.cpp
-    grunk/dynamic/RuntimeAction.hpp
-    grunk/dynamic/RuntimeAction.cpp
-    grunk/dynamic/RuntimeFeature.hpp
-    grunk/dynamic/RuntimeFeature.cpp
+    grunk/dynamic/DynamicAction.hpp
+    grunk/dynamic/DynamicAction.cpp
+    grunk/dynamic/DynamicFeature.hpp
+    grunk/dynamic/DynamicFeature.cpp
     grunk/grunk.hpp
 )
 

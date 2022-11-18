@@ -1,6 +1,6 @@
 #include "io.hpp"
 
-#include <grunk/dynamic/RuntimeAction.hpp>
+#include <grunk/dynamic/DynamicAction.hpp>
 
 namespace grunk {
 
@@ -122,7 +122,7 @@ FeatureContainer yaml_to_feature_tree(YAML::Node const& root)
             }
 
             auto object = deserialize(type, value);
-            features.emplace(name, RuntimeFeature(name, std::move(object)));
+            features.emplace(name, DynamicFeature(name, std::move(object)));
         }
     }
 
@@ -132,7 +132,7 @@ FeatureContainer yaml_to_feature_tree(YAML::Node const& root)
             
             auto const function_name = steps[i].Tag();
 
-            std::vector<RuntimeFeature> input_vec;
+            std::vector<DynamicFeature> input_vec;
             auto const inputs = steps[i][1];
             for (auto const& input: inputs) {
                 auto input_name = input.as<std::string>();

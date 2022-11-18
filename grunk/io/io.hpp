@@ -10,7 +10,7 @@
 
 #pragma once 
 
-#include <grunk/dynamic/RuntimeFeature.hpp>
+#include <grunk/dynamic/DynamicFeature.hpp>
 #include <grunk/plugins/PluginRegistry.hpp>
 #include <grunk/version.hpp>
 
@@ -356,7 +356,7 @@ YAML::Node feature_tree_to_yaml(Container const& features)
 template <typename... Args>
 YAML::Node feature_tree_to_yaml(Feature<Args> const&... args)
 {
-    return feature_tree_to_yaml(std::initializer_list<RuntimeFeature>{args...});
+    return feature_tree_to_yaml(std::initializer_list<DynamicFeature>{args...});
 }
 
 } //namespace details
@@ -433,7 +433,7 @@ void write(std::string const& filename, Args const&... args)
  * 
  * @ingroup fileio
  */
-using FeatureContainer = std::unordered_map<std::string, RuntimeFeature>;
+using FeatureContainer = std::unordered_map<std::string, DynamicFeature>;
 
 namespace details {
 

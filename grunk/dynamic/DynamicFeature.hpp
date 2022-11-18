@@ -1,5 +1,5 @@
 /**
- * @file RuntimeFeature.h
+ * @file DynamicFeature.h
  *
  * This file contains the template specialization of Feature for reflect::DynamicObjects
  */
@@ -35,10 +35,10 @@ class Feature<reflect::DynamicObject> : public FeatureBase<reflect::DynamicObjec
 public:
 
     /**
-     * @brief Construct a new RuntimeFeature given the string representation
+     * @brief Construct a new DynamicFeature given the string representation
      * of a reflected type and constructor arguments.
      *
-     * This constructs a runtime object given constructor arguments and wraps 
+     * This constructs a DynamicObject given constructor arguments and wraps 
      * it in a feature instance. See also make_rto.
      * 
      * @tparam Args The constructor arguments
@@ -52,7 +52,7 @@ public:
 
 
     /**
-     * @brief Construct a new RuntimeFeature object given constructor arguments
+     * @brief Construct a new DynamicFeature object given constructor arguments
      * Feature<Args>..., where T is constructable from Args...
      *
      * Example: 
@@ -65,13 +65,13 @@ public:
      * Feature<double> x(4.2);
      * Feature<int> y(13);
      *
-     * RuntimeFeature z("Foo", x, y);
+     * DynamicFeature z("Foo", x, y);
      * \endcode
      *
      * Whenever one of the constructor arguments x or y changes, the Feature z will 
      * be marked for lazy reconstruction.
      *
-     * Caveat: We cannot pass RuntimeFeatures as input arguments, because this would
+     * Caveat: We cannot pass DynamicFeatures as input arguments, because this would
      * not allow grunk to deduce the correct Constructor arguments to select
      * the correct constructor.
      * 
@@ -93,7 +93,7 @@ public:
     {}
 
     /**
-     * @brief Construct a new RuntimeFeature given a parametric::param<T>
+     * @brief Construct a new DynamicFeature given a parametric::param<T>
      * 
      * @param p The parametric::param<T> to be wrapped in a Feature
      */
@@ -102,7 +102,7 @@ public:
     {}
 
     /**
-     * @brief Construct a new RuntimeFeature given an reflect::DynamicObject
+     * @brief Construct a new DynamicFeature given an reflect::DynamicObject
      * 
      * @param o The input reflect::DynamicObject
      */
@@ -114,14 +114,14 @@ public:
      * @brief Converting constructor from a Feature<T>, where T is not
      * a reflect::DynamicObject
      *
-     * <b>Caution:</b> The converted RuntimeFeature will hold a reference
+     * <b>Caution:</b> The converted DynamicFeature will hold a reference
      * to the value held by the input Feature. This means that the input Feature
-     * must outlive the converted RuntimeFeature. If this is not the case, it is
-     * better to explicitly construct a new RuntimeFeature instead of using
+     * must outlive the converted DynamicFeature. If this is not the case, it is
+     * better to explicitly construct a new DynamicFeature instead of using
      * this converting constructor.
      * 
      * @tparam T The type wrapped by the incoming Feature<T>
-     * @param f The input feature to be converted to a RuntimeFeature
+     * @param f The input feature to be converted to a DynamicFeature
      */
     template <typename T,
               typename = std::enable_if_t<!std::is_same_v<reflect::DynamicObject, T>>
@@ -150,7 +150,7 @@ public:
      * the dependency of the returned feature to this.
      * 
      * @param memberName  The string representation of the member name
-     * @return RuntimeFeature The data member wrapped in a Feature
+     * @return DynamicFeature The data member wrapped in a Feature
      */
     decltype(auto) get(std::string const& memberName) const
     {
@@ -170,7 +170,7 @@ public:
      * @tparam Args The argument types expected by the member function
      * @param memberFunName The string representation of the member function
      * @param args The arguments of the member function
-     * @return RuntimeFeature The return value of the member function 
+     * @return DynamicFeature The return value of the member function 
      */
     template <typename... Args>
     decltype(auto) invoke(std::string const& memberFunName, Feature<Args> const&... args) const
@@ -188,7 +188,7 @@ public:
 };
 
 /**
- * @brief C++ 17 deduction guides for RuntimeFeature
+ * @brief C++ 17 deduction guides for DynamicFeature
  * 
  * @tparam Args The constructor arguments
  */
@@ -196,9 +196,9 @@ template <typename... Args>
 Feature(std::string const&, Args&&...) -> Feature<reflect::DynamicObject>;
 
 /**
- * @brief typedef for RuntimeFeature
+ * @brief typedef for DynamicFeature
  * @ingroup dynamic
  */
-using RuntimeFeature = Feature<reflect::DynamicObject>;
+using DynamicFeature = Feature<reflect::DynamicObject>;
 
 }
