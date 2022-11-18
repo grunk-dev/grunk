@@ -40,13 +40,13 @@ grunk lets you delay the evaluation of the function until the result is queried.
 
 In the first line no computation takes place, the function ``add`` is not evaluated.
 Instead, 
-a new ``Algorithm`` instance ``o`` is created using ``grunk::eval``.
+a new ``Action`` instance ``o`` is created using ``grunk::eval``.
 The arguments are the label ``"o"``, a function pointer ``&add`` and two arguments
 that shall be passed into the function. With ``->get()`` we retrieve a handle
-to the first (and in this case only) output of the algorithm, which is of
+to the first (and in this case only) output of the action, which is of
 type ``Feature<double>``. 
 
-Internally, ``o`` depends on the algorithm created
+Internally, ``o`` depends on the action created
 by ``grunk::eval``, which in turn depends on two ``Feature<double>`` instances, 
 one holding the value ``1.2`` and the other the value ``40.8``. With this dependency 
 information, grunk can delay the computation to the point when ``o.value()`` 

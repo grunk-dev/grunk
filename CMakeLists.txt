@@ -23,8 +23,8 @@ find_package(reflect REQUIRED)
 set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
 
 set(grunk_SRC
-    grunk/core/Algorithm.hpp
-    grunk/core/Algorithm.cpp
+    grunk/core/Action.hpp
+    grunk/core/Action.cpp
     grunk/core/Feature.hpp
     grunk/core/Feature.cpp
     grunk/io/io.hpp 
@@ -34,8 +34,8 @@ set(grunk_SRC
     grunk/plugins/PluginRegistry.cpp
     grunk/plugins/StdPlugin.hpp
     grunk/plugins/StdPlugin.cpp
-    grunk/dynamic/RuntimeAlgorithm.hpp
-    grunk/dynamic/RuntimeAlgorithm.cpp
+    grunk/dynamic/RuntimeAction.hpp
+    grunk/dynamic/RuntimeAction.cpp
     grunk/dynamic/RuntimeFeature.hpp
     grunk/dynamic/RuntimeFeature.cpp
     grunk/grunk.hpp

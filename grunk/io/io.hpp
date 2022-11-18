@@ -220,7 +220,7 @@ void parse_feature(Feature<Arg> const& arg, YAML::Node& yaml_root, Visited& visi
                     root["parameters"][n.id()] = node;
                 }
                 else {
-                    // is algorithm
+                    // is action
                     steps.push(node);
                 }
             }

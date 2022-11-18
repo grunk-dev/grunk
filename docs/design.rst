@@ -4,7 +4,7 @@ Design Principles
 
 grunk's core functionality is designed around two pairs of classes:
  * :ref:`DynamicObjects and DynamicFunctions<design-dynamic-sublanguage>`
- * :ref:`Features and Algorithms<design-features-algorithms>`
+ * :ref:`Features and Actions<design-features-actions>`
 
 .. _design-dynamic-sublanguage:
 
@@ -49,15 +49,15 @@ via type-erasure and runtime polymorphism techniques. Using a minimalistic
 sublanguage in C++ gives us fine-grained control over just how much dynamic 
 typing we need.
 
-.. _design-features-algorithms:
+.. _design-features-actions:
 
-Features and Algorithms
+Features and Actions
 =======================
 
 To understand how grunks dynamic typing system works, it is useful to know 
 about `DynamicObject``\s and ``DynamicFunction``\s.
 
-As a user of grunk however, you will work with ``Feature``\s and ``Algorithm``\s 
+As a user of grunk however, you will work with ``Feature``\s and ``Action``\s 
 rather than ``DynamicObject``\s and ``DynamicFunction``\s.
 
 A ``Feature`` is a node in a *feature tree*. It is a class template that can 
@@ -66,21 +66,21 @@ of a ``DynamicObject``. The latter is the case, if custom types from a plugin sh
 
 ``Feature``\s can be independent - in which case they 
 serve as input parameters of your model, or they can be the result of 
-``Algorithm``\s.
+``Action``\s.
 
-An ``Algorithm`` represents a calcuation step. Just like a ``Feature``, it is a class
+An ``Action`` represents a calcuation step. Just like a ``Feature``, it is a class
 template that can either wrap any function or - if dynamic typing is needed - a 
-``DynamicFunction``. ``Algorithm``\s can be applied 
+``DynamicFunction``. ``Action``\s can be applied 
 to ``Feature``\s just like a functions can be applied to its inputs. The 
-main difference is, that when the ``Algorithm`` is applied, no calculation 
-is performed. Instead, the data dependencies between the ``Algorithm``\s 
+main difference is, that when the ``Action`` is applied, no calculation 
+is performed. Instead, the data dependencies between the ``Action``\s 
 input ``Feature``\s and output ``Feature``\s are registered together with 
-the actual computation that the algorithm performs. This computation is 
-delayed until the value of one of the ``Algorithm``\s output ``Feature`` 
+the actual computation that the action performs. This computation is 
+delayed until the value of one of the ``Action``\s output ``Feature`` 
 gets explicitly queried. Then, the calculation result is cached until in the 
 ``Feature`` gets invalidated. This happens, once one of its dependent 
 ``Feature``\s down the feature tree gets invalidated, e.g. by a change of a 
 root ``Feature``.
 
-The DAG management of ``Feature``\s and ``Algorithm``\s uses the 
+The DAG management of ``Feature``\s and ``Action``\s uses the 
 `parametric <https://gitlab.dlr.de/paradigms/parametric>`_ library.

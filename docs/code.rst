@@ -38,7 +38,7 @@ of the given function for the given features as input in the feature tree.
 
 
 
-The output features can be queried from the returned `AlgorithmPtr` instance, see
+The output features can be queried from the returned `ActionPtr` instance, see
 also the :ref:`advanced section <advanced>`.
 
 .. code-block:: cpp
