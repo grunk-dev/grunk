@@ -250,7 +250,7 @@ public:
                 return T(in...);
             }, 
             args...
-        )->get()
+        )->output()
        )
     {};
 

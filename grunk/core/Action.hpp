@@ -108,19 +108,19 @@ public:
      * @return decltype(auto) a Feature wrapping the output of index Idx
      */
     template <size_t Idx=0>
-    decltype(auto) get() const
+    decltype(auto) output() const
     {
         if constexpr ( !reflect::details::is_tuple_v<ReturnType> ) {
 
             if constexpr ( !std::is_same_v<std::vector<reflect::DynamicObject>, std::decay_t<ReturnType>>) {
-                static_assert(Idx == 0, "get with Index>0 only allowed for Actions returning a tuple.");
+                static_assert(Idx == 0, "output with Index>0 only allowed for Actions returning a tuple.");
                 return Feature<ReturnType>(out);
             } else {
                 return grunk::action(
                     out.param().id() + "[" + std::to_string(Idx) + "]",
                     [](ReturnType const& vec){ return vec[Idx]; }, 
                     Feature<ReturnType>(out)
-                )->get();
+                )->output();
             }
         }
         else {
@@ -129,7 +129,7 @@ public:
                 out.param().id() + "[" + std::to_string(Idx) + "]",
                 [](ReturnType const& tuple){ return std::get<Idx>(tuple); }, 
                 Feature<ReturnType>(out)
-            )->get();
+            )->output();
         }
     }
 

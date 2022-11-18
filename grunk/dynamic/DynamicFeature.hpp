@@ -88,7 +88,7 @@ public:
                 return reflect::make_dynamic(typeName, in...);
             },
             args...
-        )->get()
+        )->output()
      )
     {}
 

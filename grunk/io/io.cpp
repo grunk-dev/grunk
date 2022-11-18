@@ -162,7 +162,7 @@ FeatureContainer yaml_to_feature_tree(YAML::Node const& root)
                     throw io_error("Error parsing step " + std::to_string(idx) + ": A parameter with name \"" + output_name + "\" already exists.");
                 }
 
-                auto output = comp_node->get(idx++);
+                auto output = comp_node->output(idx++);
                 output.set_id(output_name);
                 features.emplace(output_name, output);
             }
