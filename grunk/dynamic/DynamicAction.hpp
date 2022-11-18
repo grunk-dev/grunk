@@ -127,16 +127,16 @@ public:
      * @param Iix The index of the output. Defaults to zero.
      * @return decltype(auto) a Feature wrapping the output of index Idx
      */
-    DynamicFeature get(size_t idx = 0) const
+    DynamicFeature output(size_t idx = 0) const
     {
         return DynamicFeature(outputs[idx]);
     }
 
-    // for consistency with static get
+    // for consistency with static output
     template <size_t Idx = 0>
-    DynamicFeature get() const
+    DynamicFeature output() const
     {
-        return get(Idx);
+        return output(Idx);
     }
 
     std::string serialize() const override final

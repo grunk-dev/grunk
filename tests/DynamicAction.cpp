@@ -77,8 +77,8 @@ TEST_F(DynamicActionTest, Basic)
     //       \  |
     //         b
     //
-    auto a = action("a", f, l, r)->get(); 
-    auto b = action("b", f, a, r)->get();
+    auto a = action("a", f, l, r)->output(); 
+    auto b = action("b", f, a, r)->output();
 
     // nothing has been computed yet, we just registered the feature tree
     EXPECT_FALSE(a.is_valid());
@@ -121,11 +121,11 @@ TEST_F(DynamicActionTest, PassNonRumtimeFeatureToDynamicAction)
     auto rc = Feature("rc", MyDouble(0.1));
 
     // (DynamicFeature, Feature<T>) -> DynamicAction
-    auto ret1 = action("ret1", f, lr, rc)->get();
+    auto ret1 = action("ret1", f, lr, rc)->output();
     EXPECT_NEAR(ret1.value().get_as<double>("val"), 0.3, 1e-12);
 
     // (Feature<T>, Feature<T>) -> DynamicAction
-    auto ret2 = action("ret2", f, lc, rc)->get();
+    auto ret2 = action("ret2", f, lc, rc)->output();
     EXPECT_NEAR(ret2.value().get_as<double>("val"), 0.3, 1e-12);
 }
 
@@ -135,8 +135,8 @@ TEST_F(DynamicActionTest, MultiOutput)
 
     auto i = Feature("i", "Point", 0.2, 0.6);
     auto o = action("o", f, i);
-    auto x = o->get<0>();
-    auto y = o->get<1>();
+    auto x = o->output<0>();
+    auto y = o->output<1>();
 
     // test default output feature ids
     EXPECT_EQ(x.id(), "o[0]");
@@ -147,8 +147,8 @@ TEST_F(DynamicActionTest, MultiOutput)
     y.set_id("y");
     EXPECT_EQ(x.id(), "x");
     EXPECT_EQ(y.id(), "y");
-    EXPECT_EQ(o->get<0>().id(), "x");
-    EXPECT_EQ(o->get<1>().id(), "y");
+    EXPECT_EQ(o->output<0>().id(), "x");
+    EXPECT_EQ(o->output<1>().id(), "y");
 
     EXPECT_EQ(reflect::cast<double>(x.value()), 0.2);
     EXPECT_EQ(reflect::cast<double>(y.value()), 0.6);
@@ -166,7 +166,7 @@ TEST_F(DynamicActionTest, UnnamedFeature)
     auto f = reflect::Callable(std::plus<double>(), "plus");
 
     auto x = Feature("x", "double", 0.7); // x is a named feature
-    auto z = action("z", f, x, 0.2)->get(); // 0.2 is an unnamed feature
+    auto z = action("z", f, x, 0.2)->output(); // 0.2 is an unnamed feature
 
     EXPECT_FALSE(z.is_valid());
     EXPECT_NEAR(reflect::cast<double>(z.value()), 0.9, 1e-15);

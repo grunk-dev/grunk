@@ -51,8 +51,8 @@ TEST(ActionTest, Basic)
     //       \  |
     //         b
     //
-    auto a = action("a", &add, l, r)->get();
-    auto b = action("b", &add, a, r)->get();
+    auto a = action("a", &add, l, r)->output();
+    auto b = action("b", &add, a, r)->output();
 
     // nothing has been computed yet, we just registered the feature tree
     EXPECT_FALSE(a.is_valid());
@@ -89,8 +89,8 @@ TEST(ActionTest, MultiOutput)
     auto f = &get_components;
 
     auto i = Feature("i", Point(0.2, 0.6));
-    auto x = action("x", f, i)->get<0>();
-    auto y = action("y", f, i)->get<1>();
+    auto x = action("x", f, i)->output<0>();
+    auto y = action("y", f, i)->output<1>();
 
     EXPECT_EQ(x.value(), 0.2);
     EXPECT_EQ(y.value(), 0.6);
@@ -106,7 +106,7 @@ TEST(ActionTest, MultiOutput)
 TEST(ActionTest, UnnamedFeature)
 {
     auto x = Feature("x", 0.7);                     // x is a named feature
-    auto z = action("z", std::plus<>{}, x, 0.2)->get(); // 0.2 is an unnamed feature
+    auto z = action("z", std::plus<>{}, x, 0.2)->output(); // 0.2 is an unnamed feature
 
     EXPECT_FALSE(z.is_valid());
     EXPECT_NEAR(z.value(), 0.9, 1e-15);

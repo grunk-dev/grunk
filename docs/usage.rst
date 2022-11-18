@@ -24,7 +24,7 @@ grunk lets you delay the evaluation of the function until the result is queried.
 
    #include <grunk/grunk.h>
 
-   auto o = grunk::action("o", &add, 1.2, 40.8)->get();
+   auto o = grunk::action("o", &add, 1.2, 40.8)->output();
    
    std::cout << "Until here, nothing has happened" << std::endl;
 
@@ -42,7 +42,7 @@ In the first line no computation takes place, the function ``add`` is not evalua
 Instead, 
 a new ``Action`` instance ``o`` is created using ``grunk::action``.
 The arguments are the label ``"o"``, a function pointer ``&add`` and two arguments
-that shall be passed into the function. With ``->get()`` we retrieve a handle
+that shall be passed into the function. With ``->output()`` we retrieve a handle
 to the first (and in this case only) output of the action, which is of
 type ``Feature<double>``. 
 
@@ -63,8 +63,8 @@ Let's modify the above code example a bit.
    grunk::Feature y("y", 15.2);
    grunk::Feature z("z", 25.6);
 
-   auto a = grunk::action("a", &add, x, y)->get();
-   auto b = grunk::action("b", &add, a, z)->get();
+   auto a = grunk::action("a", &add, x, y)->output();
+   auto b = grunk::action("b", &add, a, z)->output();
 
 We have created three independent features ``x,y,z``. The feature
 ``a`` is the result of adding ``x`` and ``y`` and the feature ``b`` is the 
@@ -166,8 +166,8 @@ We can load the plugins using the ``PluginRegistry``.
    grunk::Feature y("y", "SomePluginA::MyDouble", 3.3);
    grunk::Feature z("z", "SomePluginA::MyDouble", 2.0);
 
-   auto a = grunk::action("a", "SomePluginA::add", x, y)->get();
-   auto b = grunk::action("b", "SomePluginB::multiply", a, z)->get();
+   auto a = grunk::action("a", "SomePluginA::add", x, y)->output();
+   auto b = grunk::action("b", "SomePluginB::multiply", a, z)->output();
 
 When working with plugins, I 
 have to use grunk's :ref:`dynamic mode<dynamic-mode>`, while the :ref:`first example<getting-started>` used grunk's 
@@ -179,12 +179,12 @@ a runtime reflection system used by grunk's plugin system.
 
 If I evaluate the tree by querying `b.value()`, I will retrieve an instance of ``reflect::DynamicObject``.
 Luckily, the type ``SomePluginA::MyDouble`` has a public data member called `value` which is of type
-`double`, see also the section on :ref:`writing plugins<writing-plugins>`. I can use ``reflect::DynamicObject::get`` to retrieve this data member and then cast it to a 
+`double`, see also the section on :ref:`writing plugins<writing-plugins>`. I can use ``reflect::DynamicObject::output`` to retrieve this data member and then cast it to a 
 type that I can deal with:
 
 .. code-block:: cpp
   
-   auto b_result = reflect::cast<double>(b.value().get("value"));
+   auto b_result = reflect::cast<double>(b.value().output("value"));
    std::cout << b_result << std::endl;
 
 .. code-block:: console
@@ -246,7 +246,7 @@ reconstructed, as long as the two plugins have been loaded:
 
    auto features = grunk::read("/home/jan/my_grunk_files/simple.grr")
    auto b = features.at("b");
-   auto b_result = reflect::cast<double>(b.value().get("value"));
+   auto b_result = reflect::cast<double>(b.value().output("value"));
    std::cout << b_result << std::endl;
 
 .. code-block:: console
