@@ -7,7 +7,7 @@
 #include <deque>
 #include <filesystem>
 
-#include "IPlugin.h"
+#include "IPlugin.hpp"
 
 namespace grunk {
 

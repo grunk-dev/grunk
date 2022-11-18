@@ -10,9 +10,9 @@
 
 #pragma once 
 
-#include <grunk/dynamic/RuntimeFeature.h>
-#include <grunk/plugins/PluginRegistry.h>
-#include <grunk/version.h>
+#include <grunk/dynamic/RuntimeFeature.hpp>
+#include <grunk/plugins/PluginRegistry.hpp>
+#include <grunk/version.hpp>
 
 #include <stdexcept>
 #include <utility>

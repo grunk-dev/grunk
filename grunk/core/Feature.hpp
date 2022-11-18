@@ -309,4 +309,4 @@ Feature(std::string const&, T&&) -> Feature<T>;
 
 } //namespace grunk
 
-#include "Algorithm.h"
+#include "Algorithm.hpp"

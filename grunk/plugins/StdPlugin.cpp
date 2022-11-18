@@ -1,5 +1,5 @@
-#include <grunk/plugins/StdPlugin.h>
-#include <grunk/version.h>
+#include <grunk/plugins/StdPlugin.hpp>
+#include <grunk/version.hpp>
 #include <yaml-cpp/yaml.h>
 
 namespace grunk {
