@@ -1,10 +1,10 @@
 #include <gtest/gtest.h>
 
-#include <grunk/dynamic/RuntimeAlgorithm.hpp>
+#include <grunk/dynamic/RuntimeAction.hpp>
 
 using namespace grunk;
 
-namespace RuntimeAlgorithm_test {
+namespace {
 
 // a class with one const and one non-const member function
 struct MyDouble {
@@ -35,11 +35,10 @@ std::tuple<double, double> get_components(Point const& p){
     return std::make_tuple(p.x, p.y);
 }
 
-} //namespace Algorithm_test
+} //namespace
 
-using namespace RuntimeAlgorithm_test;
 
-class RuntimeAlgorithmTest : public ::testing::Test 
+class RuntimeActionTest : public ::testing::Test 
 {
 public:
 
@@ -62,7 +61,7 @@ public:
     } 
 };
 
-TEST_F(RuntimeAlgorithmTest, Basic)
+TEST_F(RuntimeActionTest, Basic)
 {
     auto f = reflect::Callable(&add, "add");
 
@@ -113,7 +112,7 @@ TEST_F(RuntimeAlgorithmTest, Basic)
     EXPECT_NEAR(a.value().get_as<double>("val"), 0.6, 1e-12);
 }
 
-TEST_F(RuntimeAlgorithmTest, PassNonRumtimeFeatureToRuntimeAlgorithm)
+TEST_F(RuntimeActionTest, PassNonRumtimeFeatureToRuntimeAction)
 {
     auto f = reflect::Callable(&add, "add");
 
@@ -121,16 +120,16 @@ TEST_F(RuntimeAlgorithmTest, PassNonRumtimeFeatureToRuntimeAlgorithm)
     auto lc = Feature("lc", MyDouble(0.2));
     auto rc = Feature("rc", MyDouble(0.1));
 
-    // (RuntimeFeature, Feature<T>) -> RuntimeAlgorithm
+    // (RuntimeFeature, Feature<T>) -> RuntimeAction
     auto ret1 = eval("ret1", f, lr, rc)->get();
     EXPECT_NEAR(ret1.value().get_as<double>("val"), 0.3, 1e-12);
 
-    // (Feature<T>, Feature<T>) -> RuntimeAlgorithm
+    // (Feature<T>, Feature<T>) -> RuntimeAction
     auto ret2 = eval("ret2", f, lc, rc)->get();
     EXPECT_NEAR(ret2.value().get_as<double>("val"), 0.3, 1e-12);
 }
 
-TEST_F(RuntimeAlgorithmTest, MultiOutput)
+TEST_F(RuntimeActionTest, MultiOutput)
 {
     auto f = reflect::Callable(&get_components, "get_components");
 
@@ -162,7 +161,7 @@ TEST_F(RuntimeAlgorithmTest, MultiOutput)
     EXPECT_EQ(reflect::cast<double>(y.value()), 0.7);
 }
 
-TEST_F(RuntimeAlgorithmTest, UnnamedFeature)
+TEST_F(RuntimeActionTest, UnnamedFeature)
 {
     auto f = reflect::Callable(std::plus<double>(), "plus");
 

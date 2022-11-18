@@ -105,7 +105,7 @@ TEST_F(IOTest, serialize_DAGNode)
     EXPECT_EQ(yc[1][0].as<std::string>(), "x");
     EXPECT_EQ(yc[1][1].as<std::string>(), "y");
 
-    // Can't serialize algorithm with non registered function
+    // Can't serialize action with non registered function
     EXPECT_THROW(w->serialize(), std::logic_error);
 
     // dependent parameter

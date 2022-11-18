@@ -1,7 +1,7 @@
 /**
- * @file RuntimeAlgorithm.h
+ * @file RuntimeAction.h
  * 
- * This file implements the template specialization of Algorithm for RuntimeFunctions
+ * This file implements the template specialization of Action for RuntimeFunctions
  */
 
 #pragma once
@@ -13,7 +13,7 @@
 
 #include <yaml-cpp/yaml.h>
 
-#include <grunk/core/Algorithm.hpp>
+#include <grunk/core/Action.hpp>
 #include <grunk/dynamic/RuntimeFeature.hpp>
 
 namespace grunk {
@@ -21,7 +21,7 @@ namespace grunk {
 namespace details {
 
     //forward declaration
-    struct RuntimeAlgorithmFactory;
+    struct RuntimeActionFactory;
 
 } // namespace details
 
@@ -29,7 +29,7 @@ namespace details {
  * @brief template specialization of Algoithm for RuntimeFunctions
  *
  * Given a function and a set of RuntimeFeature instances as inputs, a
- * RuntimeAlgorithm represents the calculation of the function from the 
+ * RuntimeAction represents the calculation of the function from the 
  * arguments wrapped in the input RuntimeFeature instances.
  *
  * The class has a private constructor, as it should always be created using the 
@@ -42,21 +42,21 @@ namespace details {
  * @ingroup dynamic_advanced
  */
 template <>
-class Algorithm<reflect::DynamicFunction> : public parametric::ComputeNode
+class Action<reflect::DynamicFunction> : public parametric::ComputeNode
 {
 
-    friend struct details::RuntimeAlgorithmFactory;
+    friend struct details::RuntimeActionFactory;
 
 private:
 
     /**
-     * @brief Construct a new RuntimeAlgorithm given a RuntimeFunction<F> and 
+     * @brief Construct a new RuntimeAction given a RuntimeFunction<F> and 
      * an std::vector of RuntimeFeatures.
      * 
      * @param fun A const pointer to a reflect::Function
      * @param in The input RuntimeFeatures
      */
-    Algorithm(std::string const& id, reflect::DynamicFunction const& fun, std::vector<RuntimeFeature> const& in)
+    Action(std::string const& id, reflect::DynamicFunction const& fun, std::vector<RuntimeFeature> const& in)
      : function(fun)
      , inputs{in}
      , outputs(function.num_outputs())
@@ -118,7 +118,7 @@ public:
      * @brief returns the output(s) of the function wrapped in RuntimeFeature instances.
      *
      * If the wrapped function returns an std::tuple, each element in this 
-     * tuple is interpreted as an individual output of this algorithm. This function
+     * tuple is interpreted as an individual output of this action. This function
      * accepts a template integer argument to specify the index of the output.
      *
      * If the wrapped function returns something other than an std::tuple, 
@@ -170,50 +170,50 @@ private:
 };
 
 /**
- * @brief typedef for an Algorithm wrapping a RuntimeFunction
+ * @brief typedef for an Action wrapping a RuntimeFunction
  * @ingroup dynamic_advanced
  */
-using RuntimeAlgorithm = Algorithm<reflect::DynamicFunction>;
+using RuntimeAction = Action<reflect::DynamicFunction>;
 
 /**
- * @brief A parametric::compute_node_ptr wrapping a RuntimeAlgorithm
+ * @brief A parametric::compute_node_ptr wrapping a RuntimeAction
  * @ingroup dynamic_advanced
  */
-using RuntimeAlgorithmPtr = AlgorithmPtr<reflect::DynamicFunction>;
+using RuntimeActionPtr = ActionPtr<reflect::DynamicFunction>;
 
 namespace details {
 
 /**
- * @brief The AlgorithmFactory struct is an internal factory for creating Algorithm
+ * @brief The ActionFactory struct is an internal factory for creating Action
  * instances.
  *
  * It is a proxy class used in the free factory functions eval. Factory functions are
- * needed, because Algorithms should always be wrapped in a parametric::compute_node_ptr
- * and the private constructor of ALgorithm makes sure that there is no misuse. The
+ * needed, because Actions should always be wrapped in a parametric::compute_node_ptr
+ * and the private constructor of Action makes sure that there is no misuse. The
  * factory function parametric::new_node does not work with the templated constructors of the
- * Algorithm class, so we need new factory functions.
+ * Action class, so we need new factory functions.
  *
  * The proxy factory is needed, because the factory functions eval must be templated, and
  * templated friend functions are a pain in the ass. This way we have a non-templated friend
  * struct with templated member functions.
  */
-struct RuntimeAlgorithmFactory
+struct RuntimeActionFactory
 {
     /**
-     * @brief Returns a new RuntimeAlgorithmPtr given a RuntimeFunction and an
+     * @brief Returns a new RuntimeActionPtr given a RuntimeFunction and an
      * vector of RuntimeFeatures
      * 
      * @param fun The reflect::function to be wrapped
      * @param args The input features
-     * @return RuntimeAlgorithmPtr The returned compute_node_ptr wrapping a RuntimeAlgorithm
+     * @return RuntimeActionPtr The returned compute_node_ptr wrapping a RuntimeAction
      */
-    static RuntimeAlgorithmPtr new_algorithm(
+    static RuntimeActionPtr new_action(
         std::string const& id, 
         reflect::DynamicFunction const& fun, 
         std::vector<RuntimeFeature> const& args
     )
     {
-        return RuntimeAlgorithmPtr(new RuntimeAlgorithm(id, fun, args));
+        return RuntimeActionPtr(new RuntimeAction(id, fun, args));
     }
 
 };
@@ -230,10 +230,10 @@ struct RuntimeAlgorithmFactory
              references.
  * @param fun The input function
  * @param args The input features of the feature tree
- * @return RuntimeAlgorithmPtr A special pointer type wrapping a RuntimeAlgorithm instance.
+ * @return RuntimeActionPtr A special pointer type wrapping a RuntimeAction instance.
  * @ingroup dynamic_advanced
  */
-RuntimeAlgorithmPtr eval(std::string const& id, reflect::DynamicFunction const& fun, std::vector<RuntimeFeature> const& args);
+RuntimeActionPtr eval(std::string const& id, reflect::DynamicFunction const& fun, std::vector<RuntimeFeature> const& args);
 
 /**
  * @brief Given a function and some features in the feature tree, this 
@@ -247,14 +247,14 @@ RuntimeAlgorithmPtr eval(std::string const& id, reflect::DynamicFunction const& 
  * @tparam Args The types of the arguments expected by the input function
  * @param fun The input function
  * @param args The input features of the feature tree
- * @return RuntimeAlgorithmPtr A special pointer type wrapping a RuntimeAlgorithm instance.
+ * @return RuntimeActionPtr A special pointer type wrapping a RuntimeAction instance.
  * @ingroup dynamic_advanced
  */
 template <
     typename... Args,
     typename = std::enable_if_t<!(sizeof...(Args) == 1 && (std::is_same_v<std::vector<RuntimeFeature>, std::decay_t<Args>> && ...))>
 >
-RuntimeAlgorithmPtr eval(std::string const& id, reflect::DynamicFunction const& fun, Args&&... args)
+RuntimeActionPtr eval(std::string const& id, reflect::DynamicFunction const& fun, Args&&... args)
 {
     auto to_feature = [](auto&& arg){
         using Arg = std::decay_t<decltype(arg)>;
@@ -276,17 +276,17 @@ RuntimeAlgorithmPtr eval(std::string const& id, reflect::DynamicFunction const& 
  * @tparam Args The types of the arguments expected by the registered function
  * @param name The string identifier of the registered function
  * @param args The input Features
- * @return RuntimeAlgorithmPtr A special pointer type wrapping the RuntimeAlgorithm
+ * @return RuntimeActionPtr A special pointer type wrapping the RuntimeAction
  *
  * @ingroup dynamic
  */
 template <typename... Args>
-RuntimeAlgorithmPtr eval(std::string const& id, std::string const& name, Feature<Args> const&... args)
+RuntimeActionPtr eval(std::string const& id, std::string const& name, Feature<Args> const&... args)
 {
         auto const& f = reflect::get_function_registry().resolve(name);
         return eval(id, f, args...);
 }
 
-RuntimeAlgorithmPtr eval(std::string const& id, std::string const& name, std::vector<RuntimeFeature> const& args);
+RuntimeActionPtr eval(std::string const& id, std::string const& name, std::vector<RuntimeFeature> const& args);
 
 } // namespace grunk

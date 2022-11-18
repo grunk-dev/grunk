@@ -4,7 +4,7 @@
 
 using namespace grunk;
 
-namespace Algorithm_test {
+namespace {
 
 // a class with one const and one non-const member function
 struct MyDouble {
@@ -35,12 +35,9 @@ std::tuple<double, double> get_components(Point const& p){
     return std::make_tuple(p.x, p.y);
 }
 
-} //namespace Algorithm_test
+} //namespace
 
-using namespace Algorithm_test;
-
-
-TEST(AlgorithmTest, Basic)
+TEST(ActionTest, Basic)
 {
     // l and r are the root input nodes
     auto l = Feature("l", MyDouble(0.2));
@@ -87,7 +84,7 @@ TEST(AlgorithmTest, Basic)
 }
 
 
-TEST(AlgorithmTest, MultiOutput)
+TEST(ActionTest, MultiOutput)
 {
     auto f = &get_components;
 
@@ -106,7 +103,7 @@ TEST(AlgorithmTest, MultiOutput)
     EXPECT_EQ(y.value(), 0.7);
 }
 
-TEST(AlgorithmTest, UnnamedFeature)
+TEST(ActionTest, UnnamedFeature)
 {
     auto x = Feature("x", 0.7);                     // x is a named feature
     auto z = eval("z", std::plus<>{}, x, 0.2)->get(); // 0.2 is an unnamed feature

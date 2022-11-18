@@ -1,6 +1,6 @@
 #include "io.hpp"
 
-#include <grunk/dynamic/RuntimeAlgorithm.hpp>
+#include <grunk/dynamic/RuntimeAction.hpp>
 
 namespace grunk {
 
