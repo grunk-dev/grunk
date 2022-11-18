@@ -78,8 +78,8 @@ TEST_F(IOTest, serialize_DAGNode)
     // test overwrites of virtual DAGNode::serialize
     auto x = Feature("x", 0.2);
     auto y = Feature("y", 0.5);
-    auto z = eval("z", "add", x, y);
-    auto w = eval("w", [](auto const& x){ return x; }, y);
+    auto z = action("z", "add", x, y);
+    auto w = action("w", [](auto const& x){ return x; }, y);
 
     // root parameters
     auto sx = x.param().node_pointer()->serialize();
@@ -182,8 +182,8 @@ TEST_F(IOTest, basic)
 {
     auto a = Feature("a", "double", 0.2);
     auto b = Feature("b", "double", 0.1);
-    auto c = eval("c", "plus", a, b)->get();
-    auto d = eval("d", "plus", c, a)->get();
+    auto c = action("c", "plus", a, b)->get();
+    auto d = action("d", "plus", c, a)->get();
 
     auto y = details::feature_tree_to_yaml(d);
     test_basic_tree(y, "plus", "double");
@@ -202,8 +202,8 @@ TEST_F(IOTest, simple_plugin)
 {
     auto a = Feature("a", "MyDouble", 0.2);
     auto b = Feature("b", "MyDouble", 0.1);
-    auto c = eval("c", "add", a, b)->get();
-    auto d = eval("d", "add", c, a)->get();
+    auto c = action("c", "add", a, b)->get();
+    auto d = action("d", "add", c, a)->get();
 
     auto y = details::feature_tree_to_yaml(d);
     test_basic_tree(y, "add", "MyDouble");
@@ -214,8 +214,8 @@ TEST_F(IOTest, write)
     {
         auto a = Feature("a", "double", 0.2);
         auto b = Feature("b", "double", 0.1);
-        auto c = eval("c", "plus", a, b)->get();
-        auto d = eval("d", "plus", c, a)->get();
+        auto c = action("c", "plus", a, b)->get();
+        auto d = action("d", "plus", c, a)->get();
         write("test.grr", d);
     }
 
@@ -228,8 +228,8 @@ TEST_F(IOTest, write_const_iterable_container)
     {
         auto a = Feature("a", "double", 0.2);
         auto b = Feature("b", "double", 0.1);
-        auto c = eval("c", "plus", a, b)->get();
-        auto d = eval("d", "plus", c, a)->get();
+        auto c = action("c", "plus", a, b)->get();
+        auto d = action("d", "plus", c, a)->get();
 
         std::vector<DynamicFeature> v{a,b,c,d};
         write("test_vector.grr", v);
@@ -412,8 +412,8 @@ TEST_F(IOTest, write_duplicate_name)
     {
         auto a = Feature("a", "double", 0.2);
         auto b = Feature("b", "double", 0.1);
-        auto c = eval("a", "plus", a, b)->get();
-        auto d = eval("d", "plus", b, a)->get();
+        auto c = action("a", "plus", a, b)->get();
+        auto d = action("d", "plus", b, a)->get();
 
         EXPECT_THROW(
             details::feature_tree_to_yaml(d, c),
@@ -441,8 +441,8 @@ TEST_F(IOTest, roundtrip_write_read)
     {
         auto a = Feature("a", "double", 0.2);
         auto b = Feature("b", "double", 0.1);
-        auto c = eval("c", "plus", a, b)->get();
-        auto d = eval("d", "plus", c, a)->get();
+        auto c = action("c", "plus", a, b)->get();
+        auto d = action("d", "plus", c, a)->get();
         write("test.grr", d);
     }
 

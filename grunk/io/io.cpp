@@ -147,7 +147,7 @@ FeatureContainer yaml_to_feature_tree(YAML::Node const& root)
                 input_vec.push_back(feature_it->second);
             }
 
-            auto comp_node = grunk::eval("", function_name, std::move(input_vec));
+            auto comp_node = grunk::action("", function_name, std::move(input_vec));
 
             auto const outputs = steps[i][0];
             if (outputs.size() != comp_node->number_of_outputs()) {

@@ -56,7 +56,7 @@ also the :ref:`advanced section <advanced>`.
 Dynamic Mode
 ============
 
-Just like in static mode, the usage of grunk revolves around ``RuntimeFeature``\s
+Just like in static mode, the usage of grunk revolves around ``DynamicFeature``\s
 and an overload of the ``eval`` function.
 
 The main difference is that this class and function now are called with the string 
@@ -68,7 +68,7 @@ representation of types and functions that do not need to be known at compile ti
    grunk::Feature r("r", "double", 2.2);
    auto res = grunk::eval("o", "add", l, r);
    auto o = res->get(); // retrieve the first (and in this case only) output of the calcuation
-   std::cout<<Reflect::cast<double>(r.value())<<std::endl; // evaluate the result, thus triggering the calculation
+   std::cout<<reflect::cast<double>(r.value())<<std::endl; // evaluate the result, thus triggering the calculation
 
 The types and functions must be registered from plugins loaded at run time, see also 
 the :ref:`plugin section <plugin-system>` of this documentation or the 
