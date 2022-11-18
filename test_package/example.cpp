@@ -15,8 +15,8 @@ int main(int argc, char* argv[]) {
         grunk::Feature y("y", 15.2);
         grunk::Feature z("z", 25.6);
 
-        auto a = grunk::eval("a", &add, x, y)->get();
-        auto b = grunk::eval("b", &add, a, z)->get();
+        auto a = grunk::action("a", &add, x, y)->get();
+        auto b = grunk::action("b", &add, a, z)->get();
 
         std::cout << "Until here, nothing has happened" << std::endl;
 
@@ -53,8 +53,8 @@ int main(int argc, char* argv[]) {
         grunk::Feature z("z", "MyDouble", 2.0);
 
         // use plugin functions
-        auto a = grunk::eval("a", "add", x, y)->get();
-        auto b = grunk::eval("b", "multiply", a, z)->get();
+        auto a = grunk::action("a", "add", x, y)->get();
+        auto b = grunk::action("b", "multiply", a, z)->get();
 
         auto b_result = reflect::cast<double>(b.value().get("value"));
         std::cout << b_result << std::endl;

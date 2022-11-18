@@ -33,7 +33,7 @@ namespace details {
  * arguments wrapped in the input DynamicFeature instances.
  *
  * The class has a private constructor, as it should always be created using the 
- * factory function ::grunk::eval.
+ * factory function ::grunk::action.
  *
  * If the wrapped function returns an std::tuple, each element of this tuple
  * is interpreted as an output of the function and each element can be retrieved
@@ -187,13 +187,13 @@ namespace details {
  * @brief The ActionFactory struct is an internal factory for creating Action
  * instances.
  *
- * It is a proxy class used in the free factory functions eval. Factory functions are
+ * It is a proxy class used in the free factory functions action. Factory functions are
  * needed, because Actions should always be wrapped in a parametric::compute_node_ptr
  * and the private constructor of Action makes sure that there is no misuse. The
  * factory function parametric::new_node does not work with the templated constructors of the
  * Action class, so we need new factory functions.
  *
- * The proxy factory is needed, because the factory functions eval must be templated, and
+ * The proxy factory is needed, because the factory functions action must be templated, and
  * templated friend functions are a pain in the ass. This way we have a non-templated friend
  * struct with templated member functions.
  */
@@ -233,7 +233,7 @@ struct DynamicActionFactory
  * @return DynamicActionPtr A special pointer type wrapping a DynamicAction instance.
  * @ingroup dynamic_advanced
  */
-DynamicActionPtr eval(std::string const& id, reflect::DynamicFunction const& fun, std::vector<DynamicFeature> const& args);
+DynamicActionPtr action(std::string const& id, reflect::DynamicFunction const& fun, std::vector<DynamicFeature> const& args);
 
 /**
  * @brief Given a function and some features in the feature tree, this 
@@ -254,7 +254,7 @@ template <
     typename... Args,
     typename = std::enable_if_t<!(sizeof...(Args) == 1 && (std::is_same_v<std::vector<DynamicFeature>, std::decay_t<Args>> && ...))>
 >
-DynamicActionPtr eval(std::string const& id, reflect::DynamicFunction const& fun, Args&&... args)
+DynamicActionPtr action(std::string const& id, reflect::DynamicFunction const& fun, Args&&... args)
 {
     auto to_feature = [](auto&& arg){
         using Arg = std::decay_t<decltype(arg)>;
@@ -264,7 +264,7 @@ DynamicActionPtr eval(std::string const& id, reflect::DynamicFunction const& fun
             return Feature("", reflect::DynamicObject(std::forward<Arg>(arg))); //TODO: Until we properly support unnamed features, this will be an empty string
         }
     };
-    return eval(id, fun, std::vector<DynamicFeature>{to_feature(std::forward<Args>(args))...});
+    return action(id, fun, std::vector<DynamicFeature>{to_feature(std::forward<Args>(args))...});
 }
 
 /**
@@ -281,12 +281,12 @@ DynamicActionPtr eval(std::string const& id, reflect::DynamicFunction const& fun
  * @ingroup dynamic
  */
 template <typename... Args>
-DynamicActionPtr eval(std::string const& id, std::string const& name, Feature<Args> const&... args)
+DynamicActionPtr action(std::string const& id, std::string const& name, Feature<Args> const&... args)
 {
         auto const& f = reflect::get_function_registry().resolve(name);
-        return eval(id, f, args...);
+        return action(id, f, args...);
 }
 
-DynamicActionPtr eval(std::string const& id, std::string const& name, std::vector<DynamicFeature> const& args);
+DynamicActionPtr action(std::string const& id, std::string const& name, std::vector<DynamicFeature> const& args);
 
 } // namespace grunk

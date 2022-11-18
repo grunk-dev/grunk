@@ -66,7 +66,7 @@ template <typename F,
             && !details::is_dynamic_function_v<std::decay_t<F>>
           >,
           typename... Args>
-decltype(auto) eval(std::string const& id, F const& fun, Args&&... args);
+decltype(auto) action(std::string const& id, F const& fun, Args&&... args);
 
 /**
  * @brief A base class used by Feature<T> and the template specialization
@@ -241,7 +241,7 @@ public:
     >
     Feature(std::string const& id, Feature<Args> const&... args)
      : Feature(
-        eval(
+        action(
             id,
             [](Args const&... in){
 
@@ -268,7 +268,7 @@ public:
     template <typename MemberPtr>
     decltype(auto) get(MemberPtr ptr) const
     {
-        return eval(
+        return action(
             "", //To Do
             [=](auto const& wrapped){ 
                 return wrapped.*ptr; 
@@ -290,7 +290,7 @@ public:
     template <typename MemberFunPtr, typename... Args>
     decltype(auto) invoke(MemberFunPtr funPtr, Feature<Args> const&... args) const
     {
-        return eval(
+        return action(
             "", // TO DO
             [=](T const& wrapped, auto const&... arguments){
                 return (wrapped.*funPtr)(arguments...);

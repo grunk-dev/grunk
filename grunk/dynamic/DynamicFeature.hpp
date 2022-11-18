@@ -82,7 +82,7 @@ public:
     template <typename... Args>
     Feature(std::string const& id, const char* typeName, Feature<Args> const&... args)
      : Feature(
-        eval(
+        action(
             id,
             [=](Args const&... in){
                 return reflect::make_dynamic(typeName, in...);
@@ -154,7 +154,7 @@ public:
      */
     decltype(auto) get(std::string const& memberName) const
     {
-        return eval(
+        return action(
             param().id() + "." + memberName, 
             [=](reflect::DynamicObject const& wrapped){
                 return wrapped.get(memberName);
@@ -175,7 +175,7 @@ public:
     template <typename... Args>
     decltype(auto) invoke(std::string const& memberFunName, Feature<Args> const&... args) const
     {
-        return eval(
+        return action(
             param().id() + "::" + memberFunName, // TODO: How would we name this by default?
             [=](reflect::DynamicObject const& wrapped, auto const&... arguments){
                 return wrapped.invoke(memberFunName, arguments...);

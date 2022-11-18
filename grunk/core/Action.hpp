@@ -33,7 +33,7 @@ struct ActionFactory;
  * instances.
  *
  * The class has a private constructor, as it should always be created using the 
- * factory function ::grunk::eval.
+ * factory function ::grunk::action.
  *
  * If the wrapped function returns an std::tuple, each element of this tuple
  * is interpreted as an output of the function and each element can be retrieved
@@ -116,7 +116,7 @@ public:
                 static_assert(Idx == 0, "get with Index>0 only allowed for Actions returning a tuple.");
                 return Feature<ReturnType>(out);
             } else {
-                return grunk::eval(
+                return grunk::action(
                     out.param().id() + "[" + std::to_string(Idx) + "]",
                     [](ReturnType const& vec){ return vec[Idx]; }, 
                     Feature<ReturnType>(out)
@@ -124,8 +124,8 @@ public:
             }
         }
         else {
-            //TODO: Why do we need to "eval" this again? Isn't this overkill a bit?
-            return grunk::eval(
+            //TODO: Why do we need to "action" this again? Isn't this overkill a bit?
+            return grunk::action(
                 out.param().id() + "[" + std::to_string(Idx) + "]",
                 [](ReturnType const& tuple){ return std::get<Idx>(tuple); }, 
                 Feature<ReturnType>(out)
@@ -174,13 +174,13 @@ namespace details {
  * @brief The ActionFactory struct is an internal factory for creating Action
  * instances.
  *
- * It is a proxy class used in the free factory functions eval. Factory functions are
+ * It is a proxy class used in the free factory functions action. Factory functions are
  * needed, because Actions should always be wrapped in a parametric::compute_node_ptr
- * and the private constructor of Action makes sure that there is no misuse. The
+ * and the private constructor of ALgorithm makes sure that there is no misuse. The
  * factory function parametric::new_node does not work with the templated constructors of the
  * Action class, so we need new factory functions.
  *
- * The proxy factory is needed, because the factory functions eval must be templated, and
+ * The proxy factory is needed, because the factory functions action must be templated, and
  * templated friend functions are a pain in the ass. This way we have a non-templated friend
  * struct with templated member functions.
  */
@@ -226,7 +226,7 @@ template <typename F,
             && !details::is_dynamic_function_v<std::decay_t<F>>
           >,
           typename... Args>
-ActionPtr<F, Args...> eval(std::string const& id, F const& fun, Feature<Args> const&... args)
+ActionPtr<F, Args...> action(std::string const& id, F const& fun, Feature<Args> const&... args)
 {
     return details::ActionFactory::new_action(id, fun, args...);
 }
@@ -256,7 +256,7 @@ ActionPtr<F, Args...> eval(std::string const& id, F const& fun, Feature<Args> co
 template <typename F,
           typename,
           typename... Args>
-decltype(auto) eval(std::string const& id, F const& fun, Args&&... args)
+decltype(auto) action(std::string const& id, F const& fun, Args&&... args)
 {
     auto to_feature = [](auto&& arg){
         using Arg = std::decay_t<decltype(arg)>;
@@ -266,7 +266,7 @@ decltype(auto) eval(std::string const& id, F const& fun, Args&&... args)
             return Feature("", std::forward<Arg>(arg)); //TODO: Until we properly support unnamed features, this will be an empty string
         }
     };
-    return details::eval(id, fun, to_feature(args)...);
+    return details::action(id, fun, to_feature(args)...);
 }
 
 } //namespace grunk
