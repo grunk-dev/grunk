@@ -54,7 +54,9 @@ namespace details {
      * @brief evaluates to true if a type is reflect::DynamicFunction
      */
     template<typename F>
-    constexpr bool is_dynamic_function_v = std::is_base_of_v<reflect::DynamicFunction, F>;
+    constexpr bool is_dynamic_function_v = 
+        std::is_base_of_v<reflect::DynamicFunction, F> ||
+        std::is_base_of_v<reflect::OverloadSet, F>;
 }
 
 // forward declaration
