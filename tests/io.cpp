@@ -41,7 +41,7 @@ public:
 TEST_F(IOTest, no_serialize_method)
 {
     auto x = Feature("x", "NonSerializable", 42);
-    EXPECT_THROW(x.param().node_pointer()->serialize(), std::invalid_argument);
+    EXPECT_THROW(x.param().node_pointer()->serialize(), std::out_of_range);
 }
 
 TEST_F(IOTest, serialize_type)
