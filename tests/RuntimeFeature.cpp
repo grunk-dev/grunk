@@ -99,7 +99,6 @@ TEST_F(RuntimeFeatureTest, get)
      x.access_value().set("val", 0.3);
      EXPECT_FALSE(v.is_valid());
      EXPECT_EQ(reflect::cast<double>(v.value()), 0.3);
-
 }
 
 TEST_F(RuntimeFeatureTest, invoke)
@@ -129,5 +128,5 @@ TEST_F(RuntimeFeatureTest, invoke_nonConstMemberFun)
     Feature x("x", "MyStruct", 0.5);
     Feature factor("factor", "double", 3.);
     Feature v = x.invoke("timesc", factor)->get();
-    EXPECT_THROW(v.value(), reflect::BadCastException);
+    EXPECT_THROW(v.value(), std::out_of_range);
 }
