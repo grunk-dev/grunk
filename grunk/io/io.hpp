@@ -10,9 +10,9 @@
 
 #pragma once 
 
-#include <grunk/dynamic/RuntimeFeature.h>
-#include <grunk/plugins/PluginRegistry.h>
-#include <grunk/version.h>
+#include <grunk/dynamic/DynamicFeature.hpp>
+#include <grunk/plugins/PluginRegistry.hpp>
+#include <grunk/version.hpp>
 
 #include <stdexcept>
 #include <utility>
@@ -220,7 +220,7 @@ void parse_feature(Feature<Arg> const& arg, YAML::Node& yaml_root, Visited& visi
                     root["parameters"][n.id()] = node;
                 }
                 else {
-                    // is algorithm
+                    // is action
                     steps.push(node);
                 }
             }
@@ -356,7 +356,7 @@ YAML::Node feature_tree_to_yaml(Container const& features)
 template <typename... Args>
 YAML::Node feature_tree_to_yaml(Feature<Args> const&... args)
 {
-    return feature_tree_to_yaml(std::initializer_list<RuntimeFeature>{args...});
+    return feature_tree_to_yaml(std::initializer_list<DynamicFeature>{args...});
 }
 
 } //namespace details
@@ -433,7 +433,7 @@ void write(std::string const& filename, Args const&... args)
  * 
  * @ingroup fileio
  */
-using FeatureContainer = std::unordered_map<std::string, RuntimeFeature>;
+using FeatureContainer = std::unordered_map<std::string, DynamicFeature>;
 
 namespace details {
 

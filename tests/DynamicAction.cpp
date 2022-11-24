@@ -1,10 +1,10 @@
 #include <gtest/gtest.h>
 
-#include <grunk/dynamic/RuntimeAlgorithm.h>
+#include <grunk/dynamic/DynamicAction.hpp>
 
 using namespace grunk;
 
-namespace RuntimeAlgorithm_test {
+namespace {
 
 // a class with one const and one non-const member function
 struct MyDouble {
@@ -35,11 +35,10 @@ std::tuple<double, double> get_components(Point const& p){
     return std::make_tuple(p.x, p.y);
 }
 
-} //namespace Algorithm_test
+} //namespace
 
-using namespace RuntimeAlgorithm_test;
 
-class RuntimeAlgorithmTest : public ::testing::Test 
+class DynamicActionTest : public ::testing::Test 
 {
 public:
 
@@ -62,7 +61,7 @@ public:
     } 
 };
 
-TEST_F(RuntimeAlgorithmTest, Basic)
+TEST_F(DynamicActionTest, Basic)
 {
     auto f = reflect::Callable(&add, "add");
 
@@ -78,8 +77,8 @@ TEST_F(RuntimeAlgorithmTest, Basic)
     //       \  |
     //         b
     //
-    auto a = eval("a", f, l, r)->get(); 
-    auto b = eval("b", f, a, r)->get();
+    auto a = action("a", f, l, r)->output(); 
+    auto b = action("b", f, a, r)->output();
 
     // nothing has been computed yet, we just registered the feature tree
     EXPECT_FALSE(a.is_valid());
@@ -113,7 +112,7 @@ TEST_F(RuntimeAlgorithmTest, Basic)
     EXPECT_NEAR(a.value().get_as<double>("val"), 0.6, 1e-12);
 }
 
-TEST_F(RuntimeAlgorithmTest, PassNonRumtimeFeatureToRuntimeAlgorithm)
+TEST_F(DynamicActionTest, PassNonRumtimeFeatureToDynamicAction)
 {
     auto f = reflect::Callable(&add, "add");
 
@@ -121,23 +120,23 @@ TEST_F(RuntimeAlgorithmTest, PassNonRumtimeFeatureToRuntimeAlgorithm)
     auto lc = Feature("lc", MyDouble(0.2));
     auto rc = Feature("rc", MyDouble(0.1));
 
-    // (RuntimeFeature, Feature<T>) -> RuntimeAlgorithm
-    auto ret1 = eval("ret1", f, lr, rc)->get();
+    // (DynamicFeature, Feature<T>) -> DynamicAction
+    auto ret1 = action("ret1", f, lr, rc)->output();
     EXPECT_NEAR(ret1.value().get_as<double>("val"), 0.3, 1e-12);
 
-    // (Feature<T>, Feature<T>) -> RuntimeAlgorithm
-    auto ret2 = eval("ret2", f, lc, rc)->get();
+    // (Feature<T>, Feature<T>) -> DynamicAction
+    auto ret2 = action("ret2", f, lc, rc)->output();
     EXPECT_NEAR(ret2.value().get_as<double>("val"), 0.3, 1e-12);
 }
 
-TEST_F(RuntimeAlgorithmTest, MultiOutput)
+TEST_F(DynamicActionTest, MultiOutput)
 {
     auto f = reflect::Callable(&get_components, "get_components");
 
     auto i = Feature("i", "Point", 0.2, 0.6);
-    auto o = eval("o", f, i);
-    auto x = o->get<0>();
-    auto y = o->get<1>();
+    auto o = action("o", f, i);
+    auto x = o->output<0>();
+    auto y = o->output<1>();
 
     // test default output feature ids
     EXPECT_EQ(x.id(), "o[0]");
@@ -148,8 +147,8 @@ TEST_F(RuntimeAlgorithmTest, MultiOutput)
     y.set_id("y");
     EXPECT_EQ(x.id(), "x");
     EXPECT_EQ(y.id(), "y");
-    EXPECT_EQ(o->get<0>().id(), "x");
-    EXPECT_EQ(o->get<1>().id(), "y");
+    EXPECT_EQ(o->output<0>().id(), "x");
+    EXPECT_EQ(o->output<1>().id(), "y");
 
     EXPECT_EQ(reflect::cast<double>(x.value()), 0.2);
     EXPECT_EQ(reflect::cast<double>(y.value()), 0.6);
@@ -162,12 +161,12 @@ TEST_F(RuntimeAlgorithmTest, MultiOutput)
     EXPECT_EQ(reflect::cast<double>(y.value()), 0.7);
 }
 
-TEST_F(RuntimeAlgorithmTest, UnnamedFeature)
+TEST_F(DynamicActionTest, UnnamedFeature)
 {
     auto f = reflect::Callable(std::plus<double>(), "plus");
 
     auto x = Feature("x", "double", 0.7); // x is a named feature
-    auto z = eval("z", f, x, 0.2)->get(); // 0.2 is an unnamed feature
+    auto z = action("z", f, x, 0.2)->output(); // 0.2 is an unnamed feature
 
     EXPECT_FALSE(z.is_valid());
     EXPECT_NEAR(reflect::cast<double>(z.value()), 0.9, 1e-15);

@@ -13,11 +13,11 @@ include(AddGoogleTest)
 
 set(TESTSOURCES
   testmain.cpp
-  Algorithm.cpp
+  Action.cpp
   io.cpp
-  RuntimeAlgorithm.cpp
+  DynamicAction.cpp
   Feature.cpp
-  RuntimeFeature.cpp
+  DynamicFeature.cpp
 )
 
 add_library(SimplePlugin SHARED plugin_simple.cpp)

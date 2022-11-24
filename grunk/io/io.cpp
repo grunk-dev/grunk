@@ -1,6 +1,6 @@
-#include "io.h"
+#include "io.hpp"
 
-#include <grunk/dynamic/RuntimeAlgorithm.h>
+#include <grunk/dynamic/DynamicAction.hpp>
 
 namespace grunk {
 
@@ -122,7 +122,7 @@ FeatureContainer yaml_to_feature_tree(YAML::Node const& root)
             }
 
             auto object = deserialize(type, value);
-            features.emplace(name, RuntimeFeature(name, std::move(object)));
+            features.emplace(name, DynamicFeature(name, std::move(object)));
         }
     }
 
@@ -132,7 +132,7 @@ FeatureContainer yaml_to_feature_tree(YAML::Node const& root)
             
             auto const function_name = steps[i].Tag();
 
-            std::vector<RuntimeFeature> input_vec;
+            std::vector<DynamicFeature> input_vec;
             auto const inputs = steps[i][1];
             for (auto const& input: inputs) {
                 auto input_name = input.as<std::string>();
@@ -147,7 +147,7 @@ FeatureContainer yaml_to_feature_tree(YAML::Node const& root)
                 input_vec.push_back(feature_it->second);
             }
 
-            auto comp_node = grunk::eval("", function_name, std::move(input_vec));
+            auto comp_node = grunk::action("", function_name, std::move(input_vec));
 
             auto const outputs = steps[i][0];
             if (outputs.size() != comp_node->number_of_outputs()) {
@@ -162,7 +162,7 @@ FeatureContainer yaml_to_feature_tree(YAML::Node const& root)
                     throw io_error("Error parsing step " + std::to_string(idx) + ": A parameter with name \"" + output_name + "\" already exists.");
                 }
 
-                auto output = comp_node->get(idx++);
+                auto output = comp_node->output(idx++);
                 output.set_id(output_name);
                 features.emplace(output_name, output);
             }

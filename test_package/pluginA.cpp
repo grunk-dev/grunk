@@ -1,5 +1,5 @@
 #include "pluginA.hpp"
-#include <grunk/grunk.h>
+#include <grunk/grunk.hpp>
 #include <iostream>
 
 

@@ -1,7 +1,7 @@
 /**
- * @file Algorithm.h
+ * @file Action.h
  *
- * Declaration and Definition of the Algorithm class.
+ * Declaration and Definition of the Action class.
  * 
  */
 
@@ -13,27 +13,27 @@
 #include <parametric/core.hpp>
 #include <utility>
 
-#include "Feature.h"
+#include "Feature.hpp"
 
 namespace grunk {
 
 namespace details {
 
 //forward declaration
-struct AlgorithmFactory;
+struct ActionFactory;
 
 } // namespace details
 
 /**
  * @ingroup advanced
- * @brief The Algorithm class is a compute node in the feature tree of grunk.
+ * @brief The Action class is a compute node in the feature tree of grunk.
  * 
- * Given a function and a set of Feature instances as inputs, an Algorithm represents
+ * Given a function and a set of Feature instances as inputs, an Action represents
  * the calculation of the function from the arguments wrapped in the input Feature 
  * instances.
  *
  * The class has a private constructor, as it should always be created using the 
- * factory function ::grunk::eval.
+ * factory function ::grunk::action.
  *
  * If the wrapped function returns an std::tuple, each element of this tuple
  * is interpreted as an output of the function and each element can be retrieved
@@ -45,12 +45,12 @@ struct AlgorithmFactory;
  * @tparam Args  The type of the arguments, the wrapped function expects.
  */
 template <typename F, typename... Args>
-class Algorithm : public parametric::ComputeNode
+class Action : public parametric::ComputeNode
 {
 public:
     
     static_assert(std::is_invocable_v<F, Args const& ...>, "\n\nFunction is not invocable with const references. "
-        "Algorithms can only be used with referentially transparent functions.\n\n");
+        "Actions can only be used with referentially transparent functions.\n\n");
         
     //TODO: This produces a false warning and a false template<> annotation
     //I think this is related to https://github.com/michaeljones/breathe/issues/407, 
@@ -62,17 +62,17 @@ public:
      */
     using ReturnType = std::invoke_result_t<F, Args const&...>;
 
-    friend struct details::AlgorithmFactory;
+    friend struct details::ActionFactory;
 
  private:
 
     /**
-     * @brief Construct a new Algorithm object
+     * @brief Construct a new Action object
      * 
      * @param f  the function to be wrapped
      * @param args The arguments of the function wrapped in Feature instances
      */
-    Algorithm(std::string const& id, F const& f, Feature<Args> const&... args) 
+    Action(std::string const& id, F const& f, Feature<Args> const&... args) 
      : function(f)
      , in{std::make_tuple(args...)}
     {
@@ -98,7 +98,7 @@ public:
      * @brief returns the output(s) of the function wrapped in Feature instances.
      *
      * If the wrapped function returns an std::tuple, each element in this 
-     * tuple is interpreted as an individual output of this algorithm. This function
+     * tuple is interpreted as an individual output of this action. This function
      * accepts a template integer argument to specify the index of the output.
      *
      * If the wrapped function returns something other than an std::tuple, 
@@ -108,34 +108,34 @@ public:
      * @return decltype(auto) a Feature wrapping the output of index Idx
      */
     template <size_t Idx=0>
-    decltype(auto) get() const
+    decltype(auto) output() const
     {
         if constexpr ( !reflect::details::is_tuple_v<ReturnType> ) {
 
             if constexpr ( !std::is_same_v<std::vector<reflect::DynamicObject>, std::decay_t<ReturnType>>) {
-                static_assert(Idx == 0, "get with Index>0 only allowed for Algorithms returning a tuple.");
+                static_assert(Idx == 0, "output with Index>0 only allowed for Actions returning a tuple.");
                 return Feature<ReturnType>(out);
             } else {
-                return grunk::eval(
+                return grunk::action(
                     out.param().id() + "[" + std::to_string(Idx) + "]",
                     [](ReturnType const& vec){ return vec[Idx]; }, 
                     Feature<ReturnType>(out)
-                )->get();
+                )->output();
             }
         }
         else {
-            //TODO: Why do we need to "eval" this again? Isn't this overkill a bit?
-            return grunk::eval(
+            //TODO: Why do we need to "action" this again? Isn't this overkill a bit?
+            return grunk::action(
                 out.param().id() + "[" + std::to_string(Idx) + "]",
                 [](ReturnType const& tuple){ return std::get<Idx>(tuple); }, 
                 Feature<ReturnType>(out)
-            )->get();
+            )->output();
         }
     }
 
     std::string serialize() const override final
     {
-        throw std::logic_error("Only Algorithms wrapping a registered dynamic function can be serialized\n");
+        throw std::logic_error("Only Actions wrapping a registered dynamic function can be serialized\n");
     }
 
 private:
@@ -160,54 +160,54 @@ private:
 };
 
 /**
- * @brief A parametric::compute_node_ptr wrapping an Algorithm instance
+ * @brief A parametric::compute_node_ptr wrapping an Action instance
  * 
- * @tparam F the type of the function wrapped in the algorithm instance
+ * @tparam F the type of the function wrapped in the action instance
  * @tparam Args The types of the arguments expected by the wrapped function
  */
 template<typename F, typename... Args>
-using AlgorithmPtr = parametric::compute_node_ptr<Algorithm<F, Args...>>;
+using ActionPtr = parametric::compute_node_ptr<Action<F, Args...>>;
 
 namespace details {
 
 /**
- * @brief The AlgorithmFactory struct is an internal factory for creating Algorithm
+ * @brief The ActionFactory struct is an internal factory for creating Action
  * instances.
  *
- * It is a proxy class used in the free factory functions eval. Factory functions are
- * needed, because Algorithms should always be wrapped in a parametric::compute_node_ptr
+ * It is a proxy class used in the free factory functions action. Factory functions are
+ * needed, because Actions should always be wrapped in a parametric::compute_node_ptr
  * and the private constructor of ALgorithm makes sure that there is no misuse. The
  * factory function parametric::new_node does not work with the templated constructors of the
- * Algorithm class, so we need new factory functions.
+ * Action class, so we need new factory functions.
  *
- * The proxy factory is needed, because the factory functions eval must be templated, and
+ * The proxy factory is needed, because the factory functions action must be templated, and
  * templated friend functions are a pain in the ass. This way we have a non-templated friend
  * struct with templated member functions.
  */
-struct AlgorithmFactory
+struct ActionFactory
 {
 
     /**
-     * @brief returns an AlgorithmPtr
+     * @brief returns an ActionPtr
      * 
      * @tparam F The type of the wrapped function
      * @tparam Args The types of the arguments expected by the wrapped function
-     * @param fun The function to be wrapped in an Algorithm instance
+     * @param fun The function to be wrapped in an Action instance
      * @param args The arguments wrapped in Features to be passed to the function on evaluation
-     * @return AlgorithmPtr<F, Args...> a parametric::compute_node_ptr wrapping the Algorithm instance
+     * @return ActionPtr<F, Args...> a parametric::compute_node_ptr wrapping the Action instance
      */
     template <typename F,
               typename... Args>
-    static AlgorithmPtr<F, Args...> new_algorithm(std::string const& id, F const& fun, Feature<Args> const&... args)
+    static ActionPtr<F, Args...> new_action(std::string const& id, F const& fun, Feature<Args> const&... args)
     {
-        return AlgorithmPtr<F, Args...>(new Algorithm<F, Args...>(id, fun, args...));
+        return ActionPtr<F, Args...>(new Action<F, Args...>(id, fun, args...));
     }
 
 };
 
 /**
  * @brief Given a function and some features in the feature tree, this 
- * function creates an Algorithm instance representing the evaluation
+ * function creates an Action instance representing the evaluation
  * of the input function for the input features.
  *
  * This function accepts only features as arguments to the given function.
@@ -218,7 +218,7 @@ struct AlgorithmFactory
  * @tparam Args The types of the arguments expected by the input function
  * @param fun The input function
  * @param args The input features of the feature tree
- * @return AlgorithmPtr<F, Args...> A special pointer type wrapping an Algorithm instance.
+ * @return ActionPtr<F, Args...> A special pointer type wrapping an Action instance.
  */
 template <typename F,
           typename = std::enable_if_t<
@@ -226,9 +226,9 @@ template <typename F,
             && !details::is_dynamic_function_v<std::decay_t<F>>
           >,
           typename... Args>
-AlgorithmPtr<F, Args...> eval(std::string const& id, F const& fun, Feature<Args> const&... args)
+ActionPtr<F, Args...> action(std::string const& id, F const& fun, Feature<Args> const&... args)
 {
-    return details::AlgorithmFactory::new_algorithm(id, fun, args...);
+    return details::ActionFactory::new_action(id, fun, args...);
 }
 
 
@@ -236,7 +236,7 @@ AlgorithmPtr<F, Args...> eval(std::string const& id, F const& fun, Feature<Args>
 
 /**
  * @brief Given a function and some features in the feature tree, this 
- * function creates an Algorithm instance representing the evaluation
+ * function creates an Action instance representing the evaluation
  * of the input function for the input features.
  *
  * This function accepts features as arguments for the functions, as well
@@ -249,14 +249,14 @@ AlgorithmPtr<F, Args...> eval(std::string const& id, F const& fun, Feature<Args>
  * @tparam Args The types of the arguments expected by the input function
  * @param fun The input function
  * @param args The input features of the feature tree
- * @return AlgorithmPtr<F, Args...> A special pointer type wrapping an Algorithm instance.
+ * @return ActionPtr<F, Args...> A special pointer type wrapping an Action instance.
  *
  * @ingroup static
  */
 template <typename F,
           typename,
           typename... Args>
-decltype(auto) eval(std::string const& id, F const& fun, Args&&... args)
+decltype(auto) action(std::string const& id, F const& fun, Args&&... args)
 {
     auto to_feature = [](auto&& arg){
         using Arg = std::decay_t<decltype(arg)>;
@@ -266,7 +266,7 @@ decltype(auto) eval(std::string const& id, F const& fun, Args&&... args)
             return Feature("", std::forward<Arg>(arg)); //TODO: Until we properly support unnamed features, this will be an empty string
         }
     };
-    return details::eval(id, fun, to_feature(args)...);
+    return details::action(id, fun, to_feature(args)...);
 }
 
 } //namespace grunk

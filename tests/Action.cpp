@@ -1,10 +1,10 @@
 #include <gtest/gtest.h>
 
-#include <grunk/grunk.h>
+#include <grunk/grunk.hpp>
 
 using namespace grunk;
 
-namespace Algorithm_test {
+namespace {
 
 // a class with one const and one non-const member function
 struct MyDouble {
@@ -35,12 +35,9 @@ std::tuple<double, double> get_components(Point const& p){
     return std::make_tuple(p.x, p.y);
 }
 
-} //namespace Algorithm_test
+} //namespace
 
-using namespace Algorithm_test;
-
-
-TEST(AlgorithmTest, Basic)
+TEST(ActionTest, Basic)
 {
     // l and r are the root input nodes
     auto l = Feature("l", MyDouble(0.2));
@@ -54,8 +51,8 @@ TEST(AlgorithmTest, Basic)
     //       \  |
     //         b
     //
-    auto a = eval("a", &add, l, r)->get();
-    auto b = eval("b", &add, a, r)->get();
+    auto a = action("a", &add, l, r)->output();
+    auto b = action("b", &add, a, r)->output();
 
     // nothing has been computed yet, we just registered the feature tree
     EXPECT_FALSE(a.is_valid());
@@ -87,13 +84,13 @@ TEST(AlgorithmTest, Basic)
 }
 
 
-TEST(AlgorithmTest, MultiOutput)
+TEST(ActionTest, MultiOutput)
 {
     auto f = &get_components;
 
     auto i = Feature("i", Point(0.2, 0.6));
-    auto x = eval("x", f, i)->get<0>();
-    auto y = eval("y", f, i)->get<1>();
+    auto x = action("x", f, i)->output<0>();
+    auto y = action("y", f, i)->output<1>();
 
     EXPECT_EQ(x.value(), 0.2);
     EXPECT_EQ(y.value(), 0.6);
@@ -106,10 +103,10 @@ TEST(AlgorithmTest, MultiOutput)
     EXPECT_EQ(y.value(), 0.7);
 }
 
-TEST(AlgorithmTest, UnnamedFeature)
+TEST(ActionTest, UnnamedFeature)
 {
     auto x = Feature("x", 0.7);                     // x is a named feature
-    auto z = eval("z", std::plus<>{}, x, 0.2)->get(); // 0.2 is an unnamed feature
+    auto z = action("z", std::plus<>{}, x, 0.2)->output(); // 0.2 is an unnamed feature
 
     EXPECT_FALSE(z.is_valid());
     EXPECT_NEAR(z.value(), 0.9, 1e-15);

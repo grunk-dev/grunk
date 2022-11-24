@@ -21,17 +21,17 @@ template <typename T>
 class Feature;
 
 template <typename F, typename... Args>
-class Algorithm;
+class Action;
 
 /**
- * @brief AlgorithmPtr is a parametric::compute_node_ptr wrapping an Algorithm
+ * @brief ActionPtr is a parametric::compute_node_ptr wrapping an Action
  * instance
  * 
- * @tparam F The type of the function wrapped by the wrapped Algorithm instance
+ * @tparam F The type of the function wrapped by the wrapped Action instance
  * @tparam Args The arguments expected by the wrapped function.
  */
 template<typename F, typename... Args>
-using AlgorithmPtr = parametric::compute_node_ptr<Algorithm<F, Args...>>;
+using ActionPtr = parametric::compute_node_ptr<Action<F, Args...>>;
 
 namespace details {
 
@@ -64,11 +64,11 @@ template <typename F,
             && !details::is_dynamic_function_v<std::decay_t<F>>
           >,
           typename... Args>
-decltype(auto) eval(std::string const& id, F const& fun, Args&&... args);
+decltype(auto) action(std::string const& id, F const& fun, Args&&... args);
 
 /**
  * @brief A base class used by Feature<T> and the template specialization
- * Feature<RuntimeObject> aka RuntimeFeature.
+ * Feature<DynamicObject> aka DynamicFeature.
  *
  * This class implements the common interface for all template realizations.
  * 
@@ -81,7 +81,7 @@ class FeatureBase {
 public:
 
     template <typename F, typename... Args>
-    friend class Algorithm;
+    friend class Action;
 
     /**
      * @brief Construct a new FeatureBase object from an instance of type T
@@ -239,7 +239,7 @@ public:
     >
     Feature(std::string const& id, Feature<Args> const&... args)
      : Feature(
-        eval(
+        action(
             id,
             [](Args const&... in){
 
@@ -248,7 +248,7 @@ public:
                 return T(in...);
             }, 
             args...
-        )->get()
+        )->output()
        )
     {};
 
@@ -266,7 +266,7 @@ public:
     template <typename MemberPtr>
     decltype(auto) get(MemberPtr ptr) const
     {
-        return eval(
+        return action(
             "", //To Do
             [=](auto const& wrapped){ 
                 return wrapped.*ptr; 
@@ -288,7 +288,7 @@ public:
     template <typename MemberFunPtr, typename... Args>
     decltype(auto) invoke(MemberFunPtr funPtr, Feature<Args> const&... args) const
     {
-        return eval(
+        return action(
             "", // TO DO
             [=](T const& wrapped, auto const&... arguments){
                 return (wrapped.*funPtr)(arguments...);
@@ -309,4 +309,4 @@ Feature(std::string const&, T&&) -> Feature<T>;
 
 } //namespace grunk
 
-#include "Algorithm.h"
+#include "Action.hpp"

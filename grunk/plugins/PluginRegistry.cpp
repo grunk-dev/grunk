@@ -1,5 +1,5 @@
-#include "PluginRegistry.h"
-#include "StdPlugin.h"
+#include "PluginRegistry.hpp"
+#include "StdPlugin.hpp"
 #include <boost/dll/import.hpp>
 #include <functional>
 #include <iostream>

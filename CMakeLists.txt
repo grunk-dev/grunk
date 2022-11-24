@@ -23,22 +23,22 @@ find_package(reflect REQUIRED)
 set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
 
 set(grunk_SRC
-    grunk/core/Algorithm.h
-    grunk/core/Algorithm.cpp
-    grunk/core/Feature.h
+    grunk/core/Action.hpp
+    grunk/core/Action.cpp
+    grunk/core/Feature.hpp
     grunk/core/Feature.cpp
-    grunk/io/io.h 
+    grunk/io/io.hpp 
     grunk/io/io.cpp
-    grunk/plugins/IPlugin.h
-    grunk/plugins/PluginRegistry.h
+    grunk/plugins/IPlugin.hpp
+    grunk/plugins/PluginRegistry.hpp
     grunk/plugins/PluginRegistry.cpp
-    grunk/plugins/StdPlugin.h 
+    grunk/plugins/StdPlugin.hpp
     grunk/plugins/StdPlugin.cpp
-    grunk/dynamic/RuntimeAlgorithm.h
-    grunk/dynamic/RuntimeAlgorithm.cpp
-    grunk/dynamic/RuntimeFeature.h
-    grunk/dynamic/RuntimeFeature.cpp
-    grunk/grunk.h
+    grunk/dynamic/DynamicAction.hpp
+    grunk/dynamic/DynamicAction.cpp
+    grunk/dynamic/DynamicFeature.hpp
+    grunk/dynamic/DynamicFeature.cpp
+    grunk/grunk.hpp
 )
 
 # create a library and add source files
@@ -59,8 +59,8 @@ target_include_directories(grunk PUBLIC
 )
 
 configure_file(
-        ${CMAKE_CURRENT_SOURCE_DIR}/grunk/version.h.in 
-        ${CMAKE_CURRENT_BINARY_DIR}/grunk/version.h
+        ${CMAKE_CURRENT_SOURCE_DIR}/grunk/version.hpp.in 
+        ${CMAKE_CURRENT_BINARY_DIR}/grunk/version.hpp
 )
 
 include(GNUInstallDirs)

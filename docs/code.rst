@@ -22,28 +22,28 @@ section of this documentation.
 Static Mode
 ===========
 
-The core of grunk consists of the ``eval`` function together with 
+The core of grunk consists of the ``action`` function together with 
 ``Feature`` class.
 
 A ``Feature`` represents any kind of feature in the feature tree.
 Given any kind of *referentially transparent* function and some input features
-from the feature tree, the function ``eval`` registeres the evaluation
+from the feature tree, the function ``action`` registeres the evaluation
 of the given function for the given features as input in the feature tree.
 
 .. code-block:: cpp
 
    grunk::Feature<double> l("l", 3.3);
    grunk::Feature<double> r("r", 2.2);
-   auto res = grunk::eval("o", std::add, l, r);
+   auto res = grunk::action("o", std::add, l, r);
 
 
 
-The output features can be queried from the returned `AlgorithmPtr` instance, see
+The output features can be queried from the returned `ActionPtr` instance, see
 also the :ref:`advanced section <advanced>`.
 
 .. code-block:: cpp
 
-   auto o = res->get(); // retrieve the first (and in this case only) output of the calcuation
+   auto o = res->output(); // retrieve the first (and in this case only) output of the calcuation
    std::cout<<o.value()<<std::endl; // evaluate the result, thus triggering the calculation
 
 .. doxygengroup:: static
@@ -56,8 +56,8 @@ also the :ref:`advanced section <advanced>`.
 Dynamic Mode
 ============
 
-Just like in static mode, the usage of grunk revolves around ``RuntimeFeature``\s
-and an overload of the ``eval`` function.
+Just like in static mode, the usage of grunk revolves around ``DynamicFeature``\s
+and an overload of the ``action`` function.
 
 The main difference is that this class and function now are called with the string 
 representation of types and functions that do not need to be known at compile time.
@@ -66,9 +66,9 @@ representation of types and functions that do not need to be known at compile ti
 
    grunk::Feature l("l", "double", 3.3);
    grunk::Feature r("r", "double", 2.2);
-   auto res = grunk::eval("o", "add", l, r);
-   auto o = res->get(); // retrieve the first (and in this case only) output of the calcuation
-   std::cout<<Reflect::cast<double>(r.value())<<std::endl; // evaluate the result, thus triggering the calculation
+   auto res = grunk::action("o", "add", l, r);
+   auto o = res->output(); // retrieve the first (and in this case only) output of the calcuation
+   std::cout<<reflect::cast<double>(r.value())<<std::endl; // evaluate the result, thus triggering the calculation
 
 The types and functions must be registered from plugins loaded at run time, see also 
 the :ref:`plugin section <plugin-system>` of this documentation or the 
