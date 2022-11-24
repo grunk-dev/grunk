@@ -46,14 +46,14 @@ bool has_unique_feature_names(YAML::Node const& root){
     return true;
 }
 
-Reflect::DynamicObject deserialize(
+reflect::DynamicObject deserialize(
     std::string const& type_name,
     YAML::Node const & yaml_node
 )
 {
-    Reflect::TypeDescriptor const* descr = nullptr;
+    reflect::TypeDescriptor const* descr = nullptr;
     try {
-        descr = Reflect::Resolve(type_name);
+        descr = reflect::resolve(type_name);
     } catch(std::out_of_range const& e)
     {
         // convert to io error
@@ -64,7 +64,7 @@ Reflect::DynamicObject deserialize(
         throw io_error("Failed to resolve type with name\""s + type_name + "\".");
     }
 
-    auto const* deserializer = descr->GetMemberFunction("deserialize");
+    auto const* deserializer = descr->get_member_function("deserialize");
     if (!deserializer) {
         throw io_error("type "s + type_name + " does not have a (static) \"deserialize\" method. Please refer to the grunk documentation");
     }

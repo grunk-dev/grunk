@@ -44,27 +44,27 @@ class RuntimeAlgorithmTest : public ::testing::Test
 public:
 
     static void SetUpTestCase() {
-        Reflect::Reflect<double>("double")
-        .AddConstructor<double>();
+        reflect::register_type<double>("double")
+        .add_constructor<double>();
 
-        Reflect::Reflect<MyDouble>("MyDouble")
-        .AddConstructor<double>()
-        .AddDataMember(&MyDouble::val, "val");
+        reflect::register_type<MyDouble>("MyDouble")
+        .add_constructor<double>()
+        .add_data_member(&MyDouble::val, "val");
 
-        Reflect::Reflect<Point>("Point")
-        .AddConstructor<double, double>()
-        .AddDataMember(&Point::x, "x")
-        .AddDataMember(&Point::y, "y");
+        reflect::register_type<Point>("Point")
+        .add_constructor<double, double>()
+        .add_data_member(&Point::x, "x")
+        .add_data_member(&Point::y, "y");
     } 
 
     static void TearDownTestCase() {
-        Reflect::GetTypeRegistry().clear();
+        reflect::get_type_registry().clear();
     } 
 };
 
 TEST_F(RuntimeAlgorithmTest, Basic)
 {
-    auto f = Reflect::Function(&add, "add");
+    auto f = reflect::Callable(&add, "add");
 
     // l and r are the root input nodes
     auto l = Feature("l", "MyDouble", 0.2);
@@ -115,7 +115,7 @@ TEST_F(RuntimeAlgorithmTest, Basic)
 
 TEST_F(RuntimeAlgorithmTest, PassNonRumtimeFeatureToRuntimeAlgorithm)
 {
-    auto f = Reflect::Function(&add, "add");
+    auto f = reflect::Callable(&add, "add");
 
     auto lr = Feature("lr", "MyDouble", 0.2);
     auto lc = Feature("lc", MyDouble(0.2));
@@ -132,7 +132,7 @@ TEST_F(RuntimeAlgorithmTest, PassNonRumtimeFeatureToRuntimeAlgorithm)
 
 TEST_F(RuntimeAlgorithmTest, MultiOutput)
 {
-    auto f = Reflect::Function(&get_components, "get_components");
+    auto f = reflect::Callable(&get_components, "get_components");
 
     auto i = Feature("i", "Point", 0.2, 0.6);
     auto o = eval("o", f, i);
@@ -151,31 +151,31 @@ TEST_F(RuntimeAlgorithmTest, MultiOutput)
     EXPECT_EQ(o->get<0>().id(), "x");
     EXPECT_EQ(o->get<1>().id(), "y");
 
-    EXPECT_EQ(Reflect::cast<double>(x.value()), 0.2);
-    EXPECT_EQ(Reflect::cast<double>(y.value()), 0.6);
+    EXPECT_EQ(reflect::cast<double>(x.value()), 0.2);
+    EXPECT_EQ(reflect::cast<double>(y.value()), 0.6);
 
     i.access_value().set("y", 0.7);
     
     EXPECT_FALSE(x.is_valid());
     EXPECT_FALSE(y.is_valid());
 
-    EXPECT_EQ(Reflect::cast<double>(y.value()), 0.7);
+    EXPECT_EQ(reflect::cast<double>(y.value()), 0.7);
 }
 
 TEST_F(RuntimeAlgorithmTest, UnnamedFeature)
 {
-    auto f = Reflect::Function(std::plus<double>(), "plus");
+    auto f = reflect::Callable(std::plus<double>(), "plus");
 
     auto x = Feature("x", "double", 0.7); // x is a named feature
     auto z = eval("z", f, x, 0.2)->get(); // 0.2 is an unnamed feature
 
     EXPECT_FALSE(z.is_valid());
-    EXPECT_NEAR(Reflect::cast<double>(z.value()), 0.9, 1e-15);
+    EXPECT_NEAR(reflect::cast<double>(z.value()), 0.9, 1e-15);
     EXPECT_TRUE(z.is_valid());
 
     x.access_value() = 0.6;  // change named feature
 
     EXPECT_FALSE(z.is_valid());
-    EXPECT_NEAR(Reflect::cast<double>(z.value()), 0.8, 1e-15);
+    EXPECT_NEAR(reflect::cast<double>(z.value()), 0.8, 1e-15);
     EXPECT_TRUE(z.is_valid());
 }

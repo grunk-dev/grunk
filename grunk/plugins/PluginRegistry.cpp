@@ -95,7 +95,7 @@ PluginRegistry::~PluginRegistry()
 
     // Or: Figure out why plugins have to stay alive at all and check if this can 
     // be circumvented somehow.
-    Reflect::GetTypeRegistry().clear();
+    reflect::get_type_registry().clear();
 }
 
 PluginRegistry& get_plugin_registry()

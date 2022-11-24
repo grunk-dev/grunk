@@ -21,12 +21,12 @@ void StdPlugin::init() const
     register_type<int>("int");
     
     register_type<double>("double")
-    .AddConstructor<double>()
-    .AddMemberFunction(
+    .add_constructor<double>()
+    .add_member_function(
         [](double const& v){ return YAML::Node(v); }, 
         "serialize"
     )
-    .AddMemberFunction(
+    .add_member_function(
         [](YAML::Node const& y){ return y.as<double>(); },
         "deserialize"
     );
@@ -34,7 +34,7 @@ void StdPlugin::init() const
     register_type<std::string>("string");
     
     register_type<const char*>("cstring")
-    .AddConversion<std::string>();
+    .add_conversion<std::string>();
 }
 
 } //namespace grunk
