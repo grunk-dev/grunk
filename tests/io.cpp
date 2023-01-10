@@ -356,7 +356,7 @@ TEST_F(IOTest, deserialize_non_existing_function)
 
     EXPECT_THROW(
         details::yaml_to_feature_tree(root),
-        std::out_of_range
+        reflect::Unresolvable
     );
 }
 

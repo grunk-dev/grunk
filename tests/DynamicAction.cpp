@@ -18,6 +18,14 @@ struct MyDouble {
     double val;
 };
 
+int overloaded_function(double x) {
+    return 0;
+}
+
+int overloaded_function(int x) {
+    return 1;
+}
+
 
 // normal function
 MyDouble add(MyDouble const& l, MyDouble const& r) {
@@ -46,6 +54,9 @@ public:
         reflect::register_type<double>("double")
         .add_constructor<double>();
 
+        reflect::register_type<double>("int")
+        .add_constructor<int>();
+
         reflect::register_type<MyDouble>("MyDouble")
         .add_constructor<double>()
         .add_data_member(&MyDouble::val, "val");
@@ -54,6 +65,9 @@ public:
         .add_constructor<double, double>()
         .add_data_member(&Point::x, "x")
         .add_data_member(&Point::y, "y");
+
+        reflect::register_function<int(*)(double)>(&overloaded_function, "overloaded_function");
+        reflect::register_function<int(*)(int)>(&overloaded_function, "overloaded_function");
     } 
 
     static void TearDownTestCase() {
@@ -177,4 +191,20 @@ TEST_F(DynamicActionTest, UnnamedFeature)
     EXPECT_FALSE(z.is_valid());
     EXPECT_NEAR(reflect::cast<double>(z.value()), 0.8, 1e-15);
     EXPECT_TRUE(z.is_valid());
+}
+
+TEST_F(DynamicActionTest, OverloadedFunction)
+{
+    {
+        auto x = Feature("x", "double", 0.7);
+        auto y = action("y", "overloaded_function", x)->output().value();
+        EXPECT_EQ(reflect::cast<int>(y), 0);
+    }
+
+    {
+        auto x = Feature("x", "int", 7);
+        auto y = action("y", "overloaded_function", x)->output().value();
+        EXPECT_EQ(reflect::cast<int>(y), 1);
+    }
+    
 }

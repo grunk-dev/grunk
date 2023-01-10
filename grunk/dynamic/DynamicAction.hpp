@@ -283,7 +283,7 @@ DynamicActionPtr action(std::string const& id, reflect::DynamicFunction const& f
 template <typename... Args>
 DynamicActionPtr action(std::string const& id, std::string const& name, Feature<Args> const&... args)
 {
-        auto const& f = reflect::get_function_registry().resolve(name);
+        auto const& f = reflect::resolve_function(name);
         return action(id, f, args...);
 }
 
