@@ -129,7 +129,7 @@ public:
      */
     DynamicFeature output(size_t idx = 0) const
     {
-        return DynamicFeature(outputs[idx]);
+        return DynamicFeature(outputs[idx], function.get_return_type(idx));
     }
 
     // for consistency with static output

@@ -37,6 +37,7 @@ set(grunk_SRC
     grunk/dynamic/DynamicAction.hpp
     grunk/dynamic/DynamicAction.cpp
     grunk/dynamic/DynamicFeature.hpp
+    grunk/dynamic/DynamicFeature.inl
     grunk/dynamic/DynamicFeature.cpp
     grunk/grunk.hpp
 )

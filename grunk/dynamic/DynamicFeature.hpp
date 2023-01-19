@@ -32,6 +32,7 @@ namespace grunk {
 template <>
 class Feature<reflect::DynamicObject> : public FeatureBase<reflect::DynamicObject>
 {
+    
 public:
 
     /**
@@ -46,9 +47,7 @@ public:
      * @param args The constructor arguments
      */
     template <typename... Args>
-    Feature(std::string const& id, const char* typeName, Args const&... args)
-     : FeatureBase<reflect::DynamicObject>(id, reflect::make_dynamic(typeName, args...))
-    {}
+    Feature(std::string const& id, const char* typeName, Args const&... args);
 
 
     /**
@@ -80,35 +79,22 @@ public:
      * @param args input Features for the constructor for the type to b constructed 
      */
     template <typename... Args>
-    Feature(std::string const& id, const char* typeName, Feature<Args> const&... args)
-     : Feature(
-        action(
-            id,
-            [=](Args const&... in){
-                return reflect::make_dynamic(typeName, in...);
-            },
-            args...
-        )->output()
-     )
-    {}
+    Feature(std::string const& id, const char* typeName, Feature<Args> const&... args);
 
     /**
-     * @brief Construct a new DynamicFeature given a parametric::param<T>
-     * 
+     * @brief Construct a new DynamicFeature given a parametric::param<T>.
+     *
      * @param p The parametric::param<T> to be wrapped in a Feature
      */
-    Feature(parametric::param<reflect::DynamicObject>&& p)
-     : FeatureBase<reflect::DynamicObject>(std::forward<parametric::param<reflect::DynamicObject>>(p))
-    {}
+    Feature(parametric::param<reflect::DynamicObject>&& p, reflect::TypeDescriptor const* t = nullptr);
+    //note: The type descriptor is optional to be consistent with the compile time action.
 
     /**
      * @brief Construct a new DynamicFeature given an reflect::DynamicObject
      * 
      * @param o The input reflect::DynamicObject
      */
-    explicit Feature(std::string const& id, reflect::DynamicObject&& o)
-     : FeatureBase(id, std::forward<reflect::DynamicObject>(o))
-    {}
+    explicit Feature(std::string const& id, reflect::DynamicObject&& o);
 
     /**
      * @brief Converting constructor from a Feature<T>, where T is not
@@ -126,9 +112,7 @@ public:
     template <typename T,
               typename = std::enable_if_t<!std::is_same_v<reflect::DynamicObject, T>>
     >
-    Feature(Feature<T> const& f)
-     : Feature(f.param().id(), reflect::DynamicObject(f.value()))
-    {}
+    Feature(Feature<T> const& f);
 
     /**
      * @brief converts a RuntimFeature to a Feature<T>
@@ -137,10 +121,7 @@ public:
      * @return Feature<T> The converted Feature<T>
      */
     template <typename T, typename = std::enable_if_t<!std::is_same_v<T, reflect::DynamicObject>>>
-    operator Feature<T>() const
-    {
-        return Feature<T>(param().id(), reflect::cast<T>(this->param().value()));
-    }
+    operator Feature<T>() const;
 
     /**
      * @brief retrieve a data member of the wrapped object and 
@@ -152,16 +133,7 @@ public:
      * @param memberName  The string representation of the member name
      * @return DynamicFeature The data member wrapped in a Feature
      */
-    decltype(auto) get(std::string const& memberName) const
-    {
-        return action(
-            param().id() + "." + memberName, 
-            [=](reflect::DynamicObject const& wrapped){
-                return wrapped.get(memberName);
-            },
-            *this
-        );
-    }
+    ActionPtr<reflect::DynamicFunction> get(std::string const& memberName) const;
 
     /**
      * @brief invoke a member function of the wrapped object and register
@@ -173,17 +145,11 @@ public:
      * @return DynamicFeature The return value of the member function 
      */
     template <typename... Args>
-    decltype(auto) invoke(std::string const& memberFunName, Feature<Args> const&... args) const
-    {
-        return action(
-            param().id() + "::" + memberFunName, // TODO: How would we name this by default?
-            [=](reflect::DynamicObject const& wrapped, auto const&... arguments){
-                return wrapped.invoke(memberFunName, arguments...);
-            },
-            *this,
-            args...
-        );
-    }
+    decltype(auto) invoke(std::string const& memberFunName, Feature<Args> const&... args) const;
+
+private:
+
+    reflect::TypeDescriptor const* type_descriptor {nullptr};
 
 };
 
@@ -202,3 +168,5 @@ Feature(std::string const&, Args&&...) -> Feature<reflect::DynamicObject>;
 using DynamicFeature = Feature<reflect::DynamicObject>;
 
 }
+
+#include "DynamicFeature.inl"
