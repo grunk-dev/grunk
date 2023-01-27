@@ -125,6 +125,5 @@ TEST_F(DynamicFeatureTest, invoke_nonConstMemberFun)
 {
     Feature x("x", "MyStruct", 0.5);
     Feature factor("factor", "double", 3.);
-    Feature v = x.invoke("timesc", factor)->output();
-    EXPECT_THROW(v.value(), std::out_of_range);
+    EXPECT_THROW(x.invoke("timesc", factor), reflect::Unresolvable);
 }

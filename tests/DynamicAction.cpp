@@ -54,7 +54,7 @@ public:
         reflect::register_type<double>("double")
         .add_constructor<double>();
 
-        reflect::register_type<double>("int")
+        reflect::register_type<int>("int")
         .add_constructor<int>();
 
         reflect::register_type<MyDouble>("MyDouble")

@@ -193,6 +193,7 @@ template <typename T>
 class Feature : public FeatureBase<T>
 {
 public:
+    using value_type = T;
 
     /**
      * @brief Construct a new Feature object from an instance of type T.

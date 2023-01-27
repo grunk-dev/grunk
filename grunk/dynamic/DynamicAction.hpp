@@ -86,10 +86,13 @@ public:
     {
         // tranform input nodes to vector of DynamicObjects
         std::vector<reflect::DynamicObject> inputs_vec;
-        std::transform(inputs.begin(),
-                    inputs.end(),
-                    std::back_inserter(inputs_vec),
-                    [](auto const& in_feature) { return in_feature.param().value(); }
+        std::transform(
+            inputs.begin(),
+            inputs.end(),
+            std::back_inserter(inputs_vec),
+            [](auto const& in_feature) {
+                return in_feature.param().value().as_const();
+            }
         );
 
         // call the wrapped function
@@ -283,8 +286,28 @@ DynamicActionPtr action(std::string const& id, reflect::DynamicFunction const& f
 template <typename... Args>
 DynamicActionPtr action(std::string const& id, std::string const& name, Feature<Args> const&... args)
 {
-        auto const& f = reflect::resolve_function(name);
-        return action(id, f, args...);
+    auto to_specified_arg = [](auto const& f){
+        using F = std::decay_t<decltype(f)>;
+        if constexpr ( std::is_same_v<F, DynamicFeature>) {
+            assert(f.get_type_descriptor() != nullptr);
+            return reflect::DynamicFunction::SpecifiedArgument{
+                f.get_type_descriptor(),
+                reflect::DynamicFunction::ArgumentSpecifier::PtrOrRefToConst
+            };
+        } else {
+            return reflect::DynamicFunction::SpecifiedArgument{
+                reflect::resolve<typename F::value_type>(),
+                reflect::DynamicFunction::ArgumentSpecifier::PtrOrRefToConst
+            };
+        }
+    };
+    std::vector<reflect::DynamicFunction::SpecifiedArgument> specified_args{
+        to_specified_arg(args)...
+    };
+
+    auto const& overload = reflect::resolve_function(name);
+    auto const& function = overload.resolve(specified_args);
+    return action(id, function, args...);
 }
 
 DynamicActionPtr action(std::string const& id, std::string const& name, std::vector<DynamicFeature> const& args);

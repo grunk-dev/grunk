@@ -147,6 +147,10 @@ public:
     template <typename... Args>
     decltype(auto) invoke(std::string const& memberFunName, Feature<Args> const&... args) const;
 
+    reflect::TypeDescriptor const* get_type_descriptor() const {
+        return type_descriptor;
+    }
+
 private:
 
     reflect::TypeDescriptor const* type_descriptor {nullptr};
