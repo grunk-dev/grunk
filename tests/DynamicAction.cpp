@@ -156,6 +156,9 @@ TEST_F(DynamicActionTest, MultiOutput)
     EXPECT_EQ(x.id(), "o[0]");
     EXPECT_EQ(y.id(), "o[1]");
 
+    EXPECT_EQ(x.get_type_descriptor()->get_name(), "double");
+    EXPECT_EQ(y.get_type_descriptor()->get_name(), "double");
+
     // test renaming feature ids
     x.set_id("x");
     y.set_id("y");
