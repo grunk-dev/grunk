@@ -10,85 +10,17 @@
 
 #pragma once 
 
+#include <grunk/parametric_core.hpp>
 #include <grunk/dynamic/DynamicFeature.hpp>
 #include <grunk/plugins/PluginRegistry.hpp>
 #include <grunk/version.hpp>
 
 #include <stdexcept>
 #include <utility>
-#include <yaml-cpp/yaml.h>
 #include <initializer_list>
 #include <stack>
 #include <fstream>
 
-namespace parametric {
-
-/**
- * @brief template specialization of parametric::serialize for int
- *
- * With this, root parameters of this type can be serialized to yaml
- * 
- * @tparam  empty -> this is a full template specialization
- * @param v The value to be serialized
- * @return std::string string representation of the yaml node
- */
-template <>
-inline std::string serialize(int const& v) {
-    return YAML::Node(v).as<std::string>();
-}
-
-/**
- * @brief template specialization of parametric::serialize for double
- *
- * With this, root parameters of this type can be serialized to yaml
- * 
- * @tparam  empty -> this is a full template specialization
- * @param v The value to be serialized
- * @return std::string string representation of the yaml node
- */
-template <>
-inline std::string serialize(double const& v) {
-    return YAML::Node(v).as<std::string>();
-}
-
-/**
- * @brief template specialization of parametric::serialize for std::string
- *
- * With this, root parameters of this type can be serialized to yaml
- * 
- * @tparam  empty -> this is a full template specialization
- * @param v The value to be serialized
- * @return std::string string representation of the yaml node
- */
-template <>
-inline std::string serialize(std::string const& v) {
-    return v;
-}
-
-/**
- * @brief template specialization of parametric::serialize for DynamicObject
- *
- * With this, root parameters of this type can be serialized to yaml
- * 
- * @tparam  empty -> this is a full template specialization
- * @param v The value to be serialized
- * @return std::string string representation of the yaml node
- */
-template <>
-inline std::string serialize(reflect::DynamicObject const& v)
-{ 
-    auto serialized = 
-        reflect::cast<YAML::Node>(v.invoke("serialize")[0]);
-
-    YAML::Node out = serialized;
-    YAML::Emitter e;
-
-    auto tag = YAML::VerbatimTag(v.get_type_descriptor()->get_name());
-    e << tag << out;
-    return e.c_str();
-}
-
-} // namespace parametric
 
 namespace grunk {
 

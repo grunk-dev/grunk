@@ -8,7 +8,7 @@
  */
 
 #pragma once
-
+#include <grunk/parametric_core.hpp>
 #include <parametric/core.hpp>
 
 #include <reflect/reflect.hpp>
