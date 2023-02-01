@@ -2,9 +2,9 @@ uses:
   grunk: 0.1.0
   SimplePlugin: 1.2.3
 parameters:
-  a: !<MyDouble> 0.2
-  b: !<MyDouble> 0.1
-  a: !<MyDouble> 0.5
+  a: !<SimplePlugin::MyDouble> 0.2
+  b: !<SimplePlugin::MyDouble> 0.1
+  a: !<SimplePlugin::MyDouble> 0.5
 steps:
-  - !<add> [ [c], [a, b] ]
-  - !<add> [ [d], [c, a] ]
+  - !<SimplePlugin::add> [ [c], [a, b] ]
+  - !<SimplePlugin::add> [ [d], [c, a] ]

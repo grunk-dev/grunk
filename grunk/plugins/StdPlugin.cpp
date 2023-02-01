@@ -6,7 +6,7 @@ namespace grunk {
 
 std::string StdPlugin::name() const
 {
-    return "Std";
+    return "";
 }
 
 std::string StdPlugin::version() const 
