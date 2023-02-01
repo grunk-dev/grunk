@@ -200,13 +200,33 @@ void parse_feature(Feature<Arg> const& arg, YAML::Node& yaml_root, Visited& visi
                 return;
             }
 
-            if (std::string str = n.serialize(); !str.empty()){
+            //To Do: There should be a getter in parametric::DAGNode. This can be removed once
+            //https://gitlab.dlr.de/paradigms/parametric/-/issues/8 is implemented
+            auto get_num_parents = [](parametric::DAGNode const& n) {
+                struct ParentCountingVisitor {
+                    void visit(parametric::DAGNode const& n, size_t depth) {
+                        if (depth == 1) {
+                            count++;
+                        }
+                    }
+                    int count = 0;
+                } visitor;
+                n.accept(
+                    visitor,
+                    0,
+                    parametric::DAGNode::Direction::up
+                );
+                return visitor.count;
+            };
 
-                auto node =  YAML::Load(str);
+            bool is_root_parameter = (get_num_parents(n) == 0);
+            bool is_compute_node = ((depth %  2) == 1);
 
-                bool is_parameter = ((depth % 2) == 0);
+            if (is_root_parameter || is_compute_node){
 
-                if (is_parameter) {
+                auto node =  YAML::Load(n.serialize());
+
+                if (is_root_parameter) {
 
 
                     if (root["parameters"][n.id()]) {
