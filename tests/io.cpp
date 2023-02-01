@@ -41,7 +41,7 @@ public:
 TEST_F(IOTest, no_serialize_method)
 {
     auto x = Feature("x", "NonSerializable", 42);
-    EXPECT_THROW(x.param().node_pointer()->serialize(), std::invalid_argument);
+    EXPECT_THROW(x.param().node_pointer()->serialize(), std::out_of_range);
 }
 
 TEST_F(IOTest, serialize_type)
@@ -77,7 +77,7 @@ TEST_F(IOTest, serialize_DAGNode)
 {
     // test overwrites of virtual DAGNode::serialize
     auto x = Feature("x", 0.2);
-    auto y = Feature("y", 0.5);
+    auto y = Feature("y", "double", 0.5);
     auto z = action("z", "add", x, y);
     auto w = action("w", [](auto const& x){ return x; }, y);
 
@@ -86,7 +86,7 @@ TEST_F(IOTest, serialize_DAGNode)
     EXPECT_EQ(sx, parametric::serialize(0.2));
 
     auto sy = y.param().node_pointer()->serialize();
-    EXPECT_EQ(sy, parametric::serialize(0.5));
+    EXPECT_EQ(sy, parametric::serialize(reflect::make_dynamic("double", 0.5)));
 
     // compute node
     auto szc = z->serialize();
@@ -109,8 +109,11 @@ TEST_F(IOTest, serialize_DAGNode)
     EXPECT_THROW(w->serialize(), std::logic_error);
 
     // dependent parameter
-    auto zn = z->output().param().node_pointer()->serialize();
-    EXPECT_EQ(zn, "");
+    auto zo = z->output();
+    EXPECT_EQ(
+        parametric::serialize(zo.value()),      // call specialization directly
+        zo.param().node_pointer()->serialize()  // call via DAGNode::serialize member function
+    );
 }
 
 TEST_F(IOTest, feature_tree_to_yaml_empty)
@@ -356,7 +359,7 @@ TEST_F(IOTest, deserialize_non_existing_function)
 
     EXPECT_THROW(
         details::yaml_to_feature_tree(root),
-        std::out_of_range
+        reflect::Unresolvable
     );
 }
 

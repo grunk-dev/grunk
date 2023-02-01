@@ -27,7 +27,8 @@ set(grunk_SRC
     grunk/core/Action.cpp
     grunk/core/Feature.hpp
     grunk/core/Feature.cpp
-    grunk/io/io.hpp 
+    grunk/parametric_core.hpp
+    grunk/io/io.hpp
     grunk/io/io.cpp
     grunk/plugins/IPlugin.hpp
     grunk/plugins/PluginRegistry.hpp
@@ -37,6 +38,7 @@ set(grunk_SRC
     grunk/dynamic/DynamicAction.hpp
     grunk/dynamic/DynamicAction.cpp
     grunk/dynamic/DynamicFeature.hpp
+    grunk/dynamic/DynamicFeature.inl
     grunk/dynamic/DynamicFeature.cpp
     grunk/grunk.hpp
 )

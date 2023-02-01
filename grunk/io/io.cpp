@@ -64,12 +64,12 @@ reflect::DynamicObject deserialize(
         throw io_error("Failed to resolve type with name\""s + type_name + "\".");
     }
 
-    auto const* deserializer = descr->get_member_function("deserialize");
+    auto deserializer = descr->get_member_function("deserialize", reflect::to_optional_tag);
     if (!deserializer) {
         throw io_error("type "s + type_name + " does not have a (static) \"deserialize\" method. Please refer to the grunk documentation");
     }
     try {
-        return (*deserializer)(yaml_node)[0];
+        return (**deserializer)(yaml_node)[0];
     }
     catch (std::exception& e) {
         throw io_error(

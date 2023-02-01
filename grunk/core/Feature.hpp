@@ -8,7 +8,7 @@
  */
 
 #pragma once
-
+#include <grunk/parametric_core.hpp>
 #include <parametric/core.hpp>
 
 #include <reflect/reflect.hpp>
@@ -54,14 +54,16 @@ namespace details {
      * @brief evaluates to true if a type is reflect::DynamicFunction
      */
     template<typename F>
-    constexpr bool is_dynamic_function_v = std::is_base_of_v<reflect::DynamicFunction, F>;
+    constexpr bool is_dynamic_callable_v = 
+        std::is_base_of_v<reflect::DynamicFunction, F> ||
+        std::is_base_of_v<reflect::OverloadSet, F>;
 }
 
 // forward declaration
 template <typename F,
           typename = std::enable_if_t<
             !std::is_convertible_v<std::decay_t<F>, std::string>
-            && !details::is_dynamic_function_v<std::decay_t<F>>
+            && !details::is_dynamic_callable_v<std::decay_t<F>>
           >,
           typename... Args>
 decltype(auto) action(std::string const& id, F const& fun, Args&&... args);
@@ -191,6 +193,7 @@ template <typename T>
 class Feature : public FeatureBase<T>
 {
 public:
+    using value_type = T;
 
     /**
      * @brief Construct a new Feature object from an instance of type T.
