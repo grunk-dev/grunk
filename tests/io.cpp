@@ -27,10 +27,10 @@ public:
         plugins.prepend_path(".");
         plugins.load_all();
 
-        register_type<NonSerializable>("NonSerializable")
+        reflect::register_type<NonSerializable>("NonSerializable")
         .add_constructor<int>();
 
-        register_function(
+        reflect::register_function(
             [](double const& l, double const& r){ return l+r;}, 
             "plus"
         );
@@ -78,7 +78,7 @@ TEST_F(IOTest, serialize_DAGNode)
     // test overwrites of virtual DAGNode::serialize
     auto x = Feature("x", 0.2);
     auto y = Feature("y", "double", 0.5);
-    auto z = action("z", "add", x, y);
+    auto z = action("z", "SimplePlugin::add", x, y);
     auto w = action("w", [](auto const& x){ return x; }, y);
 
     // root parameters
@@ -91,7 +91,7 @@ TEST_F(IOTest, serialize_DAGNode)
     // compute node
     auto szc = z->serialize();
     auto yc = YAML::Load(szc); 
-    EXPECT_EQ(yc.Tag(), "add");
+    EXPECT_EQ(yc.Tag(), "SimplePlugin::add");
 
     //two arrays, one for outputs one for inputs
     EXPECT_EQ(yc.size(), 2);
@@ -203,13 +203,13 @@ TEST_F(IOTest, basic)
 
 TEST_F(IOTest, simple_plugin)
 {
-    auto a = Feature("a", "MyDouble", 0.2);
-    auto b = Feature("b", "MyDouble", 0.1);
-    auto c = action("c", "add", a, b)->output();
-    auto d = action("d", "add", c, a)->output();
+    auto a = Feature("a", "SimplePlugin::MyDouble", 0.2);
+    auto b = Feature("b", "SimplePlugin::MyDouble", 0.1);
+    auto c = action("c", "SimplePlugin::add", a, b)->output();
+    auto d = action("d", "SimplePlugin::add", c, a)->output();
 
     auto y = details::feature_tree_to_yaml(d);
-    test_basic_tree(y, "add", "MyDouble");
+    test_basic_tree(y, "SimplePlugin::add", "SimplePlugin::MyDouble");
 }
 
 TEST_F(IOTest, write)
@@ -267,7 +267,7 @@ TEST_F(IOTest, deserialize_double)
 TEST_F(IOTest, deserialize_simple_plugin_MyDouble)
 {
     auto y = YAML::Node(0.55557);
-    y.SetTag("MyDouble");
+    y.SetTag("SimplePlugin::MyDouble");
 
     auto md = details::deserialize(
         y.Tag(),
@@ -470,5 +470,5 @@ TEST_F(IOTest, roundtrip_read_write)
     EXPECT_NEAR(reflect::cast<double>(features.at("a").value().get("value")), 0.2, 1e-7);
 
     auto y = details::feature_tree_to_yaml(features.at("d"));
-    test_basic_tree(y, "add", "MyDouble");
+    test_basic_tree(y, "SimplePlugin::add", "SimplePlugin::MyDouble");
 }

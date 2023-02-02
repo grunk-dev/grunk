@@ -28,7 +28,7 @@ public:
     {
         // register types
 
-        grunk::register_type<MyDouble>("MyDouble")
+        register_type<MyDouble>("MyDouble")
         .add_constructor<double>()
         .add_data_member(&MyDouble::value, "value")
         .add_member_function(
@@ -47,7 +47,7 @@ public:
 
         // register functions
 
-        grunk::register_function(&add, "add");
+        register_function(&add, "add");
     }
 
 };

@@ -48,24 +48,24 @@ int main(int argc, char* argv[]) {
         std::cout<<std::endl;
 
         // use plugin types
-        grunk::Feature x("x", "MyDouble", 4.3);
-        grunk::Feature y("y", "MyDouble", 3.3);
-        grunk::Feature z("z", "MyDouble", 2.0);
+        grunk::Feature x("x", "PluginA::MyDouble", 4.3);
+        grunk::Feature y("y", "PluginA::MyDouble", 3.3);
+        grunk::Feature z("z", "PluginA::MyDouble", 2.0);
 
         // use plugin functions
-        auto a = grunk::action("a", "add", x, y)->output();
-        auto b = grunk::action("b", "multiply", a, z)->output();
+        auto a = grunk::action("a", "PluginA::add", x, y)->output();
+        auto b = grunk::action("b", "PluginB::multiply", a, z)->output();
 
         auto b_result = reflect::cast<double>(b.value().get("value"));
         std::cout << b_result << std::endl;
 
         // write to grunk file
-        grunk::write("simple.gk", b);
+        grunk::write("simple.grr", b);
     }
 
     {
         std::cout << "Reading from file ...\n";
-        auto features = grunk::read("simple.gk");
+        auto features = grunk::read("simple.grr");
         auto b = features.at("b");
         auto b_result = reflect::cast<double>(b.value().get("value"));
         std::cout << b_result << std::endl;

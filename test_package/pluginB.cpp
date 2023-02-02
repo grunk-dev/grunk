@@ -24,7 +24,7 @@ public:
     {
         // register functions
 
-        grunk::register_function(&multiply, "multiply");
+        register_function(&multiply, "multiply");
     }
 
 };

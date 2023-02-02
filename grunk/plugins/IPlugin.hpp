@@ -18,34 +18,6 @@
 
 namespace grunk {
 
-/**
- * @brief register_type is a function alias for Reflect::Reflect<T> from
- * the reflect library
- * 
- * @tparam T the type to be reflected/registered
- *
- * @ingroup plugin
- */
- template <typename T>
- decltype(auto) register_type(std::string const& name)
- {
-    return reflect::register_type<T>(name);
- }
-
-/**
- * @brief register_function is a function alias for Reflect::RegisterFunction<F> from
- * the reflect library
- * 
- * @tparam F the type of fucntion to be reflected/registered
- *
- * @ingroup plugin
- */
-template <typename F>
-void register_function(F&& f, std::string const& name, std::string const& doc = "")
-{
-    return reflect::register_function(std::forward<F>(f), name, doc);
-}
-
 
 /**
  * @brief The Plugin interface. All plugin authors must derive their plugin 
@@ -95,6 +67,35 @@ struct IPlugin
         static_assert(std::is_base_of_v<IPlugin, Plugin>, "Can only create plugins derived from IPlugin");
         return std::make_unique<Plugin>();
     };
+
+    /**
+     * @brief register_function is a function alias for Reflect::RegisterFunction<F> from
+     * the reflect library
+     *
+     * @tparam F the type of fucntion to be reflected/registered
+     *
+     */
+    template <typename F>
+    void register_function(F&& f, std::string const& function_name, std::string const& doc = "") const
+    {
+        std::string prefix = name().empty()? "" : name() + "::";
+        return reflect::register_function(std::forward<F>(f), prefix + function_name, doc);
+    }
+
+    /**
+     * @brief register_type is a function alias for Reflect::Reflect<T> from
+     * the reflect library
+     *
+     * @tparam T the type to be reflected/registered
+     *
+     * @ingroup plugin
+     */
+     template <typename T>
+     decltype(auto) register_type(std::string const& type_name) const
+     {
+        std::string prefix = name().empty()? "" : name() + "::";
+        return reflect::register_type<T>(prefix + type_name);
+     }
 };
 
 } //namespace grunk
