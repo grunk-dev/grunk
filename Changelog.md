@@ -1,3 +1,4 @@
 # v0.1.1
 
- - implement operator overloading
+ - prefix functions and types with plugin name
+ - implement runtime overload resolution
