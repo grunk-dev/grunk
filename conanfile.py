@@ -22,8 +22,8 @@ class GrunkConan(ConanFile):
     options = {"shared": [True], "fPIC": [True, False]}
     default_options = {"shared": True, "fPIC": True}
     generators = "cmake_find_package"
-    requires = "yaml-cpp/0.7.0", "boost/1.78.0", "parametric/0.2.1", "reflect/0.1.2"
-    exports_sources = "*"
+    requires = "yaml-cpp/0.7.0", "boost/1.78.0", "parametric/0.2.1", "reflect/0.1.3"
+    exports_sources = "grunk*", "CMakeLists.txt", "docs*"
 
     def config_options(self):
         if self.settings.os == "Windows":
