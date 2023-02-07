@@ -101,9 +101,9 @@ FeatureContainer yaml_to_feature_tree(YAML::Node const& root)
             throw io_error("Parsed version "s + ver + " does not match grunk version " + grunk_VERSION);
         }
     }
-    catch (...) 
+    catch (std::exception const& e) 
     {
-        throw io_error("could not parse grunk version.");
+        throw io_error(e.what());
     }
 
     //TODO: Parse plugins from input file and compare with loaded plugins. Handle appropriately
