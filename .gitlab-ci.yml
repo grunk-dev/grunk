@@ -140,11 +140,8 @@ test-windows:
   <<: *windows_config
 
 
+create-conan-package-ubuntu:
 # This job creates new release packages. It should only run on git tags
-  only:
-    - main
-  except:
-    - branches
   stage: deploy
   before_script: *configure_conan_ubuntu
   dependencies: []
@@ -154,16 +151,12 @@ test-windows:
     - conan remote add gitlab ${CI_API_V4_URL}/projects/21487/packages/conan
 # I don't know why I have to explicitly set libcxx here for clang to pick it up...
     - conan create . -s compiler.libcxx=libstdc++11 -b missing -pr:b=default
-    - f [ $CI_COMMIT_TAG ]; then CONAN_LOGIN_USERNAME=ci_user CONAN_PASSWORD=${CI_JOB_TOKEN} conan upload -c grunk/$GRUNK_VERSION --all --remote=gitlab; fi
+    - if [ $CI_COMMIT_TAG ]; then CONAN_LOGIN_USERNAME=ci_user CONAN_PASSWORD=${CI_JOB_TOKEN} conan upload -c grunk/$GRUNK_VERSION --all --remote=gitlab; fi
   <<: *ubuntu_config
 
 
 create-conan-package-windows:
 # This job creates new release packages. It should only run on git tags
-  only:
-    - main
-  except:
-    - branches
   stage: deploy
   before_script: *configure_msvc
   dependencies: []
