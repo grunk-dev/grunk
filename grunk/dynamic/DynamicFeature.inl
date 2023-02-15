@@ -9,13 +9,13 @@ namespace grunk {
     ActionPtr<reflect::DynamicFunction> action(std::string const& id, std::string const& name, Feature<Args> const&... args);
 
     template <typename... Args>
-    DynamicFeature::Feature(std::string const& id, const char* typeName, Args const&... args)
+    DynamicFeature::Feature(std::string const& id, std::string const& typeName, Args const&... args)
      : FeatureBase<reflect::DynamicObject>(id, reflect::make_dynamic(typeName, args...))
      , type_descriptor(reflect::resolve(typeName))
     {}
 
     template <typename... Args>
-    DynamicFeature::Feature(std::string const& id, const char* typeName, Feature<Args> const&... args)
+    DynamicFeature::Feature(std::string const& id, std::string const& typeName, Feature<Args> const&... args)
      : Feature(
         // std::move(
             action(
