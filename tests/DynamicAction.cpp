@@ -18,6 +18,57 @@ struct MyDouble {
     double val;
 };
 
+struct Counter {
+    Counter(bool reset) {
+        if (reset) {
+            Counter::ctor = 0;
+            Counter::copy = 0;
+            Counter::copy_assignment = 0;
+            Counter::move = 0;
+            Counter::move_assignment = 0;
+            Counter::dtor = 0;
+        }
+
+        std::cout << "ctor\n";
+        ++Counter::ctor;
+    };
+    Counter(Counter const&) {
+        std::cout << "copy\n";
+         ++Counter::copy;
+    }
+    Counter operator=(Counter const&) {
+        std::cout << "copy assignment\n";
+        ++Counter::copy_assignment;
+        return *this;
+    }
+    Counter(Counter&&) {
+        std::cout << "move\n";
+        ++Counter::move;
+    }
+    Counter operator=(Counter&&) {
+        std::cout << "move assignment\n";
+        ++Counter::move_assignment;
+        return *this;
+    }
+    ~Counter() {
+        std::cout << "dtor\n";
+        ++Counter::dtor;
+    }
+
+    static int ctor;
+    static int copy;
+    static int copy_assignment;
+    static int move;
+    static int move_assignment;
+    static int dtor;
+};
+int Counter::ctor = 0;
+int Counter::copy = 0;
+int Counter::copy_assignment = 0;
+int Counter::move = 0;
+int Counter::move_assignment = 0;
+int Counter::dtor = 0;
+
 int overloaded_function(double x) {
     return 0;
 }
@@ -51,6 +102,7 @@ class DynamicActionTest : public ::testing::Test
 public:
 
     static void SetUpTestCase() {
+
         reflect::register_type<double>("double")
         .add_constructor<double>();
 
@@ -68,6 +120,12 @@ public:
 
         reflect::register_function<int(*)(double)>(&overloaded_function, "overloaded_function");
         reflect::register_function<int(*)(int)>(&overloaded_function, "overloaded_function");
+
+        reflect::register_type<bool>("bool")
+        .add_constructor<bool>();
+
+        reflect::register_type<Counter>("Counter")
+        .add_constructor<bool>();
     } 
 
     static void TearDownTestCase() {
@@ -210,4 +268,51 @@ TEST_F(DynamicActionTest, OverloadedFunction)
         EXPECT_EQ(reflect::cast<int>(y), 1);
     }
     
+}
+
+TEST_F(DynamicActionTest, ConstructorCall)
+{
+    // invoke constructor lazily via DynamicFeature, passing DynamicFeature as constructor argument
+    {
+        auto b = DynamicFeature("b", "bool", true);
+        auto x = DynamicFeature("x", "Counter", b);
+        EXPECT_EQ(Counter::ctor, 0);
+        EXPECT_EQ(Counter::copy, 0);
+        EXPECT_EQ(Counter::copy_assignment, 0);
+        EXPECT_EQ(Counter::move, 0);
+        EXPECT_EQ(Counter::move_assignment, 0);
+        EXPECT_EQ(Counter::dtor, 0);
+
+        reflect::DynamicObject y = x.value();
+    }
+
+    EXPECT_EQ(Counter::ctor, 1);
+    EXPECT_EQ(Counter::copy, 0);
+    EXPECT_EQ(Counter::copy_assignment, 0);
+    EXPECT_EQ(Counter::move, 0);
+    EXPECT_EQ(Counter::move_assignment, 0);
+    EXPECT_EQ(Counter::dtor, 1);
+
+    // invoke constructor lazily via grunk::action, passing DynamicFeature as constructor argument
+    {
+        auto b = DynamicFeature("b", "bool", true);
+        auto x = grunk::action("x", "Counter", b)->output();
+
+        // until the ctor is called, these values will not be reset:
+        EXPECT_EQ(Counter::ctor, 1);
+        EXPECT_EQ(Counter::copy, 0);
+        EXPECT_EQ(Counter::copy_assignment, 0);
+        EXPECT_EQ(Counter::move, 0);
+        EXPECT_EQ(Counter::move_assignment, 0);
+        EXPECT_EQ(Counter::dtor, 1);
+
+        reflect::DynamicObject y = x.value();
+    }
+
+    EXPECT_EQ(Counter::ctor, 1);
+    EXPECT_EQ(Counter::copy, 0);
+    EXPECT_EQ(Counter::copy_assignment, 0);
+    EXPECT_EQ(Counter::move, 0);
+    EXPECT_EQ(Counter::move_assignment, 0);
+    EXPECT_EQ(Counter::dtor, 1);
 }
