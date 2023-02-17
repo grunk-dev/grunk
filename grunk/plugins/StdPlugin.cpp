@@ -40,7 +40,7 @@ void StdPlugin::init() const
     .add_conversion<std::string>()
     .add_member_function(
         [](helper::String const& str){
-            return YAML::Node(std::string(str));
+            return YAML::Node(static_cast<std::string>(str));
         },
         "serialize"
     )

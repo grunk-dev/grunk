@@ -11,7 +11,7 @@ String::operator const char*() const {
     return str.c_str();
 }
 
-String::operator std::string() const {
+String::operator const std::string() const {
     return str;
 }
 
