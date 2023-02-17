@@ -12,7 +12,7 @@ public:
     String() = default;
     String(std::string_view s);
     operator const char*() const;
-    operator std::string() const;
+    operator const std::string&() const;
 private:
     std::string str;
 };
