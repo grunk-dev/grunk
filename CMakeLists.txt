@@ -41,6 +41,8 @@ set(grunk_SRC
     grunk/dynamic/DynamicFeature.inl
     grunk/dynamic/DynamicFeature.cpp
     grunk/grunk.hpp
+    grunk/helper/String.hpp
+    grunk/helper/String.cpp
 )
 
 # create a library and add source files

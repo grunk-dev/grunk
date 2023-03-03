@@ -1,5 +1,6 @@
 #include <grunk/plugins/StdPlugin.hpp>
 #include <grunk/version.hpp>
+#include <grunk/helper/String.hpp>
 #include <yaml-cpp/yaml.h>
 
 namespace grunk {
@@ -31,10 +32,26 @@ void StdPlugin::init() const
         "deserialize"
     );
 
-    register_type<std::string>("string");
-    
-    register_type<const char*>("cstring")
-    .add_conversion<std::string>();
+    register_type<helper::String>("String")
+    .add_constructor<>()
+    .add_constructor<std::string_view>()
+    .add_constructor<const char*>()
+    .add_conversion<const char*>()
+    .add_conversion<std::string>()
+    .add_member_function(
+        [](helper::String const& str){
+            return YAML::Node(static_cast<std::string>(str));
+        },
+        "serialize"
+    )
+    .add_member_function(
+        [](YAML::Node const& node){
+            return helper::String(
+                node.as<std::string>()
+            );
+        },
+        "deserialize"
+    );
 }
 
 } //namespace grunk
