@@ -96,14 +96,14 @@ public:
         );
 
         // call the wrapped function
-        auto outputs_vals = function.invoke(inputs_vec);
+        return_values = function.invoke(inputs_vec);
 
-        assert(outputs_vals.size() == outputs.size());
+        assert(return_values.size() == outputs.size());
         
         // move the output values to the output nodes
         for (size_t i=0; i < outputs.size(); ++i) {
             if (!outputs[i].expired()) {
-                outputs[i].set_value(outputs_vals[i].copy());
+                outputs[i].set_value(return_values[i]);
             }
         }
     }
@@ -169,6 +169,7 @@ public:
 private:
     reflect::DynamicFunction const& function;
     std::vector<DynamicFeature> const inputs;
+    std::vector<reflect::DynamicObject> mutable return_values;
     std::vector<parametric::OutputParam<reflect::DynamicObject>> mutable outputs;
 };
 
