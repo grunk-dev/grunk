@@ -1,5 +1,5 @@
 uses:
-  grunk: 0.1.2
+  grunk: 0.1.3
   SimplePlugin: 1.2.3
 parameters:
   a: !<SimplePlugin::MyDouble> 0.2
