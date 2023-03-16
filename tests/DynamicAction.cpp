@@ -29,29 +29,23 @@ struct Counter {
             Counter::dtor = 0;
         }
 
-        std::cout << "ctor\n";
         ++Counter::ctor;
     };
     Counter(Counter const&) {
-        std::cout << "copy\n";
          ++Counter::copy;
     }
     Counter operator=(Counter const&) {
-        std::cout << "copy assignment\n";
         ++Counter::copy_assignment;
         return *this;
     }
     Counter(Counter&&) {
-        std::cout << "move\n";
         ++Counter::move;
     }
     Counter operator=(Counter&&) {
-        std::cout << "move assignment\n";
         ++Counter::move_assignment;
         return *this;
     }
     ~Counter() {
-        std::cout << "dtor\n";
         ++Counter::dtor;
     }
 
