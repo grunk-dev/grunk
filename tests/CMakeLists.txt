@@ -18,6 +18,7 @@ set(TESTSOURCES
   DynamicAction.cpp
   Feature.cpp
   DynamicFeature.cpp
+  meta.cpp
 )
 
 add_library(SimplePlugin SHARED plugin_simple.cpp)
