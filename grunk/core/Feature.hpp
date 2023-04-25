@@ -302,14 +302,6 @@ public:
     }
 };
 
-/**
- * @brief C++17 deduction guide for Feature<T>
- * 
- * @tparam T The type of the wrapped object
- */
-template <typename T>
-Feature(std::string const&, T&&) -> Feature<T>;
-
 } //namespace grunk
 
 #include "Action.hpp"
