@@ -28,6 +28,8 @@ struct MyStruct {
     double val;
 };
 
+struct DefaultConstructible{};
+
 } //namespace
 
 class DynamicFeatureTest : public ::testing::Test 
@@ -48,6 +50,9 @@ public:
         .add_data_member(&MyStruct::val, "val")
         .add_member_function(&MyStruct::times, "times")
         .add_member_function(&MyStruct::timesc, "timesc");
+
+        reflect::register_type<DefaultConstructible>("DefaultConstructible")
+        .add_constructor<>();
     } 
 
     static void TearDownTestCase() {
@@ -126,4 +131,14 @@ TEST_F(DynamicFeatureTest, invoke_nonConstMemberFun)
     Feature x("x", "MyStruct", 0.5);
     Feature factor("factor", "double", 3.);
     EXPECT_THROW(x.invoke("timesc", factor), reflect::Unresolvable);
+}
+
+TEST_F(DynamicFeatureTest, default_constructible)
+{
+    // We should be able to create DynamicFeatures of default-constructible objects
+    // 
+    auto x = Feature("x", "DefaultConstructible");
+    static_assert(std::is_same_v<decltype(x), DynamicFeature>);
+
+    auto y = DynamicFeature("x", "DefaultConstructible");
 }
