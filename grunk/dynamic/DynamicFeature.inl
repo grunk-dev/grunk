@@ -53,7 +53,7 @@ namespace grunk {
     }
 
     template <typename... Args>
-    decltype(auto) DynamicFeature::invoke(std::string const& memberFunName, Feature<Args> const&... args) const
+    ActionPtr<reflect::DynamicFunction> DynamicFeature::invoke(std::string const& memberFunName, Feature<Args> const&... args) const
     {
         return action(
             param().id() + "::" + memberFunName, // TODO: How would we name this by default?

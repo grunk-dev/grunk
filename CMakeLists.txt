@@ -5,6 +5,7 @@ project(grunk VERSION 0.1.3)
 set(CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake" ${CMAKE_MODULE_PATH})
 
 option(GRUNK_TESTS "Build unit tests using GTest" OFF)
+option(GRUNK_PYTHON "Build python bindings using swig" OFF)
 
 # conan creates FindPackage.cmake files in the CMAKE_BINARY_DIR
 set(CMAKE_MODULE_PATH ${CMAKE_BINARY_DIR} ${CMAKE_MODULE_PATH})
@@ -73,6 +74,10 @@ add_subdirectory(docs)
 
 if (GRUNK_TESTS)
         add_subdirectory(tests)
+endif()
+
+if (GRUNK_PYTHON)
+        add_subdirectory(python)
 endif()
 
 # install grunk

@@ -145,7 +145,7 @@ public:
      * @return DynamicFeature The return value of the member function 
      */
     template <typename... Args>
-    decltype(auto) invoke(std::string const& memberFunName, Feature<Args> const&... args) const;
+    ActionPtr<reflect::DynamicFunction> invoke(std::string const& memberFunName, Feature<Args> const&... args) const;
 
     reflect::TypeDescriptor const* get_type_descriptor() const {
         return type_descriptor;
