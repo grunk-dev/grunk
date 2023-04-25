@@ -13,10 +13,10 @@ DynamicFeature::Feature(std::string const& id, reflect::DynamicObject&& o)
     , type_descriptor(o.get_type_descriptor())
 {}
 
-ActionPtr<reflect::DynamicFunction> DynamicFeature::get(std::string const& memberName) const
+ActionPtr<reflect::DynamicFunction> DynamicFeature::get(std::string const& id, std::string const& memberName) const
 {
     return action(
-        param().id() + "." + memberName, 
+        id, 
         type_descriptor->get_name() + "::" + memberName,
         *this
     );

@@ -267,10 +267,10 @@ public:
      * @return decltype(auto) The data member wrapped in a Feature
      */
     template <typename MemberPtr>
-    decltype(auto) get(MemberPtr ptr) const
+    decltype(auto) get(std::string const& id, MemberPtr ptr) const
     {
         return action(
-            "", //To Do
+            id,
             [=](auto const& wrapped){ 
                 return wrapped.*ptr; 
             }, 
@@ -289,10 +289,10 @@ public:
      * @return decltype(auto) The return value of the member function, wrapped in a Feature instance
      */
     template <typename MemberFunPtr, typename... Args>
-    decltype(auto) invoke(MemberFunPtr funPtr, Feature<Args> const&... args) const
+    decltype(auto) invoke(std::string const& id, MemberFunPtr funPtr, Feature<Args> const&... args) const
     {
         return action(
-            "", // TO DO
+            id,
             [=](T const& wrapped, auto const&... arguments){
                 return (wrapped.*funPtr)(arguments...);
             },
