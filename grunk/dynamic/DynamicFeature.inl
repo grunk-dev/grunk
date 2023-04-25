@@ -14,7 +14,10 @@ namespace grunk {
      , type_descriptor(reflect::resolve(typeName))
     {}
 
-    template <typename... Args>
+    template <
+        typename... Args,
+        typename
+    >
     DynamicFeature::Feature(std::string const& id, std::string const& typeName, Feature<Args> const&... args)
      : Feature(
         // std::move(

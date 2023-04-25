@@ -78,7 +78,10 @@ public:
      * @param typeName The string representation of the reflected type
      * @param args input Features for the constructor for the type to b constructed 
      */
-    template <typename... Args>
+    template <
+        typename... Args,
+        typename = std::enable_if_t<(sizeof...(Args)>0)>
+    >
     Feature(std::string const& id, std::string const& typeName, Feature<Args> const&... args);
 
     /**
