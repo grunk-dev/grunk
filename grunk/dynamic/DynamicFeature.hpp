@@ -130,6 +130,7 @@ public:
      * This will return the data member wrapped in a Feature and register
      * the dependency of the returned feature to this.
      * 
+     * @param id id to be assigned to the Feature wrapping the retrieved data member
      * @param memberName  The string representation of the member name
      * @return DynamicFeature The data member wrapped in a Feature
      */
