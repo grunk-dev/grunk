@@ -1,0 +1,5 @@
+*__pycache__
+*.egg-info
+python/_grunk.*.so
+.vscode
+CMakeLists.txt.user
