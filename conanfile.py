@@ -2,13 +2,7 @@ from conans import ConanFile, CMake
 from conans.tools import load
 import re
 
-def get_version():
-    try:
-        content = load("CMakeLists.txt")
-        version = re.search("project\(grunk VERSION (.*)\)", content).group(1)
-        return version.strip()
-    except Exception as e:
-        return None
+from setup import get_version
 
 class GrunkConan(ConanFile):
     name = "grunk"

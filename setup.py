@@ -7,7 +7,13 @@ from pathlib import Path
 from setuptools import Extension, setup, find_packages
 from setuptools.command.build_ext import build_ext
 
-from conanfile import get_version
+def get_version():
+    try:
+        content = load("CMakeLists.txt")
+        version = re.search("project\(grunk VERSION (.*)\)", content).group(1)
+        return version.strip()
+    except Exception as e:
+        return None
 
 # Convert distutils Windows platform specifiers to CMake -A arguments
 PLAT_TO_CMAKE = {
