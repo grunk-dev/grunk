@@ -119,7 +119,7 @@ test-ubuntu-python:
     COMPILER: gcc
   before_script: 
   - pip install --upgrade pip
-  - pip install conan==1.58
+  - pip install conan==1.58 cmake
   - *configure_conan_ubuntu
   script:
    - pip install --upgrade pip
