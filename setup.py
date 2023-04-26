@@ -118,7 +118,7 @@ class CMakeBuild(build_ext):
             build_temp.mkdir(parents=True)
 
         subprocess.run(
-            ["conan", "install", ext.sourcedir], cwd=build_temp, check=True
+            ["conan", "install", ext.sourcedir, '--build=missing'], cwd=build_temp, check=True
         )
 
         subprocess.run(
