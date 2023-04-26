@@ -24,7 +24,7 @@
     #workaround: have had concurrency problems, where jobs use the same image https://gitlab.com/gitlab-org/gitlab-runner/-/issues/4793 and thus the same git repo
     # using GIT_CLONE_PATH: $CI_BUILDS_DIR/$CI_CONCURRENT_ID/$CI_PROJECT_PATH is not unique, because for some reason both Debug builds get the same $CI_CONCURRENT_ID 0
     # and both Release builds get the same $CI_CONCURRENT_ID 1.
-    #GIT_CLONE_PATH: $CI_BUILDS_DIR/$BUILD_TYPE-$COMPILER/$CI_PROJECT_PATH
+    GIT_CLONE_PATH: $CI_BUILDS_DIR/$BUILD_TYPE-$COMPILER/$CI_PROJECT_PATH
   parallel:
     matrix:
      - BUILD_TYPE: [Debug, Release]
