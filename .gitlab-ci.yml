@@ -117,6 +117,7 @@ test-ubuntu-python:
   stage: test
   before_script: *configure_conan_ubuntu
   script:
+   - pip install --upgrade pip
    - pip install .[test]
    - cd tests/test_python
    - pytest

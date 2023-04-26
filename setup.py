@@ -144,6 +144,6 @@ setup(
     zip_safe=False,
     extras_require={"test": ["pytest>=6.0"]},
     python_requires=">=3.7",
-    install_requires="conan<2.0.0"
+    install_requires=["conan<2.0.0", "wheel"]
 )
 print(find_packages(where="./python"))
