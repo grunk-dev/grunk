@@ -102,7 +102,7 @@ test-ubuntu:
   - conan install .. --generator=virtualrunenv -s build_type=$BUILD_TYPE -b missing -pr:b=default
   - chmod a+x activate_run.sh
   - source activate_run.sh
-  - cd tests
+  - cd tests/test_cpp
   - ./runUnitTests
   <<: *ubuntu_config
 
@@ -136,7 +136,7 @@ test-windows:
   # add googletest dll to path
   - $env:Path = "$pwd\$BUILD_TYPE;$pwd\bin\$BUILD_TYPE;$env:Path"
   - .\activate_run.ps1
-  - cd tests
+  - cd tests\test_cpp
   # Powershell sucks so much....:
   - powershell.exe "$BUILD_TYPE\runUnitTests.exe"
   <<: *windows_config
