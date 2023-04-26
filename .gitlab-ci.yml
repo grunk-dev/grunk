@@ -107,6 +107,19 @@ test-ubuntu:
   <<: *ubuntu_config
 
 
+test-ubuntu-python:
+  tags:
+  - ubuntu
+  - docker
+  image: conanio/$COMPILER-ubuntu18.04
+  stage: test
+  before_script: *configure_conan_ubuntu
+  script:
+   - pip install .[test]
+   - cd tests/test_python
+   - pytest
+  <<: *ubuntu_config
+
 build-windows:
   #note: variables BUILD_DIR, BUILD_TYPE and COMPILER will be populated thru yaml anchor "windows_config"
   stage: build
