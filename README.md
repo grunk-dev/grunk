@@ -21,7 +21,13 @@ This way, models built with grunk are highly modular and extendable. Users can s
 
 ## Installation
 
-See the [installation section](https://paradigms.pages.gitlab.dlr.de/grunk/installation.html#installation) of the documentation.
+The C++ library can be installed via conan or built from source using cmake, see the [installation section](https://paradigms.pages.gitlab.dlr.de/grunk/installation.html#installation) of the documentation for details.
+
+The python module can be installed using `pip`:
+
+```console
+pip install git+https://gitlab.dlr.de/paradigms/grunk
+```
 
 ## Building grunk from source
 
