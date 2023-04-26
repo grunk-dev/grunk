@@ -106,19 +106,20 @@ test-ubuntu:
   - ./runUnitTests
   <<: *ubuntu_config
 
-
+#TODO: No need to test this for all compilers and os: This is just for testing the python
+# part which should be fairly platform-independent. Let's be eco-friendly and safe some 
+# computing power
 test-ubuntu-python:
   tags:
   - ubuntu
   - docker
-  image: conanio/$COMPILER-ubuntu18.04
+  image: conanio/gcc12-ubuntu18.04
   stage: test
   before_script: *configure_conan_ubuntu
   script:
    - pip install .[test]
    - cd tests/test_python
    - pytest
-  <<: *ubuntu_config
 
 build-windows:
   #note: variables BUILD_DIR, BUILD_TYPE and COMPILER will be populated thru yaml anchor "windows_config"
