@@ -118,11 +118,13 @@ test-ubuntu-python:
   variables:
     COMPILER: gcc
   before_script: 
+  - python -m venv venv
+  - source venv/bin/activate
   - pip install --upgrade pip
   - pip install conan==1.58 cmake
   - *configure_conan_ubuntu
   script:
-   - pip install --upgrade pip
+   - source venv/bin/activate
    - pip install .[test]
    - cd tests/test_python
    - pytest
