@@ -25,7 +25,7 @@ PYBIND11_MODULE(_grunk, m)
     // dynamic
 
     py::class_<grunk::DynamicFeature>(m, "Feature")
-    // .def(py::init<std::string const&, std::string const&>())
+    .def(py::init<std::string const&, std::string const&, py::args>())
     .def("get", &grunk::DynamicFeature::get)
     .def("is_valid", &grunk::DynamicFeature::is_valid)
     .def("value", &grunk::DynamicFeature::value)
