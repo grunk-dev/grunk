@@ -115,17 +115,16 @@ test-ubuntu-python:
   - docker
   image: python:3.9
   stage: test
-  variables:
-    COMPILER: gcc
   before_script: 
   - python -m venv venv
   - source venv/bin/activate
-  - pip install --upgrade pip
-  - pip install conan==1.58 cmake
+  - python -m pip install --upgrade pip
+  - python -m pip install conan==1.58 cmake
   - *configure_conan_ubuntu
+  - conan profile update settings.compiler.libcxx=libstdc++11 default
   script:
    - source venv/bin/activate
-   - pip install .[test]
+   - python -m pip install .[test]
    - cd tests/test_python
    - pytest
 

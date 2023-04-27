@@ -3,3 +3,4 @@
 python/_grunk.*.so
 .vscode
 CMakeLists.txt.user
+venv
