@@ -429,12 +429,12 @@ TEST_F(IOTest, read_duplicate_name)
 {
 
     EXPECT_THROW(
-        read("data/simple_test_duplicate_name_parameter.grr"),
+        read("test_data/simple_test_duplicate_name_parameter.grr"),
         grunk::io_error
     );
 
     EXPECT_THROW(
-        read("data/simple_test_duplicate_name_step.grr"),
+        read("test_data/simple_test_duplicate_name_step.grr"),
         grunk::io_error
     );
 }
@@ -461,7 +461,7 @@ TEST_F(IOTest, roundtrip_write_read)
 
 TEST_F(IOTest, roundtrip_read_write)
 {
-    auto features = read("data/simple_test.grr");
+    auto features = read("test_data/simple_test.grr");
 
     EXPECT_EQ(features.size(), 4);
     EXPECT_NEAR(reflect::cast<double>(features.at("d").value().get("value")), 0.5, 1e-7);

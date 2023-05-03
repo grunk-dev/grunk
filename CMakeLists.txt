@@ -93,5 +93,5 @@ endif()
 
 
 if (GRUNK_TESTS)
-        add_subdirectory(tests/test_cpp)
+        add_subdirectory(tests/cpp)
 endif()
