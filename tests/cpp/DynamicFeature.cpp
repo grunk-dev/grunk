@@ -58,7 +58,7 @@ public:
 TEST_F(DynamicFeatureTest, ctor)
 {
     Feature<double> x("x", 0.25);
-    DynamicFeature y("y", "MyStruct", x);
+    auto y = DynamicFeature::create("y", "MyStruct", x);
 
     EXPECT_FALSE(y.is_valid());
     EXPECT_EQ(reflect::cast<MyStruct>(y.value()).val, 0.25);

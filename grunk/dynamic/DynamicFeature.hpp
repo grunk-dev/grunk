@@ -79,7 +79,7 @@ public:
      * @param args input Features for the constructor for the type to b constructed 
      */
     template <typename... Args>
-    Feature(std::string const& id, std::string const& typeName, Feature<Args> const&... args);
+    static Feature create(std::string const& id, std::string const& typeName, Feature<Args> const&... args);
 
     /**
      * @brief Construct a new DynamicFeature given a parametric::param<T>.

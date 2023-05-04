@@ -15,15 +15,10 @@ namespace grunk {
     {}
 
     template <typename... Args>
-    DynamicFeature::Feature(std::string const& id, std::string const& typeName, Feature<Args> const&... args)
-     : Feature(
-        // std::move(
-            action(
-                id, typeName, args...
-            )->output()
-        // )
-     )
-    {}
+    DynamicFeature DynamicFeature::create(std::string const& id, std::string const& typeName, Feature<Args> const&... args)
+    { 
+        return Feature(action(id, typeName, args...)->output());
+    }
 
     template <
         typename T,

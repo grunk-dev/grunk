@@ -266,10 +266,10 @@ TEST_F(DynamicActionTest, OverloadedFunction)
 
 TEST_F(DynamicActionTest, ConstructorCall)
 {
-    // invoke constructor lazily via DynamicFeature, passing DynamicFeature as constructor argument
+    // invoke constructor lazily via DynamicFeature, passing DynamicFeature to factory function
     {
         auto b = DynamicFeature("b", "bool", true);
-        auto x = DynamicFeature("x", "Counter", b);
+        auto x = DynamicFeature::create("x", "Counter", b);
         EXPECT_EQ(Counter::ctor, 0);
         EXPECT_EQ(Counter::copy, 0);
         EXPECT_EQ(Counter::copy_assignment, 0);
@@ -287,7 +287,7 @@ TEST_F(DynamicActionTest, ConstructorCall)
     EXPECT_EQ(Counter::move_assignment, 0);
     EXPECT_EQ(Counter::dtor, 1);
 
-    // invoke constructor lazily via grunk::action, passing DynamicFeature as constructor argument
+    // invoke constructor lazily via grunk::action, passing DynamicFeature to factory function
     {
         auto b = DynamicFeature("b", "bool", true);
         auto x = grunk::action("x", "Counter", b)->output();
