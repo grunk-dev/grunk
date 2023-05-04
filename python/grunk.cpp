@@ -99,16 +99,16 @@ PYBIND11_MODULE(_grunk, m)
     .def(py::init<double>());
     py::implicitly_convertible<double, reflect::DynamicObject>();
 
-    py::class_<DynamicAction>(m, "DynamicAction")
+
+    // dynamic
+
+    py::class_<DynamicAction, parametric::compute_node_ptr<DynamicAction>>(m, "DynamicAction")
     .def(
         "output", 
         // py::overload_cast<size_t>(&DynamicAction::output), 
         static_cast<DynamicFeature (DynamicAction::*)(size_t) const>(&DynamicAction::output),
         py::arg("idx") = 0
     );
-
-
-    // dynamic
 
     py::class_<grunk::DynamicActionPtr>(m, "DynamicActionPtr");
 
