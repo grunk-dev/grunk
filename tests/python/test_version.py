@@ -1,4 +1,3 @@
-import pytest
 import grunk
 
 def test_version():
