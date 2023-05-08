@@ -94,13 +94,15 @@ PYBIND11_MODULE(_grunk, m)
 
     // reflect
 
+    auto m_reflect = m.def_submodule("reflect", "python bindings for reflect");
+
     //TODO: I seem to have to do this for all builtin types!
-    py::class_<reflect::DynamicObject>(m, "DynamicObject")
+    py::class_<reflect::DynamicObject>(m_reflect, "DynamicObject")
     .def(py::init<double>())
     .def("get", static_cast<reflect::DynamicObject (reflect::DynamicObject::*)(std::string const&) const>(&reflect::DynamicObject::get))
     .def("as_float", static_cast<double (reflect::DynamicObject::*)() const>(&reflect::DynamicObject::as<double>));
-    py::implicitly_convertible<double, reflect::DynamicObject>();
 
+    py::implicitly_convertible<double, reflect::DynamicObject>();
 
     // dynamic
 
