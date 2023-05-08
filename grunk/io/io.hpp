@@ -354,7 +354,7 @@ template <typename... Args>
 void write(std::string const& filename, Args const&... args)
 {
     std::ofstream fout(filename);
-    fout << to_string(args...);
+    fout << to_string(args...) << "\n";
 }
 
 /**

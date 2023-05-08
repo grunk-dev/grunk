@@ -96,7 +96,9 @@ PYBIND11_MODULE(_grunk, m)
 
     //TODO: I seem to have to do this for all builtin types!
     py::class_<reflect::DynamicObject>(m, "DynamicObject")
-    .def(py::init<double>());
+    .def(py::init<double>())
+    .def("get", static_cast<reflect::DynamicObject (reflect::DynamicObject::*)(std::string const&) const>(&reflect::DynamicObject::get))
+    .def("as_float", static_cast<double (reflect::DynamicObject::*)() const>(&reflect::DynamicObject::as<double>));
     py::implicitly_convertible<double, reflect::DynamicObject>();
 
 
@@ -110,19 +112,20 @@ PYBIND11_MODULE(_grunk, m)
         py::arg("idx") = 0
     );
 
-    py::class_<grunk::DynamicActionPtr>(m, "DynamicActionPtr");
-
     py::class_<grunk::DynamicFeature>(m, "Feature")
-    .def(py::init(
-        [](std::string const& id, std::string const& name, py::args pyargs){
-            return grunkpy::invoke_variadic_rt<reflect::DynamicObject>(
-                [&](auto&&... args) -> grunk::DynamicFeature {
-                    return grunk::DynamicFeature(id, name, std::forward<decltype(args)>(args)...);
-                },
-                pyargs
-            );
-        }
-    ))
+    .def(
+        py::init(
+            [](std::string const& id, std::string const& name, py::args pyargs){
+                return grunkpy::invoke_variadic_rt<reflect::DynamicObject>(
+                    [&](auto&&... args) -> grunk::DynamicFeature {
+                        return grunk::DynamicFeature(id, name, std::forward<decltype(args)>(args)...);
+                    },
+                    pyargs
+                );
+            }
+        ),
+        py::return_value_policy::take_ownership
+    )
     .def("get", &grunk::DynamicFeature::get)
     .def("invoke", 
         [](grunk::DynamicFeature const& f, std::string const& mName, py::args pyargs){
@@ -146,8 +149,8 @@ PYBIND11_MODULE(_grunk, m)
     m.def(
         "action", 
         [](std::string const& id, std::string const& name, py::args pyargs){
-            return grunkpy::invoke_variadic_rt<grunk::DynamicFeature>(
-                [&](auto&&...args){
+            return grunkpy::invoke_variadic_rt<grunk::DynamicFeature const&>(
+                [&](auto&&... args){
                     return grunk::action(id, name, std::forward<decltype(args)>(args)...);
                 },
                 pyargs
