@@ -1,7 +1,7 @@
 import grunk
 import pytest
 
-def test_plugin_registry():
+def test_integration_hello_world():
     #TODO: need to copy plugin here
     gpr = grunk.get_plugin_registry()
     gpr.prepend_path(".")
@@ -17,4 +17,3 @@ def test_plugin_registry():
     d = grunk.Feature("d", "PluginA::Scalar", 1.1)
     e = grunk.action("e", "PluginA::add", d, grunk.read("test.grr")["c"]).output()
     assert 6.6 == pytest.approx(e.value().get("value").as_float())
-    grunk.write("test2.grr", e)

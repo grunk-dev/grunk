@@ -73,8 +73,9 @@ PYBIND11_DECLARE_HOLDER_TYPE(DynamicAction, parametric::compute_node_ptr<Dynamic
 
 
 
-PYBIND11_MODULE(_grunk, m)
+PYBIND11_MODULE(_core, m)
 {
+     m.attr("__name__") = "grunk._core";
     m.attr("__version__") = grunk_VERSION;
 
     // plugins

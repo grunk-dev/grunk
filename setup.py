@@ -145,7 +145,7 @@ setup(
     author_email="jan.kleinert@dlr.de",
     description="ToDo",
     long_description="ToDoToDo",
-    ext_modules=[CMakeExtension("_grunk")],
+    ext_modules=[CMakeExtension("_core")],
     package_dir={"grunk": "python"},
     packages=['grunk'],
     cmdclass={"build_ext": CMakeBuild},

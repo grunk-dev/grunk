@@ -18,7 +18,8 @@ else()
     find_package(pybind11 REQUIRED)
 endif()
 
-pybind11_add_module(_grunk MODULE
+pybind11_add_module(_core MODULE
     grunk.cpp
 )
-target_link_libraries(_grunk PRIVATE grunk)
+target_link_libraries(_core PRIVATE grunk)
+set_target_properties(_core PROPERTIES OUTPUT_NAME grunk/_core)

@@ -1,3 +1,3 @@
-from _grunk import __version__ as _version
+from ._core import __version__ as _version
 __version__ = _version
-from _grunk import *
+from ._core import *
