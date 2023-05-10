@@ -117,6 +117,7 @@ test-ubuntu-python:
   image: python:3.9
   stage: test
   before_script: 
+  - apt-get -qq -y update && apt-get -qq -y install clang 
   - python -m venv venv
   - source venv/bin/activate
   - python -m pip install --upgrade pip
