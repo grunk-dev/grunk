@@ -30,6 +30,6 @@ add_dependencies(runUnitTests SimplePlugin)
 add_custom_command(
   TARGET runUnitTests POST_BUILD
   COMMAND ${CMAKE_COMMAND} -E copy_directory
-          ${CMAKE_CURRENT_SOURCE_DIR}/test_data
+          ${CMAKE_CURRENT_SOURCE_DIR}/../test_data
           ${CMAKE_CURRENT_BINARY_DIR}/test_data
 )

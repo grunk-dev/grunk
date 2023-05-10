@@ -2,9 +2,13 @@ cmake_minimum_required(VERSION 3.12)
 
 project(grunk VERSION 0.1.3)
 
+include(GNUInstallDirs)
+
 set(CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake" ${CMAKE_MODULE_PATH})
 
 option(GRUNK_TESTS "Build unit tests using GTest" OFF)
+option(GRUNK_PYTHON "Build python bindings using pybind11" OFF)
+
 
 # conan creates FindPackage.cmake files in the CMAKE_BINARY_DIR
 set(CMAKE_MODULE_PATH ${CMAKE_BINARY_DIR} ${CMAKE_MODULE_PATH})
@@ -67,14 +71,6 @@ configure_file(
         ${CMAKE_CURRENT_BINARY_DIR}/grunk/version.hpp
 )
 
-include(GNUInstallDirs)
-
-add_subdirectory(docs)
-
-if (GRUNK_TESTS)
-        add_subdirectory(tests)
-endif()
-
 # install grunk
 install(TARGETS grunk
         RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
@@ -88,3 +84,14 @@ install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/grunk ${CMAKE_CURRENT_BINARY_DIR}/
         FILES_MATCHING
         REGEX ".*\\.(h|hpp|hxx|inl)$"
 )
+
+add_subdirectory(docs)
+
+if (GRUNK_PYTHON)
+        add_subdirectory(python)
+endif()
+
+
+if (GRUNK_TESTS)
+        add_subdirectory(tests/cpp)
+endif()

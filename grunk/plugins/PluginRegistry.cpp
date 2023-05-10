@@ -3,6 +3,8 @@
 #include <boost/dll/import.hpp>
 #include <functional>
 #include <iostream>
+#include <new>
+#include <stdexcept>
 
 namespace grunk {
 
@@ -30,18 +32,23 @@ void PluginRegistry::load_all() {
             if (!fs::is_regular_file(*it)) {
                 continue;
             }
-
+            
             auto ext = it->path().extension().string();
             if ( ext == ".dll" || ext == ".so" )  {
 
                 boost::dll::fs::error_code error;
-                boost::dll::shared_library lib(it->path(), error);
-                if (error) {
-                    continue;
-                }
+                try {
+                    boost::dll::shared_library lib(it->path(), error);
+                    if (error) {
+                        continue;
+                    }
 
-                if (lib.has("create_grunk_plugin")) {
-                    insert_plugin(std::move(lib));
+                    if (lib.has("create_grunk_plugin")) {
+                        insert_plugin(std::move(lib));
+                    }
+                } catch (std::bad_alloc e)
+                {
+                    throw std::runtime_error(std::string("Cannot load grunk plugin\n") + e.what());
                 }
             }
         }
