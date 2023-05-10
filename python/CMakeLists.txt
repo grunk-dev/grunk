@@ -19,7 +19,7 @@ else()
 endif()
 
 pybind11_add_module(_core MODULE
-    grunk.cpp
+    _core.cpp
 )
 target_link_libraries(_core PRIVATE grunk)
 set_target_properties(_core PROPERTIES OUTPUT_NAME grunk/_core)

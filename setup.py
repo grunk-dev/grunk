@@ -143,8 +143,9 @@ setup(
     version=get_version(),
     author="Jan Kleinert",
     author_email="jan.kleinert@dlr.de",
-    description="ToDo",
+    description="Command line tool for and python bindings of grunk",
     long_description="ToDoToDo",
+    entry_points={"console_scripts": ["grunk=grunk.cli:cli"]},
     ext_modules=[CMakeExtension("_core")],
     package_dir={"grunk": "python"},
     packages=['grunk'],
@@ -152,5 +153,10 @@ setup(
     zip_safe=False,
     extras_require={"test": ["pytest>=6.0"]},
     python_requires=">=3.7",
-    install_requires=["conan<2.0.0"]
+    install_requires=[
+        "conan<2.0.0",
+        "Click>=7.0",
+        "libclang",
+        "pyyaml"
+    ]
 )
