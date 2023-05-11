@@ -57,7 +57,7 @@ class Callable(ABC):
 
     def __init__(self, node: clang.cindex.Cursor):
 
-        self.return_type = node.type.get_result().spelling
+        self.return_type = node.type.get_result().get_canonical().spelling
 
         self.num_default_args = 0
         self.arguments = []
