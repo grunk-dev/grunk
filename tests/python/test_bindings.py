@@ -2,11 +2,8 @@ import grunk
 import pytest
 
 def test_integration_hello_world():
-    #TODO: need to copy plugin here
-    gpr = grunk.get_plugin_registry()
-    gpr.prepend_path(".")
-    gpr.load_all()
-    assert gpr.count() == 1
+    grunk.plugin_manager.load("PluginA", install_missing=True)
+    assert grunk.get_plugin_registry().count() == 1
 
     a = grunk.Feature("a", "PluginA::Scalar", 3.3)
     b = grunk.Feature("b", "PluginA::Scalar", 2.2)

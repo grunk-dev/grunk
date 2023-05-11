@@ -135,7 +135,6 @@ class CMakeBuild(build_ext):
             ["cmake", "--build", ".", *build_args], cwd=build_temp, check=True
         )
 
-
 # The information here can also be placed in setup.cfg - better separation of
 # logic and declaration, and simpler if you include description/version in a file.
 setup(
@@ -146,7 +145,7 @@ setup(
     description="Command line tool for and python bindings of grunk",
     long_description="ToDoToDo",
     entry_points={"console_scripts": ["grunk=grunk.cli:cli"]},
-    ext_modules=[CMakeExtension("_core")],
+    ext_modules=[CMakeExtension("grunk._core")],
     package_dir={"grunk": "python"},
     packages=['grunk'],
     cmdclass={"build_ext": CMakeBuild},

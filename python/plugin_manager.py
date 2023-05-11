@@ -4,8 +4,61 @@ from pathlib import Path
 from functools import wraps
 import conans
 from conans.client.conan_api import ConanAPIV1
-from conans.model.ref import ConanFileReference
+from conans.model.ref import ConanFileReference, PackageReference
 from grunk._util import HiddenPrints, reconstruct_package_string
+
+def get_dll_paths(plugin_name, version, in_grunk_dir=True):
+    """returns the shared library directories needed to load a given plugin
+
+    :param plugin_name: The name of the plugin
+    :type plugin_name: Str
+    :param version: version string of the plugin
+    :type version: Str
+    :param in_grunk_dir: if set to true, grunk will search the .grunk directory rather than .conan, defaults to True
+    :type in_grunk_dir: bool, optional
+    :return: a list of directories
+    :rtype: list of strings
+    """
+    ref = reconstruct_package_string(plugin_name, version)
+    if not '@' in ref:
+        ref = ref + '@_/_'
+
+    dll_dir = 'lib'
+    if platform == 'win32':
+        dll_dir = 'bin'
+
+    def _get_dll_paths(package_ref, api):
+        api.create_app()
+        ref = ConanFileReference.loads(package_ref, validate=True)
+        package_layout = api.app.cache.package_layout(ref, short_paths=None)
+
+        deps_graph, _ = api.info(package_ref)
+        package_dirs = []
+        for node in deps_graph.nodes:
+            if node.ref is not None and str(node.ref) in package_ref:
+                pref = PackageReference(ref, node.package_id)
+                prefix = package_layout.package(pref)
+                d = os.path.join(prefix, dll_dir)
+                if os.path.isdir(d):
+                    package_dirs.append(d)
+
+        return package_dirs
+
+    if in_grunk_dir:
+        with PluginManager() as pm:
+            return _get_dll_paths(ref, pm._conan)
+    else:
+        return _get_dll_paths(ref, ConanAPIV1())
+
+
+def load(package_name: str,
+        package_version: str = None,
+        install_missing=False):
+    if install_missing:
+        with PluginManager() as pm:
+            pm.install(package_name, package_version)
+    for d in get_dll_paths(package_name, package_version):
+        grunk.get_plugin_registry().prepend_path(d)
 
 
 class PluginManager:

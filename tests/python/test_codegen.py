@@ -6,8 +6,8 @@ import yaml
 
 def data_dir():
     wd = os.path.dirname(os.path.abspath(__file__))
-    return os.path.join(wd, "..", "test_data")
-
+    return os.path.join(wd, os.pardir, "test_data")
+    
 
 @pytest.fixture(scope="session")
 def parse_Foo_and_Included():
