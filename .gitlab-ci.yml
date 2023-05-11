@@ -124,7 +124,6 @@ test-ubuntu-python:
   - python -m pip install conan==1.58 cmake
   - *configure_conan_ubuntu
   - conan profile update settings.compiler.libcxx=libstdc++11 default
-  - grunk user auth ci_user -p ${CI_JOB_TOKEN}
   script:
    - source venv/bin/activate
    - python -m pip install .[test]
