@@ -117,6 +117,7 @@ test-ubuntu-python:
   image: python:3.9
   stage: test
   before_script: 
+  - apt-get -qq -y update && apt-get -qq -y install clang 
   - python -m venv venv
   - source venv/bin/activate
   - python -m pip install --upgrade pip
@@ -126,6 +127,7 @@ test-ubuntu-python:
   script:
    - source venv/bin/activate
    - python -m pip install .[test]
+   - grunk user auth ci_user -p ${CI_JOB_TOKEN}
    - cd tests/python
    - pytest
   allow_failure: true #TODO: This is allowed to fail until the grunk package manager is setup and PluginA is installable via the plugin manager

@@ -1,0 +1,988 @@
+from abc import ABC, abstractmethod
+import clang.cindex
+from enum import Enum
+import glob
+import itertools
+from pathlib import Path
+import subprocess
+import typing
+import tempfile
+import textwrap
+import warnings
+import os
+import yaml
+
+
+class Decl(ABC):
+    def __init__(self, node):
+        self.node = node
+        self.name = node.spelling
+        self.fully_qualified_name = fully_qualified(node)
+
+    def registered_name(
+        self, prefix="", fully_qualified_names=False, template_args=False
+    ):
+        name = self.name
+        if fully_qualified_names:
+            name = self.fully_qualified_name
+        if prefix:
+            name = prefix + "::" + name
+
+        # mangle name with template arguments
+        # TODO: Make this customizable somehow?
+        postfix = ""
+        for i in range(0, self.node.type.get_num_template_arguments()):
+            postfix = (
+                postfix + "_" + self.node.type.get_template_argument_type(i).spelling
+            )
+        name = name + postfix
+
+        return name
+
+    def header(self):
+        if self.node.location.file:
+            return self.node.location.file.name
+        else:
+            return None
+
+    @abstractmethod
+    def cpp_for_grunk_registration(
+        self, prefix="", fully_qualified_names=False, template_args=True
+    ):
+        pass
+
+
+class Callable(ABC):
+    """A structured representation of a callable object that has arguments"""
+
+    def __init__(self, node: clang.cindex.Cursor):
+
+        self.return_type = node.type.get_result().get_canonical().spelling
+
+        self.num_default_args = 0
+        self.arguments = []
+        for arg in node.get_arguments():
+            self.arguments.append(arg.type.get_canonical().spelling)
+
+            if "=" in [token.spelling for token in arg.get_tokens()]:
+                self.num_default_args = self.num_default_args + 1
+
+
+class FunctionDecl(Decl, Callable):
+    """A structured representation of a function declaration parsed
+    using clang. It stores strings representing the name of the function,
+    the arguments and return type etc.
+    """
+
+    def __init__(self, node: clang.cindex.Cursor, parent=None):
+        Decl.__init__(self, node)
+        Callable.__init__(self, node)
+
+        self.parent = parent
+
+        self.is_static = self.node.is_static_method()
+        self.is_const = self.node.is_const_method()
+        self.is_overloaded = False
+
+        # store function pointer as string
+        self.function_pointer = ""
+        if self.parent:
+            self.function_pointer = "&" + self.parent.type.spelling + "::" + self.name
+        else:
+            self.function_pointer = "&" + self.fully_qualified_name
+
+        # store type of function pointer as string
+        self.function_pointer_type = self.get_function_pointer_type()
+
+        self.is_variadic = self.node.type.is_function_variadic()
+
+    def get_function_pointer_type(self):
+        """constructs the function pointer type"""
+        function_pointer_type = self.return_type
+        if self.parent and not self.is_static:
+            function_pointer_type = (
+                function_pointer_type + " (" + self.parent.type.spelling + "::*)("
+            )
+        else:
+            function_pointer_type = function_pointer_type + " (*)("
+
+        for arg in self.arguments:
+            function_pointer_type = function_pointer_type + arg + ", "
+        if self.arguments:
+            function_pointer_type = function_pointer_type[0:-2]
+        function_pointer_type = function_pointer_type + ")"
+
+        if self.is_const:
+            function_pointer_type = function_pointer_type + " const"
+
+        return function_pointer_type
+
+    def cpp_for_grunk_registration(
+        self, prefix="", fully_qualified_names=False, template_args=True
+    ):
+        """generares the C++ code for registering the function in a grunk plugin
+
+        :return: string containing the C++ statement for registering the function
+        :rtype: str
+        """
+
+        if self.parent:
+            pre = "add_member_function"
+            regname = self.name
+        else:
+            pre = "register_function"
+            regname = self.registered_name(prefix, fully_qualified_names)
+        if self.is_overloaded or template_args:
+            # add template parameters so that compiler can resolve overload
+            prefix = pre + "<" + self.function_pointer_type + ">("
+        else:
+            prefix = "("
+        post = ', "' + regname + '")'
+        if not self.parent:
+            post = post + ";\n"
+
+        s = prefix + self.function_pointer + post
+
+        # add overload for every default argument
+        nargs = len(self.arguments)
+        for idx_last_arg in range(nargs - self.num_default_args, nargs):
+            if self.parent:
+                s = s + "\n."
+            s = s + pre + "([]("
+            if self.parent and not self.is_static:
+                # add implicit first argument
+                s = s + self.parent.type.spelling
+                if self.is_const:
+                    s = s + " const"
+                s = s + "& x, "
+            for i in range(0, idx_last_arg):
+                s = s + self.arguments[i] + " arg" + str(i) + ", "
+            if s[-2:] == ", ":
+                # strip last comma
+                s = s[0:-2]
+            s = s + "){ return "
+            if self.parent and not self.is_static:
+                s = s + "x."
+            if self.parent and self.is_static:
+                s = s + self.parent.type.spelling + "::"
+            if self.parent:
+                s = s + self.parent.type.spelling + "::" + self.name
+            else:
+                s = s + self.fully_qualified_name
+            s = s + "("
+            for i in range(0, idx_last_arg):
+                s = s + "arg" + str(i) + ", "
+            if s[-2:] == ", ":
+                # strip last comma
+                s = s[0:-2]
+            s = s + "); }" + post
+        return s
+
+
+class ClassDecl(Decl):
+    """A structured representation of a class or struct declaration parsed
+    using clang. It stores string representations of the name, base classes,
+    data members, member functions, conversion operators and constructors.
+    """
+
+    def __init__(
+        self,
+        node: clang.cindex.Cursor,
+    ):
+        super().__init__(node)
+
+        self.bases = []
+
+        self.fields = {}
+        self.methods = []
+
+        self.constructors = []
+        self.conversions = []
+
+        self.nested_classes = []
+        self.nested_enums = []
+
+        def is_base(n):
+            return n.kind == clang.cindex.CursorKind.CXX_BASE_SPECIFIER
+
+        def is_ctor(n):
+            return n.kind == clang.cindex.CursorKind.CONSTRUCTOR
+
+        def is_field(n):
+            return n.kind == clang.cindex.CursorKind.FIELD_DECL
+
+        def is_method(n):
+            return n.kind == clang.cindex.CursorKind.CXX_METHOD
+
+        def is_conversion(n):
+            return n.kind == clang.cindex.CursorKind.CONVERSION_FUNCTION
+
+        def is_direct_child(n):
+            return n.semantic_parent == self.node
+
+        def pred(n):
+            return (
+                is_base(n)
+                or is_ctor(n)
+                or is_field(n)
+                or is_method(n)
+                or is_conversion(n)
+                or is_class(n)
+                or is_enum(n)
+            )
+
+        for node in filter_node_list_by_predicate(self.node.get_children(), pred):
+            if is_base(node) and is_public(node):
+                self.bases.append(fully_qualified(node.referenced))
+            elif (
+                is_ctor(node)
+                and is_public(node)
+                and is_available(node)
+                and is_direct_child(node)
+                and not node.is_copy_constructor()
+                and not node.is_move_constructor()
+            ):
+                self.constructors.append(Callable(node))
+            elif is_field(node) and is_public(node) and is_direct_child(node):
+                field = {}
+                field["type"] = node.type.get_canonical().spelling
+                field["pointer"] = "&" + fully_qualified(node)
+                self.fields[node.spelling] = field
+            elif is_method(node) and is_public(node) and is_direct_child(node):
+                fd = FunctionDecl(node, parent=self.node)
+
+                overload = next((f for f in self.methods if f.name == fd.name), None)
+                if overload:
+                    overload.is_overloaded = True
+                    fd.is_overloaded = True
+
+                # variadic functions are currently not supported:
+                # We need to know the exact number of arguments (for now...)
+                if not fd.is_variadic:
+                    self.methods.append(fd)
+            elif is_conversion(node) and is_public(node):
+                self.conversions.append(node.type.get_result().spelling)
+            elif is_class(node) and is_public(node) and is_direct_child(node):
+                self.nested_classes.append(node.spelling)
+            elif is_enum(node) and is_public(node) and is_direct_child(node):
+                self.nested_enums.append(node.spelling)
+
+    def cpp_for_grunk_registration(
+        self, prefix="", fully_qualified_names=False, template_args=True
+    ):
+        """generares the C++ code for registering the type in a grunk plugin
+
+        :return: string containing the C++ statement for registering the type
+        :rtype: str
+        """
+
+        s = (
+            "register_type<"
+            + self.node.type.spelling
+            + '>("'
+            + self.registered_name(prefix, fully_qualified_names)
+            + '")'
+        )
+
+        for b in self.bases:
+            s = s + "\n.add_base<" + b + ">()"
+
+        for c in self.constructors:
+            nargs = len(c.arguments)
+            # for every default argument, add an overload ommitting the argument and all following ones
+            for idx_last_arg in range(nargs - c.num_default_args - 1, nargs):
+                s = s + "\n.add_constructor<"
+                for arg in c.arguments[: idx_last_arg + 1]:
+                    s = s + arg + ", "
+                if idx_last_arg >= 0:
+                    # strip last comma
+                    s = s[0:-2]
+                s = s + ">()"
+
+        for c in self.conversions:
+            s = s + "\n.add_conversion<" + c + ">()"
+
+        for [name, field] in self.fields.items():
+            s = s + "\n.add_data_member(" + field["pointer"] + ', "' + name + '")'
+
+        for method in self.methods:
+            s = s + "\n." + method.cpp_for_grunk_registration()
+            # s = s + "\n.add_member_function"
+            # if method.is_overloaded or template_args:
+            #     s = s + "<"
+            #     s = s + method.function_pointer_type
+            #     s = s + ">"
+            # s = s + "(" + method.function_pointer + ', "' + method.name + '")'
+
+        s = s + ";\n"
+        return s
+
+
+def filter_node_list_by_predicate(
+    nodes: typing.Iterable[clang.cindex.Cursor], predicate: typing.Callable
+) -> typing.Iterable[clang.cindex.Cursor]:
+    """filters a clang node list by cursor predicate
+
+    :param nodes: a list of clang cursors
+    :type nodes: typing.Iterable[clang.cindex.Cursor]
+    :param predicate: a list of clang cursor types
+    :type predicate: a callable that accepts a node and returns bool
+    :return: a list of clang cursors
+    :rtype: typing.Iterable[clang.cindex.Cursor]
+    """
+    for i in nodes:
+        if predicate(i):
+            yield i
+        yield from filter_node_list_by_predicate(i.get_children(), predicate)
+
+
+def is_forward_declaration(node):
+    """returns true if the node is a forward declaration, even if the definitioin
+    is in the same translation unit (e.g. via included files)
+
+    :param node: clang cursor
+    :type node: clang cursor
+    :return: True, if the node is a forward definition
+    :rtype: bool
+    """
+    if not node.get_definition():
+        return True
+
+    return node != node.get_definition()
+
+
+def is_public(node):
+    """returns True, if the clang cursor has a "public" access specifier.
+    This applies specifically to declarations within the body of a class
+    declaration.
+
+    :param node: A clang cursor
+    :type node: clang cursour
+    :return: True, if the clang cursor has a "public" access specifier
+    :rtype: bool
+    """
+    return node.access_specifier == clang.cindex.AccessSpecifier.PUBLIC
+
+
+def is_available(node):
+    """returns True, if the clang cursor is available. For example, deleted
+    constructors or operators are not avaialbe
+
+    :param node: A clang cursor
+    :type node: clang cursour
+    :return: True, if a declaration is available
+    :rtype: bool
+    """
+    return node.availability == clang.cindex.AvailabilityKind.AVAILABLE
+
+
+def is_class(n):
+    return n.kind in [
+        clang.cindex.CursorKind.CLASS_DECL,
+        clang.cindex.CursorKind.STRUCT_DECL,
+    ]
+
+
+def is_enum(n):
+    return n.kind in [
+        clang.cindex.CursorKind.ENUM_DECL,
+        clang.cindex.CursorKind.ENUM_CONSTANT_DECL,
+    ]
+
+
+def is_func(n):
+    return n.kind == clang.cindex.CursorKind.FUNCTION_DECL
+
+
+def fully_qualified(c):
+    """returns the fully qualified name of a node, including all namespaces
+
+    :param c: The clang cursor of the node
+    :type c: clang cursor
+    :return: The fully qualified name
+    :rtype: str
+    """
+    if c is None:
+        return ""
+    elif c.kind == clang.cindex.CursorKind.TRANSLATION_UNIT:
+        return ""
+    else:
+        res = fully_qualified(c.semantic_parent)
+        if res != "":
+            return res + "::" + c.spelling
+    return c.spelling
+
+
+def get_system_include_directories():
+    """gets a list of standard include paths used by clang.
+
+    By default, the parse method does not search the standard include paths.
+    This function creates an empty cpp file and queries clang for the include
+    paths with "clang++ -E -x c++ -v empty_file.cpp".
+
+    The returend include directories can be used in the arguments of parse
+
+    :return: a list of clang's standard include directories
+    :rtype: list(str)
+    """
+
+    include_directories = []
+    cpp = tempfile.NamedTemporaryFile(delete=False)
+    try:
+        result = subprocess.run(
+            ["clang++", "-E", "-x", "c++", "-v", cpp.name], capture_output=True
+        )
+        stderr = result.stderr.decode("utf-8").split("\n")
+
+        directory_section = False
+        for line in stderr:
+            # read all lines between the line starting with '#include' and the one starting with 'End of search list.'.
+            # Ignore all lines that start with '#include'
+            if line.startswith("#include") and not directory_section:
+                directory_section = True
+            if line.startswith("End of search list.") and directory_section:
+                directory_section = False
+            if "#include" not in line and directory_section:
+                include_directories.append(line.strip())
+
+        return include_directories
+
+    finally:
+        cpp.close()
+        os.unlink(cpp.name)
+
+
+def _get_absolute_path(file, directories):
+    """given a path relative to one of the directories specified in the second argument,
+    returns the full path
+
+    :param file: a relative path
+    :type file: str
+    :param directories: list of directories
+    :type directories: list of str
+    """
+    for dir in directories:
+        candidate = os.path.join(dir, file)
+        if os.path.isfile(candidate):
+            return candidate
+    raise IndexError(f"Could not find {file} in {directories}.")
+
+
+def parse_headers(headers: typing.Iterable[str], include_dirs: typing.Iterable[str]):
+    """parses header files for function, struct and class declarations. Returns two
+    dictionaries, the first for the parsed class declarations and the second for the parsed
+    function declarations.
+
+    The keys of the dictionaries are the class/struct/function names and the values are
+    of type ClassDecl, FunctionDecl respectively.
+
+    Headers are not recursively parsed through #include statements, every header that
+    shall be parsed for class and function declarations must be explicitly added
+    to the argument list.
+
+    Still, all #include-ed files must be available in the provided include directories,
+    so that all necessary information to parse the source code is available to clang.
+
+    :param headers: a list of header files. The header files can be declared with absolute file paths of paths relative to
+                    one of the provided include directories
+    :type headers: typing.Iterable[str]
+    :param include_dirs: A list of (absolute) include directories
+    :type include_dirs: typing.Iterable[str]
+    :return: Two dictionaries containing the structured representations of class and function declarations
+    :rtype: tuple(dict, dict)
+    """
+
+    translation_unit = None
+
+    # create a .cpp file including the headers and parse it with libclang
+    cpp = tempfile.NamedTemporaryFile(delete=False)
+    try:
+        for f in headers:
+            cpp.write(str.encode(f'#include "{f.relative_path}"\n'))
+        cpp.close()
+
+        index = clang.cindex.Index.create()
+        compiler_args = ["-x", "c++", "-std=c++17", "-stdlib=libc++"]
+
+        include_directories = include_dirs + get_system_include_directories()
+        for dir in include_directories:
+            compiler_args.append("-I{}".format(dir))
+
+        translation_unit = index.parse(
+            cpp.name,
+            options=clang.cindex.TranslationUnit.PARSE_DETAILED_PROCESSING_RECORD,
+            args=compiler_args,
+        )
+
+    finally:
+        os.unlink(cpp.name)
+
+    if len(translation_unit.diagnostics) > 0:
+        errors = ""
+        is_error = False
+        for diag in translation_unit.diagnostics:
+            errors = errors + diag.__str__()
+            if diag.severity > 2:
+                is_error = True
+        if is_error:
+            raise RuntimeError(
+                "Parsing Source code failed with the following errors:\n"
+                + textwrap.indent(errors, " " * 4)
+            )
+        else:
+            print(textwrap.indent(errors, " " * 4))
+
+    # define predicates on clang cursors to search in the AST
+    def is_in_headers(n):
+        return n.location.file and n.location.file.name in [
+            h.absolute_path() for h in headers
+        ]
+
+    classes = []
+    functions = []
+    for node in filter_node_list_by_predicate(
+        translation_unit.cursor.get_children(),
+        lambda n: is_in_headers(n) and (is_class(n) or is_func(n)),
+    ):
+        if is_class(node):
+            if not is_forward_declaration(node) and node.spelling:
+                cd = ClassDecl(node)
+                classes.append(cd)
+        elif is_func(node):
+            fd = FunctionDecl(node)
+
+            overload = next((o for o in functions if o.name == fd.name), None)
+            if overload:
+                overload.is_overloaded = True
+                fd.is_overloaded = True
+
+            # variadic functions are currently not supported:
+            # We need to know the exact number of arguments (for now...)
+            if not fd.is_variadic:
+                functions.append(fd)
+
+    return classes, functions
+
+
+class CppSource:
+    """a helper class to write cpp header and src files. A CppSource
+    consists of a preamble, followed by an arbitrary number of nested
+    namespaces containing a single content block at the deepest level
+    of nesting.
+
+    This way, the generated code can be added to a subnamespace of an
+    existing code base.
+    """
+
+    def __init__(self, preamble="", contents=""):
+        self.preamble = preamble
+        self.contents = contents
+
+    def __add__(self, other):
+        return CppSource(self.preamble + other.preamble, self.contents + other.contents)
+
+    def string(self, namespaces=[]):
+        """
+        returns the concatenated source file with correct indentation
+        """
+        namespaces_start = ""
+        namespaces_end = ""
+        idx = 0
+        for ns in namespaces:
+            namespaces_start = (
+                namespaces_start + " " * 4 * idx + "namespace " + ns + " {\n"
+            )
+            namespaces_end = (
+                namespaces_end
+                + " " * 4 * (len(namespaces) - idx - 1)
+                + "} // namespace "
+                + namespaces[-idx - 1]
+                + "\n"
+            )
+            idx = idx + 1
+
+        indentation = len(namespaces) * 4
+
+        return (
+            self.preamble
+            + namespaces_start
+            + textwrap.indent(self.contents, " " * indentation)
+            + namespaces_end
+        )
+
+
+class HeaderPath:
+    """stores the path to a header by storing an include directory, and the part of the absolute path relative to that include directory"""
+
+    def __init__(self, include_dir, rel_path):
+        self.include_directory = include_dir
+        self.relative_path = rel_path.strip(os.sep)
+
+    def absolute_path(self):
+        return os.path.join(self.include_directory, self.relative_path)
+
+
+class Module:
+    def __init__(self, config, include_dirs, settings=None):
+
+        self.name = config["name"]
+
+        if settings is None:
+            settings = Module.parse_settings(config)
+            settings
+
+        self.settings = settings
+
+        # set the prefix for all class, struct and function names of this
+        # module
+        prefix_type = self.set_prefix(config)
+        self.fully_qualified_names = False
+        if prefix_type == Prefix.namespaces:
+            self.fully_qualified_names = True
+
+        # set the headers
+        self.headers = []
+        if "headers" in config and config["headers"] is not None:
+            # expand headers which may contain a glob pattern
+            for g in config["headers"]:
+                for dir in include_dirs:
+                    for path in glob.iglob(os.path.join(dir, g), recursive=True):
+                        # TODO: HeaderPath should be created in parse_headers maybe?
+                        h = HeaderPath(dir, path[len(dir) :])
+                        self.headers.append(h)
+
+        # set the extra includes
+        self.extra_includes = []
+        if "extra_includes" in config and config["extra_includes"] is not None:
+            # expand headers which may contain a glob pattern
+            for g in config["extra_includes"]:
+                for dir in include_dirs:
+                    for path in glob.iglob(os.path.join(dir, g)):
+                        self.extra_includes.append(path)
+
+        # set modules
+        self.modules = []
+        if "modules" in config and config["modules"] is not None:
+            for mod_config in config["modules"]:
+                self.modules.append(Module(mod_config, include_dirs, settings))
+
+        # set whitelist and blacklist
+        self.whitelist = None
+        if "whitelist" in config:
+            self.whitelist = config["whitelist"]
+
+        self.blacklist = None
+        if "blacklist" in config:
+            self.blacklist = config["blacklist"]
+
+        # set declarations
+        self.class_declarations = []
+        self.function_declarations = []
+
+    def parse_settings(config):
+        # read and interpret global settings
+        settings = {}
+
+        assert "settings" in config
+        settings = config["settings"]
+
+        if "concatenate" not in settings:
+            settings["concatenate"] = True
+
+        if "customization" not in settings:
+            settings["customization"] = False
+
+        if "namespaces" not in settings:
+            settings["namespaces"] = []
+
+        if "prefix" in settings:
+            prefix = Prefix[settings["prefix"]]
+
+        settings["prefix"] = prefix
+        settings["module_name_parents"] = ""
+
+        return settings
+
+    def set_prefix(self, config):
+        self.prefix = ""
+        eprefix = self.settings["prefix"]
+        if "prefix" in config:
+            # this module overwrites the prefix settings
+            eprefix = Prefix(config["prefix"])
+
+        if eprefix == Prefix.module_name:
+            self.prefix = self.name
+        elif eprefix == Prefix.module_name_full:
+            sep = ""
+            if self.settings["module_name_parents"]:
+                sep = "::"
+            self.prefix = self.settings["module_name_parents"] + sep + self.name
+
+        return eprefix
+
+    def get_all_headers(self):
+        headers = self.headers
+        for mod in self.modules:
+            headers = headers + mod.get_all_headers()
+        return headers
+
+    def whitelisted(self, decl_name):
+        def matches_any(string, patterns):
+            for pattern in patterns:
+                if pattern in decl_name:
+                    return True
+            return False
+
+        keep = True
+        if self.whitelist is not None:
+            keep = matches_any(decl_name, self.whitelist)
+        if self.blacklist is not None:
+            keep = keep and not matches_any(decl_name, self.blacklist)
+        return keep
+
+    def grab_declarations(self, declarations):
+
+        for decl in declarations:
+            if decl.header() in [
+                h.absolute_path() for h in self.headers
+            ] and self.whitelisted(decl.fully_qualified_name):
+                if isinstance(decl, ClassDecl):
+                    # filter fields for whitelist
+                    fields = {}
+                    for key, value in decl.fields.items():
+                        if self.whitelisted(decl.fully_qualified_name + "::" + key):
+                            fields[key] = value
+                    decl.fields = fields
+
+                    # filter methods for whitelist
+                    methods = []
+                    for method in decl.methods:
+                        if self.whitelisted(method.fully_qualified_name):
+                            methods.append(method)
+                    decl.methods = methods
+
+                    self.class_declarations.append(decl)
+                elif isinstance(decl, FunctionDecl):
+                    self.function_declarations.append(decl)
+
+        for mod in self.modules:
+            mod.grab_declarations(declarations)
+
+    def generate_cpp_source(self, main_module_name):
+
+        preamble = ""
+        contents = ""
+
+        for header in self.headers:
+            preamble = preamble + f'#include "{header.relative_path}"\n'
+        for header in self.extra_includes:
+            preamble = preamble + f'#include "{os.path.basename(header)}"\n'
+
+        contents = "// register types\n\n"
+        for decl in self.class_declarations:
+            contents = (
+                contents
+                + decl.cpp_for_grunk_registration(
+                    self.prefix, self.fully_qualified_names
+                )
+                + "\n"
+            )
+
+        contents = contents + "// register functions\n\n"
+
+        for decl in self.function_declarations:
+            contents = (
+                contents
+                + decl.cpp_for_grunk_registration(
+                    self.prefix, self.fully_qualified_names
+                )
+                + "\n"
+            )
+
+        contents = (
+            f"\n// register module {self.name}\n"
+            + f"void {main_module_name}Plugin::{self.name}_init() const\n{{\n"
+            + textwrap.indent(contents, " " * 4)
+            + "}\n"
+        )
+
+        return CppSource(preamble, contents)
+
+    def collect_cpp_source(self, main_module_name=None):
+
+        # not pretty...better be explicit
+        if main_module_name is None:
+            main_module_name = self.name
+
+        cpp_source = {}
+        cpp_source[self.name] = self.generate_cpp_source(main_module_name)
+        for mod in self.modules:
+            cpp_source = {**cpp_source, **mod.collect_cpp_source(main_module_name)}
+        return cpp_source
+
+
+def create_plugin_src(name, settings, module_names):
+    """creates the source files for the grunk plugin"""
+
+    version = settings["version"]
+    customization = settings["customization"]
+
+    preamble = "#pragma once\n\n#include <grunk/grunk.hpp>\n\n"
+
+    extra = ""
+    if customization:
+        extra = extra + "    void custom_init() const;"
+
+    contents = f"""
+//TODO: Shoul we make this part of reflect?
+template <typename T>
+inline reflect::TypeFactory<T> modify_type()
+{{
+    return reflect::TypeFactory<T>(*reflect::details::resolve<T>());
+}}
+
+class {name}Plugin : public grunk::IPlugin
+{{
+public:
+    {name}Plugin() = default;
+
+    virtual std::string name() const override final;
+    virtual std::string version() const override final;
+    virtual void init() const override final;
+private:
+"""
+
+    for mod_name in module_names:
+        contents = contents + f"    void {mod_name}_init() const;\n"
+
+    contents = (
+        contents
+        + f"""{extra}
+}};
+GRUNK_REGISTER_PLUGIN({name}Plugin)\n
+"""
+    )
+
+    header = CppSource(preamble, contents)
+
+    preamble = f'#include "{name}Plugin.hpp"\n'
+
+    init_calls = ""
+    for mod_name in module_names:
+        init_calls = init_calls + f"{mod_name}_init();\n"
+    if customization:
+        init_calls = init_calls + "\n// custom initialization\n" + "custom_init();\n"
+
+    contents = f"""
+std::string {name}Plugin::name() const
+{{
+    return "{name}";
+}}
+
+std::string {name}Plugin::version() const
+{{
+    return "{version}";
+}}
+
+void {name}Plugin::init() const
+{{
+
+    // initialize modules
+{textwrap.indent(init_calls, ' '*4)}
+}}\n
+"""
+
+    cpp = CppSource(preamble, contents)
+    return header, cpp
+
+
+class Prefix(Enum):
+    none = 0
+    module_name_full = 1
+    module_name = 2
+    namespaces = 3
+
+    @classmethod
+    def _missing_(cls, value):
+        return cls.none
+
+
+def generate(config_file: str, output_dir: str, include_dirs: typing.Iterable[str]):
+    """generates the source code for the grunk plugin
+
+    :param config_file: A yml configuration file
+    :type config_file: str
+    :param output_dir: the output directory for the generated code
+    :type output_dir: str
+    :param include_dirs: a list of include directories for the clang parser
+    :type include_dirs: typing.Iterable[str]
+    """
+
+    # create output_dir if it does not exist
+    Path(output_dir).mkdir(parents=True, exist_ok=True)
+
+    with open(config_file, "r") as file:
+
+        config = yaml.safe_load(file)
+
+        # recursively create all modules
+        main_module = Module(config, include_dirs)
+
+        # collect the list of all headers of all modules
+        headers = main_module.get_all_headers()
+
+        # parse the source code once for all modules
+        classes, functions = parse_headers(headers, include_dirs)
+
+        # recursively collect all declarations belonging to the modules
+        main_module.grab_declarations(classes + functions)
+
+        # get the C++ source code of all modules in a "flat" dictionary
+        modules_src = main_module.collect_cpp_source()
+
+        namespaces = main_module.settings["namespaces"]
+
+        # create source code for the grunk plugin
+
+        hpp, cpp = create_plugin_src(
+            main_module.name, main_module.settings, modules_src.keys()
+        )
+
+        hpp_file = os.path.join(output_dir, f"{main_module.name}Plugin.hpp")
+        with open(hpp_file, "w") as f:
+            f.write(hpp.string(namespaces))
+
+        cpp_file = os.path.join(output_dir, f"{main_module.name}Plugin.cpp")
+        with open(cpp_file, "w") as f:
+            f.write(cpp.string(namespaces))
+
+        if main_module.settings["concatenate"]:
+
+            # create .cpp file
+            src = CppSource()
+            for [_, source] in modules_src.items():
+                src = src + source
+
+            src.preamble = src.preamble + f'#include "{main_module.name}Plugin.hpp"\n'
+            src.preamble = src.preamble + "\n#include <grunk/grunk.hpp>\n"
+            cpp = src.string(namespaces)
+
+            cpp_file = os.path.join(output_dir, f"{main_module.name}.cpp")
+            with open(cpp_file, "w") as f:
+                f.write(cpp)
+        else:
+
+            for [module_name, src] in modules_src.items():
+
+                # create .cpp file
+                src.preamble = src.preamble + f'#include "{module_name}Plugin.hpp"\n'
+                src.preamble = src.preamble + "\n#include <grunk/grunk.h>\n"
+                cpp = src.string(namespaces)
+
+                cpp_file = os.path.join(output_dir, f"{module_name}.cpp")
+                with open(cpp_file, "w") as f:
+                    f.write(cpp)
+
+
+# To Do:
+# - parse docstrings
