@@ -1,6 +1,8 @@
 import os
 import sys
-
+from grunk.plugin_manager import PluginManager
+from conans.client.conan_api import ConanAPIV1
+from conans.model.ref import ConanFileReference, PackageReference
 
 class HiddenPrints:
     """This class is used to suppress output to stdout.
@@ -132,3 +134,45 @@ def reconstruct_package_string(
         user_channel = "@{}/{}".format(user, channel)
 
     return "{}{}".format(package_version, user_channel)
+
+
+def get_dll_paths(plugin_name, version, in_grunk_dir=True):
+    """returns the shared library directories needed to load a given plugin
+
+    :param plugin_name: The name of the plugin
+    :type plugin_name: Str
+    :param version: version string of the plugin
+    :type version: Str
+    :param in_grunk_dir: if set to true, grunk will search the .grunk directory rather than .conan, defaults to True
+    :type in_grunk_dir: bool, optional
+    :return: a list of directories
+    :rtype: list of strings
+    """
+    ref = reconstruct_package_string(plugin_name, version)
+    if not '@' in ref:
+        ref = ref + '@_/_'
+
+    dll_dir = 'lib'
+    if sys.platform == 'win32':
+        dll_dir = 'bin'
+
+    def _get_dll_paths(package_ref, api):
+        api.create_app()
+        ref = ConanFileReference.loads(package_ref, validate=True)
+        package_layout = api.app.cache.package_layout(ref, short_paths=None)
+
+        deps_graph, _ = api.info(package_ref)
+        package_dirs = []
+        for node in deps_graph.nodes:
+            if node.ref is not None and str(node.ref) in package_ref:
+                pref = PackageReference(ref, node.package_id)
+                dir = package_layout.package(pref)
+                package_dirs.append(os.path.join(dir, dll_dir))
+
+        return package_dirs
+
+    if in_grunk_dir:
+        with PluginManager() as pm:
+            return _get_dll_paths(ref, pm._conan)
+    else:
+        return _get_dll_paths(ref, ConanAPIV1())
