@@ -124,9 +124,11 @@ test-ubuntu-python:
   - python -m pip install conan==1.58 cmake
   - *configure_conan_ubuntu
   - conan profile update settings.compiler.libcxx=libstdc++11 default
+  - grunk user auth ci_user -p ${CI_JOB_TOKEN}
   script:
    - source venv/bin/activate
    - python -m pip install .[test]
+   - grunk user auth ci_user -p ${CI_JOB_TOKEN}
    - cd tests/python
    - pytest
   allow_failure: true #TODO: This is allowed to fail until the grunk package manager is setup and PluginA is installable via the plugin manager
