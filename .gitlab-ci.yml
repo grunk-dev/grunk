@@ -128,7 +128,6 @@ test-ubuntu-python:
    - source venv/bin/activate
    - python -m pip install .[test]
    - grunk user auth ci_user -p ${CI_JOB_TOKEN}
-   - cd tests/python
    - pytest
 
 build-windows:
@@ -169,7 +168,7 @@ test-windows-python:
   tags:
   - windows
   - docker
-  image: abrarov/msvc-2019
+  image: stabletec/build-core:windows-2019
   stage: test
   before_script: 
   - python -m venv venv
@@ -181,7 +180,7 @@ test-windows-python:
   script:
    - source venv/bin/activate
    - python -m pip install .[test]
-   - cd tests/python
+   - grunk user auth ci_user -p ${CI_JOB_TOKEN}
    - pytest
 
 create-conan-package-ubuntu:
