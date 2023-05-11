@@ -130,7 +130,6 @@ test-ubuntu-python:
    - grunk user auth ci_user -p ${CI_JOB_TOKEN}
    - cd tests/python
    - pytest
-  allow_failure: true #TODO: This is allowed to fail until the grunk package manager is setup and PluginA is installable via the plugin manager
 
 build-windows:
   #note: variables BUILD_DIR, BUILD_TYPE and COMPILER will be populated thru yaml anchor "windows_config"
@@ -184,7 +183,6 @@ test-windows-python:
    - python -m pip install .[test]
    - cd tests/python
    - pytest
-  allow_failure: true #TODO: This is allowed to fail until the grunk package manager is setup and PluginA is installable via the plugin manager
 
 create-conan-package-ubuntu:
 # This job creates new release packages. It should only run on git tags
