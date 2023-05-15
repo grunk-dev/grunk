@@ -191,6 +191,9 @@ class PluginManager:
             install_dir = self.grunk_dir
 
         if package_version is None:
+            # The version ranges aren't searched for in the remotes https://github.com/conan-io/conan/issues/3113
+            # This can be fixed once we migrate to conan 2.0
+            raise RuntimeError("As of now, a version must explicitly be specified.")
             package_version = "[>0.0.1]"
 
         package_str = reconstruct_package_string(

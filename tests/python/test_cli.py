@@ -22,6 +22,6 @@ def test_cli():
 
 def test_cli_install():
     runner = CliRunner()
-    result = runner.invoke(cli.cli, ["install", "nonexistent"])
+    result = runner.invoke(cli.cli, ["install", "nonexistent/1.0.0"])
     assert result.exit_code == 0
-    assert 'Could not find package "nonexistent" in remotes.\n' in result.output
+    assert 'Could not find package "nonexistent/1.0.0" in remotes.\n' in result.output

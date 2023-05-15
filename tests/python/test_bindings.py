@@ -2,7 +2,7 @@ import grunk
 import pytest
 
 def test_integration_hello_world():
-    grunk.load("PluginA", install_missing=True)
+    grunk.load("PluginA", version="0.1.0", install_missing=True)
     assert grunk.get_plugin_registry().count() == 1
 
     a = grunk.Feature("a", "PluginA::Scalar", 3.3)
