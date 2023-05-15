@@ -29,7 +29,7 @@ def get_dll_paths(plugin_name, version, in_grunk_dir=True):
 
     def _get_dll_paths(package_ref, api):
         api.create_app()
-        ref = ConanFileReference.loads(package_ref, validate=True)
+        ref = ConanFileReference.loads(package_ref)
         package_layout = api.app.cache.package_layout(ref, short_paths=None)
 
         deps_graph, _ = api.info(package_ref)
@@ -187,7 +187,7 @@ class PluginManager:
             package_name, package_version, user, channel
         )
 
-        ref = ConanFileReference.loads(package_str, validate=True)
+        ref = ConanFileReference.loads(package_str)
 
         self._conan.install_reference(
             ref,
