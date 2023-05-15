@@ -2,12 +2,23 @@ import os
 from sys import platform
 from pathlib import Path
 from functools import wraps
-import conans
 from conans.client.conan_api import ConanAPIV1
 from conans.model.ref import ConanFileReference, PackageReference
 from grunk._util import HiddenPrints, reconstruct_package_string
 
-def get_dll_paths(plugin_name, version, in_grunk_dir=True):
+def get_latest_package_version(package_name, api):
+    # Get the package reference for the specified package name
+    package_ref = ConanFileReference.loads(package_name, validate=False)
+    res = api.search_recipes(package_ref.name)
+    assert(not res['error']) #TODO: Better error handling here
+    ids = []
+    for r in [result for result in res['results']]:
+        for i in r['items']:
+            ids.append(i['recipe']['id'])
+    version_numbers = [id.split("/")[1] for id in ids]
+    return max(version_numbers)
+
+def get_dll_paths(plugin_name, version = None, in_grunk_dir=True):
     """returns the shared library directories needed to load a given plugin
 
     :param plugin_name: The name of the plugin
@@ -19,17 +30,19 @@ def get_dll_paths(plugin_name, version, in_grunk_dir=True):
     :return: a list of directories
     :rtype: list of strings
     """
-    ref = reconstruct_package_string(plugin_name, version)
-    if not '@' in ref:
-        ref = ref + '@_/_'
 
     dll_dir = 'lib'
     if platform == 'win32':
         dll_dir = 'bin'
 
-    def _get_dll_paths(package_ref, api):
+    def _get_dll_paths(plugin_name, version, api):
+
+        if version is None:
+            version = get_latest_package_version(plugin_name, api)
+        package_ref = f"{plugin_name}/{version}@_/_"
+
         api.create_app()
-        ref = ConanFileReference.loads(package_ref)
+        ref = ConanFileReference.loads(package_ref, validate=False)
         package_layout = api.app.cache.package_layout(ref, short_paths=None)
 
         deps_graph, _ = api.info(package_ref)
@@ -46,9 +59,9 @@ def get_dll_paths(plugin_name, version, in_grunk_dir=True):
 
     if in_grunk_dir:
         with PluginManager() as pm:
-            return _get_dll_paths(ref, pm._conan)
+            return _get_dll_paths(plugin_name, version, pm._conan)
     else:
-        return _get_dll_paths(ref, ConanAPIV1())
+        return _get_dll_paths(plugin_name, version, ConanAPIV1())
 
 
 class PluginManager:
@@ -148,6 +161,7 @@ class PluginManager:
         user: str = None,
         channel: str = None,
         install_dir: str = None,
+        update = False
     ):
         """
         installs a package reference.
@@ -167,9 +181,6 @@ class PluginManager:
 
         """
 
-        # don't update packages by default
-        update = False
-
         # To Do: It would be nice to support installation from conancenter. Then we wouldn't
         # want to use the default_user and default_channel here
         if user is None:
@@ -181,7 +192,6 @@ class PluginManager:
 
         if package_version is None:
             package_version = "[>0.0.1]"
-            update = True
 
         package_str = reconstruct_package_string(
             package_name, package_version, user, channel

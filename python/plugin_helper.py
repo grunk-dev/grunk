@@ -9,3 +9,4 @@ def load(package_name: str,
             pm.install(package_name, package_version)
     for d in get_dll_paths(package_name, package_version):
         get_plugin_registry().prepend_path(d)
+    get_plugin_registry().load_all()
