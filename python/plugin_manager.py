@@ -51,16 +51,6 @@ def get_dll_paths(plugin_name, version, in_grunk_dir=True):
         return _get_dll_paths(ref, ConanAPIV1())
 
 
-def load(package_name: str,
-        package_version: str = None,
-        install_missing=False):
-    if install_missing:
-        with PluginManager() as pm:
-            pm.install(package_name, package_version)
-    for d in get_dll_paths(package_name, package_version):
-        grunk.get_plugin_registry().prepend_path(d)
-
-
 class PluginManager:
     """
     The PluginManager class is used to setup the conan directory and some conan variables and settings.
@@ -203,7 +193,7 @@ class PluginManager:
             ref,
             install_folder=install_dir,
             generators=["deploy"],
-            remote_name=self.remote,
+            # remote_name=self.remote,
             build=["missing"],
             update=update,
         )
