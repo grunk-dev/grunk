@@ -130,10 +130,11 @@ public:
      * This will return the data member wrapped in a Feature and register
      * the dependency of the returned feature to this.
      * 
+     * @param id id to be assigned to the Feature wrapping the retrieved data member
      * @param memberName  The string representation of the member name
      * @return DynamicFeature The data member wrapped in a Feature
      */
-    ActionPtr<reflect::DynamicFunction> get(std::string const& memberName) const;
+    ActionPtr<reflect::DynamicFunction> get(std::string const& id, std::string const& memberName) const;
 
     /**
      * @brief invoke a member function of the wrapped object and register
@@ -145,7 +146,7 @@ public:
      * @return DynamicFeature The return value of the member function 
      */
     template <typename... Args>
-    decltype(auto) invoke(std::string const& memberFunName, Feature<Args> const&... args) const;
+    decltype(auto) invoke(std::string const& id, std::string const& memberFunName, Feature<Args> const&... args) const;
 
     reflect::TypeDescriptor const* get_type_descriptor() const {
         return type_descriptor;

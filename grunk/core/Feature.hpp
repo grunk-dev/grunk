@@ -263,14 +263,15 @@ public:
      * the dependency of the returned feature to this.
      *
      * @tparam MemberPtr Type of the MemberPointer
+     * @param id id to be assigned to the Feature wrapping the retrieved data member
      * @param ptr Pointer to the data member of the the wrapped object's type
      * @return decltype(auto) The data member wrapped in a Feature
      */
     template <typename MemberPtr>
-    decltype(auto) get(MemberPtr ptr) const
+    decltype(auto) get(std::string const& id, MemberPtr ptr) const
     {
         return action(
-            "", //To Do
+            id,
             [=](auto const& wrapped){ 
                 return wrapped.*ptr; 
             }, 
@@ -284,15 +285,16 @@ public:
      * 
      * @tparam MemberFunPtr Type of the member funtion pointer
      * @tparam Args The arguments expected by the member function
+     * @param id id to be assigned to the Feature wrapping the return value(s)
      * @param funPtr The pointer to the member function of the wrapped object's type
      * @param args The arguments expected by the member function, wrapped in Feature instances
      * @return decltype(auto) The return value of the member function, wrapped in a Feature instance
      */
     template <typename MemberFunPtr, typename... Args>
-    decltype(auto) invoke(MemberFunPtr funPtr, Feature<Args> const&... args) const
+    decltype(auto) invoke(std::string const& id, MemberFunPtr funPtr, Feature<Args> const&... args) const
     {
         return action(
-            "", // TO DO
+            id,
             [=](T const& wrapped, auto const&... arguments){
                 return (wrapped.*funPtr)(arguments...);
             },

@@ -48,10 +48,10 @@ namespace grunk {
     }
 
     template <typename... Args>
-    decltype(auto) DynamicFeature::invoke(std::string const& memberFunName, Feature<Args> const&... args) const
+    decltype(auto) DynamicFeature::invoke(std::string const& id, std::string const& memberFunName, Feature<Args> const&... args) const
     {
         return action(
-            param().id() + "::" + memberFunName, // TODO: How would we name this by default?
+            id,
             type_descriptor->get_name() + "::" + memberFunName,
             *this,
             args...
