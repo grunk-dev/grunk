@@ -109,8 +109,10 @@ PYBIND11_MODULE(_core, m)
     py::implicitly_convertible<int, reflect::DynamicObject>();
 
     dynobj.def(py::init<std::string>())
-    .def("as_str", static_cast<int (reflect::DynamicObject::*)() const>(&reflect::DynamicObject::as<std::string>));
+    .def("as_str", static_cast<std::string (reflect::DynamicObject::*)() const>(&reflect::DynamicObject::as<std::string>));
     py::implicitly_convertible<std::string, reflect::DynamicObject>();
+
+    m_reflect.def("help", &reflect::help);
 
     // dynamic
 
