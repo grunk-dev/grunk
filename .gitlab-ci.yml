@@ -125,7 +125,7 @@ test-ubuntu-python:
    - source venv/bin/activate
    - python -m pip install .[test]
    - grunk user auth ci_user -p ${CI_JOB_TOKEN}
-   - pytest
+   - pytest -s
 
 build-windows:
   #note: variables BUILD_DIR, BUILD_TYPE and COMPILER will be populated thru yaml anchor "windows_config"
@@ -179,7 +179,7 @@ test-windows-python:
    - ./venv/Scripts/Activate.ps1
    - python -m pip install .[test]
    - grunk user auth ci_user -p ${CI_JOB_TOKEN}
-   - pytest
+   - pytest -s
 
 create-conan-package-ubuntu:
 # This job creates new release packages. It should only run on git tags
