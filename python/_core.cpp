@@ -97,12 +97,20 @@ PYBIND11_MODULE(_core, m)
     auto m_reflect = m.def_submodule("reflect", "python bindings for reflect");
 
     //TODO: I seem to have to do this for all builtin types!
-    py::class_<reflect::DynamicObject>(m_reflect, "DynamicObject")
-    .def(py::init<double>())
-    .def("get", static_cast<reflect::DynamicObject (reflect::DynamicObject::*)(std::string const&) const>(&reflect::DynamicObject::get))
+    auto dynobj = py::class_<reflect::DynamicObject>(m_reflect, "DynamicObject");
+    dynobj.def("get", static_cast<reflect::DynamicObject (reflect::DynamicObject::*)(std::string const&) const>(&reflect::DynamicObject::get));
+    
+    dynobj.def(py::init<double>())
     .def("as_float", static_cast<double (reflect::DynamicObject::*)() const>(&reflect::DynamicObject::as<double>));
-
     py::implicitly_convertible<double, reflect::DynamicObject>();
+
+    dynobj.def(py::init<int>())
+    .def("as_int", static_cast<int (reflect::DynamicObject::*)() const>(&reflect::DynamicObject::as<int>));
+    py::implicitly_convertible<int, reflect::DynamicObject>();
+
+    dynobj.def(py::init<std::string>())
+    .def("as_str", static_cast<int (reflect::DynamicObject::*)() const>(&reflect::DynamicObject::as<std::string>));
+    py::implicitly_convertible<std::string, reflect::DynamicObject>();
 
     // dynamic
 
