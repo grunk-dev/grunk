@@ -200,7 +200,7 @@ class PluginManager:
             package_name, package_version, user, channel
         )
 
-        ref = ConanFileReference.loads(package_str)
+        ref = ConanFileReference.loads(package_str, validate=False)
 
         self._conan.install_reference(
             ref,
