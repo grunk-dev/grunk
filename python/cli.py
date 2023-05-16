@@ -120,7 +120,7 @@ def list():
 
     This includes both grunk plugins and their dependencies.
     """
-    packages = pm.list()
+    packages = pm.list_plugins()
     packages.sort()
     for p in packages:
         print(p)

@@ -155,7 +155,7 @@ class PluginManager:
                 gcc_major = int(gcc_version.split(".")[0])
 
                 if gcc_major > 5 and not libcxx == "libstdc++11":
-                    s["compiler.libcxx"] = "libstdc++11"
+                    self._conan.update_profile("default", "settings.compiler.libcxx", "libstdc++11")
 
     def __enter__(self):
         """
@@ -308,4 +308,4 @@ def command(f):
 install = command(PluginManager.install)
 authenticate = command(PluginManager.authenticate)
 remove = command(PluginManager.remove)
-list = command(PluginManager.list)
+list_plugins = command(PluginManager.list)
