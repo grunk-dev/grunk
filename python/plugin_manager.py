@@ -6,6 +6,26 @@ from conans.client.conan_api import ConanAPIV1
 from conans.model.ref import ConanFileReference, PackageReference
 from grunk._util import HiddenPrints, reconstruct_package_string
 
+
+def is_installed(package_name, version):
+
+    with PluginManager() as pm:
+        package_ref = f"{package_name}/{version}"
+
+        # first search recipes
+        result = pm._conan.search_recipes(package_ref)
+        if result['error']:
+            raise RuntimeError("Error searching for recipes")
+        if len(result['results']) == 0:
+            return False
+
+        # next search packages
+        result = pm._conan.search_packages(reference=package_ref, remote_name=None)
+        if result['error']:
+            raise RuntimeError("Error searching for packages")
+        return len(result['results']) > 0
+
+
 def get_latest_package_version(package_name, api):
     # Get the package reference for the specified package name
     package_ref = ConanFileReference.loads(package_name, validate=False)
