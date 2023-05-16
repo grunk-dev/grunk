@@ -228,7 +228,6 @@ class PluginManager:
             build=["missing"],
             update=update,
         )
-
     def authenticate(
         self, user: str, password: str, remote_name: str, skip_auth: bool = False
     ):
@@ -259,6 +258,28 @@ class PluginManager:
         return self._conan.authenticate(user, password, remote_name, skip_auth)
 
 
+    def remove(self, pattern):
+        """
+        removes plugin(s) matching a given pattern
+
+        :param pattern: All packages matching this pattern will be removed
+        """
+
+        #To Do: Provide more options
+        return self._conan.remove(pattern, query=None, packages=None, builds=None, src=False, force=False,
+               remote_name=None, outdated=False)
+
+
+    def list(self):
+        result = self._conan.search_recipes('')
+        if result['error']:
+            raise RuntimeError("Error generating list of packages")
+        packages = []
+        for d in result['results']:
+            for i in d['items']:
+                packages.append(i['recipe']['id'])
+        return packages
+
 def command(f):
     """Decorator for PluginManager methods to be used as free functions
 
@@ -286,3 +307,5 @@ def command(f):
 # decorate PluginManager methods
 install = command(PluginManager.install)
 authenticate = command(PluginManager.authenticate)
+remove = command(PluginManager.remove)
+list = command(PluginManager.list)

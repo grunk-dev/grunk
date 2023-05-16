@@ -106,6 +106,26 @@ def auth(user_name, password, remote, skip_auth):
 
 
 @cli.command()
+@click.argument("pattern")
+def remove(pattern):
+    """
+    remove plugins matching a given pattern from the local cache.
+    """
+    return pm.remove(pattern)
+
+@cli.command()
+def list():
+    """
+    Lists packages installed in the local cache
+
+    This includes both grunk plugins and their dependencies.
+    """
+    packages = pm.list()
+    packages.sort()
+    for p in packages:
+        print(p)
+
+@cli.command()
 @click.option("-o", "--output-dir", help="output directory for generated source files")
 @click.option("-c", "--config-file", help="path to the yml configuration file")
 @click.option("-i", "--include_dir", help="include_directory", multiple=True)
