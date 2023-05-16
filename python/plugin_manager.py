@@ -129,35 +129,33 @@ class PluginManager:
             self._conan.remote_add(self.remote, self.remote_url)
 
         # update compiler.libcxx in default profile
-        if platform == "linux" or platform == "linux2":
+        if "default" not in self._conan.profile_list():
+            with HiddenPrints():  # suppress print statements. conan warns about wrong libcxx when creating the profile
+                self._conan.create_profile("default", detect=True)
 
-            if "default" not in self._conan.profile_list():
-                with HiddenPrints():  # suppress print statements. conan warns about wrong libcxx when creating the profile
-                    self._conan.create_profile("default", detect=True)
+        s = self._conan.read_profile("default").settings
 
-            s = self._conan.read_profile("default").settings
+        # update libcxx for GCC>=5
+        if (
+            "compiler" in s
+            and s["compiler"] == "gcc"
+            and "compiler.version" in s
+            and int(s["compiler.version"]) >= 5
+        ):
+            if "compiler.libcxx" in s:
 
-            # update libcxx for GCC>=5
-            if (
-                "compiler" in s
-                and s["compiler"] == "gcc"
-                and "compiler.version" in s
-                and int(s["compiler.version"]) >= 5
-            ):
-                if "compiler.libcxx" in s:
+                libcxx = s["compiler.libcxx"]
 
-                    libcxx = s["compiler.libcxx"]
+                def get_gcc_version():
+                    version_str = os.popen("gcc --version").read()
+                    first_line = version_str.split("\n")[0]
+                    return first_line.rsplit(" ", 1)[-1]
 
-                    def get_gcc_version():
-                        version_str = os.popen("gcc --version").read()
-                        first_line = version_str.split("\n")[0]
-                        return first_line.rsplit(" ", 1)[-1]
+                gcc_version = get_gcc_version()
+                gcc_major = int(gcc_version.split(".")[0])
 
-                    gcc_version = get_gcc_version()
-                    gcc_major = int(gcc_version.split(".")[0])
-
-                    if gcc_major > 5 and not libcxx == "libstdc++11":
-                        s["compiler.libcxx"] = "libstdc++11"
+                if gcc_major > 5 and not libcxx == "libstdc++11":
+                    s["compiler.libcxx"] = "libstdc++11"
 
     def __enter__(self):
         """
