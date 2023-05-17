@@ -4,6 +4,9 @@ struct MyDouble {
 
     MyDouble(double v) : value(v) {}
     double value;
+    MyDouble half() const {
+        return {value*0.5};
+    }
 };
 
 MyDouble add(MyDouble const& l, MyDouble const& r) {
@@ -31,6 +34,7 @@ public:
         register_type<MyDouble>("MyDouble")
         .add_constructor<double>()
         .add_data_member(&MyDouble::value, "value")
+        .add_member_function(&MyDouble::half, "half")
         .add_member_function(
             [](MyDouble const& d){
                 YAML::Node out(d.value);
