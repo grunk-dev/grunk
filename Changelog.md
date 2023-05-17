@@ -1,3 +1,14 @@
+# v0.2.0
+
+ - Add a CLI subcommand to execute grunk recipes from the command line (#64)
+ - Fix bug related to the fully qualified name of a `reflect::DynamicFunction`, when serializing a `DynamicAction` to yaml (#61)
+ - Support an additional means of customizing the code generation: The 
+   generation of registration code is moved to a `CodeGenerator` class, that can be subclassed. The subclassed class can be provided using a config file (#73)
+ - Added functionality to automatically load and install plugins using the conan api under the hood (#66)
+ - `DynamicFeature::get`, `Feature::get`, `DynamicFeature::invoke` and `Feature::invoke` have id as first parameter for consistency with `action` (#55)
+ - Create CLI and move package manager and code generator from grunkan to grunk (#65)
+ - Add python bindings using pybind11 (#63)
+
 # v0.1.3
 
  - Avoid unnecessary copy of return value from `grunk::action` [#58](https://gitlab.dlr.de/paradigms/grunk/-/issues/58)
