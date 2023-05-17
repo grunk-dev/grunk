@@ -467,6 +467,51 @@ def test_default_arguments():
     assert fun.num_default_args == 1
 
 
+def test_custom_registration():
+
+    include_dir = data_dir()
+    classes, functions = parse_headers(
+        [
+            HeaderPath(include_dir, "StandardTransientTest.hxx"),
+        ],
+        [
+            include_dir,
+        ],
+    )
+
+    class MyCodeGen(CodeGenerator):
+
+        def cpp_type_register_type(self, decl):
+            if 'Standard_Transient' in decl.bases:
+                return (
+                    "register_type<"
+                    + decl.node.type.spelling
+                    + ', opencascade_handle'
+                    + '>("'
+                    + decl.registered_name(
+                        self.prefix, self.fully_qualified_names
+                    )
+                    + '")'
+                )
+            else:
+                return super().cpp_type_register_type(decl)
+
+
+    c = MyCodeGen()
+
+    assert len(classes) == 3
+    assert classes[0].name == 'Standard_Transient'
+    assert classes[1].name == 'Foo'
+    assert classes[2].name == 'Bar'
+
+    foo_code = c.cpp_register_type(classes[1])
+    assert foo_code.startswith("register_type<Foo, opencascade_handle>")
+
+    bar_code = c.cpp_register_type(classes[2])
+    assert bar_code.startswith("register_type<Bar>")
+
+
+
 # TODO:
 # - test generated code (smaller header, actually compile with clang)
 # - test prefix variants
