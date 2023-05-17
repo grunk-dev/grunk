@@ -163,13 +163,8 @@ def exec(grunk_recipe, install_missing):
         recipe = yaml.load(file, Loader=SafeLoaderIgnoreUnknown)
     
     for name, version in recipe['uses'].items():
-        print(name, version)
         if not name == 'grunk':
-            print(name, version)
             grunk.load(name, version, install_missing)
-
-    print(grunk.get_plugin_registry().count())
-    grunk.get_plugin_registry().print_plugins()
 
     # parse recipe with grunk and evaluate all nodes
     nodes = grunk.read(grunk_recipe)
