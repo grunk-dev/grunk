@@ -16,7 +16,7 @@ from conans.errors import ConanException
 @click.version_option(grunk.__version__)
 def cli():
     """
-    command line interface fro grunk.
+    command line interface for grunk.
     """
     pass
 
@@ -114,7 +114,7 @@ def remove(pattern):
     return pm.remove(pattern)
 
 @cli.command()
-def list():
+def avail():
     """
     Lists packages installed in the local cache
 
@@ -124,6 +124,7 @@ def list():
     packages.sort()
     for p in packages:
         print(p)
+
 
 @cli.command()
 @click.option("-o", "--output-dir", help="output directory for generated source files")
