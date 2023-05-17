@@ -90,11 +90,11 @@ struct IPlugin
      *
      * @ingroup plugin
      */
-     template <typename T>
+     template <typename T, template <typename...> typename... Ptrs>
      decltype(auto) register_type(std::string const& type_name) const
      {
         std::string prefix = name().empty()? "" : name() + "::";
-        return reflect::register_type<T>(prefix + type_name);
+        return reflect::register_type<T, Ptrs...>(prefix + type_name);
      }
 };
 
