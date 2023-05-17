@@ -472,3 +472,17 @@ TEST_F(IOTest, roundtrip_read_write)
     auto y = details::feature_tree_to_yaml(features.at("d"));
     test_basic_tree(y, "SimplePlugin::add", "SimplePlugin::MyDouble");
 }
+
+TEST_F(IOTest, fully_qualified_name)
+{
+    auto a = Feature("a", "SimplePlugin::MyDouble", 0.2);
+    auto b = action("b", "SimplePlugin::MyDouble::half", a)->output();
+
+    EXPECT_NEAR(b.value().get_as<double>("value"), 0.1, 1e-15);
+    auto y = details::feature_tree_to_yaml(b);
+
+    EXPECT_EQ(y["steps"].size(), 1);
+ 
+    auto step1 = y["steps"][0];
+    EXPECT_EQ(step1.Tag(), "SimplePlugin::MyDouble::half");
+}
