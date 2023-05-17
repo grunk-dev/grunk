@@ -140,10 +140,10 @@ PYBIND11_MODULE(_core, m)
     )
     .def("get", &grunk::DynamicFeature::get)
     .def("invoke", 
-        [](grunk::DynamicFeature const& f, std::string const& mName, py::args pyargs){
+        [](grunk::DynamicFeature const& f, std::string id, std::string const& mName, py::args pyargs){
             return grunkpy::invoke_variadic_rt<grunk::DynamicFeature>(
                 [&](auto&&... args){
-                    return f.invoke(mName, std::forward<decltype(args)>(args)...);
+                    return f.invoke(id, mName, std::forward<decltype(args)>(args)...);
                 },
                 pyargs
             );
