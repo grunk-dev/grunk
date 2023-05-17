@@ -21,6 +21,139 @@ def check_clang():
     if not has_clang():
             raise RuntimeError("clang++ not found. Clang is needed by grunk's code generator.")
 
+
+class CodeGenerator(ABC):
+    """This class generates the C++ code for registering functions and classes
+    """
+
+    prefix = ""
+    fully_qualified_names = False
+    template_args = True
+
+    def cpp_type_register_type(self, decl):
+        return (
+            "register_type<"
+            + decl.node.type.spelling
+            + '>("'
+            + decl.registered_name(
+                self.prefix, self.fully_qualified_names
+            )
+            + '")'
+        )
+
+
+    def cpp_type_register_bases(self, decl):
+        s = ""
+        for b in decl.bases:
+            s = s + "\n.add_base<" + b + ">()"
+        return s
+
+
+    def cpp_type_register_constructors(self, decl):
+        s = ""
+        for c in decl.constructors:
+            nargs = len(c.arguments)
+            # for every default argument, add an overload ommitting the argument and all following ones
+            for idx_last_arg in range(nargs - c.num_default_args - 1, nargs):
+                s = s + "\n.add_constructor<"
+                for arg in c.arguments[: idx_last_arg + 1]:
+                    s = s + arg + ", "
+                if idx_last_arg >= 0:
+                    # strip last comma
+                    s = s[0:-2]
+                s = s + ">()"
+        return s
+
+
+    def cpp_type_register_conversions(self, decl):
+        s = ""
+        for c in decl.conversions:
+            s = s + "\n.add_conversion<" + c + ">()"
+        return s
+
+
+    def cpp_type_register_fields(self, decl):
+        s = ""
+        for [name, field] in decl.fields.items():
+            s = s + "\n.add_data_member(" + field["pointer"] + ', "' + name + '")'
+        return s
+
+
+    def cpp_type_register_methods(self, decl):
+        s = ""
+        for method in decl.methods:
+            s = s + "\n." + self.cpp_register_function(method)
+        return s
+
+
+    def cpp_register_type(self, decl):
+        return (
+            self.cpp_type_register_type(decl)
+            + self.cpp_type_register_bases(decl)
+            + self.cpp_type_register_constructors(decl)
+            + self.cpp_type_register_conversions(decl)
+            + self.cpp_type_register_fields(decl)
+            + self.cpp_type_register_methods(decl)
+            + ";\n"
+        )
+
+
+    def cpp_register_function(self, decl):
+        if decl.parent:
+            pre = "add_member_function"
+            regname = decl.name
+        else:
+            pre = "register_function"
+            regname = decl.registered_name(
+                self.prefix, self.fully_qualified_names
+            )
+        if decl.is_overloaded or self.template_args:
+            # add template parameters so that compiler can resolve overload
+            prefix = pre + "<" + decl.function_pointer_type + ">("
+        else:
+            prefix = "("
+        post = ', "' + regname + '")'
+        if not decl.parent:
+            post = post + ";\n"
+
+        s = prefix + decl.function_pointer + post
+
+        # add overload for every default argument
+        nargs = len(decl.arguments)
+        for idx_last_arg in range(nargs - decl.num_default_args, nargs):
+            if decl.parent:
+                s = s + "\n."
+            s = s + pre + "([]("
+            if decl.parent and not decl.is_static:
+                # add implicit first argument
+                s = s + decl.parent.type.spelling
+                if decl.is_const:
+                    s = s + " const"
+                s = s + "& x, "
+            for i in range(0, idx_last_arg):
+                s = s + decl.arguments[i] + " arg" + str(i) + ", "
+            if s[-2:] == ", ":
+                # strip last comma
+                s = s[0:-2]
+            s = s + "){ return "
+            if decl.parent and not decl.is_static:
+                s = s + "x."
+            if decl.parent and decl.is_static:
+                s = s + decl.parent.type.spelling + "::"
+            if decl.parent:
+                s = s + decl.parent.type.spelling + "::" + decl.name
+            else:
+                s = s + decl.fully_qualified_name
+            s = s + "("
+            for i in range(0, idx_last_arg):
+                s = s + "arg" + str(i) + ", "
+            if s[-2:] == ", ":
+                # strip last comma
+                s = s[0:-2]
+            s = s + "); }" + post
+        return s
+
+
 class Decl(ABC):
     def __init__(self, node):
         self.node = node
@@ -52,12 +185,6 @@ class Decl(ABC):
             return self.node.location.file.name
         else:
             return None
-
-    @abstractmethod
-    def cpp_for_grunk_registration(
-        self, prefix="", fully_qualified_names=False, template_args=True
-    ):
-        pass
 
 
 class Callable(ABC):
@@ -124,67 +251,7 @@ class FunctionDecl(Decl, Callable):
             function_pointer_type = function_pointer_type + " const"
 
         return function_pointer_type
-
-    def cpp_for_grunk_registration(
-        self, prefix="", fully_qualified_names=False, template_args=True
-    ):
-        """generares the C++ code for registering the function in a grunk plugin
-
-        :return: string containing the C++ statement for registering the function
-        :rtype: str
-        """
-
-        if self.parent:
-            pre = "add_member_function"
-            regname = self.name
-        else:
-            pre = "register_function"
-            regname = self.registered_name(prefix, fully_qualified_names)
-        if self.is_overloaded or template_args:
-            # add template parameters so that compiler can resolve overload
-            prefix = pre + "<" + self.function_pointer_type + ">("
-        else:
-            prefix = "("
-        post = ', "' + regname + '")'
-        if not self.parent:
-            post = post + ";\n"
-
-        s = prefix + self.function_pointer + post
-
-        # add overload for every default argument
-        nargs = len(self.arguments)
-        for idx_last_arg in range(nargs - self.num_default_args, nargs):
-            if self.parent:
-                s = s + "\n."
-            s = s + pre + "([]("
-            if self.parent and not self.is_static:
-                # add implicit first argument
-                s = s + self.parent.type.spelling
-                if self.is_const:
-                    s = s + " const"
-                s = s + "& x, "
-            for i in range(0, idx_last_arg):
-                s = s + self.arguments[i] + " arg" + str(i) + ", "
-            if s[-2:] == ", ":
-                # strip last comma
-                s = s[0:-2]
-            s = s + "){ return "
-            if self.parent and not self.is_static:
-                s = s + "x."
-            if self.parent and self.is_static:
-                s = s + self.parent.type.spelling + "::"
-            if self.parent:
-                s = s + self.parent.type.spelling + "::" + self.name
-            else:
-                s = s + self.fully_qualified_name
-            s = s + "("
-            for i in range(0, idx_last_arg):
-                s = s + "arg" + str(i) + ", "
-            if s[-2:] == ", ":
-                # strip last comma
-                s = s[0:-2]
-            s = s + "); }" + post
-        return s
+            
 
 
 class ClassDecl(Decl):
@@ -274,56 +341,6 @@ class ClassDecl(Decl):
                 self.nested_classes.append(node.spelling)
             elif is_enum(node) and is_public(node) and is_direct_child(node):
                 self.nested_enums.append(node.spelling)
-
-    def cpp_for_grunk_registration(
-        self, prefix="", fully_qualified_names=False, template_args=True
-    ):
-        """generares the C++ code for registering the type in a grunk plugin
-
-        :return: string containing the C++ statement for registering the type
-        :rtype: str
-        """
-
-        s = (
-            "register_type<"
-            + self.node.type.spelling
-            + '>("'
-            + self.registered_name(prefix, fully_qualified_names)
-            + '")'
-        )
-
-        for b in self.bases:
-            s = s + "\n.add_base<" + b + ">()"
-
-        for c in self.constructors:
-            nargs = len(c.arguments)
-            # for every default argument, add an overload ommitting the argument and all following ones
-            for idx_last_arg in range(nargs - c.num_default_args - 1, nargs):
-                s = s + "\n.add_constructor<"
-                for arg in c.arguments[: idx_last_arg + 1]:
-                    s = s + arg + ", "
-                if idx_last_arg >= 0:
-                    # strip last comma
-                    s = s[0:-2]
-                s = s + ">()"
-
-        for c in self.conversions:
-            s = s + "\n.add_conversion<" + c + ">()"
-
-        for [name, field] in self.fields.items():
-            s = s + "\n.add_data_member(" + field["pointer"] + ', "' + name + '")'
-
-        for method in self.methods:
-            s = s + "\n." + method.cpp_for_grunk_registration()
-            # s = s + "\n.add_member_function"
-            # if method.is_overloaded or template_args:
-            #     s = s + "<"
-            #     s = s + method.function_pointer_type
-            #     s = s + ">"
-            # s = s + "(" + method.function_pointer + ', "' + method.name + '")'
-
-        s = s + ";\n"
-        return s
 
 
 def filter_node_list_by_predicate(
@@ -634,22 +651,24 @@ class HeaderPath:
 
 
 class Module:
-    def __init__(self, config, include_dirs, settings=None):
+    def __init__(
+        self, config, include_dirs, code_generator=CodeGenerator(), settings=None
+    ):
 
         self.name = config["name"]
 
         if settings is None:
             settings = Module.parse_settings(config)
-            settings
 
         self.settings = settings
+        self.code_generator = code_generator
 
         # set the prefix for all class, struct and function names of this
         # module
         prefix_type = self.set_prefix(config)
-        self.fully_qualified_names = False
+        self.code_generator.fully_qualified_names = False
         if prefix_type == Prefix.namespaces:
-            self.fully_qualified_names = True
+            self.code_generator.fully_qualified_names = True
 
         # set the headers
         self.headers = []
@@ -675,7 +694,7 @@ class Module:
         self.modules = []
         if "modules" in config and config["modules"] is not None:
             for mod_config in config["modules"]:
-                self.modules.append(Module(mod_config, include_dirs, settings))
+                self.modules.append(Module(mod_config, include_dirs, code_generator, settings))
 
         # set whitelist and blacklist
         self.whitelist = None
@@ -793,9 +812,7 @@ class Module:
         for decl in self.class_declarations:
             contents = (
                 contents
-                + decl.cpp_for_grunk_registration(
-                    self.prefix, self.fully_qualified_names
-                )
+                + self.code_generator.cpp_register_type(decl)
                 + "\n"
             )
 
@@ -804,9 +821,7 @@ class Module:
         for decl in self.function_declarations:
             contents = (
                 contents
-                + decl.cpp_for_grunk_registration(
-                    self.prefix, self.fully_qualified_names
-                )
+                + self.code_generator.cpp_register_function(decl)
                 + "\n"
             )
 

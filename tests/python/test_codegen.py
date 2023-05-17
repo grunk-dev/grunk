@@ -1,5 +1,5 @@
 import os
-from grunk.codegen import parse_headers, FunctionDecl, Module, generate, HeaderPath
+from grunk.codegen import parse_headers, FunctionDecl, Module, generate, HeaderPath, CodeGenerator
 import clang.cindex
 import pytest
 import yaml
@@ -207,15 +207,16 @@ def test_parse_single_header(parse_Foo):
 def test_codegen_classes_none(parse_Foo):
 
     classes, functions = parse_Foo
+    c = CodeGenerator()
 
     assert classes[0].name == "Baz"
-    baz_cpp_code = classes[0].cpp_for_grunk_registration()
+    baz_cpp_code = c.cpp_register_type(classes[0])
     assert 'register_type<Baz>("Baz")' in baz_cpp_code
     assert '.add_member_function<void * (*)(unsigned long' in baz_cpp_code # size_t is sometimes unsigned long, sometimes unsinged long long
     assert '(&Baz::operator new, "operator new");' in baz_cpp_code
 
     assert classes[1].name == "Bar"
-    bar_cpp_code = classes[1].cpp_for_grunk_registration()
+    bar_cpp_code = c.cpp_register_type(classes[1])
     assert (
         bar_cpp_code
         == """register_type<ns2::Bar>("Bar")
@@ -227,7 +228,7 @@ def test_codegen_classes_none(parse_Foo):
     )
 
     assert classes[2].name == "Foo"
-    foo_cpp_code = classes[2].cpp_for_grunk_registration()
+    foo_cpp_code = c.cpp_register_type(classes[2])
     assert (
         foo_cpp_code
         == """register_type<ns2::Foo>("Foo")
@@ -243,8 +244,10 @@ def test_codegen_classes_none(parse_Foo):
 """
     )
 
+    c = CodeGenerator()
+
     assert functions[0].name == "some_function"
-    some_function_cpp_code = functions[0].cpp_for_grunk_registration()
+    some_function_cpp_code = c.cpp_register_function(functions[0])
     assert (
         some_function_cpp_code
         == 'register_function<ns1::Other (*)(const ForwardDeclared &, ns2::Bar *)>(&ns2::some_function, "some_function");\n'
@@ -254,15 +257,15 @@ def test_codegen_classes_none(parse_Foo):
 def test_codegen_classes_fully_qualified_names(parse_Foo):
 
     classes, functions = parse_Foo
+    c = CodeGenerator()
+    c.fully_qualified_names = True
 
     assert classes[1].name == "Bar"
-    bar_cpp_code = classes[1].cpp_for_grunk_registration(fully_qualified_names=True)
+    bar_cpp_code = c.cpp_register_type(classes[1])
     assert bar_cpp_code.startswith('register_type<ns2::Bar>("ns2::Bar")\n')
 
     assert functions[0].name == "some_function"
-    some_function_cpp_code = functions[0].cpp_for_grunk_registration(
-        fully_qualified_names=True
-    )
+    some_function_cpp_code = c.cpp_register_function(functions[0])
     assert (
         some_function_cpp_code
         == 'register_function<ns1::Other (*)(const ForwardDeclared &, ns2::Bar *)>(&ns2::some_function, "ns2::some_function");\n'
@@ -272,13 +275,15 @@ def test_codegen_classes_fully_qualified_names(parse_Foo):
 def test_codegen_classes_prefix(parse_Foo):
 
     classes, functions = parse_Foo
+    c = CodeGenerator()
+    c.prefix = "schurz"
 
     assert classes[1].name == "Bar"
-    bar_cpp_code = classes[1].cpp_for_grunk_registration(prefix="schurz")
+    bar_cpp_code = c.cpp_register_type(classes[1])
     assert bar_cpp_code.startswith('register_type<ns2::Bar>("schurz::Bar")\n')
 
     assert functions[0].name == "some_function"
-    some_function_cpp_code = functions[0].cpp_for_grunk_registration(prefix="schurz")
+    some_function_cpp_code = c.cpp_register_function(functions[0])
     assert (
         some_function_cpp_code
         == 'register_function<ns1::Other (*)(const ForwardDeclared &, ns2::Bar *)>(&ns2::some_function, "schurz::some_function");\n'
@@ -288,17 +293,16 @@ def test_codegen_classes_prefix(parse_Foo):
 def test_codegen_classes_prefix_fully_qualified_names(parse_Foo):
 
     classes, functions = parse_Foo
+    c = CodeGenerator()
+    c.prefix = "schurz"
+    c.fully_qualified_names=True
 
     assert classes[1].name == "Bar"
-    bar_cpp_code = classes[1].cpp_for_grunk_registration(
-        prefix="schurz", fully_qualified_names=True
-    )
+    bar_cpp_code = c.cpp_register_type(classes[1])
     assert bar_cpp_code.startswith('register_type<ns2::Bar>("schurz::ns2::Bar")\n')
 
     assert functions[0].name == "some_function"
-    some_function_cpp_code = functions[0].cpp_for_grunk_registration(
-        prefix="schurz", fully_qualified_names=True
-    )
+    some_function_cpp_code = c.cpp_register_function(functions[0])
     assert (
         some_function_cpp_code
         == 'register_function<ns1::Other (*)(const ForwardDeclared &, ns2::Bar *)>(&ns2::some_function, "schurz::ns2::some_function");\n'
@@ -435,7 +439,8 @@ def test_nested_class():
     assert classes[0].nested_enums[0] == "Color"
     assert classes[0].nested_enums[1] == "Boolean"
 
-    cpp_code = classes[0].cpp_for_grunk_registration()
+    c = CodeGenerator()
+    cpp_code = c.cpp_register_type(classes[0])
     assert (
         cpp_code
         == """register_type<Foo>("Foo")
