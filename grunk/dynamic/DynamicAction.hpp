@@ -161,7 +161,7 @@ public:
         y.SetStyle(YAML::EmitterStyle::Flow);
         YAML::Emitter out;
 
-        auto tag = YAML::VerbatimTag(function.get_name());
+        auto tag = YAML::VerbatimTag(function.get_full_name());
         out << tag << y;
         return out.c_str();
     }
