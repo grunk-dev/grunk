@@ -16,7 +16,7 @@ from conans.errors import ConanException
 @click.version_option(grunk.__version__)
 def cli():
     """
-    command line interface fro grunk.
+    command line interface for grunk.
     """
     pass
 
@@ -103,6 +103,27 @@ def auth(user_name, password, remote, skip_auth):
     """
     # TODO: wrap in try block. Catch e.g. NoRemoteAvailable
     return pm.authenticate(user_name, password, remote, skip_auth)
+
+
+@cli.command()
+@click.argument("pattern")
+def remove(pattern):
+    """
+    remove plugins matching a given pattern from the local cache.
+    """
+    return pm.remove(pattern)
+
+@cli.command()
+def avail():
+    """
+    Lists packages installed in the local cache
+
+    This includes both grunk plugins and their dependencies.
+    """
+    packages = pm.list_plugins()
+    packages.sort()
+    for p in packages:
+        print(p)
 
 
 @cli.command()

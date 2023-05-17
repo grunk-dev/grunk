@@ -106,10 +106,7 @@ test-ubuntu:
   - ./runUnitTests
   <<: *ubuntu_config
 
-#TODO: No need to test this for all compilers and os: This is just for testing the python
-# part which should be fairly platform-independent. Let's be eco-friendly and safe some 
-# computing power
-# Caveat: dll search path is a bit different on Windows, so a test on Windows wouldn't be so bad
+
 test-ubuntu-python:
   tags:
   - ubuntu
@@ -128,9 +125,7 @@ test-ubuntu-python:
    - source venv/bin/activate
    - python -m pip install .[test]
    - grunk user auth ci_user -p ${CI_JOB_TOKEN}
-   - cd tests/python
-   - pytest
-  allow_failure: true #TODO: This is allowed to fail until the grunk package manager is setup and PluginA is installable via the plugin manager
+   - pytest -s
 
 build-windows:
   #note: variables BUILD_DIR, BUILD_TYPE and COMPILER will be populated thru yaml anchor "windows_config"
@@ -170,21 +165,22 @@ test-windows-python:
   tags:
   - windows
   - docker
-  image: abrarov/msvc-2019
+  image: stabletec/build-core:windows-2019
   stage: test
-  before_script: 
+  before_script:
   - python -m venv venv
-  - source venv/bin/activate
+  - ./venv/Scripts/Activate.ps1
   - python -m pip install --upgrade pip
-  - python -m pip install conan==1.58 cmake
-  - *configure_msvc
-  - conan profile update settings.compiler.libcxx=libstdc++11 default
+  - python -m pip install conan==1.59 cmake
+  - conan profile new default --detect --force
+  - conan remote add gitlab https://gitlab.dlr.de/api/v4/projects/21487/packages/conan
+  - conan user ci_user -r gitlab -p ${CI_JOB_TOKEN}
   script:
-   - source venv/bin/activate
+   - ./venv/Scripts/Activate.ps1
    - python -m pip install .[test]
-   - cd tests/python
-   - pytest
-  allow_failure: true #TODO: This is allowed to fail until the grunk package manager is setup and PluginA is installable via the plugin manager
+   - grunk user auth ci_user -p ${CI_JOB_TOKEN}
+   - pytest -s
+  allow_failure: true #TODO: I think this currently fails because PluginB links against reflect 0.1.4 while grunk uses 0.1.5, but I am not sure.
 
 create-conan-package-ubuntu:
 # This job creates new release packages. It should only run on git tags

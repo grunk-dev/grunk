@@ -22,4 +22,10 @@ pybind11_add_module(_core MODULE
     _core.cpp
 )
 target_link_libraries(_core PRIVATE grunk)
-set_target_properties(_core PROPERTIES OUTPUT_NAME grunk/_core)
+
+# copy grunk.dll (.so) to site-package grunk folder
+add_custom_command(TARGET _core POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        $<TARGET_FILE:grunk>
+        $<TARGET_FILE_DIR:_core>
+)

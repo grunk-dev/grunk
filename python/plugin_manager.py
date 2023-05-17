@@ -2,10 +2,86 @@ import os
 from sys import platform
 from pathlib import Path
 from functools import wraps
-import conans
 from conans.client.conan_api import ConanAPIV1
-from conans.model.ref import ConanFileReference
+from conans.model.ref import ConanFileReference, PackageReference
 from grunk._util import HiddenPrints, reconstruct_package_string
+
+
+def is_installed(package_name, version):
+
+    with PluginManager() as pm:
+        package_ref = f"{package_name}/{version}"
+
+        # first search recipes
+        result = pm._conan.search_recipes(package_ref)
+        if result['error']:
+            raise RuntimeError("Error searching for recipes")
+        if len(result['results']) == 0:
+            return False
+
+        # next search packages
+        result = pm._conan.search_packages(reference=package_ref, remote_name=None)
+        if result['error']:
+            raise RuntimeError("Error searching for packages")
+        return len(result['results']) > 0
+
+
+def get_latest_package_version(package_name, api):
+    # Get the package reference for the specified package name
+    package_ref = ConanFileReference.loads(package_name, validate=False)
+    res = api.search_recipes(package_ref.name)
+    assert(not res['error']) #TODO: Better error handling here
+    ids = []
+    for r in [result for result in res['results']]:
+        for i in r['items']:
+            ids.append(i['recipe']['id'])
+    version_numbers = [id.split("/")[1] for id in ids]
+    return max(version_numbers)
+
+def get_dll_paths(plugin_name, version = None, in_grunk_dir=True):
+    """returns the shared library directories needed to load a given plugin
+
+    :param plugin_name: The name of the plugin
+    :type plugin_name: Str
+    :param version: version string of the plugin
+    :type version: Str
+    :param in_grunk_dir: if set to true, grunk will search the .grunk directory rather than .conan, defaults to True
+    :type in_grunk_dir: bool, optional
+    :return: a list of directories
+    :rtype: list of strings
+    """
+
+    dll_dir = 'lib'
+    if platform == 'win32':
+        dll_dir = 'bin'
+
+    def _get_dll_paths(plugin_name, version, api):
+
+        if version is None:
+            version = get_latest_package_version(plugin_name, api)
+        package_ref = f"{plugin_name}/{version}@_/_"
+
+        api.create_app()
+        ref = ConanFileReference.loads(package_ref, validate=False)
+        package_layout = api.app.cache.package_layout(ref, short_paths=None)
+
+        deps_graph, _ = api.info(package_ref)
+        package_dirs = []
+        for node in deps_graph.nodes:
+            if node.ref is not None and str(node.ref) in package_ref:
+                pref = PackageReference(ref, node.package_id)
+                prefix = package_layout.package(pref)
+                d = os.path.join(prefix, dll_dir)
+                if os.path.isdir(d):
+                    package_dirs.append(d)
+
+        return package_dirs
+
+    if in_grunk_dir:
+        with PluginManager() as pm:
+            return _get_dll_paths(plugin_name, version, pm._conan)
+    else:
+        return _get_dll_paths(plugin_name, version, ConanAPIV1())
 
 
 class PluginManager:
@@ -53,35 +129,33 @@ class PluginManager:
             self._conan.remote_add(self.remote, self.remote_url)
 
         # update compiler.libcxx in default profile
-        if platform == "linux" or platform == "linux2":
+        if "default" not in self._conan.profile_list():
+            with HiddenPrints():  # suppress print statements. conan warns about wrong libcxx when creating the profile
+                self._conan.create_profile("default", detect=True)
 
-            if "default" not in self._conan.profile_list():
-                with HiddenPrints():  # suppress print statements. conan warns about wrong libcxx when creating the profile
-                    self._conan.create_profile("default", detect=True)
+        s = self._conan.read_profile("default").settings
 
-            s = self._conan.read_profile("default").settings
+        # update libcxx for GCC>=5
+        if (
+            "compiler" in s
+            and s["compiler"] == "gcc"
+            and "compiler.version" in s
+            and int(s["compiler.version"]) >= 5
+        ):
+            if "compiler.libcxx" in s:
 
-            # update libcxx for GCC>=5
-            if (
-                "compiler" in s
-                and s["compiler"] == "gcc"
-                and "compiler.version" in s
-                and int(s["compiler.version"]) >= 5
-            ):
-                if "compiler.libcxx" in s:
+                libcxx = s["compiler.libcxx"]
 
-                    libcxx = s["compiler.libcxx"]
+                def get_gcc_version():
+                    version_str = os.popen("gcc --version").read()
+                    first_line = version_str.split("\n")[0]
+                    return first_line.rsplit(" ", 1)[-1]
 
-                    def get_gcc_version():
-                        version_str = os.popen("gcc --version").read()
-                        first_line = version_str.split("\n")[0]
-                        return first_line.rsplit(" ", 1)[-1]
+                gcc_version = get_gcc_version()
+                gcc_major = int(gcc_version.split(".")[0])
 
-                    gcc_version = get_gcc_version()
-                    gcc_major = int(gcc_version.split(".")[0])
-
-                    if gcc_major > 5 and not libcxx == "libstdc++11":
-                        s["compiler.libcxx"] = "libstdc++11"
+                if gcc_major > 5 and not libcxx == "libstdc++11":
+                    self._conan.update_profile("default", "settings.compiler.libcxx", "libstdc++11")
 
     def __enter__(self):
         """
@@ -105,6 +179,7 @@ class PluginManager:
         user: str = None,
         channel: str = None,
         install_dir: str = None,
+        update = False
     ):
         """
         installs a package reference.
@@ -124,9 +199,6 @@ class PluginManager:
 
         """
 
-        # don't update packages by default
-        update = False
-
         # To Do: It would be nice to support installation from conancenter. Then we wouldn't
         # want to use the default_user and default_channel here
         if user is None:
@@ -137,24 +209,25 @@ class PluginManager:
             install_dir = self.grunk_dir
 
         if package_version is None:
+            # The version ranges aren't searched for in the remotes https://github.com/conan-io/conan/issues/3113
+            # This can be fixed once we migrate to conan 2.0
+            raise RuntimeError("As of now, a version must explicitly be specified.")
             package_version = "[>0.0.1]"
-            update = True
 
         package_str = reconstruct_package_string(
             package_name, package_version, user, channel
         )
 
-        ref = ConanFileReference.loads(package_str, validate=True)
+        ref = ConanFileReference.loads(package_str, validate=False)
 
         self._conan.install_reference(
             ref,
             install_folder=install_dir,
             generators=["deploy"],
-            remote_name=self.remote,
+            # remote_name=self.remote,
             build=["missing"],
             update=update,
         )
-
     def authenticate(
         self, user: str, password: str, remote_name: str, skip_auth: bool = False
     ):
@@ -185,6 +258,28 @@ class PluginManager:
         return self._conan.authenticate(user, password, remote_name, skip_auth)
 
 
+    def remove(self, pattern):
+        """
+        removes plugin(s) matching a given pattern
+
+        :param pattern: All packages matching this pattern will be removed
+        """
+
+        #To Do: Provide more options
+        return self._conan.remove(pattern, query=None, packages=None, builds=None, src=False, force=False,
+               remote_name=None, outdated=False)
+
+
+    def list(self):
+        result = self._conan.search_recipes('')
+        if result['error']:
+            raise RuntimeError("Error generating list of packages")
+        packages = []
+        for d in result['results']:
+            for i in d['items']:
+                packages.append(i['recipe']['id'])
+        return packages
+
 def command(f):
     """Decorator for PluginManager methods to be used as free functions
 
@@ -212,3 +307,5 @@ def command(f):
 # decorate PluginManager methods
 install = command(PluginManager.install)
 authenticate = command(PluginManager.authenticate)
+remove = command(PluginManager.remove)
+list_plugins = command(PluginManager.list)

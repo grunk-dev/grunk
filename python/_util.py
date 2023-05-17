@@ -1,7 +1,6 @@
 import os
 import sys
 
-
 class HiddenPrints:
     """This class is used to suppress output to stdout.
 

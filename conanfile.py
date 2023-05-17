@@ -5,7 +5,7 @@ import re
 def get_version():
     try:
         content = load("CMakeLists.txt")
-        version = re.search("project\(grunk VERSION (.*)\)", content).group(1)
+        version = re.search(r"project\(grunk VERSION (.*)\)", content).group(1)
         return version.strip()
     except Exception as e:
         return None
@@ -22,7 +22,7 @@ class GrunkConan(ConanFile):
     options = {"shared": [True], "fPIC": [True, False]}
     default_options = {"shared": True, "fPIC": True}
     generators = "cmake_find_package"
-    requires = "yaml-cpp/0.7.0", "boost/1.78.0", "parametric/0.2.3", "reflect/0.1.4"
+    requires = "yaml-cpp/0.7.0", "boost/1.78.0", "parametric/0.2.3", "reflect/0.1.5"
     exports_sources = "grunk*", "CMakeLists.txt", "docs*"
 
     def config_options(self):

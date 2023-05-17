@@ -4,6 +4,7 @@ from enum import Enum
 import glob
 import itertools
 from pathlib import Path
+import shutil
 import subprocess
 import typing
 import tempfile
@@ -12,6 +13,13 @@ import warnings
 import os
 import yaml
 
+
+def has_clang():
+    return shutil.which("clang++") is not None 
+
+def check_clang():
+    if not has_clang():
+            raise RuntimeError("clang++ not found. Clang is needed by grunk's code generator.")
 
 class Decl(ABC):
     def __init__(self, node):
@@ -426,6 +434,8 @@ def get_system_include_directories():
     :rtype: list(str)
     """
 
+    check_clang()
+
     include_directories = []
     cpp = tempfile.NamedTemporaryFile(delete=False)
     try:
@@ -492,6 +502,7 @@ def parse_headers(headers: typing.Iterable[str], include_dirs: typing.Iterable[s
     :rtype: tuple(dict, dict)
     """
 
+    check_clang()
     translation_unit = None
 
     # create a .cpp file including the headers and parse it with libclang
