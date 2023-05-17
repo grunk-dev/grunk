@@ -2,6 +2,7 @@
 
 import os
 import sys
+import yaml
 
 import click
 
@@ -141,3 +142,36 @@ def codegen(config_file, output_dir, include_dir):
     You can structure the registered classes into a hierarchy of submodules
     """
     return generate(config_file, output_dir, list(include_dir))
+
+
+@cli.command()
+@click.argument("grunk_recipe", type=click.Path(exists=True))
+@click.option("-i", "--install-missing", is_flag=True, show_default=True, default=False, help="install plugins when not in local cache")
+def exec(grunk_recipe, install_missing):
+    """evaluates all features of a grunk recipe
+    """
+
+    # we need to tell pyyaml to ignore our tags
+    # https://stackoverflow.com/questions/33048540/pyyaml-safe-load-how-to-ignore-local-tags
+    class SafeLoaderIgnoreUnknown(yaml.SafeLoader):
+        def ignore_unknown(self, node):
+            return None 
+    SafeLoaderIgnoreUnknown.add_constructor(None, SafeLoaderIgnoreUnknown.ignore_unknown)
+
+    # parse recipe with pyyaml to parse plugins that need to be loaded
+    with open(grunk_recipe, "r")  as file:
+        recipe = yaml.load(file, Loader=SafeLoaderIgnoreUnknown)
+    
+    for name, version in recipe['uses'].items():
+        print(name, version)
+        if not name == 'grunk':
+            print(name, version)
+            grunk.load(name, version, install_missing)
+
+    print(grunk.get_plugin_registry().count())
+    grunk.get_plugin_registry().print_plugins()
+
+    # parse recipe with grunk and evaluate all nodes
+    nodes = grunk.read(grunk_recipe)
+    for n in nodes.values():
+        n.value()

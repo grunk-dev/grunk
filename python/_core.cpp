@@ -122,7 +122,9 @@ PYBIND11_MODULE(_core, m)
         // py::overload_cast<size_t>(&DynamicAction::output), 
         static_cast<DynamicFeature (DynamicAction::*)(size_t) const>(&DynamicAction::output),
         py::arg("idx") = 0
-    );
+    )
+    .def("number_of_outputs", &DynamicAction::number_of_outputs)
+    .def("eval", &DynamicAction::eval);
 
     py::class_<grunk::DynamicFeature>(m, "Feature")
     .def(
