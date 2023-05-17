@@ -314,16 +314,14 @@ def test_no_whitelist_no_blacklist():
     include_dirs = [
         data_dir(),
     ]
-    with open(config_file, "r") as file:
-        config = yaml.safe_load(file)
-        module = Module(config, include_dirs)
-        headers = module.get_all_headers()
-        classes, functions = parse_headers(headers, include_dirs)
-        module.grab_declarations(classes + functions)
-        assert len(module.class_declarations) == 3
-        assert len(module.function_declarations) == 1
-        assert len(module.modules[0].class_declarations) == 2
-        assert len(module.modules[0].function_declarations) == 1
+    module = Module(config_file, include_dirs)
+    headers = module.get_all_headers()
+    classes, functions = parse_headers(headers, include_dirs)
+    module.grab_declarations(classes + functions)
+    assert len(module.class_declarations) == 3
+    assert len(module.function_declarations) == 1
+    assert len(module.modules[0].class_declarations) == 2
+    assert len(module.modules[0].function_declarations) == 1
 
 
 def test_whitelist():
@@ -331,20 +329,18 @@ def test_whitelist():
     include_dirs = [
         data_dir(),
     ]
-    with open(config_file, "r") as file:
-        config = yaml.safe_load(file)
-        module = Module(config, include_dirs)
-        headers = module.get_all_headers()
-        classes, functions = parse_headers(headers, include_dirs)
-        module.grab_declarations(classes + functions)
-        assert len(module.class_declarations) == 2
-        assert "Bar" not in map(lambda x: x.name, module.class_declarations)
-        assert len(module.function_declarations) == 0
-        assert len(module.modules[0].class_declarations) == 1
-        assert "ForwardDeclared" not in map(
-            lambda x: x.name, module.modules[0].class_declarations
-        )
-        assert len(module.modules[0].function_declarations) == 1
+    module = Module(config_file, include_dirs)
+    headers = module.get_all_headers()
+    classes, functions = parse_headers(headers, include_dirs)
+    module.grab_declarations(classes + functions)
+    assert len(module.class_declarations) == 2
+    assert "Bar" not in map(lambda x: x.name, module.class_declarations)
+    assert len(module.function_declarations) == 0
+    assert len(module.modules[0].class_declarations) == 1
+    assert "ForwardDeclared" not in map(
+        lambda x: x.name, module.modules[0].class_declarations
+    )
+    assert len(module.modules[0].function_declarations) == 1
 
 
 def test_blackist_fields_and_methods():
@@ -354,17 +350,15 @@ def test_blackist_fields_and_methods():
     include_dirs = [
         data_dir(),
     ]
-    with open(config_file, "r") as file:
-        config = yaml.safe_load(file)
-        module = Module(config, include_dirs)
-        headers = module.get_all_headers()
-        classes, functions = parse_headers(headers, include_dirs)
-        module.grab_declarations(classes + functions)
-        assert len(module.class_declarations) == 3
-        assert len(module.function_declarations) == 1
-        bardecl = module.class_declarations[1]
-        assert "x" not in bardecl.fields
-        assert len(bardecl.methods) == 0
+    module = Module(config_file, include_dirs)
+    headers = module.get_all_headers()
+    classes, functions = parse_headers(headers, include_dirs)
+    module.grab_declarations(classes + functions)
+    assert len(module.class_declarations) == 3
+    assert len(module.function_declarations) == 1
+    bardecl = module.class_declarations[1]
+    assert "x" not in bardecl.fields
+    assert len(bardecl.methods) == 0
 
 
 def test_blacklist():
@@ -372,21 +366,19 @@ def test_blacklist():
     include_dirs = [
         data_dir(),
     ]
-    with open(config_file, "r") as file:
-        config = yaml.safe_load(file)
-        module = Module(config, include_dirs)
-        headers = module.get_all_headers()
-        classes, functions = parse_headers(headers, include_dirs)
-        module.grab_declarations(classes + functions)
-        assert len(module.class_declarations) == 1
-        assert "Bar" in map(lambda x: x.name, module.class_declarations)
-        assert len(module.function_declarations) == 1
-        assert "some_function" in map(lambda x: x.name, module.function_declarations)
-        assert len(module.modules[0].class_declarations) == 1
-        assert "ForwardDeclared" in map(
-            lambda x: x.name, module.modules[0].class_declarations
-        )
-        assert len(module.modules[0].function_declarations) == 0
+    module = Module(config_file, include_dirs)
+    headers = module.get_all_headers()
+    classes, functions = parse_headers(headers, include_dirs)
+    module.grab_declarations(classes + functions)
+    assert len(module.class_declarations) == 1
+    assert "Bar" in map(lambda x: x.name, module.class_declarations)
+    assert len(module.function_declarations) == 1
+    assert "some_function" in map(lambda x: x.name, module.function_declarations)
+    assert len(module.modules[0].class_declarations) == 1
+    assert "ForwardDeclared" in map(
+        lambda x: x.name, module.modules[0].class_declarations
+    )
+    assert len(module.modules[0].function_declarations) == 0
 
 
 def test_whitelist_blacklist():
@@ -394,15 +386,13 @@ def test_whitelist_blacklist():
     include_dirs = [
         data_dir(),
     ]
-    with open(config_file, "r") as file:
-        config = yaml.safe_load(file)
-        module = Module(config, include_dirs)
-        headers = module.get_all_headers()
-        classes, functions = parse_headers(headers, include_dirs)
-        module.grab_declarations(classes + functions)
-        assert len(module.class_declarations) == 1
-        assert "Foo" in map(lambda x: x.name, module.class_declarations)
-        assert len(module.function_declarations) == 0
+    module = Module(config_file, include_dirs)
+    headers = module.get_all_headers()
+    classes, functions = parse_headers(headers, include_dirs)
+    module.grab_declarations(classes + functions)
+    assert len(module.class_declarations) == 1
+    assert "Foo" in map(lambda x: x.name, module.class_declarations)
+    assert len(module.function_declarations) == 0
 
 
 def test_generate():
@@ -504,6 +494,9 @@ def test_custom_registration():
     assert classes[1].name == 'Foo'
     assert classes[2].name == 'Bar'
 
+    stdtrans_code = c.cpp_register_type(classes[0])
+    assert stdtrans_code.startswith("register_type<Standard_Transient>")
+
     foo_code = c.cpp_register_type(classes[1])
     assert foo_code.startswith("register_type<Foo, opencascade_handle>")
 
@@ -511,6 +504,23 @@ def test_custom_registration():
     assert bar_code.startswith("register_type<Bar>")
 
 
+def test_custom_code_generator_from_config():
+    config_file = os.path.join(data_dir(), "config_StandardTransient.yml")
+    include_dirs = [
+        data_dir(),
+    ]
+    module = Module(config_file, include_dirs)
+    headers = module.get_all_headers()
+    classes, functions = parse_headers(headers, include_dirs)
+    module.grab_declarations(classes + functions)
+    
+    assert len(module.class_declarations) == 3
+    assert "Foo" in map(lambda x: x.name, module.class_declarations)
+    src = module.collect_cpp_source()["grocc"].string()
+    
+    assert "register_type<Standard_Transient>" in src
+    assert "register_type<Foo, opencascade_handle>" in src
+    assert "register_type<Bar>" in src
 
 # TODO:
 # - test generated code (smaller header, actually compile with clang)

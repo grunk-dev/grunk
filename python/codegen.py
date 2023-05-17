@@ -2,6 +2,8 @@ from abc import ABC, abstractmethod
 import clang.cindex
 from enum import Enum
 import glob
+import importlib.util
+import inspect
 import itertools
 from pathlib import Path
 import shutil
@@ -652,16 +654,20 @@ class HeaderPath:
 
 class Module:
     def __init__(
-        self, config, include_dirs, code_generator=CodeGenerator(), settings=None
+        self, config, include_dirs, settings=None
     ):
+        if not isinstance(config, dict):
+            self.config_path = os.path.dirname(config)
+            with open(config, "r")  as file:
+                config = yaml.safe_load(file)
 
         self.name = config["name"]
 
         if settings is None:
-            settings = Module.parse_settings(config)
+            settings = self.parse_settings(config)
 
         self.settings = settings
-        self.code_generator = code_generator
+        self.code_generator = settings["code_generator"]
 
         # set the prefix for all class, struct and function names of this
         # module
@@ -694,7 +700,7 @@ class Module:
         self.modules = []
         if "modules" in config and config["modules"] is not None:
             for mod_config in config["modules"]:
-                self.modules.append(Module(mod_config, include_dirs, code_generator, settings))
+                self.modules.append(Module(mod_config, include_dirs, settings))
 
         # set whitelist and blacklist
         self.whitelist = None
@@ -709,7 +715,7 @@ class Module:
         self.class_declarations = []
         self.function_declarations = []
 
-    def parse_settings(config):
+    def parse_settings(self, config):
         # read and interpret global settings
         settings = {}
 
@@ -728,8 +734,39 @@ class Module:
         if "prefix" in settings:
             prefix = Prefix[settings["prefix"]]
 
+        if "code_generator" in settings:
+            # execute the python file specified in code_generator
+            file_path = settings["code_generator"]
+            if not os.path.isabs(file_path):
+                file_path = os.path.join(self.config_path, file_path)
+            module_name = file_path.split('.')[0]
+            spec = importlib.util.spec_from_file_location(module_name, file_path)
+            module = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(module)
+
+            # search for class subclassing CodeGenerator
+            def get_subclasses(module, base_class):
+                subclasses = []
+                for name, obj in inspect.getmembers(module):
+                    if inspect.isclass(obj) and issubclass(obj, base_class) and not obj == base_class:
+                        subclasses.append(obj)
+                return subclasses
+
+            subclasses = get_subclasses(module, CodeGenerator)
+            if len(subclasses) > 1:
+                raise RuntimeError(f"Found more than one CodeGenerator instance in {file_path}")
+            if len(subclasses) == 0:
+                raise RuntimeError(f"Found no CodeGenerator instance in {file_path}")
+
+            # replace settings["code_generator"] with instance of subclass
+            settings["code_generator"] = subclasses[0]()
+
+        else:
+            settings["code_generator"] = CodeGenerator()
+
         settings["prefix"] = prefix
         settings["module_name_parents"] = ""
+
 
         return settings
 
@@ -947,67 +984,63 @@ def generate(config_file: str, output_dir: str, include_dirs: typing.Iterable[st
     # create output_dir if it does not exist
     Path(output_dir).mkdir(parents=True, exist_ok=True)
 
-    with open(config_file, "r") as file:
+    # recursively create all modules
+    main_module = Module(config_file, include_dirs)
 
-        config = yaml.safe_load(file)
+    # collect the list of all headers of all modules
+    headers = main_module.get_all_headers()
 
-        # recursively create all modules
-        main_module = Module(config, include_dirs)
+    # parse the source code once for all modules
+    classes, functions = parse_headers(headers, include_dirs)
 
-        # collect the list of all headers of all modules
-        headers = main_module.get_all_headers()
+    # recursively collect all declarations belonging to the modules
+    main_module.grab_declarations(classes + functions)
 
-        # parse the source code once for all modules
-        classes, functions = parse_headers(headers, include_dirs)
+    # get the C++ source code of all modules in a "flat" dictionary
+    modules_src = main_module.collect_cpp_source()
 
-        # recursively collect all declarations belonging to the modules
-        main_module.grab_declarations(classes + functions)
+    namespaces = main_module.settings["namespaces"]
 
-        # get the C++ source code of all modules in a "flat" dictionary
-        modules_src = main_module.collect_cpp_source()
+    # create source code for the grunk plugin
 
-        namespaces = main_module.settings["namespaces"]
+    hpp, cpp = create_plugin_src(
+        main_module.name, main_module.settings, modules_src.keys()
+    )
 
-        # create source code for the grunk plugin
+    hpp_file = os.path.join(output_dir, f"{main_module.name}Plugin.hpp")
+    with open(hpp_file, "w") as f:
+        f.write(hpp.string(namespaces))
 
-        hpp, cpp = create_plugin_src(
-            main_module.name, main_module.settings, modules_src.keys()
-        )
+    cpp_file = os.path.join(output_dir, f"{main_module.name}Plugin.cpp")
+    with open(cpp_file, "w") as f:
+        f.write(cpp.string(namespaces))
 
-        hpp_file = os.path.join(output_dir, f"{main_module.name}Plugin.hpp")
-        with open(hpp_file, "w") as f:
-            f.write(hpp.string(namespaces))
+    if main_module.settings["concatenate"]:
 
-        cpp_file = os.path.join(output_dir, f"{main_module.name}Plugin.cpp")
+        # create .cpp file
+        src = CppSource()
+        for [_, source] in modules_src.items():
+            src = src + source
+
+        src.preamble = src.preamble + f'#include "{main_module.name}Plugin.hpp"\n'
+        src.preamble = src.preamble + "\n#include <grunk/grunk.hpp>\n"
+        cpp = src.string(namespaces)
+
+        cpp_file = os.path.join(output_dir, f"{main_module.name}.cpp")
         with open(cpp_file, "w") as f:
-            f.write(cpp.string(namespaces))
+            f.write(cpp)
+    else:
 
-        if main_module.settings["concatenate"]:
+        for [module_name, src] in modules_src.items():
 
             # create .cpp file
-            src = CppSource()
-            for [_, source] in modules_src.items():
-                src = src + source
-
-            src.preamble = src.preamble + f'#include "{main_module.name}Plugin.hpp"\n'
-            src.preamble = src.preamble + "\n#include <grunk/grunk.hpp>\n"
+            src.preamble = src.preamble + f'#include "{module_name}Plugin.hpp"\n'
+            src.preamble = src.preamble + "\n#include <grunk/grunk.h>\n"
             cpp = src.string(namespaces)
 
-            cpp_file = os.path.join(output_dir, f"{main_module.name}.cpp")
+            cpp_file = os.path.join(output_dir, f"{module_name}.cpp")
             with open(cpp_file, "w") as f:
                 f.write(cpp)
-        else:
-
-            for [module_name, src] in modules_src.items():
-
-                # create .cpp file
-                src.preamble = src.preamble + f'#include "{module_name}Plugin.hpp"\n'
-                src.preamble = src.preamble + "\n#include <grunk/grunk.h>\n"
-                cpp = src.string(namespaces)
-
-                cpp_file = os.path.join(output_dir, f"{module_name}.cpp")
-                with open(cpp_file, "w") as f:
-                    f.write(cpp)
 
 
 # To Do:
