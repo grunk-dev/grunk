@@ -1,5 +1,6 @@
 # v0.2.0
 
+ - `DynamicFeature` constructor accepting `DynamicFeature`s as argument has been removed. This caused ambiguities with default-constructible types. Now there is a create factory method to create a new `DynamicFeature` from others. Also, `action` can be used to evaluate a constructor (#39)
  - Add a CLI subcommand to execute grunk recipes from the command line (#64)
  - Fix bug related to the fully qualified name of a `reflect::DynamicFunction`, when serializing a `DynamicAction` to yaml (#61)
  - Support an additional means of customizing the code generation: The 
