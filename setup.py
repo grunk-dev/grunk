@@ -58,6 +58,11 @@ class CMakeBuild(build_ext):
             f"-DPYTHON_EXECUTABLE={sys.executable}",
             f"-DCMAKE_BUILD_TYPE={cfg}",  # not used on MSVC, but no harm
         ]
+
+        #https://stackoverflow.com/a/58175755/12173376
+        cmake_args += ["-DCMAKE_BUILD_WITH_INSTALL_RPATH=TRUE"]
+        cmake_args += ["-DCMAKE_INSTALL_RPATH={}".format("$ORIGIN")]
+
         build_args = []
         # Adding CMake arguments set as environment variable
         # (needed e.g. to build for ARM OSx on conda-forge)
