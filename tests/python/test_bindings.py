@@ -19,5 +19,5 @@ def test_integration_hello_world():
     assert 11 == pytest.approx(e.value().get("value").as_float())
     grunk.write("test2.grr", e)
 
-    a.set_value(4.4)
+    a.access_value().set("value", 4.4)
     assert 6.6 == pytest.approx(c.value().get("value").as_float())

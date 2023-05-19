@@ -97,8 +97,21 @@ PYBIND11_MODULE(_core, m)
     auto m_reflect = m.def_submodule("reflect", "python bindings for reflect");
 
     //TODO: I seem to have to do this for all builtin types!
-    auto dynobj = py::class_<reflect::DynamicObject>(m_reflect, "DynamicObject");
-    dynobj.def("get", static_cast<reflect::DynamicObject (reflect::DynamicObject::*)(std::string const&) const>(&reflect::DynamicObject::get));
+    auto dynobj = py::class_<reflect::DynamicObject>(m_reflect, "DynamicObject")
+    .def("get", static_cast<reflect::DynamicObject (reflect::DynamicObject::*)(std::string const&) const>(&reflect::DynamicObject::get))
+    .def("has_value", &reflect::DynamicObject::has_value)
+    .def("is_owning", &reflect::DynamicObject::is_owning)
+    .def("set", static_cast<void (reflect::DynamicObject::*)(std::string const&, reflect::DynamicObject const&)>(&reflect::DynamicObject::set))
+    .def("invoke", 
+        [](reflect::DynamicObject const& f, std::string const& name, py::args pyargs){
+            return grunkpy::invoke_variadic_rt<reflect::DynamicObject>(
+                [&](auto&&... args){
+                    return f.invoke(name, std::forward<decltype(args)>(args)...);
+                },
+                pyargs
+            );
+        }
+    );
     
     dynobj.def(py::init<double>())
     .def("as_float", static_cast<double (reflect::DynamicObject::*)() const>(&reflect::DynamicObject::as<double>));
@@ -153,6 +166,11 @@ PYBIND11_MODULE(_core, m)
     )
     .def("is_valid", &grunk::DynamicFeature::is_valid)
     .def("value", &grunk::DynamicFeature::value)
+    .def(
+        "access_value",
+        &grunk::DynamicFeature::access_value,
+        py::return_value_policy::reference_internal
+    )
     .def("set_value", &grunk::DynamicFeature::set_value)
     .def_property(
         "id", 
