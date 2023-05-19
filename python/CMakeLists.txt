@@ -29,3 +29,8 @@ add_custom_command(TARGET _core POST_BUILD
         $<TARGET_FILE:grunk>
         $<TARGET_FILE_DIR:_core>
 )
+add_custom_command(TARGET _core POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        ${reflect_LIBRARIES}
+        $<TARGET_FILE_DIR:_core>
+)
