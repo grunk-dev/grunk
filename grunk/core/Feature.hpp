@@ -163,6 +163,16 @@ public:
     }
 
     /**
+     * @brief Set the value of the feature. 
+     * 
+     * @param other 
+     */
+    void set_value(T const& other)
+    {
+        m_param.set_value(other);
+    }
+
+    /**
      * @brief returns a 
      * 
      * @return parametric::param<T> const& 

@@ -153,7 +153,7 @@ PYBIND11_MODULE(_core, m)
     )
     .def("is_valid", &grunk::DynamicFeature::is_valid)
     .def("value", &grunk::DynamicFeature::value)
-    .def("access_value", &grunk::DynamicFeature::access_value)
+    .def("set_value", &grunk::DynamicFeature::set_value)
     .def_property(
         "id", 
         &grunk::DynamicFeature::id,
