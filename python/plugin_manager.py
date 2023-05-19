@@ -308,4 +308,4 @@ def command(f):
 install = command(PluginManager.install)
 authenticate = command(PluginManager.authenticate)
 remove = command(PluginManager.remove)
-list_plugins = command(PluginManager.list)
+avail = command(PluginManager.list)

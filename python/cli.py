@@ -121,7 +121,7 @@ def avail():
 
     This includes both grunk plugins and their dependencies.
     """
-    packages = pm.list_plugins()
+    packages = pm.avail()
     packages.sort()
     for p in packages:
         print(p)
