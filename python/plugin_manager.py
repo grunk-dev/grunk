@@ -1,4 +1,5 @@
 import os
+import tempfile
 from sys import platform
 from pathlib import Path
 from functools import wraps
@@ -93,8 +94,8 @@ class PluginManager:
 
     .. code-block:: python
 
-       with PluginManager() as g:
-           g.install(package_name)
+       with PluginManager() as pm:
+           pm.install(package_name)
     """
 
     def __init__(self):
@@ -199,6 +200,45 @@ class PluginManager:
 
         """
 
+        package_str = _get_package_ref(package_name, package_version, user, channel)
+
+        ref = ConanFileReference.loads(package_str, validate=False)
+
+        self._conan.install_reference(
+            ref,
+            install_folder=install_dir,
+            generators=["deploy"],
+            # remote_name=self.remote,
+            build=["missing"],
+            update=update,
+        )
+
+    def virtualrunenv(
+        self,
+        package_refs,
+    ):
+        """
+        creates scripts to activate/deactivate a virtual run environment 
+        for the package references (strings) defined in package reFs
+
+        :param package_refs: list of package_ref (name/version)
+        """
+
+        tmp = tempfile.NamedTemporaryFile(mode = "w", delete=False)
+        try:
+            tmp.write("[requires]\n")
+            for ref in package_refs:
+                tmp.write(ref + "\n")
+            tmp.close()
+            self._conan.install(
+                tmp.name,
+                generators=["virtualrunenv"],
+            )
+        finally:
+            os.unlink(tmp.name)
+
+    
+    def _get_package_ref(package_name, package_version, user, channel):
         # To Do: It would be nice to support installation from conancenter. Then we wouldn't
         # want to use the default_user and default_channel here
         if user is None:
@@ -214,20 +254,12 @@ class PluginManager:
             raise RuntimeError("As of now, a version must explicitly be specified.")
             package_version = "[>0.0.1]"
 
-        package_str = reconstruct_package_string(
+        return reconstruct_package_string(
             package_name, package_version, user, channel
         )
 
-        ref = ConanFileReference.loads(package_str, validate=False)
 
-        self._conan.install_reference(
-            ref,
-            install_folder=install_dir,
-            generators=["deploy"],
-            # remote_name=self.remote,
-            build=["missing"],
-            update=update,
-        )
+
     def authenticate(
         self, user: str, password: str, remote_name: str, skip_auth: bool = False
     ):
@@ -305,6 +337,7 @@ def command(f):
 
 
 # decorate PluginManager methods
+virtualrunenv = command(PluginManager.virtualrunenv)
 install = command(PluginManager.install)
 authenticate = command(PluginManager.authenticate)
 remove = command(PluginManager.remove)

@@ -24,6 +24,22 @@ def cli():
 
 @cli.command()
 @click.argument("packages", nargs=-1)
+def virtualrunenv(packages):
+    """create scripts to activate/deactivate a virtual run environment
+
+    This is particularly useful to make sure that all runtime dependencies
+    of plugins are met. 
+
+    :param packages: package references of the form package/version or package/version@user/channel
+    :type packages: str
+    :return: None
+    :rtype: None
+    """
+    return pm.virtualrunenv(packages)
+
+
+@cli.command()
+@click.argument("packages", nargs=-1)
 def install(packages):
     """
     install grunk plugins.

@@ -3,7 +3,6 @@
 #include <boost/dll/import.hpp>
 #include <functional>
 #include <iostream>
-#include <new>
 #include <stdexcept>
 
 namespace grunk {
@@ -40,6 +39,8 @@ void PluginRegistry::load_all() {
                 try {
                     boost::dll::shared_library lib(it->path(), error);
                     if (error) {
+                        //TODO: Logging!!! This is a warning
+                        std::cout << "Error loading " << it->path() << ". Did you properly setup the environment using \"grunk virtualenv\"?\n";
                         continue;
                     }
 
