@@ -112,6 +112,18 @@ PYBIND11_MODULE(_core, m)
             );
         }
     );
+
+    m_reflect.def(
+        "invoke",
+        [](std::string const& name, py::args pyargs){
+            return grunkpy::invoke_variadic_rt<reflect::DynamicObject>(
+                [&](auto&&... args){
+                    return reflect::invoke(name, std::forward<decltype(args)>(args)...);
+                },
+                pyargs
+            );
+        }
+    );
     
     dynobj.def(py::init<double>())
     .def("as_float", static_cast<double (reflect::DynamicObject::*)() const>(&reflect::DynamicObject::as<double>));
