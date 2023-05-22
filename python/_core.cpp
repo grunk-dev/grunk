@@ -2,6 +2,7 @@
 #include <pybind11/pybind11.h>
 #include <pybind11/stl_bind.h>
 #include <grunk/grunk.hpp>
+#include <grunk/helper/String.hpp>
 
 namespace grunkpy {
 
@@ -96,7 +97,6 @@ PYBIND11_MODULE(_core, m)
 
     auto m_reflect = m.def_submodule("reflect", "python bindings for reflect");
 
-    //TODO: I seem to have to do this for all builtin types!
     auto dynobj = py::class_<reflect::DynamicObject>(m_reflect, "DynamicObject")
     .def("get", static_cast<reflect::DynamicObject (reflect::DynamicObject::*)(std::string const&) const>(&reflect::DynamicObject::get))
     .def("has_value", &reflect::DynamicObject::has_value)
@@ -121,7 +121,13 @@ PYBIND11_MODULE(_core, m)
     .def("as_int", static_cast<int (reflect::DynamicObject::*)() const>(&reflect::DynamicObject::as<int>));
     py::implicitly_convertible<int, reflect::DynamicObject>();
 
-    dynobj.def(py::init<std::string>())
+    dynobj.def(
+        py::init(
+            [](std::string const& s){
+                return reflect::DynamicObject(grunk::helper::String(s));
+            }
+        )
+    )
     .def("as_str", static_cast<std::string (reflect::DynamicObject::*)() const>(&reflect::DynamicObject::as<std::string>));
     py::implicitly_convertible<std::string, reflect::DynamicObject>();
 
