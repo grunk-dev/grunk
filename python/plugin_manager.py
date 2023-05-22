@@ -117,7 +117,7 @@ class PluginManager:
 
         # store previous CONAN_USER_HOME so that it can be reset and update CONAN_USER_HOME
         self.conan_user_home_prev = os.environ.get("CONAN_USER_HOME")
-        os.environ["CONAN_USER_HOME"] = self.grunk_dir
+        os.environ["CONAN_USER_HOME"] = os.getenv("GRUNK_USER_HOME", self.grunk_dir)
 
         self._conan = ConanAPIV1()
 
