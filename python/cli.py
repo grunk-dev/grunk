@@ -30,10 +30,8 @@ def virtualrunenv(packages):
     This is particularly useful to make sure that all runtime dependencies
     of plugins are met. 
 
-    :param packages: package references of the form package/version or package/version@user/channel
-    :type packages: str
-    :return: None
-    :rtype: None
+    You can pass any number of package references in the conan format, e.g.
+    mypackage1/0.1.0 mypackage2/0.2.3 
     """
     return pm.virtualrunenv(packages)
 
