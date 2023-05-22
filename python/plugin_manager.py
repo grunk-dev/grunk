@@ -238,7 +238,7 @@ class PluginManager:
             os.unlink(tmp.name)
 
     
-    def _get_package_ref(package_name, package_version, user, channel):
+    def _get_package_ref(self, package_name, package_version, user, channel):
         # To Do: It would be nice to support installation from conancenter. Then we wouldn't
         # want to use the default_user and default_channel here
         if user is None:
