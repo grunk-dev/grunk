@@ -52,6 +52,7 @@ using namespace grunk;
 namespace py = pybind11;
 
 PYBIND11_MAKE_OPAQUE(std::unordered_map<std::string, DynamicFeature>);
+PYBIND11_MAKE_OPAQUE(std::vector<reflect::DynamicObject>);
 
 // the following code is needed to wrap grunk::DynamicActionPtr
 // We will tell pybind11 that grunk::DynamicActionPtr is a smart pointer.
