@@ -200,6 +200,9 @@ class PluginManager:
 
         """
 
+        if install_dir is None:
+            install_dir = self.grunk_dir
+
         package_str = self._get_package_ref(package_name, package_version, user, channel)
 
         ref = ConanFileReference.loads(package_str, validate=False)
@@ -245,9 +248,6 @@ class PluginManager:
             user = self.default_user
         if channel is None:
             channel = self.default_channel
-        if install_dir is None:
-            install_dir = self.grunk_dir
-
         if package_version is None:
             # The version ranges aren't searched for in the remotes https://github.com/conan-io/conan/issues/3113
             # This can be fixed once we migrate to conan 2.0
