@@ -15,6 +15,7 @@
 
 #include <grunk/core/Action.hpp>
 #include <grunk/dynamic/DynamicFeature.hpp>
+#include <grunk/dynamic/FeatureContainer.hpp>
 
 namespace grunk {
 
@@ -165,6 +166,11 @@ public:
         out << tag << y;
         return out.c_str();
     }
+
+    static ActionPtr<reflect::DynamicFunction> deserialize(
+        YAML::Node const&,
+        FeatureContainer const&
+    );
 
 private:
     reflect::DynamicFunction const& function;

@@ -132,22 +132,8 @@ FeatureContainer yaml_to_feature_tree(YAML::Node const& root)
             
             auto const function_name = steps[i].Tag();
 
-            std::vector<DynamicFeature> input_vec;
-            auto const inputs = steps[i][1];
-            for (auto const& input: inputs) {
-                auto input_name = input.as<std::string>();
-                auto feature_it = features.find(input_name);
-                if (feature_it == std::end(features)) {
-                    throw io_error(
-                        "Could not find input "s
-                            + input_name + " for function call to " + function_name
-                            + ". Are the steps in the correct topological order?"
-                    );
-                }
-                input_vec.push_back(feature_it->second);
-            }
 
-            auto comp_node = grunk::action("", function_name, std::move(input_vec));
+            auto comp_node = DynamicAction::deserialize(steps[i], features);
 
             auto const outputs = steps[i][0];
             if (outputs.size() != comp_node->number_of_outputs()) {

@@ -33,6 +33,7 @@ set(grunk_SRC
     grunk/core/Feature.hpp
     grunk/core/Feature.cpp
     grunk/parametric_core.hpp
+    grunk/io/io_error.hpp
     grunk/io/io.hpp
     grunk/io/io.cpp
     grunk/plugins/IPlugin.hpp
@@ -47,6 +48,7 @@ set(grunk_SRC
     grunk/dynamic/DynamicFeature.cpp
     grunk/dynamic/Expression.hpp
     grunk/dynamic/Expression.cpp
+    grunk/dynamic/FeatureContainer.hpp
     grunk/grunk.hpp
     grunk/helper/String.hpp
     grunk/helper/String.cpp
