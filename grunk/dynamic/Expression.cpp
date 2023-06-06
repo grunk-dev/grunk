@@ -1,5 +1,6 @@
 #include "Expression.hpp"
 #include <grunk/io/io_error.hpp>
+#include <unordered_map>
 
 namespace grunk {
 
@@ -21,14 +22,23 @@ Expression::Expression(
 
 void Expression::eval() const 
 {
-    mup::ParserX parser;
+    mu::Parser parser;
     parser.SetExpr(expr);
+    std::unordered_map<std::string, double> vars;
     for (auto const& input : inputs) {
-        mup::Value  val(input.value().as<double>());
-        parser.DefineVar(input.id(), mup::Variable(&val));
+        auto ret = vars.emplace(
+            std::make_pair(
+                input.id(),
+                input.value().as<double>()
+            )
+        );
+        parser.DefineVar(
+            input.id(), 
+            &(ret.first->second)
+        );
     }
 
-    double result = parser.Eval().GetFloat();
+    double result = parser.Eval();
     if (!out.expired()) {
         out.set_value(reflect::DynamicObject(result));
     }
@@ -54,8 +64,7 @@ ExpressionPtr Expression::deserialize(
 )
 {
     std::string expr = node[1].as<std::string>();
-    mup::ParserX p;
-    p.EnableAutoCreateVar(true);
+    mu::Parser p;
     p.SetExpr(expr);
 
     std::vector<DynamicFeature> input_vec;

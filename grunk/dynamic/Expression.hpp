@@ -5,7 +5,7 @@
 
 #include <grunk/parametric_core.hpp>
 #include <yaml-cpp/yaml.h>
-#include "muparserx/mpParser.h"
+#include "muParser.h"
 
 namespace grunk {
 
