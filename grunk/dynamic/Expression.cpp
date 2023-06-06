@@ -38,7 +38,17 @@ void Expression::eval() const
         );
     }
 
-    auto result = reflect::DynamicObject(parser.Eval());
+    double res;
+    try {
+        res = parser.Eval();
+    } catch (mu::Parser::exception_type &e) {
+        throw io_error(
+            "Could not parse expression \""s
+            + expr 
+            + "\": "
+            + e.GetMsg());
+    }
+    auto result = reflect::DynamicObject(std::move(res));
     if (!out.expired()) {
         out.set_value(result);
     }
@@ -73,9 +83,9 @@ ExpressionPtr Expression::deserialize(
         if (feature_it == std::end(features)) {
             throw io_error(
                 "Could not find input "s
-                    + input_name + " in expression " + node[0].as<std::string>()
+                    + input_name + " in expression \"" + node[0].as<std::string>()
                     + " = " + expr
-                    + ". Are the steps in the correct topological order?"
+                    + "\". Are the steps in the correct topological order?"
             );
         }
         input_vec.push_back(feature_it->second);

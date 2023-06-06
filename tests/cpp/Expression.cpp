@@ -50,3 +50,35 @@ TEST_F(ExpressionTest, serialize)
     EXPECT_EQ(tree.size(), 3);
     EXPECT_NEAR(tree.at("z").value().as<double>(), 3, 1e-15);
 }
+
+TEST_F(ExpressionTest, UnknownUnknown)
+{
+    auto x = Feature("x", "double", 1.5);
+    auto y = Feature("y", "double", 2.);
+    auto z = expression("z", "a*y", x,y)->output();
+    EXPECT_THROW(z.value(), grunk::io_error);
+}
+
+TEST_F(ExpressionTest, UnknownFunction)
+{
+    auto x = Feature("x", "double", 1.5);
+    auto y = Feature("y", "double", 2.);
+    auto z = expression("z", "x*fun(y)", x,y)->output();
+    EXPECT_THROW(z.value(), grunk::io_error);
+}
+
+TEST_F(ExpressionTest, UnknownOperator)
+{
+    auto x = Feature("x", "double", 1.5);
+    auto y = Feature("y", "double", 2.);
+    auto z = expression("z", "x$y", x,y)->output();
+    EXPECT_THROW(z.value(), grunk::io_error);
+}
+
+TEST_F(ExpressionTest, EmptyString)
+{
+    auto x = Feature("x", "double", 1.5);
+    auto y = Feature("y", "double", 2.);
+    auto z = expression("z", "", x,y)->output();
+    EXPECT_THROW(z.value(), grunk::io_error);
+}
