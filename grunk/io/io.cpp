@@ -133,7 +133,7 @@ FeatureContainer yaml_to_feature_tree(YAML::Node const& root)
             
             auto const function_name = steps[i].Tag();
 
-            if (function_name == "expression") {
+            if (function_name == "expr") {
 
                 auto comp_node = Expression::deserialize(steps[i], features);
                 auto output_name = steps[i][0].as<std::string>();

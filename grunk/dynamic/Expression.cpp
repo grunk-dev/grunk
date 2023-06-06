@@ -38,9 +38,9 @@ void Expression::eval() const
         );
     }
 
-    double result = parser.Eval();
+    auto result = reflect::DynamicObject(parser.Eval());
     if (!out.expired()) {
-        out.set_value(reflect::DynamicObject(result));
+        out.set_value(result);
     }
 }
 
@@ -68,7 +68,7 @@ ExpressionPtr Expression::deserialize(
     p.SetExpr(expr);
 
     std::vector<DynamicFeature> input_vec;
-    for (auto const& [input_name, var] : p.GetVar()) {
+    for (auto const& [input_name, var] : p.GetUsedVar()) {
         auto feature_it = features.find(input_name);
         if (feature_it == std::end(features)) {
             throw io_error(
@@ -79,7 +79,6 @@ ExpressionPtr Expression::deserialize(
             );
         }
         input_vec.push_back(feature_it->second);
-        // cout << item->first << "=" << (Variable&)(*(item->second)) << "\n";
     }
 
     return grunk::expression("", expr, std::move(input_vec));
