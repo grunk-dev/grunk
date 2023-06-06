@@ -19,6 +19,7 @@ set(BUILD_SHARED_LIBS  ON)
 
 # find dependencies
 find_package(yaml-cpp REQUIRED)
+find_package(muparserx REQUIRED)
 find_package(Boost REQUIRED COMPONENTS headers)
 find_package(parametric REQUIRED)
 find_package(reflect REQUIRED)
@@ -44,6 +45,8 @@ set(grunk_SRC
     grunk/dynamic/DynamicFeature.hpp
     grunk/dynamic/DynamicFeature.inl
     grunk/dynamic/DynamicFeature.cpp
+    grunk/dynamic/Expression.hpp
+    grunk/dynamic/Expression.cpp
     grunk/grunk.hpp
     grunk/helper/String.hpp
     grunk/helper/String.cpp
@@ -58,6 +61,7 @@ target_link_libraries(grunk PUBLIC ${CMAKE_DL_LIBS}
                                    reflect::reflect
                                    Boost::headers
                                    yaml-cpp::yaml-cpp
+                                   muparserx::muparserx
 				   # this is needed to support older gcc versions:
 				   $<$<AND:$<CXX_COMPILER_ID:GNU>,$<VERSION_LESS:$<CXX_COMPILER_VERSION>,9.0>>:stdc++fs>)
 target_include_directories(grunk PUBLIC
