@@ -32,7 +32,7 @@ namespace grunk {
 
         void eval() const override final;
 
-        inline DynamicFeature output(size_t idx = 0) const
+        inline DynamicFeature output() const
         {
             return DynamicFeature(out, reflect::resolve<double>());
         }
