@@ -1,5 +1,5 @@
 /**
- * @file DynamicAction.h
+ * @file DynamicAction.hpp
  * 
  * This file implements the template specialization of Action for DynamicFunctions
  */
@@ -54,6 +54,7 @@ private:
      * @brief Construct a new DynamicAction given a DynamicFunction<F> and 
      * an std::vector of DynamicFeatures.
      * 
+     * @param id The id of the output Feature
      * @param fun A const pointer to a reflect::Function
      * @param in The input DynamicFeatures
      */
@@ -79,7 +80,7 @@ private:
 
 public:
     /**
-     * @brief This function evaluates the wrapped function and cacnes the
+     * @brief This function evaluates the wrapped function and caches the
      * output.
      * 
      */
@@ -128,7 +129,7 @@ public:
      * If the wrapped function returns something other than an std::tuple, 
      * there will be just one output.
      * 
-     * @param Iix The index of the output. Defaults to zero.
+     * @param idx The index of the output. Defaults to zero.
      * @return decltype(auto) a Feature wrapping the output of index Idx
      */
     DynamicFeature output(size_t idx = 0) const
@@ -137,12 +138,33 @@ public:
     }
 
     // for consistency with static output
+    /**
+     * @brief returns the output(s) of the function wrapped in DynamicFeature instances.
+     *
+     * If the wrapped function returns an std::tuple, each element in this
+     * tuple is interpreted as an individual output of this action. This function
+     * accepts a template integer argument to specify the index of the output.
+     *
+     * If the wrapped function returns something other than an std::tuple,
+     * there will be just one output.
+     *
+     * @tparam Idx The index of the output. Defaults to zero.
+     * @return decltype(auto) a Feature wrapping the output of index Idx
+     */
     template <size_t Idx = 0>
     DynamicFeature output() const
     {
         return output(Idx);
     }
 
+    /**
+     * @brief serialize a DynamicAction to yaml, for use in a grunk recipe. It will be
+     * serialized using the function name as a tag. The yaml node consists of a list
+     * with two elements. The first element is a list containing the ids of the output
+     * ::grunk::DynamicFeature instances. The second element is a list containing the
+     * ids of the input ::grunk::DynamicFeature instances.
+     * @return A yaml-string representing the DynamicAction
+     */
     std::string serialize() const override final
     {
 
@@ -167,6 +189,13 @@ public:
         return out.c_str();
     }
 
+    /**
+     * @brief deserializes a yaml-representation of a DynamicAction , e.g. from a
+     * grunk recipe, to an instance of ::grunk::ActionPtr, wrapping an instance of
+     * a ::grunk::DynamicAction.
+     *
+     * @return ::grunk::ActionPtr, wrapping an instance of a ::grunk::DynamicAction.
+     */
     static ActionPtr<reflect::DynamicFunction> deserialize(
         YAML::Node const&,
         FeatureContainer const&
@@ -213,7 +242,8 @@ struct DynamicActionFactory
      * @brief Returns a new DynamicActionPtr given a DynamicFunction and an
      * vector of DynamicFeatures
      * 
-     * @param fun The reflect::function to be wrapped
+     * @param id The id of the output ::grunk::DynamicFeature
+     * @param fun The reflect::DynamicFunction to be wrapped
      * @param args The input features
      * @return DynamicActionPtr The returned compute_node_ptr wrapping a DynamicAction
      */
@@ -238,6 +268,7 @@ struct DynamicActionFactory
  * @tparam F The type of the function to be wrapped. This can be any referentially transparent function, 
              In particular, the function must be invokable on const 
              references.
+ * @param id The id of the output ::grunk::DynamicFeature
  * @param fun The input function
  * @param args The input features of the feature tree
  * @return DynamicActionPtr A special pointer type wrapping a DynamicAction instance.
@@ -255,6 +286,7 @@ DynamicActionPtr action(std::string const& id, reflect::DynamicFunction const& f
  * be wrapped in an unnamed/anonymous feature
  * 
  * @tparam Args The types of the arguments expected by the input function
+ * @param id The id of the output ::grunk::DynamicFeature
  * @param fun The input function
  * @param args The input features of the feature tree
  * @return DynamicActionPtr A special pointer type wrapping a DynamicAction instance.
@@ -284,6 +316,7 @@ DynamicActionPtr action(std::string const& id, reflect::DynamicFunction const& f
  * passed the input features.
  * 
  * @tparam Args The types of the arguments expected by the registered function
+ * @param id The id of the output ::grunk::DynamicFeature
  * @param name The string identifier of the registered function
  * @param args The input Features
  * @return DynamicActionPtr A special pointer type wrapping the DynamicAction

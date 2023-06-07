@@ -1,5 +1,5 @@
 /**
- * @file io.h
+ * @file io.hpp
  * 
  * This file contains all routines needed for reading a feature tree
  * from a yaml file and writing a feature tree to a yaml file

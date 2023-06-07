@@ -39,6 +39,9 @@ public:
      */
     ~PluginRegistry();
 
+    /**
+     * @brief The Entry struct is a composition class of the loaded library and the plugin initialized from it.
+     */
     struct Entry {
         boost::dll::shared_library library;
         std::unique_ptr<IPlugin> plugin;
@@ -81,9 +84,9 @@ public:
     void unload_all();
 
     /**
-     * @brief 
-     * 
-     */
+      * @brief returns the plugins
+      * @return The loaded plugins
+      */
      PluginMap const& plugins() const
      {
         return loaded_plugins;
