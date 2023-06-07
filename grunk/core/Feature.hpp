@@ -1,5 +1,5 @@
 /**
- * @file Feature.h
+ * @file Feature.hpp
  *
  * Declaration and Definition of the Feature class.
  *
@@ -88,6 +88,7 @@ public:
     /**
      * @brief Construct a new FeatureBase object from an instance of type T
      * 
+     * @param id The id of the Feature
      * @param t The instance to be wrapped inside this feature
      */
     FeatureBase(std::string const& id, T&& t)
@@ -141,6 +142,10 @@ public:
         return m_param.id();
     }
 
+    /**
+     * @brief set_id sets the id
+     * @param s The id of the feature
+     */
     void set_id(std::string const& s) {
         m_param.set_id(s);
     }
@@ -183,6 +188,9 @@ public:
 
 protected:
 
+    /**
+     * @brief m_param FeatureBase is a wrapper around a parametric::param
+     */
     parametric::param<T> m_param;
 };
 
@@ -203,11 +211,15 @@ template <typename T>
 class Feature : public FeatureBase<T>
 {
 public:
+    /**
+     * @brief The type of the wrapped value
+     */
     using value_type = T;
 
     /**
      * @brief Construct a new Feature object from an instance of type T.
      * 
+     * @param id The id of the Feature
      * @param t The object to be wrapped
      */
     Feature(std::string const& id, T&& t)
@@ -244,6 +256,7 @@ public:
      * be marked for lazy reconstruction.
      * 
      * @tparam Args Constructor argument types for T
+     * @param id The id of the Feature
      * @param args input Features for the constructor of T
      */
     template <

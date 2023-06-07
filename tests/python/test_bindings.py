@@ -21,3 +21,12 @@ def test_integration_hello_world():
 
     a.access_value().set("value", 4.4)
     assert 6.6 == pytest.approx(c.value().get("value").as_float())
+
+def test_expression():
+    grunk.get_plugin_registry() # initializes standard plugin
+
+    a = grunk.Feature("x", "double", 0.)
+    b = grunk.Feature("y", "double", 0.75)
+    c = grunk.expression("z", "2*cos(x)*y+1", a, b).output()
+    assert 2.5 == pytest.approx(c.value().as_float())
+

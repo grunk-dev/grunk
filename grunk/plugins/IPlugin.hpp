@@ -1,5 +1,5 @@
 /**
- * @file IPlugin.h
+ * @file IPlugin.hpp
  *
  * This file contains the implementation of the plugin interface 
  *

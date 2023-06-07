@@ -1,5 +1,5 @@
 /**
- * @file Action.h
+ * @file Action.hpp
  *
  * Declaration and Definition of the Action class.
  * 
@@ -69,6 +69,7 @@ public:
     /**
      * @brief Construct a new Action object
      * 
+     * @param id The id of the output Feature
      * @param f  the function to be wrapped
      * @param args The arguments of the function wrapped in Feature instances
      */
@@ -133,6 +134,10 @@ public:
         }
     }
 
+    /**
+     * @brief serialize throws an exception, as currenlty only DynamicActions can be serialized to yaml.
+     * @return yaml-string representing the action.
+     */
     std::string serialize() const override final
     {
         throw std::logic_error("Only Actions wrapping a registered dynamic function can be serialized\n");
@@ -192,6 +197,7 @@ struct ActionFactory
      * 
      * @tparam F The type of the wrapped function
      * @tparam Args The types of the arguments expected by the wrapped function
+     * @param id The id of the output of the new Action
      * @param fun The function to be wrapped in an Action instance
      * @param args The arguments wrapped in Features to be passed to the function on evaluation
      * @return ActionPtr<F, Args...> a parametric::compute_node_ptr wrapping the Action instance
@@ -216,6 +222,7 @@ struct ActionFactory
              In particular, the function must be invokable on const 
              references.
  * @tparam Args The types of the arguments expected by the input function
+ * @param id The id used for the output of the function
  * @param fun The input function
  * @param args The input features of the feature tree
  * @return ActionPtr<F, Args...> A special pointer type wrapping an Action instance.
@@ -247,6 +254,7 @@ ActionPtr<F, Args...> action(std::string const& id, F const& fun, Feature<Args> 
              In particular, the function must be invokable on const 
              references.
  * @tparam Args The types of the arguments expected by the input function
+ * @param id the id of the output Feature
  * @param fun The input function
  * @param args The input features of the feature tree
  * @return ActionPtr<F, Args...> A special pointer type wrapping an Action instance.

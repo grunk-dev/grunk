@@ -1,6 +1,7 @@
 #include "io.hpp"
 
 #include <grunk/dynamic/DynamicAction.hpp>
+#include <grunk/dynamic/Expression.hpp>
 
 namespace grunk {
 
@@ -132,39 +133,40 @@ FeatureContainer yaml_to_feature_tree(YAML::Node const& root)
             
             auto const function_name = steps[i].Tag();
 
-            std::vector<DynamicFeature> input_vec;
-            auto const inputs = steps[i][1];
-            for (auto const& input: inputs) {
-                auto input_name = input.as<std::string>();
-                auto feature_it = features.find(input_name);
-                if (feature_it == std::end(features)) {
-                    throw io_error(
-                        "Could not find input "s
-                            + input_name + " for function call to " + function_name
-                            + ". Are the steps in the correct topological order?"
-                    );
-                }
-                input_vec.push_back(feature_it->second);
-            }
+            if (function_name == "expr") {
 
-            auto comp_node = grunk::action("", function_name, std::move(input_vec));
-
-            auto const outputs = steps[i][0];
-            if (outputs.size() != comp_node->number_of_outputs()) {
-                throw io_error("Number of given outputs doesn't match number of outputs of function "s + function_name);
-            }
-
-            size_t idx = 0;
-            for (auto const& node : outputs) {
-                auto output_name = node.as<std::string>();
-
+                auto comp_node = Expression::deserialize(steps[i], features);
+                auto output_name = steps[i][0].as<std::string>();
                 if (features.find(output_name) != features.end()) {
-                    throw io_error("Error parsing step " + std::to_string(idx) + ": A parameter with name \"" + output_name + "\" already exists.");
+                    throw io_error("Error parsing step " + std::to_string(i) + ": A parameter with name \"" + output_name + "\" already exists.");
                 }
-
-                auto output = comp_node->output(idx++);
+                auto output = comp_node->output();
                 output.set_id(output_name);
                 features.emplace(output_name, output);
+
+            } else {
+
+
+                auto comp_node = DynamicAction::deserialize(steps[i], features);
+
+                auto const outputs = steps[i][0];
+                if (outputs.size() != comp_node->number_of_outputs()) {
+                    throw io_error("Number of given outputs doesn't match number of outputs of function "s + function_name);
+                }
+
+                size_t idx = 0;
+                for (auto const& node : outputs) {
+                    auto output_name = node.as<std::string>();
+
+                    if (features.find(output_name) != features.end()) {
+                        throw io_error("Error parsing step " + std::to_string(i) + ": A parameter with name \"" + output_name + "\" already exists.");
+                    }
+
+                    auto output = comp_node->output(idx++);
+                    output.set_id(output_name);
+                    features.emplace(output_name, output);
+                }
+
             }
 
 
