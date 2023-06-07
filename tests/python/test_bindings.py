@@ -14,7 +14,7 @@ def test_integration_hello_world():
     grunk.load("PluginB", version="0.1.0", install_missing=True)
     assert grunk.get_plugin_registry().count() == 2
     
-    d = grunk.Feature("d", "PluginA::Scalar", 2.)
+    d = grunk.Feature("d", "PluginA::Scalar", 2)
     e = grunk.action("e", "PluginB::multiply", d, grunk.read("test.grr")["c"]).output()
     assert 11 == pytest.approx(e.value().get("value").as_float())
     grunk.write("test2.grr", e)
