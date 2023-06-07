@@ -19,7 +19,16 @@ void StdPlugin::init() const
 {
     register_type<bool>("bool");
 
-    register_type<int>("int");
+    register_type<int>("int")
+    .add_constructor<int>()
+    .add_member_function(
+        [](int const& v){ return YAML::Node(v); }, 
+        "serialize"
+    )
+    .add_member_function(
+        [](YAML::Node const& y){ return y.as<int>(); },
+        "deserialize"
+    );
     
     register_type<double>("double")
     .add_constructor<double>()
