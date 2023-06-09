@@ -1,3 +1,11 @@
+# v0.2.1
+
+ - bump reflect to 0.1.6
+ - Add `grunk::expression` and `grunk::Expression` to create 
+ compute nodes, that represent the evaluation of simple calculations. 
+ This implementation is based on muparser and all functions and operators supported by muparser can be used (#33). 
+
+
 # v0.2.0
 
  - `DynamicFeature` constructor accepting `DynamicFeature`s as argument has been removed. This caused ambiguities with default-constructible types. Now there is a create factory method to create a new `DynamicFeature` from others. Also, `action` can be used to evaluate a constructor (#39)
