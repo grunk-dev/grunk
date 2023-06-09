@@ -71,7 +71,7 @@ namespace PYBIND11_NAMESPACE { namespace detail {
         }
     };
 }}
-PYBIND11_DECLARE_HOLDER_TYPE(DynamicAction, parametric::compute_node_ptr<DynamicAction>);
+PYBIND11_DECLARE_HOLDER_TYPE(T, parametric::compute_node_ptr<T>);
 
 
 
@@ -203,6 +203,25 @@ PYBIND11_MODULE(_core, m)
             return grunkpy::invoke_variadic_rt<grunk::DynamicFeature const&>(
                 [&](auto&&... args){
                     return grunk::action(id, name, std::forward<decltype(args)>(args)...);
+                },
+                pyargs
+            );
+        }
+    );
+
+    py::class_<Expression, parametric::compute_node_ptr<Expression>>(m, "Expression")
+    .def(
+        "output", 
+        &Expression::output
+    )
+    .def("eval", &Expression::eval);
+
+    m.def(
+        "expression", 
+        [](std::string const& id, std::string const& expr, py::args pyargs){
+            return grunkpy::invoke_variadic_rt<grunk::DynamicFeature const&>(
+                [&](auto&&... args){
+                    return grunk::expression(id, expr, std::forward<decltype(args)>(args)...);
                 },
                 pyargs
             );

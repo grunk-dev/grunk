@@ -1,5 +1,5 @@
 /**
- * @file io.h
+ * @file io.hpp
  * 
  * This file contains all routines needed for reading a feature tree
  * from a yaml file and writing a feature tree to a yaml file
@@ -10,12 +10,13 @@
 
 #pragma once 
 
+#include <grunk/io/io_error.hpp>
 #include <grunk/parametric_core.hpp>
 #include <grunk/dynamic/DynamicFeature.hpp>
+#include <grunk/dynamic/FeatureContainer.hpp>
 #include <grunk/plugins/PluginRegistry.hpp>
 #include <grunk/version.hpp>
 
-#include <stdexcept>
 #include <utility>
 #include <initializer_list>
 #include <stack>
@@ -23,38 +24,6 @@
 
 
 namespace grunk {
-
-using namespace std::string_literals;
-
-/**
- * @brief An exception representing errors with grunk's file I/O system
- */
-class io_error : public std::exception
-{
-public: 
-    /**
-     * @brief Construct a new io error object from an error message
-     * 
-     * @param msg 
-     */
-    io_error(std::string const& msg);
-
-    /**
-     * @brief print the error message with the prefix "grunk IO error"
-     * 
-     * @return const char* the error message
-     */
-    const char *what() const noexcept override;
-
-    /**
-     * @brief Get the error message without the prefix "grunk IO error"
-     * 
-     * @return std::string the error message
-     */
-    std::string get_message() const;
-private:
-    std::string mMessage;
-};
 
 namespace details {
 
@@ -356,17 +325,6 @@ void write(std::string const& filename, Args const&... args)
     std::ofstream fout(filename);
     fout << to_string(args...) << "\n";
 }
-
-/**
- * @brief When deserializing a feature tree from yaml, the features
- * of the feature tree will be contained in a FeatureContainer.
- *
- * It is a typedef for an unordered_map, where the keys are the ids
- * of the features.
- * 
- * @ingroup fileio
- */
-using FeatureContainer = std::unordered_map<std::string, DynamicFeature>;
 
 namespace details {
 

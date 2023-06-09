@@ -1,5 +1,5 @@
 /**
- * @file DynamicFeature.h
+ * @file DynamicFeature.hpp
  *
  * This file contains the template specialization of Feature for reflect::DynamicObjects
  */
@@ -43,6 +43,7 @@ public:
      * it in a feature instance. See also make_rto.
      * 
      * @tparam Args The constructor arguments
+     * @param id The id of the Feature
      * @param typeName The string representation of the reflected type
      * @param args The constructor arguments
      */
@@ -75,6 +76,7 @@ public:
      * the correct constructor.
      * 
      * @tparam Args Constructor argument types for the type to be constructed
+     * @param id The id of the Feature
      * @param typeName The string representation of the reflected type
      * @param args input Features for the constructor for the type to b constructed 
      */
@@ -85,6 +87,8 @@ public:
      * @brief Construct a new DynamicFeature given a parametric::param<T>.
      *
      * @param p The parametric::param<T> to be wrapped in a Feature
+     * @param t An optional type descriptor, so that we can know the type of the held feature
+     *          without having to evaluate the parametric tree.
      */
     Feature(parametric::param<reflect::DynamicObject>&& p, reflect::TypeDescriptor const* t = nullptr);
     //note: The type descriptor is optional to be consistent with the compile time action.
@@ -92,6 +96,7 @@ public:
     /**
      * @brief Construct a new DynamicFeature given an reflect::DynamicObject
      * 
+     * @param id The id of the Feature
      * @param o The input reflect::DynamicObject
      */
     explicit Feature(std::string const& id, reflect::DynamicObject&& o);
@@ -141,6 +146,7 @@ public:
      * the dependencies of the outputs on this in the feature tree
      * 
      * @tparam Args The argument types expected by the member function
+     * @param id The id of the output Feature
      * @param memberFunName The string representation of the member function
      * @param args The arguments of the member function
      * @return DynamicFeature The return value of the member function 
@@ -148,6 +154,12 @@ public:
     template <typename... Args>
     decltype(auto) invoke(std::string const& id, std::string const& memberFunName, Feature<Args> const&... args) const;
 
+    /**
+     * @brief get_type_descriptor returns a pointer to the type descriptor class of the held type.
+     * This class holds information about the name of the type, base classes, convesion operators,
+     * data members and member functions
+     * @return type descriptor of the type of the held value.
+     */
     reflect::TypeDescriptor const* get_type_descriptor() const {
         return type_descriptor;
     }
