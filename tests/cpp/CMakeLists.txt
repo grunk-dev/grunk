@@ -28,6 +28,21 @@ add_executable(runUnitTests ${TESTSOURCES})
 target_link_libraries(runUnitTests PRIVATE grunk gtest_main)
 add_dependencies(runUnitTests SimplePlugin)
 
+configure_file(
+        ${CMAKE_CURRENT_SOURCE_DIR}/../test_data/simple_test.grr.in 
+        ${CMAKE_CURRENT_BINARY_DIR}/test_data/simple_test.grr
+)
+
+configure_file(
+        ${CMAKE_CURRENT_SOURCE_DIR}/../test_data/simple_test_duplicate_name_step.grr.in
+        ${CMAKE_CURRENT_BINARY_DIR}/test_data/simple_test_duplicate_name_step.grr
+)
+
+configure_file(
+        ${CMAKE_CURRENT_SOURCE_DIR}/../test_data/simple_test_duplicate_name_parameter.grr.in
+        ${CMAKE_CURRENT_BINARY_DIR}/test_data/simple_test_duplicate_name_parameter.grr
+)
+
 add_custom_command(
   TARGET runUnitTests POST_BUILD
   COMMAND ${CMAKE_COMMAND} -E copy_directory
