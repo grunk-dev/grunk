@@ -29,6 +29,8 @@ The python module can be installed using `pip`:
 pip install git+https://gitlab.dlr.de/paradigms/grunk
 ```
 
+Make sure you have [setup conan properly](https://paradigms.pages.gitlab.dlr.de/grunk/installation.html#setup-conan) before so that the dependencies can be downloaded during the installation with pip.
+
 ## Building grunk from source
 
 Refer to the [build instructions](https://paradigms.pages.gitlab.dlr.de/grunk/installation.html#building-from-source) of the documentation.
