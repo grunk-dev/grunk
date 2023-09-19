@@ -91,7 +91,7 @@ TEST_F(DynamicFeatureTest, get)
 {
     Feature x("x", "MyStruct", 0.5);
 
-    Feature v = x.get("v", "val")->output();
+    Feature v = x.get("v", "val");
     EXPECT_EQ(reflect::cast<double>(v.value()), 0.5);
 
      x.access_value().set("val", 0.3);
@@ -104,7 +104,7 @@ TEST_F(DynamicFeatureTest, invoke)
     Feature x("x", "MyStruct", 0.5);
     Feature factor("factor", "double", 3.);
 
-    Feature v = x.invoke("v", "times", factor)->output();
+    Feature v = x.invoke("v", "times", factor).output();
     
     EXPECT_FALSE(v.is_valid());
     EXPECT_NEAR(reflect::cast<double>(v.value()), 1.5, 1e-12);

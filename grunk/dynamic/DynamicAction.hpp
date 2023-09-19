@@ -43,7 +43,11 @@ namespace details {
  * @ingroup dynamic_advanced
  */
 template <>
-class Action<reflect::DynamicFunction> : public parametric::ComputeNode
+class Action<reflect::DynamicFunction> : public parametric::ComputeNode<
+                                                    Action<reflect::DynamicFunction>,
+                                                    parametric::Results<std::vector<reflect::DynamicObject>>, /* Results are ignored*/
+                                                    parametric::Arguments<std::vector<reflect::DynamicObject>> /* Arguments are ignored by derived class */
+                                                >
 {
 
     friend struct details::DynamicActionFactory;
@@ -58,16 +62,12 @@ private:
      * @param fun A const pointer to a reflect::Function
      * @param in The input DynamicFeatures
      */
-    Action(std::string const& id, reflect::DynamicFunction const& fun, std::vector<DynamicFeature> const& in)
+    Action(std::string const& id, reflect::DynamicFunction const& fun)
      : function(fun)
-     , inputs{in}
-     , outputs(function.num_outputs())
     {
         set_id(id);
-        for (auto& i: inputs){
-            depends_on(i.param());
-        }
 
+        /**
         size_t n_outputs = function.num_outputs();
         for (size_t i=0; i<n_outputs; ++i){
             std::string output_id = id;
@@ -76,6 +76,7 @@ private:
             } 
             computes(outputs[i], parametric::param<reflect::DynamicObject>(output_id));
         }
+        **/
     }
 
 public:
@@ -88,73 +89,20 @@ public:
     {
         // tranform input nodes to vector of DynamicObjects
         std::vector<reflect::DynamicObject> inputs_vec;
-        std::transform(
-            inputs.begin(),
-            inputs.end(),
-            std::back_inserter(inputs_vec),
-            [](auto const& in_feature) {
-                return in_feature.param().value().as_const();
-            }
-        );
+        inputs_vec.reserve(this->num_parents());
+        for (size_t i = 0; i < this->num_parents(); ++i) {
+            inputs_vec.push_back(this->arg<reflect::DynamicObject>(i).value().as_const());
+        }
 
         // call the wrapped function
-        return_values = function.invoke(inputs_vec);
+        auto ret = function.invoke(inputs_vec);
 
-        assert(return_values.size() == outputs.size());
-        
-        // move the output values to the output nodes
-        for (size_t i=0; i < outputs.size(); ++i) {
-            if (!outputs[i].expired()) {
-                outputs[i].set_value(return_values[i]);
+        // transform to outputs
+        for (size_t i=0; i < this->num_children(); ++i) {
+            if (auto output = this->template res<reflect::DynamicObject>(i); output) {
+                output->set_value(ret[i]);
             }
         }
-    }
-
-    /**
-     * @brief returns the number of outputs
-     * 
-     * @return size_t the number of outputs
-     */
-    size_t number_of_outputs() const {
-        return outputs.size();
-    }
-
-    /**
-     * @brief returns the output(s) of the function wrapped in DynamicFeature instances.
-     *
-     * If the wrapped function returns an std::tuple, each element in this 
-     * tuple is interpreted as an individual output of this action. This function
-     * accepts a template integer argument to specify the index of the output.
-     *
-     * If the wrapped function returns something other than an std::tuple, 
-     * there will be just one output.
-     * 
-     * @param idx The index of the output. Defaults to zero.
-     * @return decltype(auto) a Feature wrapping the output of index Idx
-     */
-    DynamicFeature output(size_t idx = 0) const
-    {
-        return DynamicFeature(outputs[idx], function.get_return_type(idx));
-    }
-
-    // for consistency with static output
-    /**
-     * @brief returns the output(s) of the function wrapped in DynamicFeature instances.
-     *
-     * If the wrapped function returns an std::tuple, each element in this
-     * tuple is interpreted as an individual output of this action. This function
-     * accepts a template integer argument to specify the index of the output.
-     *
-     * If the wrapped function returns something other than an std::tuple,
-     * there will be just one output.
-     *
-     * @tparam Idx The index of the output. Defaults to zero.
-     * @return decltype(auto) a Feature wrapping the output of index Idx
-     */
-    template <size_t Idx = 0>
-    DynamicFeature output() const
-    {
-        return output(Idx);
     }
 
     /**
@@ -171,15 +119,18 @@ public:
         YAML::Node y;
 
         // outputs
+        auto const& outputs = this->template res<0>();
         y.push_back(YAML::Node());
-        for (auto const& output : outputs){
-            y[0].push_back(output.param().id());
+        for (size_t i = 0; i < this->num_children(); ++i){
+            if(auto const& output = this->res<reflect::DynamicObject>(i); output)
+                y[0].push_back(output->id());
         }
 
         // inputs
         y.push_back(YAML::Node());
-        for (auto const& input : inputs){
-            y[1].push_back(input.param().id());
+        for (size_t i = 0; i < this->num_parents(); ++i){
+            auto const& input = this->arg<reflect::DynamicObject>(i);
+            y[1].push_back(input.id());
         }
         y.SetStyle(YAML::EmitterStyle::Flow);
         YAML::Emitter out;
@@ -191,21 +142,18 @@ public:
 
     /**
      * @brief deserializes a yaml-representation of a DynamicAction , e.g. from a
-     * grunk recipe, to an instance of ::grunk::ActionPtr, wrapping an instance of
-     * a ::grunk::DynamicAction.
+     * grunk recipe, to an instance of ::grunk::DynamicAction.
      *
-     * @return ::grunk::ActionPtr, wrapping an instance of a ::grunk::DynamicAction.
+     * @return The list of return values wrapped in DynamicFeature instances
      */
-    static ActionPtr<reflect::DynamicFunction> deserialize(
+    static ResultHolder<Action<reflect::DynamicFunction>> deserialize(
         YAML::Node const&,
         FeatureContainer const&
     );
 
 private:
     reflect::DynamicFunction const& function;
-    std::vector<DynamicFeature> const inputs;
     std::vector<reflect::DynamicObject> mutable return_values;
-    std::vector<parametric::OutputParam<reflect::DynamicObject>> mutable outputs;
 };
 
 /**
@@ -214,11 +162,34 @@ private:
  */
 using DynamicAction = Action<reflect::DynamicFunction>;
 
-/**
- * @brief A parametric::compute_node_ptr wrapping a DynamicAction
- * @ingroup dynamic_advanced
- */
-using DynamicActionPtr = ActionPtr<reflect::DynamicFunction>;
+template <>
+class ResultHolder<DynamicAction> {
+    using result_type = std::vector<DynamicFeature>;
+public:
+
+    ResultHolder(result_type const& res, DynamicAction const& c) : result(res), m_compute_node(c) {}
+
+    decltype(auto) output(int i=0) {
+        return result[i];
+    }
+
+    size_t size() const {
+        return result.size();
+    }
+
+    DynamicAction const& compute_node() const {
+        return m_compute_node;
+    }
+
+    void eval() const {
+        compute_node().eval();
+    }
+
+
+private:
+    DynamicAction const& m_compute_node;
+    result_type result;
+};
 
 namespace details {
 
@@ -238,6 +209,7 @@ namespace details {
  */
 struct DynamicActionFactory
 {
+
     /**
      * @brief Returns a new DynamicActionPtr given a DynamicFunction and an
      * vector of DynamicFeatures
@@ -247,13 +219,45 @@ struct DynamicActionFactory
      * @param args The input features
      * @return DynamicActionPtr The returned compute_node_ptr wrapping a DynamicAction
      */
-    static DynamicActionPtr new_action(
+    static ResultHolder<DynamicAction> new_action(
         std::string const& id, 
         reflect::DynamicFunction const& fun, 
         std::vector<DynamicFeature> const& args
     )
     {
-        return DynamicActionPtr(new DynamicAction(id, fun, args));
+        auto ptr = std::shared_ptr<DynamicAction>(new DynamicAction(id, fun));
+
+        struct raii {
+            std::shared_ptr<DynamicAction> const& ptr;
+            ~raii() {
+                ptr->post_connect();
+            }
+        };
+        raii r{ptr};
+
+        // connect compute node to arguments
+        for (auto const& arg : args) {
+            add_parent(ptr, arg.param().node_pointer());
+        }
+
+        // initialize outputs and connect compute node to outputs
+        std::vector<DynamicFeature> res;
+        res.reserve(fun.num_outputs());
+
+        for (size_t i = 0; i < fun.num_outputs(); ++i) {
+
+            std::string output_id = id;
+            if (fun.num_outputs() > 1) {
+                output_id += "[" + std::to_string(i) + "]";
+            } 
+
+
+            res.push_back({parametric::param<reflect::DynamicObject>{output_id}, fun.get_return_type(i)});
+            add_parent(res.back().param().node_pointer(), ptr);
+        }
+
+        return ResultHolder<DynamicAction>(res, *ptr);
+
     }
 
 };
@@ -271,10 +275,10 @@ struct DynamicActionFactory
  * @param id The id of the output ::grunk::DynamicFeature
  * @param fun The input function
  * @param args The input features of the feature tree
- * @return DynamicActionPtr A special pointer type wrapping a DynamicAction instance.
+ * @return ResultHolder A special wrapper class around the output features.
  * @ingroup dynamic_advanced
  */
-DynamicActionPtr action(std::string const& id, reflect::DynamicFunction const& fun, std::vector<DynamicFeature> const& args);
+ResultHolder<DynamicAction> action(std::string const& id, reflect::DynamicFunction const& fun, std::vector<DynamicFeature> const& args);
 
 /**
  * @brief Given a function and some features in the feature tree, this 
@@ -296,7 +300,7 @@ template <
     typename... Args,
     typename = std::enable_if_t<!(sizeof...(Args) == 1 && (std::is_same_v<std::vector<DynamicFeature>, std::decay_t<Args>> && ...))>
 >
-DynamicActionPtr action(std::string const& id, reflect::DynamicFunction const& fun, Args&&... args)
+ResultHolder<DynamicAction> action(std::string const& id, reflect::DynamicFunction const& fun, Args&&... args)
 {
     auto to_feature = [](auto&& arg){
         using Arg = std::decay_t<decltype(arg)>;
@@ -324,7 +328,7 @@ DynamicActionPtr action(std::string const& id, reflect::DynamicFunction const& f
  * @ingroup dynamic
  */
 template <typename... Args>
-DynamicActionPtr action(std::string const& id, std::string const& name, Feature<Args> const&... args)
+ResultHolder<DynamicAction> action(std::string const& id, std::string const& name, Feature<Args> const&... args)
 {
     auto to_specified_arg = [](auto const& f){
         using F = std::decay_t<decltype(f)>;
@@ -350,6 +354,6 @@ DynamicActionPtr action(std::string const& id, std::string const& name, Feature<
     return action(id, function, args...);
 }
 
-DynamicActionPtr action(std::string const& id, std::string const& name, std::vector<DynamicFeature> const& args);
+ResultHolder<DynamicAction> action(std::string const& id, std::string const& name, std::vector<DynamicFeature> const& args);
 
 } // namespace grunk

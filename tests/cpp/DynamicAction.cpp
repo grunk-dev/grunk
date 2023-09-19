@@ -143,8 +143,8 @@ TEST_F(DynamicActionTest, Basic)
     //       \  |
     //         b
     //
-    auto a = action("a", f, l, r)->output(); 
-    auto b = action("b", f, a, r)->output();
+    auto a = action("a", f, l, r).output();
+    auto b = action("b", f, a, r).output();
 
     // nothing has been computed yet, we just registered the feature tree
     EXPECT_FALSE(a.is_valid());
@@ -187,11 +187,11 @@ TEST_F(DynamicActionTest, PassNonRumtimeFeatureToDynamicAction)
     auto rc = Feature("rc", MyDouble(0.1));
 
     // (DynamicFeature, Feature<T>) -> DynamicAction
-    auto ret1 = action("ret1", f, lr, rc)->output();
+    auto ret1 = action("ret1", f, lr, rc).output();
     EXPECT_NEAR(ret1.value().get_as<double>("val"), 0.3, 1e-12);
 
     // (Feature<T>, Feature<T>) -> DynamicAction
-    auto ret2 = action("ret2", f, lc, rc)->output();
+    auto ret2 = action("ret2", f, lc, rc).output();
     EXPECT_NEAR(ret2.value().get_as<double>("val"), 0.3, 1e-12);
 }
 
@@ -201,8 +201,8 @@ TEST_F(DynamicActionTest, MultiOutput)
 
     auto i = Feature("i", "Point", 0.2, 0.6);
     auto o = action("o", f, i);
-    auto x = o->output<0>();
-    auto y = o->output<1>();
+    auto x = o.output(0);
+    auto y = o.output(1);
 
     // test default output feature ids
     EXPECT_EQ(x.id(), "o[0]");
@@ -216,8 +216,8 @@ TEST_F(DynamicActionTest, MultiOutput)
     y.set_id("y");
     EXPECT_EQ(x.id(), "x");
     EXPECT_EQ(y.id(), "y");
-    EXPECT_EQ(o->output<0>().id(), "x");
-    EXPECT_EQ(o->output<1>().id(), "y");
+    EXPECT_EQ(o.output(0).id(), "x");
+    EXPECT_EQ(o.output(1).id(), "y");
 
     EXPECT_EQ(reflect::cast<double>(x.value()), 0.2);
     EXPECT_EQ(reflect::cast<double>(y.value()), 0.6);
@@ -235,7 +235,7 @@ TEST_F(DynamicActionTest, UnnamedFeature)
     auto f = reflect::Callable(std::plus<double>(), "plus");
 
     auto x = Feature("x", "double", 0.7); // x is a named feature
-    auto z = action("z", f, x, 0.2)->output(); // 0.2 is an unnamed feature
+    auto z = action("z", f, x, 0.2).output(); // 0.2 is an unnamed feature
 
     EXPECT_FALSE(z.is_valid());
     EXPECT_NEAR(reflect::cast<double>(z.value()), 0.9, 1e-15);
@@ -252,13 +252,13 @@ TEST_F(DynamicActionTest, OverloadedFunction)
 {
     {
         auto x = Feature("x", "double", 0.7);
-        auto y = action("y", "overloaded_function", x)->output().value();
+        auto y = action("y", "overloaded_function", x).output().value();
         EXPECT_EQ(reflect::cast<int>(y), 0);
     }
 
     {
         auto x = Feature("x", "int", 7);
-        auto y = action("y", "overloaded_function", x)->output().value();
+        auto y = action("y", "overloaded_function", x).output().value();
         EXPECT_EQ(reflect::cast<int>(y), 1);
     }
     
@@ -290,7 +290,7 @@ TEST_F(DynamicActionTest, ConstructorCall)
     // invoke constructor lazily via grunk::action, passing DynamicFeature to factory function
     {
         auto b = DynamicFeature("b", "bool", true);
-        auto x = grunk::action("x", "Counter", b)->output();
+        auto x = grunk::action("x", "Counter", b).output();
 
         // until the ctor is called, these values will not be reset:
         EXPECT_EQ(Counter::ctor, 1);

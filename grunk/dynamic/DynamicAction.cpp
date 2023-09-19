@@ -3,7 +3,7 @@
 
 namespace grunk {
 
-ActionPtr<reflect::DynamicFunction> DynamicAction::deserialize(
+ResultHolder<DynamicAction> DynamicAction::deserialize(
     YAML::Node const& node,
     FeatureContainer const& features
 )
@@ -29,12 +29,12 @@ ActionPtr<reflect::DynamicFunction> DynamicAction::deserialize(
 
 }
 
-DynamicActionPtr action(std::string const& id, reflect::DynamicFunction const& fun, std::vector<DynamicFeature> const& args)
+ResultHolder<DynamicAction> action(std::string const& id, reflect::DynamicFunction const& fun, std::vector<DynamicFeature> const& args)
 {
     return details::DynamicActionFactory::new_action(id, fun, args);
 }
 
-DynamicActionPtr action(std::string const& id, std::string const& name, std::vector<DynamicFeature> const& args)
+ResultHolder<DynamicAction> action(std::string const& id, std::string const& name, std::vector<DynamicFeature> const& args)
 {
     std::vector<reflect::DynamicFunction::SpecifiedArgument> specified_args;
     std::transform(

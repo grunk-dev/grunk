@@ -6,18 +6,11 @@ namespace grunk {
 
 Expression::Expression(
     std::string const& id,
-    std::string const& expression,
-    std::vector<DynamicFeature> const& in
+    std::string const& expression
 )
-    : inputs(in)
-    , expr(expression)
+    : expr(expression)
 {
     set_id(id);
-    
-    for (auto& i: inputs){
-        depends_on(i.param());
-    }
-    computes(out, parametric::param<reflect::DynamicObject>(id));
 }
 
 void Expression::eval() const 
@@ -25,7 +18,8 @@ void Expression::eval() const
     mu::Parser parser;
     parser.SetExpr(expr);
     std::unordered_map<std::string, double> vars;
-    for (auto const& input : inputs) {
+    for (size_t i = 0; i < this->num_parents(); ++i) {
+        auto input = this->template arg<reflect::DynamicObject>(i);
         auto ret = vars.emplace(
             std::make_pair(
                 input.id(),
@@ -49,16 +43,18 @@ void Expression::eval() const
             + e.GetMsg());
     }
     auto result = reflect::DynamicObject(std::move(res));
-    if (!out.expired()) {
-        out.set_value(result);
+     if (auto out = this->template res<0>(); out) {
+        out->set_value(result);
     }
 }
 
 std::string Expression::serialize() const
 {
     YAML::Node s;
-    s.push_back(out.param().id());
-    s.push_back(expr);
+    if (auto out = this->template res<0>(); out) {
+        s.push_back(out->id());
+        s.push_back(expr);
+    }
 
     s.SetStyle(YAML::EmitterStyle::Flow);
     YAML::Emitter out;
@@ -68,7 +64,7 @@ std::string Expression::serialize() const
     return out.c_str();
 }
 
-ExpressionPtr Expression::deserialize(
+DynamicFeature Expression::deserialize(
     YAML::Node const& node,
     FeatureContainer const& features
 )
@@ -94,9 +90,17 @@ ExpressionPtr Expression::deserialize(
     return grunk::expression("", expr, std::move(input_vec));
 }
 
-ExpressionPtr expression(std::string const& id, std::string const& expr, std::vector<DynamicFeature> const& args)
+DynamicFeature expression(std::string const& id, std::string const& expr, std::vector<DynamicFeature> const& args)
 {
-    return parametric::compute_node_ptr<Expression>(new Expression(id, expr, args));
+    std::vector<parametric::param<reflect::DynamicObject>> inputs;
+    std::transform(
+        args.begin(),
+        args.end(),
+        std::back_inserter(inputs),
+        [](DynamicFeature const& f){ return f.param(); }
+    );
+    auto ret = parametric::compute(std::shared_ptr<Expression>(new Expression(id, expr)), inputs);
+    return DynamicFeature(std::move(ret), reflect::resolve<double>());
 }
 
 } // namespace grunk

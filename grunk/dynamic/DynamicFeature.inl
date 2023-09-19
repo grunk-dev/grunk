@@ -6,7 +6,7 @@
 namespace grunk {
 
     template <typename... Args>
-    ActionPtr<reflect::DynamicFunction> action(std::string const& id, std::string const& name, Feature<Args> const&... args);
+    ResultHolder<Action<reflect::DynamicFunction>> action(std::string const& id, std::string const& name, Feature<Args> const&... args);
 
     template <typename... Args>
     DynamicFeature::Feature(std::string const& id, std::string const& typeName, Args const&... args)
@@ -17,7 +17,7 @@ namespace grunk {
     template <typename... Args>
     DynamicFeature DynamicFeature::create(std::string const& id, std::string const& typeName, Feature<Args> const&... args)
     { 
-        return Feature(action(id, typeName, args...)->output());
+        return action(id, typeName, args...).output();
     }
 
     template <
@@ -32,7 +32,7 @@ namespace grunk {
                      return reflect::DynamicObject(t);
                  },
                 f
-            )->output()
+            ).output()
      )
     {
         type_descriptor = reflect::resolve<T>();
