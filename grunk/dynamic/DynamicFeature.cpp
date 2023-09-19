@@ -3,8 +3,8 @@
 
 namespace grunk {
 
-DynamicFeature::Feature(parametric::param<reflect::DynamicObject> const& p, reflect::TypeDescriptor const* t)
-    : FeatureBase<reflect::DynamicObject>(p)
+DynamicFeature::Feature(parametric::param<reflect::DynamicObject>&& p, reflect::TypeDescriptor const* t)
+    : FeatureBase<reflect::DynamicObject>(std::forward<parametric::param<reflect::DynamicObject>>(p))
     , type_descriptor(t)
 {}
 

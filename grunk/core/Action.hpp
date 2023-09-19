@@ -150,10 +150,37 @@ private:
 
 };
 
+namespace {
+
+template <typename T>
+struct Param2Feature
+{
+    using type = void;
+};
+
+template <typename T>
+struct Param2Feature<parametric::param<T>>
+{
+    using type=Feature<T>;
+};
+
+template <typename... Ts>
+struct Param2Feature<std::tuple<parametric::param<Ts>...>>
+{
+    using type = std::tuple<Feature<Ts>...>;
+};
+
+template <typename... Ts>
+using param2feature_t = typename Param2Feature<Ts...>::type;
+
+} // anonymous namespace
+
 template <typename C>
 class ResultHolder
 {
-    using result_type = typename parametric::compute_return_value<C>;
+    using result_type = param2feature_t<
+        typename parametric::compute_return_value<C>
+    >;
 public:
 
     ResultHolder(result_type const& res, C const& c) : result(res), m_compute_node(c) {}
@@ -162,9 +189,9 @@ public:
     template <int i=0>
     decltype(auto) output() {
         if constexpr ( reflect::details::is_tuple_v<result_type> ) {
-            return Feature(std::get<i>(result));
+            return std::get<i>(result);
         } else {
-            return Feature(result);
+            return result;
         }
     }
 
@@ -226,8 +253,10 @@ struct ActionFactory
     {
         using MyAction = Action<F, Args...>;
         auto ptr = std::shared_ptr<MyAction>(new MyAction(id, fun));
-        auto ret = parametric::compute(ptr, args.param()...);
-        return ResultHolder<MyAction>(ret, *ptr);
+        return ResultHolder<MyAction>(
+            parametric::compute(ptr, args.param()...),
+            *ptr
+        );
     }
 
 };

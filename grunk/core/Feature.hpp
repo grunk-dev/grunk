@@ -90,7 +90,7 @@ public:
      * 
      * @param p a parametric::param<T>
      */
-    FeatureBase(parametric::param<T> const& p)
+    FeatureBase(parametric::param<T>&& p)
      : m_param(p)
     {}
 
@@ -221,8 +221,8 @@ public:
      * 
      * @param p The parametric::param<T> to be wrapped
      */
-    Feature(parametric::param<T> const& p)
-     : FeatureBase<T>(p)
+    Feature(parametric::param<T>&& p)
+     : FeatureBase<T>(std::forward<parametric::param<T>>(p))
     {}
 
     /**

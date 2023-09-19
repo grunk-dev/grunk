@@ -90,7 +90,7 @@ public:
      * @param t An optional type descriptor, so that we can know the type of the held feature
      *          without having to evaluate the parametric tree.
      */
-    Feature(parametric::param<reflect::DynamicObject> const& p, reflect::TypeDescriptor const* t = nullptr);
+    Feature(parametric::param<reflect::DynamicObject>&& p, reflect::TypeDescriptor const* t = nullptr);
     //note: The type descriptor is optional to be consistent with the compile time action.
 
     /**
