@@ -48,6 +48,13 @@ void Expression::eval() const
     }
 }
 
+void Expression::post_connect() const
+{
+    if (auto out = this->template res<0>(); out) {
+       out->set_id(this->id());
+   }
+}
+
 std::string Expression::serialize() const
 {
     YAML::Node s;

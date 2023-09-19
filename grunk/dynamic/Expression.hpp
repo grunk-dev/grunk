@@ -65,6 +65,8 @@ namespace grunk {
          */
         std::string serialize() const override final;
 
+        void post_connect() const override final;
+
         /**
          * @brief deserializes a yaml-representation, e.g. from a grunk recipe to an instance
          * of ::grunk::ExpressionPtr, which in turn wraps the corresponding ::grunk::Expression.
@@ -119,7 +121,7 @@ namespace grunk {
         auto to_feature = [](auto&& arg){
             using Arg = std::decay_t<decltype(arg)>;
             if constexpr (details::is_feature_v<Arg>){
-                return arg;
+                return std::forward<decltype(arg)>(arg);
             } else {
                 return Feature("", reflect::DynamicObject(std::forward<Arg>(arg))); //TODO: Until we properly support unnamed features, this will be an empty string
             }
