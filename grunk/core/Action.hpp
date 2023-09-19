@@ -87,14 +87,14 @@ public:
 
 public:
 
+    static constexpr size_t nresults = std::tuple_size_v<parametric::Results<ReturnType>>;
+
     /**
      * @brief evaluates the function and caches the output.
      * 
      */
     void eval() const override final
     {
-
-        constexpr size_t nresults = std::tuple_size_v<parametric::Results<ReturnType>>;
 
         if constexpr (nresults > 1) {
             auto ret = call(std::make_index_sequence<sizeof...(Args)>{});
@@ -106,6 +106,11 @@ public:
         else {
             call(std::make_index_sequence<sizeof...(Args)>{});
         }
+    }
+
+    void post_connect() const override final
+    {
+        set_output_ids(std::make_index_sequence<nresults>{});
     }
 
     /**
@@ -143,6 +148,20 @@ private:
     {
         if (auto r =  this->template res<I>(); r) {
             r->set_value(t);
+        }
+    }
+
+    template <size_t... I>
+    void set_output_ids(std::index_sequence<I...>) const
+    {
+        (set_output_id<I>(), ...);
+    }
+
+    template <size_t I>
+    void set_output_id() const
+    {
+        if (auto r =  this->template res<I>(); r) {
+            r->set_id(this->id());
         }
     }
 

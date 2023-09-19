@@ -305,7 +305,7 @@ ResultHolder<DynamicAction> action(std::string const& id, reflect::DynamicFuncti
     auto to_feature = [](auto&& arg){
         using Arg = std::decay_t<decltype(arg)>;
         if constexpr (details::is_feature_v<Arg>){
-            return arg;
+            return std::forward<decltype(arg)>(arg);
         } else {
             return Feature("", reflect::DynamicObject(std::forward<Arg>(arg))); //TODO: Until we properly support unnamed features, this will be an empty string
         }
