@@ -66,17 +66,6 @@ private:
      : function(fun)
     {
         set_id(id);
-
-        /**
-        size_t n_outputs = function.num_outputs();
-        for (size_t i=0; i<n_outputs; ++i){
-            std::string output_id = id;
-            if (n_outputs > 1) {
-                output_id += "[" + std::to_string(i) + "]";
-            } 
-            computes(outputs[i], parametric::param<reflect::DynamicObject>(output_id));
-        }
-        **/
     }
 
 public:
@@ -153,7 +142,6 @@ public:
 
 private:
     reflect::DynamicFunction const& function;
-    std::vector<reflect::DynamicObject> mutable return_values;
 };
 
 /**
@@ -162,6 +150,14 @@ private:
  */
 using DynamicAction = Action<reflect::DynamicFunction>;
 
+/**
+ * @ingroup dynamic_advanced
+ * @brief Specialization of the ResultHolder class template for DynamicActions. It is a proxy for holding the 
+ * result of a ::grunk::DynamicAction instance. The results is an std::vector of DynamicFeatures. 
+ * In addition to storing the result, it stores a const reference to the compute_node so that void functions
+ * can be evaluated as well.
+ * 
+ */
 template <>
 class ResultHolder<DynamicAction> {
     using result_type = std::vector<DynamicFeature>;
@@ -169,18 +165,38 @@ public:
 
     ResultHolder(result_type const& res, DynamicAction const& c) : result(res), m_compute_node(c) {}
 
+    /**
+     * @brief returns the i-th output 
+     * 
+     * @param i index of the queried output
+     * @return decltype(auto) the -ith output DynamicFeature
+     */
     decltype(auto) output(int i=0) const {
         return result[i];
     }
 
+    /**
+     * @brief returns the number of outputs
+     * 
+     * @return constexpr size_t the number of outputs
+     */
     size_t size() const {
         return result.size();
     }
 
+    /**
+     * @brief retunrs a const reference to the DynamicAction
+     * 
+     * @return DynamicAction const& the DynamicAction instance
+     */
     DynamicAction const& compute_node() const {
         return m_compute_node;
     }
 
+    /**
+     * @brief evaluates the DynamicAction
+     * 
+     */
     void eval() const {
         compute_node().eval();
     }
@@ -217,7 +233,7 @@ struct DynamicActionFactory
      * @param id The id of the output ::grunk::DynamicFeature
      * @param fun The reflect::DynamicFunction to be wrapped
      * @param args The input features
-     * @return DynamicActionPtr The returned compute_node_ptr wrapping a DynamicAction
+     * @return ResultHolder<DynamicAction> The returned ResultHolder wrapping the outputs
      */
     static ResultHolder<DynamicAction> new_action(
         std::string const& id, 
@@ -293,7 +309,7 @@ ResultHolder<DynamicAction> action(std::string const& id, reflect::DynamicFuncti
  * @param id The id of the output ::grunk::DynamicFeature
  * @param fun The input function
  * @param args The input features of the feature tree
- * @return DynamicActionPtr A special pointer type wrapping a DynamicAction instance.
+ * @return ResultHolder<DynamicAction> The returned ResultHolder wrapping the outputs
  * @ingroup dynamic_advanced
  */
 template <
@@ -323,7 +339,7 @@ ResultHolder<DynamicAction> action(std::string const& id, reflect::DynamicFuncti
  * @param id The id of the output ::grunk::DynamicFeature
  * @param name The string identifier of the registered function
  * @param args The input Features
- * @return DynamicActionPtr A special pointer type wrapping the DynamicAction
+ * @return ResultHolder<DynamicAction> The returned ResultHolder wrapping the outputs
  *
  * @ingroup dynamic
  */
