@@ -27,6 +27,6 @@ def test_expression():
 
     a = grunk.Feature("x", "double", 0.)
     b = grunk.Feature("y", "double", 0.75)
-    c = grunk.expression("z", "2*cos(x)*y+1", a, b).output()
+    c = grunk.expression("z", "2*cos(x)*y+1", a, b)
     assert 2.5 == pytest.approx(c.value().as_float())
 
