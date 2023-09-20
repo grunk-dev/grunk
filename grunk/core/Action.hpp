@@ -113,7 +113,7 @@ public:
      * with its parents and children in the feature tree.
      * 
      */
-    void post_connect() const override final
+    void post_connect() const
     {
         set_output_ids(std::make_index_sequence<nresults>{});
     }
@@ -253,7 +253,7 @@ template <typename C>
 class ResultHolder
 {
     using result_type = param2feature_t<
-        typename parametric::compute_return_value<C>
+        typename parametric::compute_return_value<parametric::Results<typename C::ReturnType>>
     >;
 
     friend struct details::ActionFactory;

@@ -65,7 +65,7 @@ namespace grunk {
          */
         std::string serialize() const override final;
 
-        void post_connect() const override final;
+        void post_connect() const;
 
         /**
          * @brief deserializes a yaml-representation, e.g. from a grunk recipe to an instance
