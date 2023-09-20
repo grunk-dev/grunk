@@ -169,7 +169,7 @@ public:
 
     ResultHolder(result_type const& res, DynamicAction const& c) : result(res), m_compute_node(c) {}
 
-    decltype(auto) output(int i=0) {
+    decltype(auto) output(int i=0) const {
         return result[i];
     }
 
