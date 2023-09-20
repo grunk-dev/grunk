@@ -69,6 +69,46 @@ private:
     }
 
 public:
+
+
+    void connect_inputs(std::vector<DynamicFeature> const& args)
+    {
+        for (auto const& arg : args) {
+            depends_on(arg.param());
+        }
+    }
+
+    std::vector<DynamicFeature> initialize_results() const
+    {
+        std::vector<DynamicFeature> res;
+        res.reserve(function.num_outputs());
+
+        for (size_t i = 0; i < function.num_outputs(); ++i) {
+            res.emplace_back(parametric::new_param<reflect::DynamicObject>(), function.get_return_type(i));
+        }
+        return res;
+    }
+
+    void connect_results(std::vector<DynamicFeature> const& res)
+    {
+        for (auto& f : res) {
+            computes(f.param());
+        }
+    }
+
+    void post_connect() const
+    {
+        for (size_t i = 0; i < function.num_outputs(); ++i) {
+            std::string output_id = id();
+            if( auto r = this->template res<reflect::DynamicObject>(i); r) {
+                if (function.num_outputs() > 1) {
+                    output_id += "[" + std::to_string(i) + "]";
+                }
+                r->set_id(output_id);
+            } 
+        }
+    }
+
     /**
      * @brief This function evaluates the wrapped function and caches the
      * output.
@@ -247,36 +287,10 @@ struct DynamicActionFactory
     {
         auto ptr = std::shared_ptr<DynamicAction>(new DynamicAction(id, fun));
 
-        struct raii {
-            std::shared_ptr<DynamicAction> const& ptr;
-            ~raii() {
-                ptr->post_connect();
-            }
-        };
-        raii r{ptr};
-
-        // connect compute node to arguments
-        for (auto const& arg : args) {
-            add_parent(ptr, arg.param().node_pointer());
-        }
-
-        // initialize outputs and connect compute node to outputs
-        std::vector<DynamicFeature> res;
-        res.reserve(fun.num_outputs());
-
-        for (size_t i = 0; i < fun.num_outputs(); ++i) {
-
-            std::string output_id = id;
-            if (fun.num_outputs() > 1) {
-                output_id += "[" + std::to_string(i) + "]";
-            } 
-
-
-            res.push_back({parametric::param<reflect::DynamicObject>{output_id}, fun.get_return_type(i)});
-            add_parent(res.back().param().node_pointer(), ptr);
-        }
-
-        return ResultHolder<DynamicAction>(res, *ptr);
+        return ResultHolder<DynamicAction>(
+            parametric::compute(ptr, args), 
+            *ptr
+        );
 
     }
 

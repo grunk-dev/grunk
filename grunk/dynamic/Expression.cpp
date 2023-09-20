@@ -99,15 +99,7 @@ DynamicFeature Expression::deserialize(
 
 DynamicFeature expression(std::string const& id, std::string const& expr, std::vector<DynamicFeature> const& args)
 {
-    std::vector<parametric::param<reflect::DynamicObject>> inputs;
-    std::transform(
-        args.begin(),
-        args.end(),
-        std::back_inserter(inputs),
-        [](DynamicFeature const& f){ return f.param(); }
-    );
-    auto ret = parametric::compute(std::shared_ptr<Expression>(new Expression(id, expr)), inputs);
-    return DynamicFeature(std::move(ret), reflect::resolve<double>());
+    return parametric::compute(std::shared_ptr<Expression>(new Expression(id, expr)), args);
 }
 
 } // namespace grunk

@@ -51,6 +51,20 @@ namespace grunk {
             std::vector<DynamicFeature> const& args
         );
 
+        void connect_inputs(std::vector<DynamicFeature> const& inputs) {
+            for (auto const& input : inputs) {
+                depends_on(input.param());
+            }
+        };
+
+        DynamicFeature initialize_results() const {
+            return DynamicFeature(parametric::new_param<reflect::DynamicObject>(), reflect::resolve<double>());
+        }
+
+        void connect_results(DynamicFeature const& res) {
+            computes(res.param());
+        }
+
         /**
          * @brief This function evaluates the expression and caches the output
          */
