@@ -24,7 +24,7 @@ grunk lets you delay the evaluation of the function until the result is queried.
 
    #include <grunk/grunk.h>
 
-   auto o = grunk::action("o", &add, 1.2, 40.8)->output();
+   auto o = grunk::action("o", &add, 1.2, 40.8).output();
    
    std::cout << "Until here, nothing has happened" << std::endl;
 
@@ -42,7 +42,7 @@ In the first line no computation takes place, the function ``add`` is not evalua
 Instead, 
 a new ``Action`` instance ``o`` is created using ``grunk::action``.
 The arguments are the label ``"o"``, a function pointer ``&add`` and two arguments
-that shall be passed into the function. With ``->output()`` we retrieve a handle
+that shall be passed into the function. With ``.output()`` we retrieve a handle
 to the first (and in this case only) output of the action, which is of
 type ``Feature<double>``. 
 
@@ -63,8 +63,8 @@ Let's modify the above code example a bit.
    grunk::Feature y("y", 15.2);
    grunk::Feature z("z", 25.6);
 
-   auto a = grunk::action("a", &add, x, y)->output();
-   auto b = grunk::action("b", &add, a, z)->output();
+   auto a = grunk::action("a", &add, x, y).output();
+   auto b = grunk::action("b", &add, a, z).output();
 
 We have created three independent features ``x,y,z``. The feature
 ``a`` is the result of adding ``x`` and ``y`` and the feature ``b`` is the 
@@ -166,8 +166,8 @@ We can load the plugins using the ``PluginRegistry``.
    grunk::Feature y("y", "SomePluginA::MyDouble", 3.3);
    grunk::Feature z("z", "SomePluginA::MyDouble", 2.0);
 
-   auto a = grunk::action("a", "SomePluginA::add", x, y)->output();
-   auto b = grunk::action("b", "SomePluginB::multiply", a, z)->output();
+   auto a = grunk::action("a", "SomePluginA::add", x, y).output();
+   auto b = grunk::action("b", "SomePluginB::multiply", a, z).output();
 
 When working with plugins, I 
 have to use grunk's :ref:`dynamic mode<dynamic-mode>`, while the :ref:`first example<getting-started>` used grunk's 
@@ -307,7 +307,7 @@ make available in our grunk interface.
        {
            // register types
    
-           grunk::register_type<MyDouble>("MyDouble")
+           register_type<MyDouble>("MyDouble")
            .add_constructor<double>()
            .add_data_member(&MyDouble::value, "value")
            .add_member_function(
@@ -326,7 +326,7 @@ make available in our grunk interface.
    
            // register functions
    
-           grunk::register_function(&add, "add", "adds two MyDouble instances");
+           register_function(&add, "add", "adds two MyDouble instances");
        }
    
    };
