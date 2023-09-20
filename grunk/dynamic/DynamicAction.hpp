@@ -161,10 +161,14 @@ using DynamicAction = Action<reflect::DynamicFunction>;
 template <>
 class ResultHolder<DynamicAction> {
     using result_type = std::vector<DynamicFeature>;
-public:
+
+    friend struct details::DynamicActionFactory;
+
+private:
 
     ResultHolder(result_type const& res, DynamicAction const& c) : result(res), m_compute_node(c) {}
 
+public:
     /**
      * @brief returns the i-th output 
      * 

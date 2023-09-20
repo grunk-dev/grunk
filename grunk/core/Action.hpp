@@ -255,10 +255,14 @@ class ResultHolder
     using result_type = param2feature_t<
         typename parametric::compute_return_value<C>
     >;
-public:
+
+    friend struct details::ActionFactory;
+
+private:
 
     ResultHolder(result_type const& res, C const& c) : result(res), m_compute_node(c) {}
 
+public:
     /**
      * @brief returns the i-th output
      * 
