@@ -37,7 +37,7 @@ TEST_F(ExpressionTest, serialize)
         auto y = Feature("y", "double", 2.);
         auto z = expression("z", "x*y", x,y);
 
-        node = details::feature_tree_to_yaml(z);
+        node = serialize(z);
     } // x, y and z go out of scope here
 
     EXPECT_EQ(node["steps"].size(), 1);
@@ -46,9 +46,9 @@ TEST_F(ExpressionTest, serialize)
     EXPECT_EQ(node["steps"][0][0].as<std::string>(), "z");
     EXPECT_EQ(node["steps"][0][1].as<std::string>(), "x*y");
 
-    auto tree = details::yaml_to_feature_tree(node);
-    EXPECT_EQ(tree.size(), 3);
-    EXPECT_NEAR(tree.at("z").value().as<double>(), 3, 1e-15);
+    auto recipe = Recipe::deserialize(node);
+    EXPECT_EQ(recipe.num_features(), 3);
+    EXPECT_NEAR(recipe.at("z").value().as<double>(), 3, 1e-15);
 }
 
 TEST_F(ExpressionTest, UnknownUnknown)

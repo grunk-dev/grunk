@@ -1,4 +1,5 @@
 #include <grunk/dynamic/Recipe.hpp>
+#include <grunk/dynamic/Expression.hpp>
 #include <grunk/io/io.hpp>
 
 namespace grunk {
@@ -7,37 +8,151 @@ Recipe::Recipe(std::initializer_list<DynamicFeature> const& feature_vec)
  : recipes{}
 {
     for (auto const& f : feature_vec) {
-        features.emplace(f.id(), f);
+        auto ret = features.emplace(f.id(), f);
+        if (not ret.second) {
+            // no insertion took place
+            if (features.find(f.id()) != features.end()) {
+                throw std::logic_error("A feature with id \""s + f.id() + "\" already exists. Duplicate fature ids are not allowed");
+            }
+        }
     }
 }
 
 Recipe::Recipe(Recipe::FeatureContainer const& other) : features(other), recipes{} {}
 
+
 YAML::Node Recipe::serialize() const
 {
-    YAML::Node root = details::feature_tree_to_yaml(features);
+    YAML::Node root;
+    grunk::details::Visited visited;    
+
+    //write grunk version
+    root["uses"]["grunk"] = grunk_VERSION;
+    
+    for (auto const& value: features){
+        grunk::details::parse_feature(value.second, root, visited);
+    }
+
+    if (!grunk::details::has_unique_feature_names(root)) {
+        throw io_error("The feature tree does not have unique feature names.");
+    }
+
+    // write loaded plugins
+    auto const& registry = get_plugin_registry();
+    for(auto const& [name, entry] : registry.plugins()){
+        root["uses"][name] = entry.plugin->version();
+    }
+
+    // write recipes
     if (recipes.size() > 0) {
         root["recipes"] = YAML::Node();
         for (auto const& [key, value] : recipes) {
             root["recipes"][key] = value->serialize();
         }
     }
+
     return root;
 }
 
-Recipe Recipe::deserialize(YAML::Node const& node)
+Recipe Recipe::deserialize(YAML::Node const& root)
 {
-    auto recipe = Recipe(details::yaml_to_feature_tree(node));
-    if (auto const& recipes_node = node["recipes"]; recipes_node) {
+    if (!root["uses"]) {
+        throw io_error("Missing \"uses\" block.");
+    }
+
+    auto const uses = root["uses"];
+    if (!uses["grunk"])
+    {
+        throw io_error("Missing \"grunk\" in \"uses\" block.");
+    }
+
+    try {
+        auto ver = uses["grunk"].as<std::string>();
+        if (ver != grunk_VERSION) {
+            //TODO: Generate a meaningful warning. Throwing an exception is not a 
+            // viable solution. This will be done here anyway as long as grunk is in experimental state.
+            throw io_error("Parsed version "s + ver + " does not match grunk version " + grunk_VERSION);
+        }
+    }
+    catch (std::exception const& e) 
+    {
+        throw io_error(e.what());
+    }
+
+    //TODO: Parse plugins from input file and compare with loaded plugins. Handle appropriately
+
+
+    Recipe recipe;
+
+    if (auto const& recipes_node = root["recipes"]; recipes_node) {
         for (YAML::const_iterator it=recipes_node.begin();it!=recipes_node.end();++it ) {
             auto name = it->first.as<std::string>();
 
             auto ptr = std::make_unique<Recipe>(
                 std::move(Recipe::deserialize(it->second))
             );
-            recipe.insert_recipe(name, std::move(ptr));
+            recipe.recipes.emplace(name, std::move(ptr));
         }
     }
+
+    if (auto const parameters = root["parameters"]; parameters) {
+        for (YAML::const_iterator it=parameters.begin();it!=parameters.end();++it ) {
+            
+            auto name = it->first.as<std::string>();
+            auto type = it->second.Tag();
+            auto value = it->second;
+
+            if (recipe.features.find(name) != recipe.features.end()) {
+                throw io_error("Error parsing parameters. A parameter with name \"" + name + "\" already exists.");
+            }
+
+            auto object = grunk::details::deserialize(type, value);
+            recipe.features.emplace(name, DynamicFeature(name, std::move(object)));
+        }
+    }
+
+    if (auto const steps = root["steps"]; steps)
+    {
+        for (size_t i = 0; i < steps.size(); i++) {
+            
+            auto const function_name = steps[i].Tag();
+
+            if (function_name == "expr") {
+
+                auto output = Expression::deserialize(steps[i], recipe.features);
+                auto output_name = steps[i][0].as<std::string>();
+                if (recipe.features.find(output_name) != recipe.features.end()) {
+                    throw io_error("Error parsing step " + std::to_string(i) + ": A parameter with name \"" + output_name + "\" already exists.");
+                }
+                output.set_id(output_name);
+                recipe.features.emplace(output_name, output);
+
+            } else {
+
+
+                auto output_nodes = DynamicAction::deserialize(steps[i], recipe.features);
+
+                auto const outputs = steps[i][0];
+                if (outputs.size() != output_nodes.size()) {
+                    throw io_error("Number of given outputs doesn't match number of outputs of function "s + function_name);
+                }
+
+                size_t idx = 0;
+                for (auto const& node : outputs) {
+                    auto output_name = node.as<std::string>();
+
+                    if (recipe.features.find(output_name) != recipe.features.end()) {
+                        throw io_error("Error parsing step " + std::to_string(i) + ": A parameter with name \"" + output_name + "\" already exists.");
+                    }
+
+                    auto output = output_nodes.output(idx++);
+                    output.set_id(output_name);
+                    recipe.features.emplace(output_name, output);
+                }
+            }
+        }
+    }
+    
     return recipe;
 }
 
@@ -89,8 +204,12 @@ Recipe Recipe::clone() const
     return Recipe(cloned);
 }
 
-Recipe::Action::Action(Recipe const& other, std::initializer_list<Recipe::IDPair> const& oid)
- : output_ids(oid)
+Recipe::Action::Action(
+    std::string const& n, 
+    Recipe const& other, 
+    std::initializer_list<Recipe::IDPair> const& oid)
+ : name(n)
+ , output_ids(oid)
  , recipe(std::make_shared<Recipe>(std::move(other.clone())))
  {}
 
@@ -148,13 +267,49 @@ void Recipe::Action::eval() const
     }
 }
 
+std::string Recipe::Action::serialize() const
+{
+    YAML::Node s;
+
+    YAML::Node outputs;
+    for (auto const& id_pair : output_ids) {
+        outputs[id_pair.id_to] = id_pair.id_from;
+    }
+    s.push_back(outputs);
+
+    YAML::Node inputs;
+    for (size_t i=0; i < this->num_parents(); ++i) {
+        auto id_from = this->template arg<reflect::DynamicObject>(i).id();
+        inputs[input_ids[i]] = id_from;
+    }
+    s.push_back(inputs);
+
+    s.SetStyle(YAML::EmitterStyle::Flow);
+    YAML::Emitter out;
+
+    using namespace std::string_literals;
+    auto tag = YAML::VerbatimTag("recipes::"s + name);
+    out << tag << s;
+    return out.c_str();
+}
+
+Recipe::Action Recipe::Action::deserialize(
+    YAML::Node const& node,
+    FeatureContainer const& features
+)
+{
+
+}
+
 FeatureContainer Recipe::operator()(
+    std::string const& name,
     std::initializer_list<Recipe::IDPair> const& output_ids,
     FeatureContainer const& inputs
 ) const
 {
     auto ptr = std::shared_ptr<Recipe::Action>(
         new Recipe::Action(
+            name,
             this->clone(),
             output_ids
         )

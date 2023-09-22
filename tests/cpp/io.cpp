@@ -116,9 +116,9 @@ TEST_F(IOTest, serialize_DAGNode)
     );
 }
 
-TEST_F(IOTest, feature_tree_to_yaml_empty)
+TEST_F(IOTest, recipe_to_yaml_empty)
 {
-    auto x = details::feature_tree_to_yaml<std::vector<grunk::DynamicFeature>>({});
+    auto x = grunk::serialize();
 
     // there should be just one node called "uses"
     EXPECT_EQ(x.size(), 1);
@@ -188,7 +188,7 @@ TEST_F(IOTest, basic)
     auto c = action("c", "plus", a, b).output();
     auto d = action("d", "plus", c, a).output();
 
-    auto y = details::feature_tree_to_yaml(d);
+    auto y = grunk::serialize(d);
     test_basic_tree(y, "plus", "double");
 
     // adding nodes that d depends on shouldn't 
@@ -196,9 +196,9 @@ TEST_F(IOTest, basic)
     // NOTE: Not true for the order of root parameters
     auto str = to_string(d);
     EXPECT_EQ(str, to_string(d,a));
-    EXPECT_EQ(str, to_string(a,d,b));
-    EXPECT_EQ(str, to_string(d,b));
-    EXPECT_EQ(str, to_string(a,a,d,a));
+    EXPECT_EQ(str, to_string(a,b,d));
+    EXPECT_EQ(str, to_string(b,d));
+    EXPECT_EQ(str, to_string(a,d));
 }
 
 TEST_F(IOTest, simple_plugin)
@@ -208,7 +208,7 @@ TEST_F(IOTest, simple_plugin)
     auto c = action("c", "SimplePlugin::add", a, b).output();
     auto d = action("d", "SimplePlugin::add", c, a).output();
 
-    auto y = details::feature_tree_to_yaml(d);
+    auto y = serialize(d);
     test_basic_tree(y, "SimplePlugin::add", "SimplePlugin::MyDouble");
 }
 
@@ -224,32 +224,6 @@ TEST_F(IOTest, write)
 
     auto y = YAML::LoadFile("test.grr");
     test_basic_tree(y, "plus", "double");
-}
-
-TEST_F(IOTest, write_const_iterable_container)
-{
-    {
-        auto a = Feature("a", "double", 0.2);
-        auto b = Feature("b", "double", 0.1);
-        auto c = action("c", "plus", a, b).output();
-        auto d = action("d", "plus", c, a).output();
-
-        std::vector<DynamicFeature> v{a,b,c,d};
-        write("test_vector.grr", v);
-
-        FeatureContainer m;
-        m.insert({"a", a});
-        m.insert({"b", b});
-        m.insert({"c", c});
-        m.insert({"d", d});
-        write("test_unordered_map.grr", m);
-    }
-
-    auto yv = YAML::LoadFile("test_vector.grr");
-    test_basic_tree(yv, "plus", "double");
-
-    auto ym = YAML::LoadFile("test_unordered_map.grr");
-    test_basic_tree(ym, "plus", "double");
 }
 
 TEST_F(IOTest, deserialize_double)
@@ -305,99 +279,6 @@ TEST_F(IOTest, deserialize_non_existing_type)
     );
 }
 
-TEST_F(IOTest, deserialize_no_uses_block)
-{
-    YAML::Node root;
-    EXPECT_THROW(
-        details::yaml_to_feature_tree(root),
-        grunk::io_error
-    );
-}
-
-TEST_F(IOTest, deserialize_wrong_value)
-{
-    YAML::Node root;
-
-
-    YAML::Node uses;
-    uses["grunk"] = grunk_VERSION;
-    root["uses"] = uses;
-
-    YAML::Node parameters;
-    auto a = YAML::Node("Hello World");
-    a.SetTag("double");
-    parameters["a"] = a;
-    root["parameters"] = parameters;
-
-    EXPECT_THROW(
-        details::yaml_to_feature_tree(root), 
-        grunk::io_error
-    );
-}
-
-TEST_F(IOTest, deserialize_non_existing_function)
-{
-    YAML::Node root;
-    
-    YAML::Node uses;
-    uses["grunk"] = grunk_VERSION;
-    root["uses"] = uses;
-
-    YAML::Node parameters;
-    parameters["a"] = YAML::Load(parametric::serialize(reflect::DynamicObject(13.2)));
-    parameters["b"] = YAML::Load(parametric::serialize(reflect::DynamicObject(11.8)));
-    root["parameters"] = parameters;
-
-    YAML::Node steps;
-
-    YAML::Node step = YAML::Node();
-    step.SetTag("spunck");
-    step.push_back(std::vector<std::string>{"c"});
-    step.push_back(std::vector<std::string>{"a", "b"});
-    steps.push_back(step);
-    root["steps"] = steps;
-
-    EXPECT_THROW(
-        details::yaml_to_feature_tree(root),
-        reflect::Unresolvable
-    );
-}
-
-TEST_F(IOTest, deserialize_no_topo_order)
-{
-    YAML::Node root;
-    
-    YAML::Node uses;
-    uses["grunk"] = grunk_VERSION;
-    root["uses"] = uses;
-
-    YAML::Node parameters;
-    parameters["a"] = YAML::Load(parametric::serialize(reflect::DynamicObject(13.2)));
-    parameters["b"] = YAML::Load(parametric::serialize(reflect::DynamicObject(11.8)));
-    root["parameters"] = parameters;
-
-    YAML::Node steps;
-
-    YAML::Node step2;
-    step2.SetTag("add");
-    step2.push_back(std::vector<std::string>{"d"});
-    step2.push_back(std::vector<std::string>{"a", "c"});
-    steps.push_back(step2);
-
-    YAML::Node step1;
-    step1.SetTag("add");
-    step1.push_back(std::vector<std::string>{"c"});
-    step1.push_back(std::vector<std::string>{"a", "b"});
-    steps.push_back(step1);
-
-    root["steps"] = steps;
-
-    EXPECT_THROW(
-        details::yaml_to_feature_tree(root), 
-        grunk::io_error
-    );
-}
-
 TEST_F(IOTest, write_duplicate_name)
 {
     // duplicate name in parameters
@@ -406,8 +287,8 @@ TEST_F(IOTest, write_duplicate_name)
         auto b = Feature("a", "double", 0.1);
 
         EXPECT_THROW(
-            details::feature_tree_to_yaml(a, b),
-            grunk::io_error
+            serialize(a, b),
+            std::logic_error
         );
     }
 
@@ -419,7 +300,7 @@ TEST_F(IOTest, write_duplicate_name)
         auto d = action("d", "plus", b, a).output();
 
         EXPECT_THROW(
-            details::feature_tree_to_yaml(d, c),
+            serialize(d, c),
             grunk::io_error
         );
     }
@@ -469,7 +350,7 @@ TEST_F(IOTest, roundtrip_read_write)
     EXPECT_NEAR(reflect::cast<double>(recipe.at("b").value().get("value")), 0.1, 1e-7);
     EXPECT_NEAR(reflect::cast<double>(recipe.at("a").value().get("value")), 0.2, 1e-7);
 
-    auto y = details::feature_tree_to_yaml(recipe.at("d"));
+    auto y = serialize(recipe.at("d"));
     test_basic_tree(y, "SimplePlugin::add", "SimplePlugin::MyDouble");
 }
 
@@ -479,7 +360,7 @@ TEST_F(IOTest, fully_qualified_name)
     auto b = action("b", "SimplePlugin::MyDouble::half", a).output();
 
     EXPECT_NEAR(b.value().get_as<double>("value"), 0.1, 1e-15);
-    auto y = details::feature_tree_to_yaml(b);
+    auto y = serialize(b);
 
     EXPECT_EQ(y["steps"].size(), 1);
  

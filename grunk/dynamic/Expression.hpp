@@ -84,7 +84,7 @@ namespace grunk {
         /**
          * @brief deserializes a yaml-representation, e.g. from a grunk recipe to an instance
          * of ::grunk::ExpressionPtr, which in turn wraps the corresponding ::grunk::Expression.
-         * @return The ::grunk::ExpressionPtr wrapping the corresponding ::grunk::Expression.
+         * @return The ::grunk::DynamicFeature returned by the ::grunk::Expression.
          */
         static DynamicFeature deserialize(
             YAML::Node const&,

@@ -35,8 +35,26 @@ bool has_unique_feature_names(YAML::Node const& root){
 
     if (root["steps"]) {
         for (auto const& s : root["steps"]) {
-            for (auto const& output : s[0]) {
-                std::string id = output.as<std::string>();
+            if (s[0].Type() == YAML::NodeType::Sequence) {
+                for (auto const& output : s[0]) {
+                    // handle sequence of ids
+                    std::string id = output.as<std::string>();
+                    if (ids.find(id) != ids.end()) {
+                        return false;
+                    }
+                    ids[id] = true;
+                }
+            } else if (s[0].Type() == YAML::NodeType::Map) {
+                // handle map for output ids. output ids are the keys (e.g. in Recipe::Action)
+                for(YAML::const_iterator it=s[0].begin();it!=s[0].end();++it) {
+                    std::string id = it->first.as<std::string>();
+                    if (ids.find(id) != ids.end()) {
+                        return false;
+                    }
+                    ids[id] = true;
+                }
+            } else {
+                std::string id = s[0].as<std::string>();
                 if (ids.find(id) != ids.end()) {
                     return false;
                 }
@@ -81,99 +99,6 @@ reflect::DynamicObject deserialize(
             + e.what() + "\" while trying."
         );
     }
-}
-
-FeatureContainer yaml_to_feature_tree(YAML::Node const& root)
-{
-    if (!root["uses"]) {
-        throw io_error("Missing \"uses\" block.");
-    }
-
-    auto const uses = root["uses"];
-    if (!uses["grunk"])
-    {
-        throw io_error("Missing \"grunk\" in \"uses\" block.");
-    }
-
-    try {
-        auto ver = uses["grunk"].as<std::string>();
-        if (ver != grunk_VERSION) {
-            //TODO: Generate a meaningful warning. Throwing an exception is not a 
-            // viable solution. This will be done here anyway as long as grunk is in experimental state.
-            throw io_error("Parsed version "s + ver + " does not match grunk version " + grunk_VERSION);
-        }
-    }
-    catch (std::exception const& e) 
-    {
-        throw io_error(e.what());
-    }
-
-    //TODO: Parse plugins from input file and compare with loaded plugins. Handle appropriately
-
-    FeatureContainer features;
-
-    if (auto const parameters = root["parameters"]; parameters) {
-        for (YAML::const_iterator it=parameters.begin();it!=parameters.end();++it ) {
-            
-            auto name = it->first.as<std::string>();
-            auto type = it->second.Tag();
-            auto value = it->second;
-
-            if (features.find(name) != features.end()) {
-                throw io_error("Error parsing parameters. A parameter with name \"" + name + "\" already exists.");
-            }
-
-            auto object = deserialize(type, value);
-            features.emplace(name, DynamicFeature(name, std::move(object)));
-        }
-    }
-
-    if (auto const steps = root["steps"]; steps)
-    {
-        for (size_t i = 0; i < steps.size(); i++) {
-            
-            auto const function_name = steps[i].Tag();
-
-            if (function_name == "expr") {
-
-                auto output = Expression::deserialize(steps[i], features);
-                auto output_name = steps[i][0].as<std::string>();
-                if (features.find(output_name) != features.end()) {
-                    throw io_error("Error parsing step " + std::to_string(i) + ": A parameter with name \"" + output_name + "\" already exists.");
-                }
-                output.set_id(output_name);
-                features.emplace(output_name, output);
-
-            } else {
-
-
-                auto output_nodes = DynamicAction::deserialize(steps[i], features);
-
-                auto const outputs = steps[i][0];
-                if (outputs.size() != output_nodes.size()) {
-                    throw io_error("Number of given outputs doesn't match number of outputs of function "s + function_name);
-                }
-
-                size_t idx = 0;
-                for (auto const& node : outputs) {
-                    auto output_name = node.as<std::string>();
-
-                    if (features.find(output_name) != features.end()) {
-                        throw io_error("Error parsing step " + std::to_string(i) + ": A parameter with name \"" + output_name + "\" already exists.");
-                    }
-
-                    auto output = output_nodes.output(idx++);
-                    output.set_id(output_name);
-                    features.emplace(output_name, output);
-                }
-
-            }
-
-
-        }
-    }
-
-    return features;
 }
 
 } // namespace details 

@@ -70,6 +70,7 @@ TEST_F(RecipeTest, as_function)
 
     Feature a("a", "double", -10.);
     auto res = my_recipe(
+        "my_recipe",
         {{"my_z", "z"}}, // create a new node my_z that contains the value of the inner node z
         {{"x", a}} // map the inner node x to input parameter a
     );
@@ -80,6 +81,99 @@ TEST_F(RecipeTest, as_function)
     // my _recipe should be unaffected by call to Recipe::operator
     EXPECT_EQ(my_recipe.at("x").value().as<double>(), 12.3);
     EXPECT_NEAR(my_recipe.at("z").value().as<double>(), 42., 1e-15);
+}
+
+TEST_F(RecipeTest, deserialize_no_uses_block)
+{
+    YAML::Node root;
+    EXPECT_THROW(
+        Recipe::deserialize(root),
+        grunk::io_error
+    );
+}
+
+TEST_F(RecipeTest, deserialize_non_existing_function)
+{
+    YAML::Node root;
+    
+    YAML::Node uses;
+    uses["grunk"] = grunk_VERSION;
+    root["uses"] = uses;
+
+    YAML::Node parameters;
+    parameters["a"] = YAML::Load(parametric::serialize(reflect::DynamicObject(13.2)));
+    parameters["b"] = YAML::Load(parametric::serialize(reflect::DynamicObject(11.8)));
+    root["parameters"] = parameters;
+
+    YAML::Node steps;
+
+    YAML::Node step = YAML::Node();
+    step.SetTag("spunck");
+    step.push_back(std::vector<std::string>{"c"});
+    step.push_back(std::vector<std::string>{"a", "b"});
+    steps.push_back(step);
+    root["steps"] = steps;
+
+    EXPECT_THROW(
+        Recipe::deserialize(root),
+        reflect::Unresolvable
+    );
+}
+
+TEST_F(RecipeTest, deserialize_no_topo_order)
+{
+    YAML::Node root;
+    
+    YAML::Node uses;
+    uses["grunk"] = grunk_VERSION;
+    root["uses"] = uses;
+
+    YAML::Node parameters;
+    parameters["a"] = YAML::Load(parametric::serialize(reflect::DynamicObject(13.2)));
+    parameters["b"] = YAML::Load(parametric::serialize(reflect::DynamicObject(11.8)));
+    root["parameters"] = parameters;
+
+    YAML::Node steps;
+
+    YAML::Node step2;
+    step2.SetTag("add");
+    step2.push_back(std::vector<std::string>{"d"});
+    step2.push_back(std::vector<std::string>{"a", "c"});
+    steps.push_back(step2);
+
+    YAML::Node step1;
+    step1.SetTag("add");
+    step1.push_back(std::vector<std::string>{"c"});
+    step1.push_back(std::vector<std::string>{"a", "b"});
+    steps.push_back(step1);
+
+    root["steps"] = steps;
+
+    EXPECT_THROW(
+        Recipe::deserialize(root), 
+        grunk::io_error
+    );
+}
+
+TEST_F(RecipeTest, deserialize_wrong_value)
+{
+    YAML::Node root;
+
+
+    YAML::Node uses;
+    uses["grunk"] = grunk_VERSION;
+    root["uses"] = uses;
+
+    YAML::Node parameters;
+    auto a = YAML::Node("Hello World");
+    a.SetTag("double");
+    parameters["a"] = a;
+    root["parameters"] = parameters;
+
+    EXPECT_THROW(
+        Recipe::deserialize(root), 
+        grunk::io_error
+    );
 }
 
 TEST_F(RecipeTest, serialize_no_subrecipe)
@@ -158,4 +252,51 @@ TEST_F(RecipeTest, serialize_subrecipe)
     EXPECT_EQ(step1[1].size(), 2);
     EXPECT_EQ(step1[1][0].as<std::string>(), "x");
     EXPECT_EQ(step1[1][1].as<std::string>(), "y");
+}
+
+TEST_F(RecipeTest, serialize_recipe_action)
+{
+    // create inner recipe
+    Feature x("x", "double", 17.);
+    Feature y("y", "double", 11.);
+    Feature z = action("z", "add", x, y).output();
+    Recipe recipe1({x, y, z});
+
+    // create outer recipe
+    Feature a("a", "double", 13.);
+    Feature b("b", "double", 11.);
+    Recipe recipe({a, b});
+    recipe.insert_recipe("addition", std::make_unique<Recipe>(std::move(recipe1)));
+
+    // evaluate inner recipe
+    auto compute_node = (*recipe.get_recipe("addition"))(
+        "addition",
+        {{"c", "z"}}, 
+        {{"x", a}, {"y", b}}
+    );
+    recipe.insert_feature(compute_node.at("c"));
+
+    EXPECT_NEAR(recipe.at("c").value().as<double>(), 24., 1e-15);
+    
+    auto node = recipe.serialize();
+    EXPECT_EQ(node.size(), 4);
+    EXPECT_EQ(node["steps"].size(), 1);
+    auto step = node["steps"][0];
+
+    // check tag
+    EXPECT_EQ(step.Tag(), "recipes::addition");
+
+    // check output map
+    EXPECT_EQ(step[0].Type(), YAML::NodeType::Map);
+    EXPECT_EQ(step[0].size(), 1);
+    EXPECT_TRUE(step[0]["c"]);
+    EXPECT_EQ(step[0]["c"].as<std::string>(), "z");
+
+    // check input map
+    EXPECT_EQ(step[1].Type(), YAML::NodeType::Map);
+    EXPECT_EQ(step[1].size(), 2);
+    EXPECT_TRUE(step[1]["x"]);
+    EXPECT_EQ(step[1]["x"].as<std::string>(), "a");
+    EXPECT_TRUE(step[1]["y"]);
+    EXPECT_EQ(step[1]["y"].as<std::string>(), "b");
 }
