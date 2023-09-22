@@ -127,7 +127,15 @@ Recipe Recipe::deserialize(YAML::Node const& root)
                 output.set_id(output_name);
                 recipe.features.emplace(output_name, output);
 
-            } else {
+            } else if (auto n = function_name.rfind("recipes::", 0); n == 0) {
+                std::string recipe_name = function_name.substr(n+1);
+                auto outputs = Recipe::Action::deserialize(
+                    node, 
+                    recipe    
+                ); 
+
+                // TODO: / insert output features into recipe
+            } else
 
 
                 auto output_nodes = DynamicAction::deserialize(steps[i], recipe.features);
@@ -295,10 +303,22 @@ std::string Recipe::Action::serialize() const
 
 Recipe::Action Recipe::Action::deserialize(
     YAML::Node const& node,
-    FeatureContainer const& features
+    Recipe const& recipe
 )
 {
+    assert(node.size() == 2);
 
+    // get subrecipe name from tag
+    std::string tag = node.Tag();
+    std::string recipe_name = tag.substr(9); // everything after recipes::
+
+    // get subrecipe from input recipe
+    auto subrecipe = recipe.get_recipe(recipe_name);
+    
+    // construct output map
+    // construct input map
+    // call the subrecipe 
+    /
 }
 
 FeatureContainer Recipe::operator()(
