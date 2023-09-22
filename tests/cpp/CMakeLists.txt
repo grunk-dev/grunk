@@ -19,6 +19,7 @@ set(TESTSOURCES
   Feature.cpp
   DynamicFeature.cpp
   Expression.cpp
+  Recipe.cpp
 )
 
 add_library(SimplePlugin SHARED plugin_simple.cpp)
