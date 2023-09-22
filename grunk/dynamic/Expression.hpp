@@ -11,8 +11,6 @@ namespace grunk {
 
     class Expression;
 
-    using ExpressionPtr = parametric::compute_node_ptr<Expression>;
-
     /**
      * @brief The Expression class represents an expression to be evaluated at runtime
      *
@@ -27,7 +25,11 @@ namespace grunk {
      *
      * @ingroup dynamic_advanced
      */
-    class Expression : public parametric::ComputeNode
+    class Expression : public parametric::ComputeNode<
+                                  Expression,
+                                  parametric::Results<reflect::DynamicObject>, /* Results are ignored*/
+                                  parametric::Arguments<std::vector<reflect::DynamicObject>> /* Arguments are ignored by derived class */
+                              >
     {
         /**
          * @brief Construct a new Expression instance
@@ -37,32 +39,36 @@ namespace grunk {
          */
         Expression(
             std::string const& id,
-            std::string const& expression,
-            std::vector<DynamicFeature> const& in
+            std::string const& expression
         );
 
     public:
 
         // factory method
-        friend ExpressionPtr expression(
+        friend DynamicFeature expression(
             std::string const& id, 
             std::string const& expr, 
             std::vector<DynamicFeature> const& args
         );
 
+        void connect_inputs(std::vector<DynamicFeature> const& inputs) {
+            for (auto const& input : inputs) {
+                depends_on(input.param());
+            }
+        };
+
+        DynamicFeature initialize_results() const {
+            return DynamicFeature(parametric::new_param<reflect::DynamicObject>(), reflect::resolve<double>());
+        }
+
+        void connect_results(DynamicFeature const& res) {
+            computes(res.param());
+        }
+
         /**
          * @brief This function evaluates the expression and caches the output
          */
         void eval() const override final;
-
-        /**
-         * @brief output retrieves the output feature of the expression
-         * @return The output ::grunk::DynamicFeature of the expression
-         */
-        inline DynamicFeature output() const
-        {
-            return DynamicFeature(out, reflect::resolve<double>());
-        }
 
         /**
          * @brief serialize an expression to yaml. It will be serialized with the
@@ -73,24 +79,24 @@ namespace grunk {
          */
         std::string serialize() const override final;
 
+        void post_connect() const;
+
         /**
          * @brief deserializes a yaml-representation, e.g. from a grunk recipe to an instance
          * of ::grunk::ExpressionPtr, which in turn wraps the corresponding ::grunk::Expression.
          * @return The ::grunk::ExpressionPtr wrapping the corresponding ::grunk::Expression.
          */
-        static ExpressionPtr deserialize(
+        static DynamicFeature deserialize(
             YAML::Node const&,
             FeatureContainer const&
         );
 
     private:
-        std::vector<DynamicFeature> const inputs;
-        parametric::OutputParam<reflect::DynamicObject> mutable out;
         std::string const expr;
     };
 
     /**
-     * @brief expression creates an instance of ::grunk::Expression, wrapped in a ::grunk::ExpressionPtr.
+     * @brief expression creates an instance of ::grunk::Expression and returns the outpt in a ::grunk::DynamicFeature.
      *
      * This function creates a compute node in a parametric tree representing the evaluation of an expression.
      * The expression may contain variable names corresponding to the ids of ::grunk::DynamicFeature instances, which are
@@ -100,36 +106,35 @@ namespace grunk {
      * @param id The id of the output ::grunk::DynamicFeature
      * @param expr A string representing the expression.
      * @param args A vector of ::grunk::DynamicFeature instances, which are the inputs to the expression.
-     * @return ::grunk::Expression, wrapped in a ::grunk::ExpressionPtr.
-     * @ingroup dynamic_advanced
+     * @return ::grunk::DynamicFeature, the evaluated expression as a node in the feature tree.
+     * @ingroup dynamic
      */
-    ExpressionPtr expression(std::string const& id, std::string const& expr, std::vector<DynamicFeature> const& args);
+    DynamicFeature expression(std::string const& id, std::string const& expr, std::vector<DynamicFeature> const& args);
 
     /**
-     * @brief expression creates an instance of ::grunk::Expression, wrapped in a ::grunk::ExpressionPtr.
+     * @brief expression creates an instance of ::grunk::Expression and returns the outpt in a ::grunk::DynamicFeature.
      *
      * This function creates a compute node in a parametric tree representing the evaluation of an expression.
      * The expression may contain variable names corresponding to the ids of ::grunk::DynamicFeature instances, which are
      * passed as inputs to the expression. The expression may use any functions, operators or constants supported by
      * the muparser library.
      *
-     * @tparam Args The types of the arguments expected by the input function
      * @param id The id of the output ::grunk::DynamicFeature
      * @param expr A string representing the expression.
-     * @param args ::grunk::DynamicFeature instances, which are the inputs to the expression.
-     * @return ::grunk::Expression, wrapped in a ::grunk::ExpressionPtr.
-     * @ingroup dynamic
+     * @param args A vector of ::grunk::DynamicFeature instances, which are the inputs to the expression.
+     * @return ::grunk::DynamicFeature, the evaluated expression as a node in the feature tree.
+     * @ingroup dynamic_advanced
      */
     template <
     typename... Args,
     typename = std::enable_if_t<!(sizeof...(Args) == 1 && (std::is_same_v<std::vector<DynamicFeature>, std::decay_t<Args>> && ...))>
     >
-    ExpressionPtr expression(std::string const& id, std::string const& expr, Args&&... args)
+    DynamicFeature expression(std::string const& id, std::string const& expr, Args&&... args)
     {
         auto to_feature = [](auto&& arg){
             using Arg = std::decay_t<decltype(arg)>;
             if constexpr (details::is_feature_v<Arg>){
-                return arg;
+                return std::forward<decltype(arg)>(arg);
             } else {
                 return Feature("", reflect::DynamicObject(std::forward<Arg>(arg))); //TODO: Until we properly support unnamed features, this will be an empty string
             }

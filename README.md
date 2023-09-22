@@ -1,5 +1,4 @@
-# Grunk
-
+![](docs/images/grunk_logo.png)
 
 **share tools - share designs - build together**
 

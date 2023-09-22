@@ -89,7 +89,7 @@ TEST_F(IOTest, serialize_DAGNode)
     EXPECT_EQ(sy, parametric::serialize(reflect::make_dynamic("double", 0.5)));
 
     // compute node
-    auto szc = z->serialize();
+    auto szc = z.compute_node().serialize();
     auto yc = YAML::Load(szc); 
     EXPECT_EQ(yc.Tag(), "SimplePlugin::add");
 
@@ -106,13 +106,13 @@ TEST_F(IOTest, serialize_DAGNode)
     EXPECT_EQ(yc[1][1].as<std::string>(), "y");
 
     // Can't serialize action with non registered function
-    EXPECT_THROW(w->serialize(), std::logic_error);
+    EXPECT_THROW(w.compute_node().serialize(), std::logic_error);
 
     // dependent parameter
-    auto zo = z->output();
+    auto zo = z;
     EXPECT_EQ(
-        parametric::serialize(zo.value()),      // call specialization directly
-        zo.param().node_pointer()->serialize()  // call via DAGNode::serialize member function
+        parametric::serialize(zo.output().value()),      // call specialization directly
+        zo.output().param().node_pointer()->serialize()  // call via DAGNode::serialize member function
     );
 }
 
@@ -185,8 +185,8 @@ TEST_F(IOTest, basic)
 {
     auto a = Feature("a", "double", 0.2);
     auto b = Feature("b", "double", 0.1);
-    auto c = action("c", "plus", a, b)->output();
-    auto d = action("d", "plus", c, a)->output();
+    auto c = action("c", "plus", a, b).output();
+    auto d = action("d", "plus", c, a).output();
 
     auto y = details::feature_tree_to_yaml(d);
     test_basic_tree(y, "plus", "double");
@@ -205,8 +205,8 @@ TEST_F(IOTest, simple_plugin)
 {
     auto a = Feature("a", "SimplePlugin::MyDouble", 0.2);
     auto b = Feature("b", "SimplePlugin::MyDouble", 0.1);
-    auto c = action("c", "SimplePlugin::add", a, b)->output();
-    auto d = action("d", "SimplePlugin::add", c, a)->output();
+    auto c = action("c", "SimplePlugin::add", a, b).output();
+    auto d = action("d", "SimplePlugin::add", c, a).output();
 
     auto y = details::feature_tree_to_yaml(d);
     test_basic_tree(y, "SimplePlugin::add", "SimplePlugin::MyDouble");
@@ -217,8 +217,8 @@ TEST_F(IOTest, write)
     {
         auto a = Feature("a", "double", 0.2);
         auto b = Feature("b", "double", 0.1);
-        auto c = action("c", "plus", a, b)->output();
-        auto d = action("d", "plus", c, a)->output();
+        auto c = action("c", "plus", a, b).output();
+        auto d = action("d", "plus", c, a).output();
         write("test.grr", d);
     }
 
@@ -231,8 +231,8 @@ TEST_F(IOTest, write_const_iterable_container)
     {
         auto a = Feature("a", "double", 0.2);
         auto b = Feature("b", "double", 0.1);
-        auto c = action("c", "plus", a, b)->output();
-        auto d = action("d", "plus", c, a)->output();
+        auto c = action("c", "plus", a, b).output();
+        auto d = action("d", "plus", c, a).output();
 
         std::vector<DynamicFeature> v{a,b,c,d};
         write("test_vector.grr", v);
@@ -415,8 +415,8 @@ TEST_F(IOTest, write_duplicate_name)
     {
         auto a = Feature("a", "double", 0.2);
         auto b = Feature("b", "double", 0.1);
-        auto c = action("a", "plus", a, b)->output();
-        auto d = action("d", "plus", b, a)->output();
+        auto c = action("a", "plus", a, b).output();
+        auto d = action("d", "plus", b, a).output();
 
         EXPECT_THROW(
             details::feature_tree_to_yaml(d, c),
@@ -444,8 +444,8 @@ TEST_F(IOTest, roundtrip_write_read)
     {
         auto a = Feature("a", "double", 0.2);
         auto b = Feature("b", "double", 0.1);
-        auto c = action("c", "plus", a, b)->output();
-        auto d = action("d", "plus", c, a)->output();
+        auto c = action("c", "plus", a, b).output();
+        auto d = action("d", "plus", c, a).output();
         write("test.grr", d);
     }
 
@@ -476,7 +476,7 @@ TEST_F(IOTest, roundtrip_read_write)
 TEST_F(IOTest, fully_qualified_name)
 {
     auto a = Feature("a", "SimplePlugin::MyDouble", 0.2);
-    auto b = action("b", "SimplePlugin::MyDouble::half", a)->output();
+    auto b = action("b", "SimplePlugin::MyDouble::half", a).output();
 
     EXPECT_NEAR(b.value().get_as<double>("value"), 0.1, 1e-15);
     auto y = details::feature_tree_to_yaml(b);

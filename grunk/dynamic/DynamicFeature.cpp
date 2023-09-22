@@ -13,13 +13,13 @@ DynamicFeature::Feature(std::string const& id, reflect::DynamicObject&& o)
     , type_descriptor(o.get_type_descriptor())
 {}
 
-ActionPtr<reflect::DynamicFunction> DynamicFeature::get(std::string const& id, std::string const& memberName) const
+DynamicFeature DynamicFeature::get(std::string const& id, std::string const& memberName) const
 {
     return action(
         id, 
         type_descriptor->get_name() + "::" + memberName,
         *this
-    );
+    ).output(0);
 }
 
 } //namespace grunk

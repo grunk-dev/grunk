@@ -135,22 +135,21 @@ FeatureContainer yaml_to_feature_tree(YAML::Node const& root)
 
             if (function_name == "expr") {
 
-                auto comp_node = Expression::deserialize(steps[i], features);
+                auto output = Expression::deserialize(steps[i], features);
                 auto output_name = steps[i][0].as<std::string>();
                 if (features.find(output_name) != features.end()) {
                     throw io_error("Error parsing step " + std::to_string(i) + ": A parameter with name \"" + output_name + "\" already exists.");
                 }
-                auto output = comp_node->output();
                 output.set_id(output_name);
                 features.emplace(output_name, output);
 
             } else {
 
 
-                auto comp_node = DynamicAction::deserialize(steps[i], features);
+                auto output_nodes = DynamicAction::deserialize(steps[i], features);
 
                 auto const outputs = steps[i][0];
-                if (outputs.size() != comp_node->number_of_outputs()) {
+                if (outputs.size() != output_nodes.size()) {
                     throw io_error("Number of given outputs doesn't match number of outputs of function "s + function_name);
                 }
 
@@ -162,7 +161,7 @@ FeatureContainer yaml_to_feature_tree(YAML::Node const& root)
                         throw io_error("Error parsing step " + std::to_string(i) + ": A parameter with name \"" + output_name + "\" already exists.");
                     }
 
-                    auto output = comp_node->output(idx++);
+                    auto output = output_nodes.output(idx++);
                     output.set_id(output_name);
                     features.emplace(output_name, output);
                 }

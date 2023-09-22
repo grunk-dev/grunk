@@ -64,8 +64,7 @@ Now, ``grunk`` can be installed from the conan remote ``gitlab`` via
 
 .. code-block:: console
 
-    conan install grunk/0.1.0 --build=missing
-
+    conan install grunk/0.2.1 --build=missing
 
 ********************
 Building from source

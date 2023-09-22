@@ -139,7 +139,7 @@ public:
      * @param memberName  The string representation of the member name
      * @return DynamicFeature The data member wrapped in a Feature
      */
-    ActionPtr<reflect::DynamicFunction> get(std::string const& id, std::string const& memberName) const;
+    Feature<reflect::DynamicObject> get(std::string const& id, std::string const& memberName) const;
 
     /**
      * @brief invoke a member function of the wrapped object and register

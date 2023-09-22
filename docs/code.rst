@@ -38,12 +38,12 @@ of the given function for the given features as input in the feature tree.
 
 
 
-The output features can be queried from the returned `ActionPtr` instance, see
+The output features can be queried from the returned `ResultHolder` instance, see
 also the :ref:`advanced section <advanced>`.
 
 .. code-block:: cpp
 
-   auto o = res->output(); // retrieve the first (and in this case only) output of the calcuation
+   auto o = res.output(); // retrieve the first (and in this case only) output of the calcuation
    std::cout<<o.value()<<std::endl; // evaluate the result, thus triggering the calculation
 
 .. doxygengroup:: static
@@ -67,7 +67,7 @@ representation of types and functions that do not need to be known at compile ti
    grunk::Feature l("l", "double", 3.3);
    grunk::Feature r("r", "double", 2.2);
    auto res = grunk::action("o", "add", l, r);
-   auto o = res->output(); // retrieve the first (and in this case only) output of the calcuation
+   auto o = res.output(); // retrieve the first (and in this case only) output of the calcuation
    std::cout<<reflect::cast<double>(r.value())<<std::endl; // evaluate the result, thus triggering the calculation
 
 The types and functions must be registered from plugins loaded at run time, see also 

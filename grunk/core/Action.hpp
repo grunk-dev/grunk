@@ -10,6 +10,7 @@
 
 #include <functional>
 #include <grunk/parametric_core.hpp>
+#include <type_traits>
 #include <utility>
 
 #include <reflect/reflect.hpp>
@@ -37,7 +38,7 @@ struct ActionFactory;
  *
  * If the wrapped function returns an std::tuple, each element of this tuple
  * is interpreted as an output of the function and each element can be retrieved
- * individually as a feature.
+ * individually as a feature using the ::grunk::ResultHolder class template.
  * 
  * @tparam F     The type of the function to be wrapped. This can be any referentially transparent function, 
                  In particular, the function must be invokable on const 
@@ -45,8 +46,13 @@ struct ActionFactory;
  * @tparam Args  The type of the arguments, the wrapped function expects.
  */
 template <typename F, typename... Args>
-class Action : public parametric::ComputeNode
+class Action : public parametric::ComputeNode<
+                        Action<F, Args...>,
+                        parametric::Results<std::invoke_result_t<F, Args const&...>>,
+                        parametric::Arguments<Args...>
+                      >
 {
+
 public:
     
     static_assert(std::is_invocable_v<F, Args const& ...>, "\n\nFunction is not invocable with const references. "
@@ -73,16 +79,15 @@ public:
      * @param f  the function to be wrapped
      * @param args The arguments of the function wrapped in Feature instances
      */
-    Action(std::string const& id, F const& f, Feature<Args> const&... args) 
+    Action(std::string const& id, F const& f) 
      : function(f)
-     , in{std::make_tuple(args...)}
     {
-        std::apply([=](Feature<Args> const&... feature){ (...,depends_on(feature.param())); }, in);
-        computes(out, parametric::param<ReturnType>(id));
-        set_id(id);
+        this->set_id(id);
     }
 
 public:
+
+    static constexpr size_t nresults = std::tuple_size_v<parametric::Results<ReturnType>>;
 
     /**
      * @brief evaluates the function and caches the output.
@@ -90,48 +95,27 @@ public:
      */
     void eval() const override final
     {
-        if (!out.expired()) {
-            out.set_value(call(std::make_index_sequence<sizeof...(Args)>{}));
+
+        if constexpr (nresults > 1) {
+            auto ret = call(std::make_index_sequence<sizeof...(Args)>{});
+            set_outputs(std::make_index_sequence<nresults>{}, ret);
+        }
+        else if constexpr (nresults == 1) {
+            set_output<0>(call(std::make_index_sequence<sizeof...(Args)>{}));
+        }
+        else {
+            call(std::make_index_sequence<sizeof...(Args)>{});
         }
     }
 
     /**
-     * @brief returns the output(s) of the function wrapped in Feature instances.
-     *
-     * If the wrapped function returns an std::tuple, each element in this 
-     * tuple is interpreted as an individual output of this action. This function
-     * accepts a template integer argument to specify the index of the output.
-     *
-     * If the wrapped function returns something other than an std::tuple, 
-     * there will be just one output.
+     * @brief call-back to set the ids of the outputs, once this compute node is connected
+     * with its parents and children in the feature tree.
      * 
-     * @tparam Idx The index of the output. Defaults to zero.
-     * @return decltype(auto) a Feature wrapping the output of index Idx
      */
-    template <size_t Idx=0>
-    decltype(auto) output() const
+    void post_connect() const
     {
-        if constexpr ( !reflect::details::is_tuple_v<ReturnType> ) {
-
-            if constexpr ( !std::is_same_v<std::vector<reflect::DynamicObject>, std::decay_t<ReturnType>>) {
-                static_assert(Idx == 0, "output with Index>0 only allowed for Actions returning a tuple.");
-                return Feature<ReturnType>(out);
-            } else {
-                return grunk::action(
-                    out.param().id() + "[" + std::to_string(Idx) + "]",
-                    [](ReturnType const& vec){ return vec[Idx]; }, 
-                    Feature<ReturnType>(out)
-                )->output();
-            }
-        }
-        else {
-            //TODO: Why do we need to "action" this again? Isn't this overkill a bit?
-            return grunk::action(
-                out.param().id() + "[" + std::to_string(Idx) + "]",
-                [](ReturnType const& tuple){ return std::get<Idx>(tuple); }, 
-                Feature<ReturnType>(out)
-            )->output();
-        }
+        set_output_ids(std::make_index_sequence<nresults>{});
     }
 
     /**
@@ -155,25 +139,182 @@ private:
     template <size_t... I>
     ReturnType call(std::index_sequence<I...>) const
     {
-        return function(std::get<I>(in).value()...);
+        return function(this->template arg<I>().value()...);
+    }
+
+    /**
+     * @brief internal helper function to set the outputs with the new calcuation
+     * result using the index trick. Here it is assumed that the function returns 
+     * a tuple.
+     * 
+     * @tparam I indices of the output values
+     * @param ret The tuple returned by the wrapped function
+     */
+    template <size_t... I>
+    void set_outputs(std::index_sequence<I...>, ReturnType const& ret) const
+    {
+        (set_output<I>(std::get<I>(ret)), ...);
+    }
+
+    /**
+     * @brief internal helper function to set the output of an individual output
+     * using the index trick
+     * 
+     * @tparam I index of the output
+     * @tparam T type of the output
+     * @param t new value for the output
+     */
+    template <size_t I, typename T>
+    void set_output(T const& t) const
+    {
+        if (auto r =  this->template res<I>(); r) {
+            r->set_value(t);
+        }
+    }
+
+    /**
+     * @brief internal helper function to set the output ids 
+     * using the index trick. Here it is assumed that the function returns 
+     * a tuple.
+     * 
+     * @tparam I indices of the output values
+     */
+    template <size_t... I>
+    void set_output_ids(std::index_sequence<I...>) const
+    {
+        (set_output_id<I>(), ...);
+    }
+
+    /**
+     * @brief internal helper function to set the output id of an individual output
+     * using the index trick
+     * 
+     * @tparam I index of the output
+     */
+    template <size_t I>
+    void set_output_id() const
+    {
+        if (auto r =  this->template res<I>(); r) {
+            r->set_id(this->id());
+        }
     }
 
     F const function;
-    std::tuple<Feature<Args> const...> const in;
-    parametric::OutputParam<ReturnType> mutable out;
 
 };
 
+namespace {
+
 /**
- * @brief A parametric::compute_node_ptr wrapping an Action instance
+ * @brief A meta-programming helper struct to transform param<T> to Feature<T> and 
+ * std::tuple<param<Ts>...> to std::tuple<Feature<Ts>...>
+ *
+ * Default is void so that it can be applied to all three possible return values of 
+ * parametric::compute
  * 
- * @tparam F the type of the function wrapped in the action instance
- * @tparam Args The types of the arguments expected by the wrapped function
+ * @tparam T 
  */
-template<typename F, typename... Args>
-using ActionPtr = parametric::compute_node_ptr<Action<F, Args...>>;
+template <typename T>
+struct Param2Feature
+{
+    // handles the case where T is neither a param, nor a tuple of params
+    using type = void;
+};
+
+// specialization for param<T>
+template <typename T>
+struct Param2Feature<parametric::param<T>>
+{
+    using type=Feature<T>;
+};
+
+// specialization for tuple<param<Ts>...>
+template <typename... Ts>
+struct Param2Feature<std::tuple<parametric::param<Ts>...>>
+{
+    using type = std::tuple<Feature<Ts>...>;
+};
+
+template <typename... Ts>
+using param2feature_t = typename Param2Feature<Ts...>::type;
+
+} // anonymous namespace
+
+/**
+ * @ingroup advanced
+ * @brief The ResultHolder class template is a proxy for holding the result of a ::grunk::Action
+ * instance. The results can be either a tuple of features, a feature or nothing for void functions. 
+ * In addition to storing the result, it stores a const reference to the compute_node so that void functions
+ * can be evaluated as well.
+ * 
+ * @tparam C A template realization of ::grunk::Action, i.e. a specific compute node in the feature tree
+ */
+template <typename C>
+class ResultHolder
+{
+    using result_type = param2feature_t<
+        typename parametric::compute_return_value<parametric::Results<typename C::ReturnType>>
+    >;
+
+    friend struct details::ActionFactory;
+
+private:
+
+    ResultHolder(result_type const& res, C const& c) : result(res), m_compute_node(c) {}
+
+public:
+    /**
+     * @brief returns the i-th output
+     * 
+     * @tparam i index of the queried output
+     * @return decltype(auto) the i-th output feature
+     */
+    template <int i=0>
+    decltype(auto) output() const {
+        if constexpr ( reflect::details::is_tuple_v<result_type> ) {
+            return std::get<i>(result);
+        } else {
+            return result;
+        }
+    }
+
+    /**
+     * @brief returns the number of outputs
+     * 
+     * @return constexpr size_t the number of outputs
+     */
+    constexpr size_t size() const {
+        if constexpr (reflect::details::is_tuple_v<result_type> ) {
+            return std::tuple_size_v<result_type>;
+        } else {
+            return 0;
+        }
+    }
+
+    /**
+     * @brief returns a const-reference to the compute node
+     * 
+     * @return C const& the compute node
+     */
+    C const& compute_node() const {
+        return m_compute_node;
+    }
+
+    /**
+     * @brief evaluates the compute node
+     * 
+     */
+    void eval() const {
+        compute_node().eval();
+    }
+
+private:
+    C const& m_compute_node;
+    result_type result;
+};
 
 namespace details {
+
 
 /**
  * @brief The ActionFactory struct is an internal factory for creating Action
@@ -192,21 +333,27 @@ namespace details {
 struct ActionFactory
 {
 
+
     /**
-     * @brief returns an ActionPtr
+     * @brief construct a new Action instance.
      * 
      * @tparam F The type of the wrapped function
      * @tparam Args The types of the arguments expected by the wrapped function
      * @param id The id of the output of the new Action
      * @param fun The function to be wrapped in an Action instance
      * @param args The arguments wrapped in Features to be passed to the function on evaluation
-     * @return ActionPtr<F, Args...> a parametric::compute_node_ptr wrapping the Action instance
+     * @return ResultHolder wrapping the outputs of the Action
      */
     template <typename F,
               typename... Args>
-    static ActionPtr<F, Args...> new_action(std::string const& id, F const& fun, Feature<Args> const&... args)
+    static decltype(auto) new_action(std::string const& id, F const& fun, Feature<Args> const&... args)
     {
-        return ActionPtr<F, Args...>(new Action<F, Args...>(id, fun, args...));
+        using MyAction = Action<F, Args...>;
+        auto ptr = std::shared_ptr<MyAction>(new MyAction(id, fun));
+        return ResultHolder<MyAction>(
+            parametric::compute(ptr, args.param()...),
+            *ptr
+        );
     }
 
 };
@@ -225,7 +372,7 @@ struct ActionFactory
  * @param id The id used for the output of the function
  * @param fun The input function
  * @param args The input features of the feature tree
- * @return ActionPtr<F, Args...> A special pointer type wrapping an Action instance.
+ * @return ResultHolder wrapping the outputs of the Action
  */
 template <typename F,
           typename = std::enable_if_t<
@@ -233,7 +380,7 @@ template <typename F,
             && !details::is_dynamic_callable_v<std::decay_t<F>>
           >,
           typename... Args>
-ActionPtr<F, Args...> action(std::string const& id, F const& fun, Feature<Args> const&... args)
+decltype(auto) action(std::string const& id, F const& fun, Feature<Args> const&... args)
 {
     return details::ActionFactory::new_action(id, fun, args...);
 }
@@ -257,7 +404,7 @@ ActionPtr<F, Args...> action(std::string const& id, F const& fun, Feature<Args> 
  * @param id the id of the output Feature
  * @param fun The input function
  * @param args The input features of the feature tree
- * @return ActionPtr<F, Args...> A special pointer type wrapping an Action instance.
+ * @return ResultHolder wrapping the outputs of the Action
  *
  * @ingroup static
  */

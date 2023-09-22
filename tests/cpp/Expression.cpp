@@ -23,7 +23,7 @@ TEST_F(ExpressionTest, simple)
 {
     auto x = Feature("x", "double", 1.5);
     auto y = Feature("y", "double", 2.);
-    auto z = grunk::expression("z", "x*y", x,y)->output();
+    auto z = grunk::expression("z", "x*y", x,y);
     EXPECT_EQ(z.id(), "z");
     EXPECT_NEAR(z.value().as<double>(), 3., 1e-15);
 }
@@ -35,7 +35,7 @@ TEST_F(ExpressionTest, serialize)
     {
         auto x = Feature("x", "double", 1.5);
         auto y = Feature("y", "double", 2.);
-        auto z = expression("z", "x*y", x,y)->output();
+        auto z = expression("z", "x*y", x,y);
 
         node = details::feature_tree_to_yaml(z);
     } // x, y and z go out of scope here
@@ -55,7 +55,7 @@ TEST_F(ExpressionTest, UnknownUnknown)
 {
     auto x = Feature("x", "double", 1.5);
     auto y = Feature("y", "double", 2.);
-    auto z = expression("z", "a*y", x,y)->output();
+    auto z = expression("z", "a*y", x,y);
     EXPECT_THROW(z.value(), grunk::io_error);
 }
 
@@ -63,7 +63,7 @@ TEST_F(ExpressionTest, UnknownFunction)
 {
     auto x = Feature("x", "double", 1.5);
     auto y = Feature("y", "double", 2.);
-    auto z = expression("z", "x*fun(y)", x,y)->output();
+    auto z = expression("z", "x*fun(y)", x,y);
     EXPECT_THROW(z.value(), grunk::io_error);
 }
 
@@ -71,7 +71,7 @@ TEST_F(ExpressionTest, UnknownOperator)
 {
     auto x = Feature("x", "double", 1.5);
     auto y = Feature("y", "double", 2.);
-    auto z = expression("z", "x$y", x,y)->output();
+    auto z = expression("z", "x$y", x,y);
     EXPECT_THROW(z.value(), grunk::io_error);
 }
 
@@ -79,6 +79,6 @@ TEST_F(ExpressionTest, EmptyString)
 {
     auto x = Feature("x", "double", 1.5);
     auto y = Feature("y", "double", 2.);
-    auto z = expression("z", "", x,y)->output();
+    auto z = expression("z", "", x,y);
     EXPECT_THROW(z.value(), grunk::io_error);
 }

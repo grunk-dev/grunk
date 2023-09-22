@@ -23,16 +23,6 @@ class Feature;
 template <typename F, typename... Args>
 class Action;
 
-/**
- * @brief ActionPtr is a parametric::compute_node_ptr wrapping an Action
- * instance
- * 
- * @tparam F The type of the function wrapped by the wrapped Action instance
- * @tparam Args The arguments expected by the wrapped function.
- */
-template<typename F, typename... Args>
-using ActionPtr = parametric::compute_node_ptr<Action<F, Args...>>;
-
 namespace details {
 
     /**
@@ -101,7 +91,7 @@ public:
      * @param p a parametric::param<T>
      */
     FeatureBase(parametric::param<T>&& p)
-     : m_param(std::forward<parametric::param<T>>(p))
+     : m_param(p)
     {}
 
     /**
@@ -274,7 +264,7 @@ public:
                 return T(in...);
             }, 
             args...
-        )->output()
+        ).output()
        )
     {};
 

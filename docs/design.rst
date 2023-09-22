@@ -33,7 +33,7 @@ previously been *reflected*.
 
 If a function returns a ``std::tuple``, the
 corresponding ``DynamicFunction`` will return a vector of
-``DynamicObject``s. This facilitates the use of multi-output functions in 
+``DynamicObject``\s. This facilitates the use of multi-output functions in 
 the dynamic typing system.
 
 For its dynamic typing system, grunk uses the 

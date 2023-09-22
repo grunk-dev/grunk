@@ -54,26 +54,6 @@ namespace py = pybind11;
 PYBIND11_MAKE_OPAQUE(std::unordered_map<std::string, DynamicFeature>);
 PYBIND11_MAKE_OPAQUE(std::vector<reflect::DynamicObject>);
 
-// the following code is needed to wrap grunk::DynamicActionPtr
-// We will tell pybind11 that grunk::DynamicActionPtr is a smart pointer.
-// pybind11 expects smartpointer to have a get member. Since parametric::compute_node_ptr
-// doesn't have that member, we need to define a holder_helper type,
-// see https://pybind11.readthedocs.io/en/stable/advanced/smart_ptrs.html#custom-smart-pointers
-namespace PYBIND11_NAMESPACE { namespace detail {
-
-    template <typename T>
-    using SmartPtr = parametric::compute_node_ptr<T>;
-
-    template <typename T>
-    struct holder_helper<SmartPtr<T>> { // <-- specialization
-        static const T *get(const SmartPtr<T> &p) { 
-            return const_cast<SmartPtr<T>&>(p).operator->().get(); 
-        }
-    };
-}}
-PYBIND11_DECLARE_HOLDER_TYPE(T, parametric::compute_node_ptr<T>);
-
-
 
 PYBIND11_MODULE(_core, m)
 {
@@ -148,15 +128,15 @@ PYBIND11_MODULE(_core, m)
 
     // dynamic
 
-    py::class_<DynamicAction, parametric::compute_node_ptr<DynamicAction>>(m, "DynamicAction")
+    using ResultHolder_DynamicAction = ResultHolder<DynamicAction>;
+    py::class_<ResultHolder_DynamicAction>(m, "ResultHolder_DynamicAction")
     .def(
         "output", 
-        // py::overload_cast<size_t>(&DynamicAction::output), 
-        static_cast<DynamicFeature (DynamicAction::*)(size_t) const>(&DynamicAction::output),
+        &ResultHolder_DynamicAction::output,
         py::arg("idx") = 0
     )
-    .def("number_of_outputs", &DynamicAction::number_of_outputs)
-    .def("eval", &DynamicAction::eval);
+    .def("size", &ResultHolder_DynamicAction::size)
+    .def("eval", &ResultHolder_DynamicAction::eval);
 
     py::class_<grunk::DynamicFeature>(m, "Feature")
     .def(
@@ -208,13 +188,6 @@ PYBIND11_MODULE(_core, m)
             );
         }
     );
-
-    py::class_<Expression, parametric::compute_node_ptr<Expression>>(m, "Expression")
-    .def(
-        "output", 
-        &Expression::output
-    )
-    .def("eval", &Expression::eval);
 
     m.def(
         "expression", 
