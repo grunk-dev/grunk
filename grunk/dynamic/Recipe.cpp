@@ -130,12 +130,13 @@ Recipe Recipe::deserialize(YAML::Node const& root)
             } else if (auto n = function_name.rfind("recipes::", 0); n == 0) {
                 std::string recipe_name = function_name.substr(n+1);
                 auto outputs = Recipe::Action::deserialize(
-                    node, 
+                    steps[i], 
                     recipe    
                 ); 
-
-                // TODO: / insert output features into recipe
-            } else
+                for (auto const& value : outputs) {
+                    recipe.insert_feature(value.second);
+                }
+            } else {
 
 
                 auto output_nodes = DynamicAction::deserialize(steps[i], recipe.features);
@@ -215,7 +216,7 @@ Recipe Recipe::clone() const
 Recipe::Action::Action(
     std::string const& n, 
     Recipe const& other, 
-    std::initializer_list<Recipe::IDPair> const& oid)
+    std::vector<Recipe::IDPair> const& oid)
  : name(n)
  , output_ids(oid)
  , recipe(std::make_shared<Recipe>(std::move(other.clone())))
@@ -301,7 +302,7 @@ std::string Recipe::Action::serialize() const
     return out.c_str();
 }
 
-Recipe::Action Recipe::Action::deserialize(
+FeatureContainer Recipe::Action::deserialize(
     YAML::Node const& node,
     Recipe const& recipe
 )
@@ -313,17 +314,35 @@ Recipe::Action Recipe::Action::deserialize(
     std::string recipe_name = tag.substr(9); // everything after recipes::
 
     // get subrecipe from input recipe
-    auto subrecipe = recipe.get_recipe(recipe_name);
+    auto const& subrecipe = recipe.get_recipe(recipe_name);
     
     // construct output map
+    std::vector<Recipe::IDPair> output_ids;
+    for (YAML::const_iterator it=node[0].begin();it!=node[0].end();++it ) {
+        auto key = it->first.as<std::string>();
+        auto val = it->second.as<std::string>();
+        output_ids.push_back(IDPair{key, val});
+    }
+
     // construct input map
+    FeatureContainer inputs;
+    for (YAML::const_iterator it=node[1].begin();it!=node[1].end();++it ) {
+        auto key = it->first.as<std::string>();
+        auto val = it->second.as<std::string>();
+        inputs.at(key) = recipe.features.at(val);
+    }
+
     // call the subrecipe 
-    /
+    return (*subrecipe)(
+        recipe_name,
+        output_ids, 
+        inputs
+    );
 }
 
 FeatureContainer Recipe::operator()(
     std::string const& name,
-    std::initializer_list<Recipe::IDPair> const& output_ids,
+    std::vector<Recipe::IDPair> const& output_ids,
     FeatureContainer const& inputs
 ) const
 {

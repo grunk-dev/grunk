@@ -54,13 +54,13 @@ public:
         void eval() const override;
 
         std::string serialize() const override final;
-        static Action deserialize(
+        static FeatureContainer deserialize(
             YAML::Node const&,
-            FeatureContainer const&
+            Recipe const& recipe
         );
 
     private:
-        Action(std::string const& name, Recipe const&, std::initializer_list<IDPair> const& output_ids);
+        Action(std::string const& name, Recipe const&, std::vector<IDPair> const& output_ids);
 
         std::string name;
         std::vector<std::string> input_ids;
@@ -70,7 +70,7 @@ public:
 
     FeatureContainer operator()(
         std::string const& name,
-        std::initializer_list<Recipe::IDPair> const& output_ids,
+        std::vector<Recipe::IDPair> const& output_ids,
         FeatureContainer const& inputs
     ) const;
 
