@@ -9,8 +9,7 @@ class RecipeTest : public ::testing::Test
 public:
     static void SetUpTestCase() {
 
-        reflect::register_type<double>("double")
-        .add_constructor<double>();
+        grunk::StdPlugin().init();
 
         reflect::register_function(
             [](double x, double y){ return x+y; }, 
@@ -23,6 +22,8 @@ public:
     } 
 };
 
+//TODO: Test insert_recipe, insert_feature, constructor, feature and recipe retrieval
+
 TEST_F(RecipeTest, clone)
 {
     Feature x("x", "double", 12.3);
@@ -34,7 +35,9 @@ TEST_F(RecipeTest, clone)
     
     Recipe clone = my_recipe.clone();
 
-    EXPECT_EQ(clone.size(), 3);
+    EXPECT_EQ(clone.num_features(), 3);
+    EXPECT_EQ(clone.num_recipes(), 0);
+
     EXPECT_EQ(clone.at("x").value().as<double>(), 12.3);
     EXPECT_EQ(clone.at("y").value().as<double>(), 29.7);
     EXPECT_NEAR(clone.at("z").value().as<double>(), 42.0, 1e-15);
@@ -72,8 +75,87 @@ TEST_F(RecipeTest, as_function)
     );
     Feature my_z = res.at("my_z");
     EXPECT_NEAR(my_z.value().as<double>(), 19.7, 1e-15);
+    EXPECT_EQ(my_z.id(), "my_z");
 
-    // To Do:
-    //  - check id of output
-    //  - check that my_recipe nodes are uneffected by function evaluation
+    // my _recipe should be unaffected by call to Recipe::operator
+    EXPECT_EQ(my_recipe.at("x").value().as<double>(), 12.3);
+    EXPECT_NEAR(my_recipe.at("z").value().as<double>(), 42., 1e-15);
+}
+
+TEST_F(RecipeTest, serialize_no_subrecipe)
+{
+    YAML::Node node;
+
+    {
+        Recipe recipe;
+        recipe.insert_feature(Feature("x", "double", -0.15));
+        recipe.insert_feature(Feature("y", "double", -0.75));
+        auto add_node = action("z", "add", recipe.at("x"), recipe.at("y"));
+        recipe.insert_feature(add_node.output());
+
+        node = recipe.serialize();
+    } // desctructor of recipe called
+
+    EXPECT_EQ(node.size(), 3);
+    EXPECT_EQ(node["parameters"].size(), 2);
+    EXPECT_EQ(node["parameters"]["x"].Tag(), "double");
+    EXPECT_NEAR(node["parameters"]["x"].as<double>(), -0.15, 1e-6);
+    EXPECT_EQ(node["parameters"]["y"].Tag(), "double");
+    EXPECT_NEAR(node["parameters"]["y"].as<double>(), -0.75, 1e-6);
+
+    EXPECT_EQ(node["steps"].size(), 1);
+    auto step1 = node["steps"][0];
+    EXPECT_EQ(step1.Tag(), "add");
+    EXPECT_EQ(step1[0].size(), 1);
+    EXPECT_EQ(step1[0][0].as<std::string>(), "z");
+    EXPECT_EQ(step1[1].size(), 2);
+    EXPECT_EQ(step1[1][0].as<std::string>(), "x");
+    EXPECT_EQ(step1[1][1].as<std::string>(), "y");
+
+    Recipe deserialized = Recipe::deserialize(node);
+    EXPECT_NEAR(deserialized.at("x").value().as<double>(), -0.15, 1e-6);
+    EXPECT_NEAR(deserialized.at("y").value().as<double>(), -0.75, 1e-6);
+    EXPECT_NEAR(deserialized.at("z").value().as<double>(), -0.9, 1e-6);
+}
+
+TEST_F(RecipeTest, serialize_subrecipe)
+{
+    YAML::Node node;
+
+    {
+        Feature x("x", "double", 12.3);
+        Feature y("y", "double", 29.7);
+        Feature z = action("z", "add", x, y).output();
+        Recipe recipe1({x, y, z});
+
+        auto recipe2 = std::make_unique<Recipe>();
+        recipe2->insert_feature(Feature("a", "double", 1.));
+        recipe2->insert_feature(Feature("b", "double", 2.));
+        auto add_node = action("c", "add", recipe2->at("a"), recipe2->at("b"));
+        recipe2->insert_feature(add_node.output());
+
+        recipe1.insert_recipe("recipe2", std::move(recipe2));
+
+        node = recipe1.serialize();
+    }
+
+    EXPECT_EQ(node.size(), 4);
+    EXPECT_TRUE(node["recipes"]);
+    EXPECT_TRUE(node["recipes"]["recipe2"]);
+
+    auto recipe2_node = node["recipes"]["recipe2"];
+    EXPECT_EQ(recipe2_node["parameters"].size(), 2);
+    EXPECT_EQ(recipe2_node["parameters"]["a"].Tag(), "double");
+    EXPECT_NEAR(recipe2_node["parameters"]["a"].as<double>(), 1., 1e-6);
+    EXPECT_EQ(recipe2_node["parameters"]["b"].Tag(), "double");
+    EXPECT_NEAR(recipe2_node["parameters"]["b"].as<double>(), 2., 1e-6);
+
+    EXPECT_EQ(recipe2_node["steps"].size(), 1);
+    auto step1 = node["steps"][0];
+    EXPECT_EQ(step1.Tag(), "add");
+    EXPECT_EQ(step1[0].size(), 1);
+    EXPECT_EQ(step1[0][0].as<std::string>(), "z");
+    EXPECT_EQ(step1[1].size(), 2);
+    EXPECT_EQ(step1[1][0].as<std::string>(), "x");
+    EXPECT_EQ(step1[1][1].as<std::string>(), "y");
 }

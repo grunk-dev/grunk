@@ -2,6 +2,7 @@
 
 #include <grunk/dynamic/DynamicAction.hpp>
 #include <grunk/dynamic/Expression.hpp>
+#include <grunk/dynamic/Recipe.hpp>
 
 namespace grunk {
 
@@ -177,11 +178,24 @@ FeatureContainer yaml_to_feature_tree(YAML::Node const& root)
 
 } // namespace details 
 
-FeatureContainer read(std::string filename)
+std::string to_string(Recipe const& r)
+{
+    YAML::Emitter out;
+    out << r.serialize();
+    return out.c_str();
+}
+
+void write(std::string const& filename, Recipe const& recipe)
+{
+    std::ofstream fout(filename);
+    fout << to_string(recipe) << "\n";
+}
+
+Recipe read(std::string filename)
 {
     auto const root = YAML::LoadFile(filename);
     try {
-        return details::yaml_to_feature_tree(root);
+        return Recipe::deserialize(root);
     } catch(const io_error& e)
     {
         throw io_error(std::string(e.get_message()) + " filename = " + filename);

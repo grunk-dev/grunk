@@ -450,26 +450,26 @@ TEST_F(IOTest, roundtrip_write_read)
     }
 
     {
-        auto features = read("test.grr");
-        EXPECT_EQ(features.size(), 4);
-        EXPECT_NEAR(reflect::cast<double>(features.at("d").value()), 0.5, 1e-7);
-        EXPECT_NEAR(reflect::cast<double>(features.at("c").value()), 0.3, 1e-7);
-        EXPECT_NEAR(reflect::cast<double>(features.at("b").value()), 0.1, 1e-7);
-        EXPECT_NEAR(reflect::cast<double>(features.at("a").value()), 0.2, 1e-7);
+        auto recipe = read("test.grr");
+        EXPECT_EQ(recipe.num_features(), 4);
+        EXPECT_NEAR(reflect::cast<double>(recipe.at("d").value()), 0.5, 1e-7);
+        EXPECT_NEAR(reflect::cast<double>(recipe.at("c").value()), 0.3, 1e-7);
+        EXPECT_NEAR(reflect::cast<double>(recipe.at("b").value()), 0.1, 1e-7);
+        EXPECT_NEAR(reflect::cast<double>(recipe.at("a").value()), 0.2, 1e-7);
     }
 }
 
 TEST_F(IOTest, roundtrip_read_write)
 {
-    auto features = read("test_data/simple_test.grr");
+    auto recipe = read("test_data/simple_test.grr");
 
-    EXPECT_EQ(features.size(), 4);
-    EXPECT_NEAR(reflect::cast<double>(features.at("d").value().get("value")), 0.5, 1e-7);
-    EXPECT_NEAR(reflect::cast<double>(features.at("c").value().get("value")), 0.3, 1e-7);
-    EXPECT_NEAR(reflect::cast<double>(features.at("b").value().get("value")), 0.1, 1e-7);
-    EXPECT_NEAR(reflect::cast<double>(features.at("a").value().get("value")), 0.2, 1e-7);
+    EXPECT_EQ(recipe.num_features(), 4);
+    EXPECT_NEAR(reflect::cast<double>(recipe.at("d").value().get("value")), 0.5, 1e-7);
+    EXPECT_NEAR(reflect::cast<double>(recipe.at("c").value().get("value")), 0.3, 1e-7);
+    EXPECT_NEAR(reflect::cast<double>(recipe.at("b").value().get("value")), 0.1, 1e-7);
+    EXPECT_NEAR(reflect::cast<double>(recipe.at("a").value().get("value")), 0.2, 1e-7);
 
-    auto y = details::feature_tree_to_yaml(features.at("d"));
+    auto y = details::feature_tree_to_yaml(recipe.at("d"));
     test_basic_tree(y, "SimplePlugin::add", "SimplePlugin::MyDouble");
 }
 

@@ -9,20 +9,36 @@ class Recipe
     using RecipeContainer = std::unordered_map<std::string, std::unique_ptr<Recipe>>;
 
 public:
+    Recipe() = default;
     Recipe(std::initializer_list<DynamicFeature> const&);
     Recipe(FeatureContainer const&);
+
+    YAML::Node serialize() const;
+    static Recipe deserialize(YAML::Node const&);
 
     Recipe clone() const;
 
     DynamicFeature& at(std::string const&);
     DynamicFeature const& at(std::string const&) const;
-    size_t size() const;
+    void insert_feature(DynamicFeature const&);
+    size_t num_features() const;
+
+    std::unique_ptr<Recipe>& get_recipe(std::string const&);
+    std::unique_ptr<Recipe> const& get_recipe(std::string const&) const;
+    void insert_recipe(std::string const& id, std::unique_ptr<Recipe>&&);
+    size_t num_recipes() const;
+
+    struct IDPair 
+    {
+        std::string id_to;
+        std::string id_from;
+    };
 
     struct ignore {};
     class Action : public parametric::ComputeNode<Action, ignore, ignore>
     {
         friend class Recipe;
-        
+
     public:
 
         void connect_inputs(FeatureContainer const& inputs);
@@ -33,16 +49,15 @@ public:
         void eval() const override;
 
     private:
-        Action(Recipe const&, std::unordered_map<std::string, std::string> const&);
+        Action(Recipe const&, std::initializer_list<IDPair> const& output_ids);
 
         std::vector<std::string> input_ids;
-        std::vector<std::string> output_ids;
-        std::unordered_map<std::string, std::string> output_id_map;
+        std::vector<IDPair> output_ids;
         std::shared_ptr<Recipe> recipe;
     };
 
     FeatureContainer operator()(
-        std::unordered_map<std::string, std::string> ouput_ids,
+        std::initializer_list<Recipe::IDPair> const& output_ids,
         FeatureContainer const& inputs
     ) const;
 

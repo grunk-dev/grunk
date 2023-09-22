@@ -25,6 +25,8 @@
 
 namespace grunk {
 
+    class Recipe;
+
 namespace details {
 
 /**
@@ -282,6 +284,8 @@ std::string to_string(Feature<Args> const&... args)
     return out.c_str();
 }
 
+std::string to_string(Recipe const&);
+
 /**
  * @brief given a container of ``Feature``s, this function serializes
  * these features together with all their ancestors to string, which 
@@ -326,6 +330,14 @@ void write(std::string const& filename, Args const&... args)
     fout << to_string(args...) << "\n";
 }
 
+/**
+ * @brief writes a ::grunk::Recipe to file
+ * 
+ * @param filename the filename of the output file
+ * @param recipe the ::grunk::Recipe to be serialized to yaml
+ */
+void write(std::string const& filename, Recipe const& recipe);
+
 namespace details {
 
 /**
@@ -354,13 +366,13 @@ FeatureContainer yaml_to_feature_tree(YAML::Node const& root);
 } // namespace details
 
 /**
- * @brief creates a feature tree from a yaml file. 
+ * @brief reads a recipe from a yaml file. 
  * 
  * @param filename The file to be parsed
- * @return FeatureContainer the resulting feature tree
+ * @return Recipe the resulting recipe
  *
  * @ingroup fileio
  */
-FeatureContainer read(std::string filename);
+Recipe read(std::string filename);
 
 } //namespace grunk
