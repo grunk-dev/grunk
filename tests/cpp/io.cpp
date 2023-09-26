@@ -194,11 +194,13 @@ TEST_F(IOTest, basic)
     // adding nodes that d depends on shouldn't 
     // alter the output
     // NOTE: Not true for the order of root parameters
-    auto str = to_string(d);
-    EXPECT_EQ(str, to_string(d,a));
-    EXPECT_EQ(str, to_string(a,b,d));
-    EXPECT_EQ(str, to_string(b,d));
-    EXPECT_EQ(str, to_string(a,d));
+    test_basic_tree(serialize(d,a), "plus", "double");
+    test_basic_tree(serialize(a,d,b), "plus", "double");
+    test_basic_tree(serialize(d,b), "plus", "double");
+    test_basic_tree(serialize(a,d), "plus", "double");
+    test_basic_tree(serialize(a,b,d), "plus", "double");
+    test_basic_tree(serialize(b,d), "plus", "double");
+    test_basic_tree(serialize(a,d), "plus", "double");
 }
 
 TEST_F(IOTest, simple_plugin)
