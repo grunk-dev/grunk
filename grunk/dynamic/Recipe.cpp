@@ -9,7 +9,7 @@ Recipe::Recipe(std::initializer_list<DynamicFeature> const& feature_vec)
 {
     for (auto const& f : feature_vec) {
         auto ret = features.emplace(f.id(), f);
-        if (not ret.second) {
+        if (!ret.second) {
             // no insertion took place
             if (features.find(f.id()) != features.end()) {
                 throw std::logic_error("A feature with id \""s + f.id() + "\" already exists. Duplicate fature ids are not allowed");
