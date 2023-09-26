@@ -266,15 +266,14 @@ TEST_F(RecipeTest, serialize_recipe_action)
     Feature a("a", "double", 13.);
     Feature b("b", "double", 11.);
     Recipe recipe({a, b});
-    recipe.insert_recipe("addition", std::make_unique<Recipe>(std::move(recipe1)));
+    recipe.insert_recipe("addition", std::move(recipe1));
 
     // evaluate inner recipe
-    auto compute_node = (*recipe.get_recipe("addition"))(
+    recipe.recipe(
         "addition",
         {{"c", "z"}}, 
         {{"x", a}, {"y", b}}
     );
-    recipe.insert_feature(compute_node.at("c"));
 
     EXPECT_NEAR(recipe.at("c").value().as<double>(), 24., 1e-15);
     
@@ -299,4 +298,52 @@ TEST_F(RecipeTest, serialize_recipe_action)
     EXPECT_EQ(step[1]["x"].as<std::string>(), "a");
     EXPECT_TRUE(step[1]["y"]);
     EXPECT_EQ(step[1]["y"].as<std::string>(), "b");
+}
+
+
+TEST_F(RecipeTest, deserialize_recipe_action)
+{
+    YAML::Node serialized;
+    
+    {
+        // create inner recipe
+        Recipe recipe1;
+        recipe1.feature("x", "double", 17.);
+        recipe1.feature("y", "double", 5.);
+        recipe1.insert_feature(
+            action(
+                "z", 
+                "add", 
+                recipe1.at("x"), 
+                recipe1.at("y")
+            ).output()
+        );
+        
+        // create outer recipe
+        Feature a("a", "double", 13.);
+        Feature b("b", "double", 11.);
+        Recipe recipe({a, b});
+        recipe.insert_recipe("addition", std::move(recipe1));
+
+        // evaluate inner recipe
+        recipe.recipe(
+            "addition",
+            {{"c", "z"}}, 
+            {{"x", a}, {"y", b}}
+        );
+
+        serialized = recipe.serialize();
+    }
+    
+    auto recipe = Recipe::deserialize(serialized);
+    EXPECT_EQ(recipe.num_features(), 3);
+    EXPECT_EQ(recipe.at("a").value().as<double>(), 13.);
+    EXPECT_EQ(recipe.at("b").value().as<double>(), 11.);
+    EXPECT_EQ(recipe.at("c").value().as<double>(), 24.);
+    EXPECT_EQ(recipe.num_recipes(), 1);
+    auto& subrecipe = recipe.get_recipe("addition");
+    EXPECT_EQ(subrecipe.num_features(), 3);
+    EXPECT_EQ(subrecipe.at("x").value().as<double>(), 17.);
+    EXPECT_EQ(subrecipe.at("y").value().as<double>(), 5.);
+    EXPECT_EQ(subrecipe.at("z").value().as<double>(), 22.);
 }

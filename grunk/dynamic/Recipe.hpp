@@ -1,4 +1,6 @@
 #include <grunk/dynamic/DynamicFeature.hpp>
+#include <grunk/io/io.hpp>
+
 #include <initializer_list>
 
 namespace grunk {
@@ -28,9 +30,15 @@ public:
     void insert_feature(DynamicFeature const&);
     size_t num_features() const;
 
-    std::unique_ptr<Recipe>& get_recipe(std::string const&);
-    std::unique_ptr<Recipe> const& get_recipe(std::string const&) const;
+    template <typename... Args>
+    void feature(std::string const& id, Args&&... args) {
+        features.emplace(id, DynamicFeature(id, std::forward<Args>(args)...));
+    }
+
+    Recipe& get_recipe(std::string const&);
+    Recipe const& get_recipe(std::string const&) const;
     void insert_recipe(std::string const& id, std::unique_ptr<Recipe>&&);
+    void insert_recipe(std::string const& id, Recipe&&);
     size_t num_recipes() const;
 
     struct IDPair 
@@ -54,9 +62,9 @@ public:
         void eval() const override;
 
         std::string serialize() const override final;
-        static FeatureContainer deserialize(
+        static void deserialize(
             YAML::Node const&,
-            Recipe const& recipe
+            Recipe& recipe
         );
 
     private:
@@ -74,6 +82,12 @@ public:
         FeatureContainer const& inputs
     ) const;
 
+    void recipe(
+        std::string const& name,
+        std::vector<Recipe::IDPair> const& output_ids,
+        FeatureContainer const& inputs
+    );
+
 private:
 
     FeatureContainer features;
@@ -88,10 +102,10 @@ YAML::Node serialize(Args&&... args)
 }
 
 template <typename... Args>
-std::string to_string(Args&&... args)
+std::string to_string(Feature<Args> const&... args)
 {
     YAML::Emitter out;
-    out << serialize(std::forward<Args>(args)...);
+    out << serialize(args...);
     return out.c_str();
 }
 

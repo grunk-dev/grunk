@@ -128,14 +128,10 @@ Recipe Recipe::deserialize(YAML::Node const& root)
                 recipe.features.emplace(output_name, output);
 
             } else if (auto n = function_name.rfind("recipes::", 0); n == 0) {
-                std::string recipe_name = function_name.substr(n+1);
-                auto outputs = Recipe::Action::deserialize(
+                Recipe::Action::deserialize(
                     steps[i], 
                     recipe    
                 ); 
-                for (auto const& value : outputs) {
-                    recipe.insert_feature(value.second);
-                }
             } else {
 
 
@@ -184,19 +180,34 @@ size_t Recipe::num_features() const {
     return features.size();
 }
 
-std::unique_ptr<Recipe>& Recipe::get_recipe(std::string const& id)
+Recipe& Recipe::get_recipe(std::string const& id)
 {
-    return recipes.at(id);
+    using namespace std::string_literals;
+    if (auto& ptr = recipes.at(id); ptr) {
+        return *recipes.at(id);
+    } else {
+        throw std::logic_error("Recipe \""s + id + "\" is null.");
+    }
 }
 
-std::unique_ptr<Recipe> const& Recipe::get_recipe(std::string const& id) const
+Recipe const& Recipe::get_recipe(std::string const& id) const
 {
-    return recipes.at(id);
+    using namespace std::string_literals;
+    if (auto& ptr = recipes.at(id); ptr) {
+        return *recipes.at(id);
+    } else {
+        throw std::logic_error("Recipe \""s + id + "\" is null.");
+    }
 }
 
 void Recipe::insert_recipe(std::string const& id, std::unique_ptr<Recipe>&& r)
 {
     recipes.insert({id, std::move(r)});
+}
+
+void Recipe::insert_recipe(std::string const& id, Recipe&& recipe)
+{
+    recipes.insert({id, std::make_unique<Recipe>(std::move(recipe))});
 }
 
 size_t Recipe::num_recipes() const {
@@ -302,9 +313,9 @@ std::string Recipe::Action::serialize() const
     return out.c_str();
 }
 
-FeatureContainer Recipe::Action::deserialize(
+void Recipe::Action::deserialize(
     YAML::Node const& node,
-    Recipe const& recipe
+    Recipe& recipe
 )
 {
     assert(node.size() == 2);
@@ -312,9 +323,6 @@ FeatureContainer Recipe::Action::deserialize(
     // get subrecipe name from tag
     std::string tag = node.Tag();
     std::string recipe_name = tag.substr(9); // everything after recipes::
-
-    // get subrecipe from input recipe
-    auto const& subrecipe = recipe.get_recipe(recipe_name);
     
     // construct output map
     std::vector<Recipe::IDPair> output_ids;
@@ -329,11 +337,11 @@ FeatureContainer Recipe::Action::deserialize(
     for (YAML::const_iterator it=node[1].begin();it!=node[1].end();++it ) {
         auto key = it->first.as<std::string>();
         auto val = it->second.as<std::string>();
-        inputs.at(key) = recipe.features.at(val);
+        inputs.insert({key, recipe.features.at(val)});
     }
 
     // call the subrecipe 
-    return (*subrecipe)(
+    recipe.recipe(
         recipe_name,
         output_ids, 
         inputs
@@ -355,6 +363,18 @@ FeatureContainer Recipe::operator()(
     );
 
     return parametric::compute(ptr, inputs);
+}
+
+void Recipe::recipe(
+    std::string const& name,
+    std::vector<Recipe::IDPair> const& output_ids,
+    FeatureContainer const& inputs
+)
+{
+    auto outputs = get_recipe(name)(name, output_ids, inputs);
+    for (auto const& kv : outputs) {
+        insert_feature(kv.second);
+    }
 }
 
 } // namespace grunk
