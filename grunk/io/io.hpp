@@ -13,7 +13,6 @@
 #include <grunk/io/io_error.hpp>
 #include <grunk/parametric_core.hpp>
 #include <grunk/dynamic/DynamicFeature.hpp>
-#include <grunk/dynamic/FeatureContainer.hpp>
 #include <grunk/plugins/PluginRegistry.hpp>
 #include <grunk/version.hpp>
 

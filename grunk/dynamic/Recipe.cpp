@@ -161,6 +161,16 @@ Recipe Recipe::deserialize(YAML::Node const& root)
     return recipe;
 }
 
+Recipe::FeatureContainer const& Recipe::get_features() const
+{
+    return features;
+}
+
+Recipe::FeatureContainer& Recipe::get_features()
+{
+    return features;
+}
+
 DynamicFeature& Recipe::at(std::string const& id) 
 {
     return features.at(id);
@@ -348,7 +358,7 @@ void Recipe::Action::deserialize(
     );
 }
 
-FeatureContainer Recipe::operator()(
+Recipe::FeatureContainer Recipe::operator()(
     std::string const& name,
     std::vector<Recipe::IDPair> const& output_ids,
     FeatureContainer const& inputs

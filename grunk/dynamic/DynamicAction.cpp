@@ -1,13 +1,15 @@
 #include "DynamicAction.hpp"
+#include <grunk/dynamic/Recipe.hpp>
 #include <grunk/io/io_error.hpp>
 
 namespace grunk {
 
 ResultHolder<DynamicAction> DynamicAction::deserialize(
     YAML::Node const& node,
-    FeatureContainer const& features
+    Recipe const& recipe
 )
 {
+    auto const& features = recipe.get_features();
     auto const function_name = node.Tag();
 
     std::vector<DynamicFeature> input_vec;

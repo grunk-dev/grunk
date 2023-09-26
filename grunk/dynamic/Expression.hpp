@@ -1,7 +1,6 @@
 #pragma once 
 
 #include <grunk/dynamic/DynamicFeature.hpp>
-#include <grunk/dynamic/FeatureContainer.hpp>
 
 #include <grunk/parametric_core.hpp>
 #include <yaml-cpp/yaml.h>
@@ -9,6 +8,7 @@
 
 namespace grunk {
 
+    class Recipe;
     class Expression;
 
     /**
@@ -88,7 +88,7 @@ namespace grunk {
          */
         static DynamicFeature deserialize(
             YAML::Node const&,
-            FeatureContainer const&
+            Recipe const&
         );
 
     private:

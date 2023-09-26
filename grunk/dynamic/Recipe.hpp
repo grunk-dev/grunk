@@ -7,10 +7,10 @@ namespace grunk {
 
 class Recipe 
 {
+public:
     using FeatureContainer = std::unordered_map<std::string, DynamicFeature>;
     using RecipeContainer = std::unordered_map<std::string, std::unique_ptr<Recipe>>;
 
-public:
     Recipe() = default;
     Recipe(std::initializer_list<DynamicFeature> const&);
     Recipe(FeatureContainer const&);
@@ -25,6 +25,8 @@ public:
 
     Recipe clone() const;
 
+    FeatureContainer const& get_features() const;
+    FeatureContainer& get_features();
     DynamicFeature& at(std::string const&);
     DynamicFeature const& at(std::string const&) const;
     void insert_feature(DynamicFeature const&);
