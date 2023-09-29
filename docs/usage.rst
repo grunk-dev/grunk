@@ -232,9 +232,6 @@ yield the same file *(except for the order of independent parameters)*:
    grunk::write("/home/jan/my_grunk_files/simple.grr", b, a, x, y, z);
    grunk::write("/home/jan/my_grunk_files/simple.grr", z, b);
 
-   std::vector<DynamicFeature> vec{a,b,x};
-   grunk::write("/home/jan/my_grunk_files/simple.grr", vec);
-
 The file can then be read by grunk and the feature tree can be 
 reconstructed, as long as the two plugins have been loaded:
 
@@ -253,12 +250,92 @@ reconstructed, as long as the two plugins have been loaded:
 
    15.2
 
-The function ``grunk::read`` returns a map of ``Feature`` instances, where the 
-keys are the the string ids of the features. 
+The function ``grunk::read`` returns a ``Recipe`` instances, which stores the re-constructed
+features, see :ref:`the next section<grunk-recipes>`. Retrieval is based on the string ids of the features. 
 
 Plugins enable experts to create and use domain specific building blocks to model 
 complex systems. grunk files enable experts to share workflows in a collaborative and 
 multidisciplinary environment.
+
+.. _grunk-recipes:
+
+Grunk Recipes 
+=============
+
+You have seen in :ref:`the previous section<reading-and-writing-to-file>` how individual features or 
+a set of features can be written to a *grunk recipe*. In grunk, there exists a class to model 
+such a recipe in :ref:`dynamic mode<dynamic-mode>`, namely ``::grunk::Recipe``. 
+
+In a certain sense, a ``::grunk::Recipe`` is just a container of features. You can create a recipe and 
+add features to it, or you can create the features directly within the recipe:
+
+.. code-block:: cpp 
+
+   auto a = grunk::Feature("a", "PluginA::Scalar", 17.);
+   auto b = grunk::Feature("b", "PluginA::Scalar", 15.);
+   auto c = grunk::action("c", "PluginA::add", a, b).output();
+   Recipe recipe1(a, b, c);
+
+   Recipe recipe2;
+   recipe2.feature("x", "PluginA::Scalar", 2.);
+   recipe2.feature("y", "PluginA::Scalar", 5.);
+   recipe2.insert_feature(
+      grunk::action("z", "PluginB::multiply", recipe2["x"], recipe2["y"]).output()
+   );
+
+In addition to storing features, recipes can store recipes. Think of them as building-blocks for your model. 
+For instance, a recipe for an aircraft may have recipes for modeling wings, fuselages or a landing gear.
+Continuing our above example, we can insert ``recipe2`` as a subrecipe of ``recipe1`` and assign a label to it:
+
+.. code-block:: cpp
+
+   recipe1.insert_recipe("multiplication", std::move(recipe2));
+
+``::grunk::Recipe``\s can be used like functions in the sense, that we can interpret independent 
+features as arguments and any other feature as an output. These functions can in turn be treated like a new 
+compute node in a feature tree. This helps us with encapsulation: We can build complex recipes using a set of 
+smaller recipes.
+
+Let us invoke the new subrecipe ``multiplication`` of ``recipe1`` on ``a`` and ``b``. 
+
+.. code-block:: cpp 
+
+   recipe.recipe("multiplication", {{"d", "z"}}, {{"x", a}, {"y", b}});
+
+The arguments are not intuitive to parse. It is best to read them from right to left:
+
+ * Take feature ``b`` as input for the inner independent feature with id ``y``. 
+ * Take feature ``a`` as input for the inner independent feature with id ``x``.
+ * Map the inner output feature ``z`` to a newly created feature in the outer recipe and assign 
+   the new feature with the id ``d``.
+
+The inner recipe will be uneffected by this action. Since all inner features have a default value, 
+it is not necessary to assign all input features with a feature from the outer recipe. As an example, 
+it would also have been okay, to just replace ``x`` with say ``c`` and keep ``y`` as is.
+
+Exporting the recipe will result in the following yaml-representation:
+
+.. code-block:: yaml 
+   
+   uses:
+     grunk: 0.2.1
+     PluginA: 0.1.0
+   parameters:
+     a: !<PluginA::Scalar> 17
+     b: !<PluginA::Scalar> 15
+   steps:
+     - !<PluginA::add> [[c], [a, b]]
+     - !<recipes::multiplication> [{d: z}, {x: a, y: b}]
+   recipes:
+     multiplication:
+       uses:
+         PluginB: 0.1.0
+         PluginA: 0.1.0
+       parameters:
+         x: !<PluginA::Scalar> 2
+         y: !<PluginA::Scalar> 5
+       steps:
+         - !<PluginB::multiply> [[z], [x, y]]
 
 .. _writing-plugins:
 
