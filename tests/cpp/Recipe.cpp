@@ -22,7 +22,20 @@ public:
     } 
 };
 
-//TODO: Test insert_recipe, insert_feature, constructor, feature and recipe retrieval
+TEST_F(RecipeTest, ctor)
+{
+    EXPECT_NO_THROW(Recipe recipe);
+
+    auto x = Feature("x", "double", 0.2);
+    auto y = Feature("y", "double", 0.1);
+    EXPECT_NO_THROW(Recipe recipe(x));
+    EXPECT_NO_THROW(Recipe recipe(x, y));
+    EXPECT_NO_THROW(Recipe recipe({x, y}));
+
+    grunk::Recipe::FeatureContainer m{{"x", x}, {"y", y}};
+    EXPECT_NO_THROW(Recipe recipe(m));
+    
+}
 
 TEST_F(RecipeTest, clone)
 {
