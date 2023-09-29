@@ -9,7 +9,7 @@ class Recipe
 {
 public:
     using FeatureContainer = std::unordered_map<std::string, DynamicFeature>;
-    using RecipeContainer = std::unordered_map<std::string, std::unique_ptr<Recipe>>;
+    using RecipeContainer = std::unordered_map<std::string, std::shared_ptr<Recipe>>;
 
     Recipe() = default;
     Recipe(std::initializer_list<DynamicFeature> const&);
@@ -39,7 +39,7 @@ public:
 
     Recipe& get_recipe(std::string const&);
     Recipe const& get_recipe(std::string const&) const;
-    void insert_recipe(std::string const& id, std::unique_ptr<Recipe>&&);
+    void insert_recipe(std::string const& id, std::shared_ptr<Recipe>&&);
     void insert_recipe(std::string const& id, Recipe&&);
     size_t num_recipes() const;
 
@@ -97,18 +97,10 @@ private:
 };
 
 template <typename... Args>
-YAML::Node serialize(Args&&... args)
+YAML::Node serialize(Feature<Args> const&... args)
 {
-    Recipe r(std::forward<Args>(args)...);
+    Recipe r(args...);
     return r.serialize();
-}
-
-template <typename... Args>
-std::string to_string(Feature<Args> const&... args)
-{
-    YAML::Emitter out;
-    out << serialize(args...);
-    return out.c_str();
 }
 
 } // namespace grunk

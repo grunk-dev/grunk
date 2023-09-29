@@ -88,7 +88,7 @@ Recipe Recipe::deserialize(YAML::Node const& root)
         for (YAML::const_iterator it=recipes_node.begin();it!=recipes_node.end();++it ) {
             auto name = it->first.as<std::string>();
 
-            auto ptr = std::make_unique<Recipe>(
+            auto ptr = std::make_shared<Recipe>(
                 std::move(Recipe::deserialize(it->second))
             );
             recipe.recipes.emplace(name, std::move(ptr));
@@ -210,14 +210,14 @@ Recipe const& Recipe::get_recipe(std::string const& id) const
     }
 }
 
-void Recipe::insert_recipe(std::string const& id, std::unique_ptr<Recipe>&& r)
+void Recipe::insert_recipe(std::string const& id, std::shared_ptr<Recipe>&& r)
 {
     recipes.insert({id, std::move(r)});
 }
 
 void Recipe::insert_recipe(std::string const& id, Recipe&& recipe)
 {
-    recipes.insert({id, std::make_unique<Recipe>(std::move(recipe))});
+    recipes.insert({id, std::make_shared<Recipe>(std::move(recipe))});
 }
 
 size_t Recipe::num_recipes() const {

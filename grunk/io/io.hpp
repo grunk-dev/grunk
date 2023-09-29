@@ -178,6 +178,38 @@ std::string to_string(Recipe const&);
  */
 void write(std::string const& filename, Recipe const& recipe);
 
+template <typename... Args>
+YAML::Node serialize(Feature<Args> const&... args);
+
+/**
+ * @brief writes several ::grunk::Feature instances to string
+ * 
+ * @tparam Args the types of the features
+ * @param args the features
+ * @return std::string  the serialized grunk recipe
+ */
+template <typename... Args>
+std::string to_string(Feature<Args> const&... args)
+{
+    YAML::Emitter out;
+    out << serialize(args...);
+    return out.c_str();
+}
+
+/**
+ * @brief writes several ::grunk::Feature instances to string
+ * 
+ * @tparam Args the types of the features
+ * @param filename the filename of the output file
+ * @param args the features
+ */
+template <typename... Args>
+void write(std::string const& filename, Feature<Args> const&... args)
+{
+    std::ofstream fout(filename);
+    fout << to_string(args...) << "\n";
+}
+
 namespace details {
 
 /**
