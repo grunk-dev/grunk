@@ -29,6 +29,8 @@ public:
     FeatureContainer& get_features();
     DynamicFeature& at(std::string const&);
     DynamicFeature const& at(std::string const&) const;
+    DynamicFeature& operator[](std::string const&);
+    DynamicFeature const& operator[](std::string const&) const;
     void insert_feature(DynamicFeature const&);
     size_t num_features() const;
 

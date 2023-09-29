@@ -205,6 +205,12 @@ PYBIND11_MODULE(_core, m)
         py::overload_cast<std::string const&>(&grunk::Recipe::at, py::const_),
         py::return_value_policy::reference_internal
     )
+    .def(
+        "__getitem__",
+        [](Recipe& r, std::string const& key) {
+            return r.at(key);
+        }
+    )
     .def("insert_feature", &grunk::Recipe::insert_feature)
     .def("num_features", &grunk::Recipe::num_features)
     .def(

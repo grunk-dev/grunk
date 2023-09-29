@@ -181,6 +181,16 @@ DynamicFeature const& Recipe::at(std::string const& id) const
     return features.at(id);
 }
 
+DynamicFeature& Recipe::operator[](std::string const& id)
+{
+    return features.at(id);
+}
+
+DynamicFeature const& Recipe::operator[](std::string const& id) const
+{
+    return features.at(id);
+}
+
 void Recipe::insert_feature(DynamicFeature const&f)
 {
     features.insert({f.id(), f});
