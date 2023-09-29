@@ -46,6 +46,16 @@ def test_recipe():
     z = grunk.action("z", "PluginB::multiply", x, y).output()
     recipe.insert_recipe("multiply", grunk.Recipe(x,y,z))
 
-    recipe.recipe("multiply", {"c": "z"}, {"x": recipe["a"]})
+    recipe.recipe("multiply", {"d": "z"}, {"x": recipe["c"]})
+
+    assert (17. + 15.) == pytest.approx(recipe["c"].value().as_float())
+    assert ( 2. *  5.) == pytest.approx(recipe.get_recipe("multiply")["z"].value().as_float())
+    assert ( 5. * 32.) == pytest.approx(recipe["d"].value().as_float())
+
+    # evaluation of d should not effect value of z in inner recipe
+    assert ( 2. *  5.) == pytest.approx(recipe.get_recipe("multiply")["z"].value().as_float())
+
+    # just make sure this doesn't fail:
+    grunk.write("test_nested_recipe.grr", recipe)
 
 

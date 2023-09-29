@@ -331,6 +331,7 @@ PYBIND11_MODULE(_core, m)
     // io
 
     m.def("read", &grunk::read);
+    m.def("write", static_cast<void(*)(std::string const&, grunk::Recipe const&)>(&grunk::write));
     m.def(
         "write",
         [](std::string const& filename, py::args pyargs){
@@ -342,6 +343,5 @@ PYBIND11_MODULE(_core, m)
             );
         }
     );
-    m.def("write", static_cast<void(*)(std::string const&, grunk::Recipe const&)>(&grunk::write));
 
 }
