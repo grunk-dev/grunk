@@ -74,6 +74,34 @@ TEST_F(RecipeTest, clone)
     EXPECT_NEAR(z.value().as<double>(), 42.9, 1e-15);
 }
 
+TEST_F(RecipeTest, clone_with_subrecipes)
+{
+    // create inner recipe
+    Feature x("x", "double", 17.);
+    Feature y("y", "double", 11.);
+    Feature z = action("z", "add", x, y).output();
+    Recipe recipe1({x, y, z});
+
+    // create outer recipe
+    Feature a("a", "double", 13.);
+    Feature b("b", "double", 11.);
+    Recipe recipe({a, b});
+    recipe.insert_recipe("addition", std::move(recipe1));
+
+    // evaluate inner recipe
+    recipe.recipe(
+        "addition",
+        {{"c", "z"}}, 
+        {{"x", a}, {"y", b}}
+    );
+
+    // just some quick sanity checks
+    auto other = recipe.clone();
+    EXPECT_EQ(other.num_features(), 3);
+    EXPECT_EQ(other.num_recipes(), 1);
+    EXPECT_EQ(other.get_recipe("addition").num_features(), 3);
+}
+
 TEST_F(RecipeTest, as_function)
 {
     Feature x("x", "double", 12.3);

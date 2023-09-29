@@ -241,7 +241,13 @@ Recipe Recipe::clone() const
     for (auto const& [id, f] : features) {
         cloned.emplace(id, DynamicFeature(f.param().clone(cloned_nodes)));
     }
-    return Recipe(cloned);
+
+    Recipe out(cloned);
+
+    for (auto const& [id, r] : recipes) {
+        out.insert_recipe(id, std::move(r->clone()));
+    }
+    return out;
 }
 
 Recipe::Action::Action(
