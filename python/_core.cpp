@@ -54,6 +54,43 @@ namespace py = pybind11;
 PYBIND11_MAKE_OPAQUE(std::unordered_map<std::string, DynamicFeature>);
 PYBIND11_MAKE_OPAQUE(std::vector<reflect::DynamicObject>);
 
+namespace {
+
+    std::vector<grunk::Recipe::IDPair> dict_to_idpair_vec(py::dict const& d)
+    {
+        std::vector<grunk::Recipe::IDPair> v;
+
+        std::transform(
+            d.begin(),
+            d.end(),
+            std::back_inserter(v),
+            [](auto const& kv){ 
+                return grunk::Recipe::IDPair{
+                    py::cast<std::string>(kv.first), 
+                    py::cast<std::string>(kv.second)
+                }; 
+            }
+        );
+        return v;
+    }
+
+    grunk::Recipe::FeatureContainer dict_to_feature_container(py::dict const& d)
+    {
+        grunk::Recipe::FeatureContainer m;
+        for (auto const& kv : d) {
+            m.insert(
+                {
+                    py::cast<std::string>(kv.first),
+                    py::cast<grunk::DynamicFeature>(kv.second)
+                }
+            );
+        }
+
+        return m;
+    }
+
+} // anonymouos namespace
+
 
 PYBIND11_MODULE(_core, m)
 {
@@ -177,9 +214,7 @@ PYBIND11_MODULE(_core, m)
         &grunk::DynamicFeature::set_id
     );
 
-    using RecipeOutputMap = std::unordered_map<std::string, std::string>;
     py::bind_map<grunk::Recipe::FeatureContainer>(m, "FeatureContainer");
-    py::bind_map<RecipeOutputMap>(m, "RecipeOutputMap");
 
     py::class_<grunk::Recipe>(m, "Recipe")
     .def(
@@ -241,18 +276,15 @@ PYBIND11_MODULE(_core, m)
         [](
             Recipe const& recipe,
             std::string const& name, 
-            RecipeOutputMap const& output_ids, 
-            grunk::Recipe::FeatureContainer const& inputs
+            py::dict const& output_ids, 
+            py::dict const& inputs
         ) 
         {
-            std::vector<grunk::Recipe::IDPair> output_ids_vec;
-            std::transform(
-                output_ids.begin(),
-                output_ids.end(),
-                std::back_inserter(output_ids_vec),
-                [](auto const& kv){ return grunk::Recipe::IDPair{kv.first, kv.second}; }
+            return recipe(
+                name, 
+                dict_to_idpair_vec(output_ids), 
+                dict_to_feature_container(inputs)
             );
-            return recipe(name, output_ids_vec, inputs);
         }
     )
     .def(
@@ -260,18 +292,15 @@ PYBIND11_MODULE(_core, m)
         [](
             Recipe& recipe,
             std::string const& name, 
-            RecipeOutputMap const& output_ids, 
-            grunk::Recipe::FeatureContainer const& inputs
+            py::dict const& output_ids, 
+            py::dict const& inputs
         ) 
         {
-            std::vector<grunk::Recipe::IDPair> output_ids_vec;
-            std::transform(
-                output_ids.begin(),
-                output_ids.end(),
-                std::back_inserter(output_ids_vec),
-                [](auto const& kv){ return grunk::Recipe::IDPair{kv.first, kv.second}; }
+            return recipe.recipe(
+                name, 
+                dict_to_idpair_vec(output_ids), 
+                dict_to_feature_container(inputs)
             );
-            return recipe.recipe(name, output_ids_vec, inputs);
         }
     );
 
