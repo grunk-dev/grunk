@@ -121,3 +121,33 @@ TEST_F(ScriptTest, serialize)
      EXPECT_EQ(script["returns"].size(), 1);
      EXPECT_EQ(script["returns"][0].as<std::string>(), "p");
 }
+
+TEST_F(ScriptTest, deserialize)
+{
+    YAML::Node node;
+
+    {
+        grunk::Feature u("u", "double", 0.1);
+        grunk::Feature v("v", "double", 0.2);
+        auto s = grunk::script(
+            {
+                {"Pnt", {"p"}, {}},                 // create a new point p
+                {"Pnt::set_x", {}, {"p", u}},       // invoke non-const setter
+                {"Pnt::set_y", {}, {"p", v}},       // invoke non-const setter
+            },
+            {"p"}                                   // return new point p
+        );
+
+        node = serialize(u, v, s.output());
+    }
+
+    auto d = grunk::Recipe::deserialize(node);
+
+    EXPECT_EQ(d.num_features(), 3);
+    EXPECT_NEAR(d["u"].value().as<double>(), 0.1, 1e-10);
+    EXPECT_NEAR(d["v"].value().as<double>(), 0.2, 1e-10);
+    auto pnt = d["p"].value().as<Pnt>();
+    EXPECT_NEAR(pnt.x, 0.1, 1e-10);
+    EXPECT_NEAR(pnt.y, 0.2, 1e-10);
+    EXPECT_NEAR(pnt.z, 0.0, 1e-10);
+}

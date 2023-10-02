@@ -1,5 +1,5 @@
 #include <grunk/dynamic/Script.hpp>
-#include <initializer_list>
+#include <vector>
 
 using namespace std::string_literals;
 
@@ -21,8 +21,8 @@ std::string script_error::get_message() const
 
 Script::Step::Step(
     std::string fun,
-    std::initializer_list<std::string> const& outputs_,
-    std::initializer_list<Argument> const& inputs
+    std::vector<std::string> const& outputs_,
+    std::vector<Argument> const& inputs
 )
     : function_name(fun)
     , outputs(outputs_)
@@ -81,6 +81,49 @@ std::string Script::serialize() const
     return out.c_str();
 }
 
+Script::Step Script::Step::deserialize(YAML::Node const& node, Recipe::FeatureContainer& features)
+{
+    auto function_name = node.Tag();
+    std::vector<std::string> outputs;
+    if (node[0]) {
+        for (auto const& o : node[0]) {
+            outputs.push_back(o.as<std::string>());
+        }
+    }
+
+    std::vector<Script::Step::Argument> inputs;
+    if (node[1]) {
+        for (auto const& i : node[1]) {
+            auto id = i.as<std::string>();
+            if (auto search = features.find(id); search != features.end()) {
+                inputs.push_back(search->second);
+            } else {
+                inputs.push_back(id);
+            }
+        }
+    }
+    return Script::Step(function_name, outputs, inputs);
+}
+
+ResultHolder<DynamicAction> Script::deserialize(YAML::Node const& node, Recipe::FeatureContainer& features)
+{
+    std::vector<Script::Step> steps_list;
+    if (node["steps"]) {
+        for (auto const& step : node["steps"]) {
+            steps_list.push_back(Script::Step::deserialize(step, features));
+        }
+    }
+
+    std::vector<std::string> output_list;
+    if (node["returns"]) {
+        for (auto const& o : node["returns"]) {
+            output_list.push_back(o.as<std::string>());
+        }
+    }
+
+    return script(steps_list, output_list);
+}
+
 void Script::eval(Script::Step const& s, Script::VariableMap& vars) const
 {
     std::vector<reflect::DynamicObject> inputs;
@@ -117,8 +160,8 @@ void Script::eval(Script::Step const& s, Script::VariableMap& vars) const
 }
 
 Script::Script(
-    std::initializer_list<Step> const& s,
-    std::initializer_list<std::string> const& r
+    std::vector<Step> const& s,
+    std::vector<std::string> const& r
 )
  : steps(s) 
  , returns(r)
@@ -137,8 +180,8 @@ Script::Script(
 }
 
 ResultHolder<DynamicAction> script(
-    std::initializer_list<Script::Step> const& steps,
-    std::initializer_list<std::string> const& returns    
+    std::vector<Script::Step> const& steps,
+    std::vector<std::string> const& returns
 )
 {
     auto ptr = std::shared_ptr<Script>(new Script(steps, returns));
@@ -148,7 +191,7 @@ ResultHolder<DynamicAction> script(
     );
 }
 
-void Script::connect_inputs(std::initializer_list<Step> const& steps_)
+void Script::connect_inputs(std::vector<Step> const& steps_)
 {
     for (auto s : steps_) {
         for (auto const& a : s.arguments) {

@@ -1,3 +1,5 @@
+#pragma once
+
 #include <grunk/dynamic/DynamicFeature.hpp>
 #include <grunk/io/io.hpp>
 
