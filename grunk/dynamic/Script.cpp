@@ -29,6 +29,58 @@ Script::Step::Step(
     , arguments(inputs)
 {};
 
+YAML::Node Script::serialize(Script::Step const& step) const 
+{
+    YAML::Node s;
+    
+    YAML::Node o;//(YAML::NodeType::Sequence);
+    for (auto const& output: step.outputs) {
+        o.push_back(output);
+    }
+    s.push_back(o);
+
+    YAML::Node i;//(YAML::NodeType::Sequence);
+    for (auto const& a : step.arguments) {
+        if (std::holds_alternative<std::string>(a)) {
+            i.push_back(std::get<std::string>(a));
+        } else if (std::holds_alternative<DynamicFeature>(a)) {
+            i.push_back(std::get<DynamicFeature>(a).id());
+        } else {
+            i.push_back(this->arg<reflect::DynamicObject>(std::get<int>(a)).id());
+        }
+    }
+    s.push_back(i);
+
+    s.SetTag(step.function_name);
+    s.SetStyle(YAML::EmitterStyle::Flow);
+
+    return s;
+}
+
+std::string Script::serialize() const
+{
+    YAML::Node r;
+
+    YAML::Node sn;
+    for (auto const& s : steps) {
+        sn.push_back(serialize(s));
+    }
+    r["steps"] = sn;
+
+    YAML::Node o;
+    for (auto const& out : returns) {
+        o.push_back(out);
+    }
+    if (o.size() > 0) {
+        r["returns"] = o;
+    }
+
+    r.SetStyle(YAML::EmitterStyle::Block);
+    YAML::Emitter out;
+    out << YAML::VerbatimTag("script") << r;
+    return out.c_str();
+}
+
 void Script::eval(Script::Step const& s, Script::VariableMap& vars) const
 {
     std::vector<reflect::DynamicObject> inputs;
@@ -77,9 +129,8 @@ Script::Script(
         for (auto& a : s.arguments) {
             if (std::holds_alternative<DynamicFeature>(a)) {
                 a = i++;
-            }
-            if (std::holds_alternative<int>(a)) {
-                throw script_error("Step arguments for new scripts must either be strings or DynamicFeatures. integer arguments are for interal use only.")
+            } else if (std::holds_alternative<int>(a)) {
+                throw script_error("Step arguments for new scripts must either be strings or DynamicFeatures. integer arguments are for interal use only.");
             }
         }
     }

@@ -83,6 +83,8 @@ public:
     void post_connect() const;
     void eval() const override final;
 
+    std::string serialize() const override final;
+
 private:
 
     Script(
@@ -91,6 +93,7 @@ private:
     );
 
     void eval(Step const& s, VariableMap& vars) const;
+    YAML::Node serialize(Step const& s) const;
 
     std::vector<Step> mutable steps;
     std::vector<std::string> const returns;

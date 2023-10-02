@@ -63,11 +63,61 @@ TEST_F(ScriptTest, basic_usage)
         },
         {"p"}                                   // return new point p
     );
-    
+
     EXPECT_EQ(s.size(), 1);
     auto pnt = s.output().value().as<Pnt>();
     EXPECT_EQ(pnt.x, 0.1);
     EXPECT_EQ(pnt.y, 0.2);
     EXPECT_EQ(pnt.z, 0.0);
 
+}
+
+TEST_F(ScriptTest, serialize)
+{
+    grunk::Feature u("u", "double", 0.1);
+    grunk::Feature v("v", "double", 0.2);
+    auto s = grunk::script(
+        {
+            {"Pnt", {"p"}, {}},                 // create a new point p
+            {"Pnt::set_x", {}, {"p", u}},       // invoke non-const setter 
+            {"Pnt::set_y", {}, {"p", v}},       // invoke non-const setter
+        },
+        {"p"}                                   // return new point p
+    );
+    
+    YAML::Node node = serialize(u, v, s.output());
+
+     EXPECT_EQ(node["steps"].size(), 1);
+     auto script = node["steps"][0];
+     EXPECT_EQ(script.Tag(), "script");
+     EXPECT_EQ(script.size(), 2);
+     EXPECT_TRUE(script["steps"]);
+     EXPECT_EQ(script["steps"].size(), 3);
+
+     // - !<Pnt> [[p], ~]
+     EXPECT_EQ(script["steps"][0].size(), 2);
+     EXPECT_EQ(script["steps"][0].Tag(), "Pnt");
+     EXPECT_EQ(script["steps"][0][0].size(), 1);
+     EXPECT_EQ(script["steps"][0][0][0].as<std::string>(), "p");
+     EXPECT_EQ(script["steps"][0][1].Type(), YAML::NodeType::Null);
+
+     // - !<Pnt::set_x> [~, [p, u]]
+     EXPECT_EQ(script["steps"][1].size(), 2);
+     EXPECT_EQ(script["steps"][1].Tag(), "Pnt::set_x");
+     EXPECT_EQ(script["steps"][1][0].Type(), YAML::NodeType::Null);
+     EXPECT_EQ(script["steps"][1][1].size(), 2);
+     EXPECT_EQ(script["steps"][1][1][0].as<std::string>(), "p");
+     EXPECT_EQ(script["steps"][1][1][1].as<std::string>(), "u");
+
+     // - !<Pnt::set_y> [~, [p, v]]
+     EXPECT_EQ(script["steps"][2].size(), 2);
+     EXPECT_EQ(script["steps"][2].Tag(), "Pnt::set_y");
+     EXPECT_EQ(script["steps"][2][0].Type(), YAML::NodeType::Null);
+     EXPECT_EQ(script["steps"][2][1].size(), 2);
+     EXPECT_EQ(script["steps"][2][1][0].as<std::string>(), "p");
+     EXPECT_EQ(script["steps"][2][1][1].as<std::string>(), "v");
+
+     EXPECT_TRUE(script["returns"]);
+     EXPECT_EQ(script["returns"].size(), 1);
+     EXPECT_EQ(script["returns"][0].as<std::string>(), "p");
 }

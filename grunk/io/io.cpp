@@ -22,50 +22,6 @@ std::string io_error::get_message() const
 
 namespace details {
 
-bool has_unique_feature_names(YAML::Node const& root){
-
-    std::unordered_map<std::string, bool> ids;
-    
-    if (root["parameters"]) {
-        for (auto const& p : root["parameters"]) {
-            std::string id = p.first.as<std::string>();
-            ids[id] = true;
-        }
-    }
-
-    if (root["steps"]) {
-        for (auto const& s : root["steps"]) {
-            if (s[0].Type() == YAML::NodeType::Sequence) {
-                for (auto const& output : s[0]) {
-                    // handle sequence of ids
-                    std::string id = output.as<std::string>();
-                    if (ids.find(id) != ids.end()) {
-                        return false;
-                    }
-                    ids[id] = true;
-                }
-            } else if (s[0].Type() == YAML::NodeType::Map) {
-                // handle map for output ids. output ids are the keys (e.g. in Recipe::Action)
-                for(YAML::const_iterator it=s[0].begin();it!=s[0].end();++it) {
-                    std::string id = it->first.as<std::string>();
-                    if (ids.find(id) != ids.end()) {
-                        return false;
-                    }
-                    ids[id] = true;
-                }
-            } else {
-                std::string id = s[0].as<std::string>();
-                if (ids.find(id) != ids.end()) {
-                    return false;
-                }
-                ids[id] = true;
-            }
-        }
-    }
-
-    return true;
-}
-
 reflect::DynamicObject deserialize(
     std::string const& type_name,
     YAML::Node const & yaml_node
