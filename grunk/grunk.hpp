@@ -9,4 +9,5 @@
 #include <grunk/dynamic/DynamicFeature.hpp>
 #include <grunk/dynamic/DynamicAction.hpp>
 #include <grunk/dynamic/Expression.hpp>
+#include <grunk/dynamic/Script.hpp>
 #include <grunk/dynamic/Recipe.hpp>

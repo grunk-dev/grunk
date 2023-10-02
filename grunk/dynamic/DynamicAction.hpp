@@ -203,13 +203,10 @@ template <>
 class ResultHolder<DynamicAction> {
     using result_type = std::vector<DynamicFeature>;
 
-    friend struct details::DynamicActionFactory;
-
-private:
-
-    ResultHolder(result_type const& res, DynamicAction const& c) : result(res), m_compute_node(c) {}
-
 public:
+
+    ResultHolder(result_type const& res, parametric::DAGNode const& c) : result(res), m_compute_node(c) {}
+
     /**
      * @brief returns the i-th output 
      * 
@@ -234,7 +231,7 @@ public:
      * 
      * @return DynamicAction const& the DynamicAction instance
      */
-    DynamicAction const& compute_node() const {
+    parametric::DAGNode const& compute_node() const {
         return m_compute_node;
     }
 
@@ -248,7 +245,7 @@ public:
 
 
 private:
-    DynamicAction const& m_compute_node;
+    parametric::DAGNode const& m_compute_node;
     result_type result;
 };
 

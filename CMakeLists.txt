@@ -50,6 +50,8 @@ set(grunk_SRC
     grunk/dynamic/Expression.cpp
     grunk/dynamic/Recipe.hpp
     grunk/dynamic/Recipe.cpp
+    grunk/dynamic/Script.hpp
+    grunk/dynamic/Script.cpp
     grunk/grunk.hpp
     grunk/helper/String.hpp
     grunk/helper/String.cpp
