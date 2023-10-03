@@ -156,18 +156,32 @@ Let's assume that we have both plugins ``libSomePluginA.so`` and ``libSomePlugin
 directory ``/home/jan/grunk_plugins/`` *(Note that on Windows the file extension would be .dll)*. 
 We can load the plugins using the ``PluginRegistry``. 
 
-.. code-block:: cpp
+.. tabs::
+
+   .. code-tab:: cpp 
    
-   auto& plugins = grunk::get_plugin_registry();
-   plugins.prepend_path("/home/jan/grunk_plugins/");
-   plugins.load_all();
+         auto& plugins = grunk::get_plugin_registry();
+         plugins.prepend_path("/home/jan/grunk_plugins/");
+         plugins.load_all();
 
-   grunk::Feature x("x", "SomePluginA::MyDouble", 4.3);
-   grunk::Feature y("y", "SomePluginA::MyDouble", 3.3);
-   grunk::Feature z("z", "SomePluginA::MyDouble", 2.0);
+         grunk::Feature x("x", "SomePluginA::MyDouble", 4.3);
+         grunk::Feature y("y", "SomePluginA::MyDouble", 3.3);
+         grunk::Feature z("z", "SomePluginA::MyDouble", 2.0);
 
-   auto a = grunk::action("a", "SomePluginA::add", x, y).output();
-   auto b = grunk::action("b", "SomePluginB::multiply", a, z).output();
+         auto a = grunk::action("a", "SomePluginA::add", x, y).output();
+         auto b = grunk::action("b", "SomePluginB::multiply", a, z).output();
+
+   .. code-tab:: python 
+   
+         grunk.load("PluginA", version="0.1.0", install_missing=True)
+         grunk.load("PluginB", version="0.1.0", install_missing=True)
+
+         x = grunk.Feature("x", "SomePluginA::MyDouble", 4.3)
+         y = grunk.Feature("y", "SomePluginA::MyDouble", 3.3)
+         z = grunk.Feature("z", "SomePluginA::MyDouble", 2.0)
+
+         a = grunk.action("a", "SomePluginA::add", x, y).output()
+         b = grunk.action("b", "SomePluginB::multiply", a, z).output()
 
 When working with plugins, I 
 have to use grunk's :ref:`dynamic mode<dynamic-mode>`, while the :ref:`first example<getting-started>` used grunk's 
@@ -177,15 +191,24 @@ at runtime, the calling code does not know about the type ``SomePluginA::MyDoubl
 functions ``SomePluginA::add`` and ``SomePluginB::multiply`` directly. Instead, it relies on 
 a runtime reflection system used by grunk's plugin system. 
 
+Currently, static mode is not supported via the python bindings.
+
 If I evaluate the tree by querying `b.value()`, I will retrieve an instance of ``reflect::DynamicObject``.
 Luckily, the type ``SomePluginA::MyDouble`` has a public data member called `value` which is of type
-`double`, see also the section on :ref:`writing plugins<writing-plugins>`. I can use ``reflect::DynamicObject::output`` to retrieve this data member and then cast it to a 
+`double`, see also the section on :ref:`writing plugins<writing-plugins>`. I can use ``reflect::DynamicObject::get`` to retrieve this data member and then cast it to a 
 type that I can deal with:
 
-.. code-block:: cpp
+.. tabs::
+
+   .. code-tab:: cpp 
   
-   auto b_result = reflect::cast<double>(b.value().output("value"));
-   std::cout << b_result << std::endl;
+         auto b_result = reflect::cast<double>(b.value().get("value"));
+         std::cout << b_result << std::endl;
+
+   .. code-tab:: python 
+  
+         b_result = b.value().get("value").as_float();
+         print(b_result)
 
 .. code-block:: console
 
@@ -200,9 +223,15 @@ Reading and writing to file
 We can write the feature tree from the :ref:`previous section<using-plugins>` to a file, 
 the *grunk recipe*, with the command
 
-.. code-block:: cpp
+.. tabs::
+
+   .. code-tab:: cpp 
    
-   grunk::write("/home/jan/my_grunk_files/simple.grr", b);
+      grunk::write("/home/jan/my_grunk_files/simple.grr", b);
+
+   .. code-tab:: python 
+   
+      grunk.write("/home/jan/my_grunk_files/simple.grr", b)
 
 The grunk recipe will have the following contents:
 
@@ -226,25 +255,45 @@ evaluation is possible. The function ``grunk::write`` accepts any number of ``Fe
 instances or an iterable collection of ``Feature`` instances. The following commands all 
 yield the same file *(except for the order of independent parameters)*:
 
-.. code-block:: cpp 
+.. tabs::
+
+   .. code-tab:: cpp 
    
-   grunk::write("/home/jan/my_grunk_files/simple.grr", b);
-   grunk::write("/home/jan/my_grunk_files/simple.grr", b, a, x, y, z);
-   grunk::write("/home/jan/my_grunk_files/simple.grr", z, b);
+         grunk::write("/home/jan/my_grunk_files/simple.grr", b);
+         grunk::write("/home/jan/my_grunk_files/simple.grr", b, a, x, y, z);
+         grunk::write("/home/jan/my_grunk_files/simple.grr", z, b);
+
+   .. code-tab:: python 
+   
+         grunk.write("/home/jan/my_grunk_files/simple.grr", b)
+         grunk.write("/home/jan/my_grunk_files/simple.grr", b, a, x, y, z)
+         grunk.write("/home/jan/my_grunk_files/simple.grr", z, b)
 
 The file can then be read by grunk and the feature tree can be 
 reconstructed, as long as the two plugins have been loaded:
 
-.. code-block:: cpp 
-   
-   auto& plugins = grunk::get_plugin_registry();
-   plugins.prepend_path("/home/jan/grun_plugins/");
-   plugins.load_all();
+.. tabs::
 
-   auto features = grunk::read("/home/jan/my_grunk_files/simple.grr")
-   auto b = features.at("b");
-   auto b_result = reflect::cast<double>(b.value().output("value"));
-   std::cout << b_result << std::endl;
+   .. code-tab:: cpp 
+   
+         auto& plugins = grunk::get_plugin_registry();
+         plugins.prepend_path("/home/jan/grun_plugins/");
+         plugins.load_all();
+
+         auto features = grunk::read("/home/jan/my_grunk_files/simple.grr")
+         auto b = features.at("b");
+         auto b_result = reflect::cast<double>(b.value().get("value"));
+         std::cout << b_result << std::endl;
+
+   .. code-tab:: python 
+
+         grunk.load("PluginA", version="0.1.0", install_missing=True)
+         grunk.load("PluginB", version="0.1.0", install_missing=True)
+
+         features = grunk.read("/home/jan/my_grunk_files/simple.grr")
+         b = features["b"]
+         b_result = b.value().get("value").as_float();
+         print(b_result)
 
 .. code-block:: console
 
@@ -269,27 +318,50 @@ such a recipe in :ref:`dynamic mode<dynamic-mode>`, namely ``::grunk::Recipe``.
 In a certain sense, a ``::grunk::Recipe`` is just a container of features. You can create a recipe and 
 add features to it, or you can create the features directly within the recipe:
 
-.. code-block:: cpp 
+.. tabs::
 
-   auto a = grunk::Feature("a", "PluginA::Scalar", 17.);
-   auto b = grunk::Feature("b", "PluginA::Scalar", 15.);
-   auto c = grunk::action("c", "PluginA::add", a, b).output();
-   Recipe recipe1(a, b, c);
+   .. code-tab:: cpp 
 
-   Recipe recipe2;
-   recipe2.feature("x", "PluginA::Scalar", 2.);
-   recipe2.feature("y", "PluginA::Scalar", 5.);
-   recipe2.insert_feature(
-      grunk::action("z", "PluginB::multiply", recipe2["x"], recipe2["y"]).output()
-   );
+         auto a = grunk::Feature("a", "PluginA::Scalar", 17.);
+         auto b = grunk::Feature("b", "PluginA::Scalar", 15.);
+         auto c = grunk::action("c", "PluginA::add", a, b).output();
+         Recipe recipe1(a, b, c);
+
+         Recipe recipe2;
+         recipe2.feature("x", "PluginA::Scalar", 2.);
+         recipe2.feature("y", "PluginA::Scalar", 5.);
+         recipe2.insert_feature(
+            grunk::action("z", "PluginB::multiply", recipe2["x"], recipe2["y"]).output()
+         );
+
+   .. code-tab:: python
+
+
+         a = grunk.Feature("a", "PluginA::Scalar", 17.)
+         b = grunk.Feature("b", "PluginA::Scalar", 15.)
+         c = grunk.action("c", "PluginA::add", a, b).output()
+         recipe1 = Recipe(a, b, c)
+
+         recipe2 = Recipe()
+         recipe2.feature("x", "PluginA::Scalar", 2.)
+         recipe2.feature("y", "PluginA::Scalar", 5.)
+         recipe2.insert_feature(
+            grunk.action("z", "PluginB::multiply", recipe2["x"], recipe2["y"]).output()
+         )
 
 In addition to storing features, recipes can store recipes. Think of them as building-blocks for your model. 
 For instance, a recipe for an aircraft may have recipes for modeling wings, fuselages or a landing gear.
 Continuing our above example, we can insert ``recipe2`` as a subrecipe of ``recipe1`` and assign a label to it:
 
-.. code-block:: cpp
+.. tabs::
 
-   recipe1.insert_recipe("multiplication", std::move(recipe2));
+   .. code-tab:: cpp 
+
+         recipe1.insert_recipe("multiplication", std::move(recipe2));
+
+   .. code-tab:: python 
+
+         recipe1.insert_recipe("multiplication", recipe2);
 
 ``::grunk::Recipe``\s can be used like functions in the sense, that we can interpret independent 
 features as arguments and any other feature as an output. These functions can in turn be treated like a new 
@@ -298,9 +370,16 @@ smaller recipes.
 
 Let us invoke the new subrecipe ``multiplication`` of ``recipe1`` on ``a`` and ``b``. 
 
-.. code-block:: cpp 
 
-   recipe.recipe("multiplication", {{"d", "z"}}, {{"x", a}, {"y", b}});
+.. tabs::
+
+   .. code-tab:: cpp 
+
+      recipe1.recipe("multiplication", {{"d", "z"}}, {{"x", a}, {"y", b}});
+
+   .. code-tab:: python 
+
+      recipe1.recipe("multiplication", {"d": "z"}, {"x": a, "y": b})
 
 The arguments are not intuitive to parse. It is best to read them from right to left:
 
@@ -336,6 +415,174 @@ Exporting the recipe will result in the following yaml-representation:
          y: !<PluginA::Scalar> 5
        steps:
          - !<PluginB::multiply> [[z], [x, y]]
+
+.. _types-of-compute-nodes:
+
+Types of Compute Nodes
+======================
+
+With grunk, we can build parametric trees. A tree is a directed acyclic graph (DAG), where the 
+nodes are features and compute nodes. Features are inputs and outputs of compute nodes. A compute node 
+can have any number of inputs and any number of outputs. A feature can have at most one input. 
+If it has no input, it is an independent input feature, or a `parameter`. If it has one input, the input
+must be a compute node and the feature is an output of a computation. compute nodes are the `"steps"` that
+can be used as part of a grunk recipe.
+
+Compute nodes can be of the following types:
+
+.. _action:
+
+Action
+------
+
+Use ``grunk::action`` to create compute nodes representing a single function call. 
+Actions can be of either static type, wrapping a normal C++ function or dynamic type, 
+wrapping a function that is stored in the static function registry, see :ref:`Getting Started<getting-started>`
+and :ref:`Using Plugins<using-plugins>`.
+
+.. _expression:
+
+Expression
+----------
+
+Use ``grunk::expression`` to create a compute node representing an expression.
+
+
+.. tabs::
+
+   .. code-tab:: cpp 
+
+         auto a = grunk::Feature("x", "double", 0.);
+         auto b = grunk::Feature("y", "double", 0.75);
+         auto c = grunk::expression("z", "2*cos(x)*y+1", a, b);
+
+   .. code-tab:: python
+
+         a = grunk.Feature("x", "double", 0.)
+         b = grunk.Feature("y", "double", 0.75)
+         c = grunk.expression("z", "2*cos(x)*y+1", a, b)
+
+   .. code-tab:: yaml
+
+         uses:
+           grunk: 0.2.1
+         parameters:
+           x: !<double> 0
+           y: !<double> 0.75
+         steps:
+           - !<expr> [z, 2*cos(x)*y+1]
+
+
+Under the hood, `muparser <https://beltoforion.de/en/muparser/>`_ is used and thus 
+most (all?) functionality of muparser is supported.
+
+.. _script:
+
+Script
+------
+
+Use ``grunk::script`` to create compute nodes representing a sequence of simple function calls. 
+Consider it a concatenation of :ref:`actions<action>` in dynamic mode within a single compute node.
+
+This is useful in two scenarios. Firstly, you can disable caching and lazy evaluation for a sequence 
+of steps. Secondly, you can use it to instantiate new objects and modify them using non-const getters.
+
+grunk dissallows any function, that can potentially alter its inputs. This includes any function that
+takes a non-const reference as argument and in consequence, all non-const member functions. This is an 
+important safeguard against dependency cycles in the feature tree: As part of the philosophy of grunk, 
+information flows from inputs to outputs only and any feature in the tree is influenced only by predecessors.
+
+This comes with a heavy restrition, since non-const members, e.g. setters are frequently used in 
+object-oriented programs. Consider the following class
+
+.. code-block:: cpp
+
+   struct Pnt
+    {
+        Pnt() = default;
+
+        inline void set_x(double x_) { x = x_; }
+        inline void set_y(double y_) { y = y_; }
+        inline void set_z(double z_) { z = z_; }
+
+        double x{0.};
+        double y{0.};
+        double z{0.};
+    };
+
+Instantiating an instance of ``Pnt`` with grunk and then modifying it using ``set_x`` using 
+``grunk::action`` is not allowed, because ``set_x`` is a non-const member function. 
+
+Instead, you can create the instance and modify it as part of a script:
+
+
+.. tabs::
+
+   .. code-tab:: cpp 
+
+         grunk::Feature u("u", "double", 0.1);
+         grunk::Feature v("v", "double", 0.2);
+         
+         auto s = grunk::script(
+            {
+                  {"Pnt", {"p"}, {}},                 // create a new point p
+                  {"Pnt::set_x", {}, {"p", u}},       // invoke non-const setter 
+                  {"Pnt::set_y", {}, {"p", v}},       // invoke non-const setter
+            },
+            {"p"}                                   // return new point p
+         ).output();
+
+   .. code-tab:: python
+
+         u = grunk.Feature("u", "double", 0.1)
+         v = grunk.Feature("v", "double", 0.2)
+         
+         s = grunk.script(
+            [
+                  grunk.ScriptStep("Pnt", ["p"], []),           # create a new point p
+                  grunk.ScriptStep("Pnt::set_x", [], ["p", u]), # invoke non-const setter 
+                  grunk.ScriptStep("Pnt::set_y", [], ["p", v])  # invoke non-const setter
+            ],
+            returns=["p"]                           # return new point 
+         ).output()
+
+   .. code-tab:: yaml
+
+         uses:
+         grunk: 0.2.1
+         parameters:
+         u: !<double> 0.1
+         v: !<double> 0.2
+         steps:
+         - !<script>
+            steps:
+               - !<Pnt> [[p], ~]
+               - !<Pnt::set_x> [~, [p, u]]
+               - !<Pnt::set_y> [~, [p, v]]
+            returns:
+               - p
+
+
+In the above example, you define a script as a sequence of three steps, where each step is defined using
+three parts. The first is the function name, the second is a list of names of the outputs of the function and 
+the third is a list of inputs. The inputs can either be a ``DynamicFeature`` defined previously outside of the script
+or the id of an intermediate variable created within the same script in a preceeding step. 
+
+The second argument of ``grunk::script`` is a vector of output ids. These are any intermediate variables of 
+the script that shall be passed as return features of the compute node. 
+
+Note that here, no cycles are created because the non-const setters are not called on 
+features, but on intermediate variables of the script during the evaluation of a single compute
+node. The inputs ``u`` and ``v`` are not altered.
+
+.. _recipe:
+
+Recipe
+------
+
+``grunk::Recipe``\s can be used as compute nodes, see :ref:`the section on recipes<grunk-recipes>`. 
+This is useful for modularizing a complex recipe into subrecipes, e.g. a recipe for a car can have 
+subrecipes for the wheels, chassis, motor etc.
 
 .. _writing-plugins:
 
