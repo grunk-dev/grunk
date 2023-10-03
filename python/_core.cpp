@@ -1,5 +1,6 @@
 #define PYBIND11_DETAILED_ERROR_MESSAGES
 #include <pybind11/pybind11.h>
+#include <pybind11/stl.h>
 #include <pybind11/stl_bind.h>
 #include <grunk/grunk.hpp>
 #include <grunk/helper/String.hpp>
@@ -327,6 +328,20 @@ PYBIND11_MODULE(_core, m)
             );
         }
     );
+
+    py::class_<grunk::Script::Step>(m, "ScriptStep")
+    .def(
+        py::init<
+            std::string const&, 
+            std::vector<std::string> const&, 
+            std::vector<grunk::Script::Step::Argument> const&
+        >(),
+        py::arg("function_name"),
+        py::arg("outputs"),
+        py::arg("inputs")
+    );
+
+    m.def("script", &grunk::script, py::arg("steps"), py::arg("returns"));
 
     // io
 
