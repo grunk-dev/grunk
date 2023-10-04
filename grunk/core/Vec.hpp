@@ -29,7 +29,8 @@ private:
 };
 
 template <typename T, typename... Ts>
-Feature<std::vector<T>> vec(std::string const& id, Feature<T> const& f, Feature<Ts> const&... fs)
+std::enable_if_t<!std::is_same_v<T, reflect::DynamicObject>, Feature<std::vector<T>>> 
+ vec(std::string const& id, Feature<T> const& f, Feature<Ts> const&... fs)
 {
     static_assert((std::is_same_v<T, Ts> && ...));
     auto ret = parametric::compute<Vec<T>>(f.param(), fs.param()...);

@@ -48,6 +48,8 @@ set(grunk_SRC
     grunk/dynamic/DynamicFeature.hpp
     grunk/dynamic/DynamicFeature.inl
     grunk/dynamic/DynamicFeature.cpp
+    grunk/dynamic/DynamicVec.hpp
+    grunk/dynamic/DynamicVec.cpp
     grunk/dynamic/Expression.hpp
     grunk/dynamic/Expression.cpp
     grunk/dynamic/Recipe.hpp

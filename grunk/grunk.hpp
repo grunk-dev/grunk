@@ -11,4 +11,4 @@
 #include <grunk/dynamic/Expression.hpp>
 #include <grunk/dynamic/Script.hpp>
 #include <grunk/dynamic/Recipe.hpp>
-#include <grunk/core/Vec.hpp> //TODO: replace with grunk/dynamicVec.hpp
+#include <grunk/dynamic/DynamicVec.hpp>
