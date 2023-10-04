@@ -54,6 +54,43 @@ namespace py = pybind11;
 PYBIND11_MAKE_OPAQUE(std::unordered_map<std::string, DynamicFeature>);
 PYBIND11_MAKE_OPAQUE(std::vector<reflect::DynamicObject>);
 
+namespace {
+
+    std::vector<grunk::Recipe::IDPair> dict_to_idpair_vec(py::dict const& d)
+    {
+        std::vector<grunk::Recipe::IDPair> v;
+
+        std::transform(
+            d.begin(),
+            d.end(),
+            std::back_inserter(v),
+            [](auto const& kv){ 
+                return grunk::Recipe::IDPair{
+                    py::cast<std::string>(kv.first), 
+                    py::cast<std::string>(kv.second)
+                }; 
+            }
+        );
+        return v;
+    }
+
+    grunk::Recipe::FeatureContainer dict_to_feature_container(py::dict const& d)
+    {
+        grunk::Recipe::FeatureContainer m;
+        for (auto const& kv : d) {
+            m.insert(
+                {
+                    py::cast<std::string>(kv.first),
+                    py::cast<grunk::DynamicFeature>(kv.second)
+                }
+            );
+        }
+
+        return m;
+    }
+
+} // anonymouos namespace
+
 
 PYBIND11_MODULE(_core, m)
 {
@@ -177,6 +214,96 @@ PYBIND11_MODULE(_core, m)
         &grunk::DynamicFeature::set_id
     );
 
+    py::bind_map<grunk::Recipe::FeatureContainer>(m, "FeatureContainer");
+
+    py::class_<grunk::Recipe>(m, "Recipe")
+    .def(
+        py::init(
+            [](py::args pyargs){
+                return grunkpy::invoke_variadic_rt<grunk::DynamicFeature>(
+                    [&](auto&&... args) -> grunk::Recipe {
+                        return grunk::Recipe(std::forward<decltype(args)>(args)...);
+                    },
+                    pyargs
+                );
+            }
+        )
+    )
+    .def("clone", &Recipe::clone)
+    .def(
+        "get_features", 
+        py::overload_cast<>(&grunk::Recipe::get_features, py::const_),
+        py::return_value_policy::reference_internal
+    )
+    .def(
+        "at", 
+        py::overload_cast<std::string const&>(&grunk::Recipe::at, py::const_),
+        py::return_value_policy::reference_internal
+    )
+    .def(
+        "__getitem__",
+        [](Recipe& r, std::string const& key) {
+            return r.at(key);
+        }
+    )
+    .def("insert_feature", &grunk::Recipe::insert_feature)
+    .def("num_features", &grunk::Recipe::num_features)
+    .def(
+        "feature",
+        [](grunk::Recipe& r, std::string const& id, std::string const& type_name, py::args pyargs){
+            grunkpy::invoke_variadic_rt<reflect::DynamicObject>(
+                [&](auto&&... args) {
+                    r.feature(id, type_name, std::forward<decltype(args)>(args)...);
+                },
+                pyargs
+            );
+        }
+    )
+    .def(
+        "get_recipe", 
+        py::overload_cast<std::string const&>(&grunk::Recipe::get_recipe, py::const_),
+        py::return_value_policy::reference_internal
+    )
+    .def(
+        "insert_recipe", 
+        [](grunk::Recipe& r, std::string const& id, grunk::Recipe const& other) {
+            r.insert_recipe(id, std::move(other.clone()));
+        }
+    )
+    .def("num_recipes", &grunk::Recipe::num_recipes)
+    .def(
+        "__call__",
+        [](
+            Recipe const& recipe,
+            std::string const& name, 
+            py::dict const& output_ids, 
+            py::dict const& inputs
+        ) 
+        {
+            return recipe(
+                name, 
+                dict_to_idpair_vec(output_ids), 
+                dict_to_feature_container(inputs)
+            );
+        }
+    )
+    .def(
+        "recipe",
+        [](
+            Recipe& recipe,
+            std::string const& name, 
+            py::dict const& output_ids, 
+            py::dict const& inputs
+        ) 
+        {
+            return recipe.recipe(
+                name, 
+                dict_to_idpair_vec(output_ids), 
+                dict_to_feature_container(inputs)
+            );
+        }
+    );
+
     m.def(
         "action", 
         [](std::string const& id, std::string const& name, py::args pyargs){
@@ -203,14 +330,14 @@ PYBIND11_MODULE(_core, m)
 
     // io
 
-    py::bind_map<grunk::FeatureContainer>(m, "FeatureContainer");
     m.def("read", &grunk::read);
+    m.def("write", static_cast<void(*)(std::string const&, grunk::Recipe const&)>(&grunk::write));
     m.def(
         "write",
         [](std::string const& filename, py::args pyargs){
             return grunkpy::invoke_variadic_rt<grunk::DynamicFeature>(
                 [&](auto&&...args){
-                    return grunk::write(filename, std::forward<decltype(args)>(args)...);
+                    return grunk::write(filename, args...);
                 },
                 pyargs
             );

@@ -15,9 +15,10 @@
 
 #include <grunk/core/Action.hpp>
 #include <grunk/dynamic/DynamicFeature.hpp>
-#include <grunk/dynamic/FeatureContainer.hpp>
 
 namespace grunk {
+
+class Recipe;
 
 namespace details {
 
@@ -177,7 +178,7 @@ public:
      */
     static ResultHolder<Action<reflect::DynamicFunction>> deserialize(
         YAML::Node const&,
-        FeatureContainer const&
+        Recipe const&
     );
 
 private:

@@ -30,3 +30,32 @@ def test_expression():
     c = grunk.expression("z", "2*cos(x)*y+1", a, b)
     assert 2.5 == pytest.approx(c.value().as_float())
 
+def test_recipe():
+    grunk.load("PluginA", version="0.1.0", install_missing=True)
+    grunk.load("PluginB", version="0.1.0", install_missing=True)
+    
+    recipe = grunk.Recipe()
+    recipe.feature("a", "PluginA::Scalar", 17.)
+    recipe.feature("b", "PluginA::Scalar", 15.)
+    recipe.insert_feature(
+        grunk.action("c", "PluginA::add", recipe["a"], recipe["b"]).output()
+    )
+
+    x = grunk.Feature("x", "PluginA::Scalar", 2.)
+    y = grunk.Feature("y", "PluginA::Scalar", 5.)
+    z = grunk.action("z", "PluginB::multiply", x, y).output()
+    recipe.insert_recipe("multiply", grunk.Recipe(x,y,z))
+
+    recipe.recipe("multiply", {"d": "z"}, {"x": recipe["c"]})
+
+    assert (17. + 15.) == pytest.approx(recipe["c"].value().as_float())
+    assert ( 2. *  5.) == pytest.approx(recipe.get_recipe("multiply")["z"].value().as_float())
+    assert ( 5. * 32.) == pytest.approx(recipe["d"].value().as_float())
+
+    # evaluation of d should not effect value of z in inner recipe
+    assert ( 2. *  5.) == pytest.approx(recipe.get_recipe("multiply")["z"].value().as_float())
+
+    # just make sure this doesn't fail:
+    grunk.write("test_nested_recipe.grr", recipe)
+
+

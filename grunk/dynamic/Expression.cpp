@@ -1,4 +1,5 @@
 #include "Expression.hpp"
+#include <grunk/dynamic/Recipe.hpp>
 #include <grunk/io/io_error.hpp>
 #include <unordered_map>
 
@@ -71,11 +72,14 @@ std::string Expression::serialize() const
     return out.c_str();
 }
 
+using FeatureContainer = Recipe::FeatureContainer;
+
 DynamicFeature Expression::deserialize(
     YAML::Node const& node,
-    FeatureContainer const& features
+    Recipe const& recipe
 )
 {
+    auto const& features = recipe.get_features();
     std::string expr = node[1].as<std::string>();
     mu::Parser p;
     p.SetExpr(expr);
