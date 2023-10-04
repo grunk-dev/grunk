@@ -21,6 +21,7 @@ set(TESTSOURCES
   Expression.cpp
   Recipe.cpp
   Script.cpp
+  Vec.cpp
 )
 
 add_library(SimplePlugin SHARED plugin_simple.cpp)
