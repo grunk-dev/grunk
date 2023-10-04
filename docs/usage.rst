@@ -512,7 +512,7 @@ Use ``grunk::script`` to create compute nodes representing a sequence of simple 
 Consider it a concatenation of :ref:`actions<action>` in dynamic mode within a single compute node.
 
 This is useful in two scenarios. Firstly, you can disable caching and lazy evaluation for a sequence 
-of steps. Secondly, you can use it to instantiate new objects and modify them using non-const getters.
+of steps. Secondly, you can use it to instantiate new objects and modify them using non-const setters.
 
 grunk dissallows any function, that can potentially alter its inputs. This includes any function that
 takes a non-const reference as argument and in consequence, all non-const member functions. This is an 
