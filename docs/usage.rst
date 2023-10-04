@@ -183,6 +183,17 @@ We can load the plugins using the ``PluginRegistry``.
          a = grunk.action("a", "SomePluginA::add", x, y).output()
          b = grunk.action("b", "SomePluginB::multiply", a, z).output()
 
+.. note::
+
+   Currently, it is not possible to interact with grunk's package manager via the C++ library. Therefore
+   we need to point the plugin registry to the location of the ``.so`` (resp. ``.dll``) files 
+   manually using ``PluginRegistry::prepend_path``. The reason is that grunk's package manager is based on 
+   conan, which is written in python. 
+
+   On the contrary, it is possible to interact with grunk's package manager via the 
+   python module for grunk. It provides ``grunk.load`` to automatically install and/or 
+   load grunk plugins.
+
 When working with plugins, I 
 have to use grunk's :ref:`dynamic mode<dynamic-mode>`, while the :ref:`first example<getting-started>` used grunk's 
 :ref:`static mode<static-mode>`. In essence, this means that all features of the above feature tree are now instances of ``Feature<reflect::DynamicObject>``, 
@@ -191,18 +202,20 @@ at runtime, the calling code does not know about the type ``SomePluginA::MyDoubl
 functions ``SomePluginA::add`` and ``SomePluginB::multiply`` directly. Instead, it relies on 
 a runtime reflection system used by grunk's plugin system. 
 
-Currently, static mode is not supported via the python bindings.
+.. note::
 
-If I evaluate the tree by querying `b.value()`, I will retrieve an instance of ``reflect::DynamicObject``.
-Luckily, the type ``SomePluginA::MyDouble`` has a public data member called `value` which is of type
-`double`, see also the section on :ref:`writing plugins<writing-plugins>`. I can use ``reflect::DynamicObject::get`` to retrieve this data member and then cast it to a 
+   Currently, static mode is not supported via the python bindings.
+
+If I evaluate the tree by querying ``b.value()``, I will retrieve an instance of ``reflect::DynamicObject``.
+Luckily, the type ``SomePluginA::MyDouble`` has a public data member called ``value`` which is of type
+``double``, see also the section on :ref:`writing plugins<writing-plugins>`. I can use ``reflect::DynamicObject::get`` to retrieve this data member and then cast it to a 
 type that I can deal with:
 
 .. tabs::
 
    .. code-tab:: cpp 
   
-         auto b_result = reflect::cast<double>(b.value().get("value"));
+         auto b_result = b.value().get("value").as<double>();
          std::cout << b_result << std::endl;
 
    .. code-tab:: python 
@@ -252,7 +265,7 @@ The grunk recipe will have the following contents:
 All information needed to reproduce the output of ``b`` gets written into the file in 
 yaml format. The steps are sorted in topological order, that is in the order in which an 
 evaluation is possible. The function ``grunk::write`` accepts any number of ``Feature`` 
-instances or an iterable collection of ``Feature`` instances. The following commands all 
+instances or an instance of ``grunk::Recipe``, see :ref:`the section on grunk recipes<grunk-recipes>`. The following commands all 
 yield the same file *(except for the order of independent parameters)*:
 
 .. tabs::
@@ -277,12 +290,12 @@ reconstructed, as long as the two plugins have been loaded:
    .. code-tab:: cpp 
    
          auto& plugins = grunk::get_plugin_registry();
-         plugins.prepend_path("/home/jan/grun_plugins/");
+         plugins.prepend_path("/home/jan/grunk_plugins/");
          plugins.load_all();
 
          auto features = grunk::read("/home/jan/my_grunk_files/simple.grr")
          auto b = features.at("b");
-         auto b_result = reflect::cast<double>(b.value().get("value"));
+         auto b_result = b.value().get("value").as<double>();
          std::cout << b_result << std::endl;
 
    .. code-tab:: python 
@@ -313,10 +326,12 @@ Grunk Recipes
 
 You have seen in :ref:`the previous section<reading-and-writing-to-file>` how individual features or 
 a set of features can be written to a *grunk recipe*. In grunk, there exists a class to model 
-such a recipe in :ref:`dynamic mode<dynamic-mode>`, namely ``::grunk::Recipe``. 
+such a recipe in :ref:`dynamic mode<dynamic-mode>`, namely ``grunk::Recipe``. 
 
-In a certain sense, a ``::grunk::Recipe`` is just a container of features. You can create a recipe and 
-add features to it, or you can create the features directly within the recipe:
+In a certain sense, a ``grunk::Recipe`` is just a container of features. You can 
+ * construct a recipe from from one or more features
+ * create an empty recipe and add features to it via ``Recipe::insert_feature``, or 
+ * you can create the features directly within the recipe using ``Recipe::feature``.
 
 .. tabs::
 
@@ -348,6 +363,18 @@ add features to it, or you can create the features directly within the recipe:
          recipe2.insert_feature(
             grunk.action("z", "PluginB::multiply", recipe2["x"], recipe2["y"]).output()
          )
+
+Notice that features can be queried by their id:
+
+.. tabs::
+
+   .. code-tab:: cpp 
+
+      auto x = recipe2["x"];
+
+   .. code-tab:: cpp 
+
+      x = recipe2["x"]
 
 In addition to storing features, recipes can store recipes. Think of them as building-blocks for your model. 
 For instance, a recipe for an aircraft may have recipes for modeling wings, fuselages or a landing gear.
