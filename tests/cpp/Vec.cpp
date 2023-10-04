@@ -1,9 +1,13 @@
 #include <gtest/gtest.h>
 
 #include <grunk/grunk.hpp>
+#include <numeric>
 
 namespace {
 
+double sum(std::vector<double> const& v){
+    return std::accumulate(v.begin(), v.end(), 0.);
+}
 
 }
 
@@ -13,6 +17,8 @@ public:
     static void SetUpTestCase() {
 
         grunk::StdPlugin().init();
+
+        reflect::register_function(&sum, "sum");
 
     }
 
@@ -55,4 +61,12 @@ TEST_F(VecTest, dynamic_mode)
     EXPECT_FALSE(z.is_valid());
     ret = z.value().as<std::vector<reflect::DynamicObject>>();
     EXPECT_EQ(ret[0].as<double>(), -0.1);
+}
+
+TEST_F(VecTest, dynamic_mode_vector_as_argument)
+{
+    auto x = grunk::Feature("x", "double", 0.1);
+    auto y = grunk::Feature("y", "double", 0.2);
+    auto s = grunk::action("s", "sum", grunk::vec("z", x, y)).output();
+    EXPECT_NEAR(s.value().as<double>(), 0.3, 1e-15);
 }
