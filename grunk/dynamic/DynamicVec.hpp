@@ -100,4 +100,8 @@ vec(std::string const& id, DynamicFeature const& f, Args const&... fs)
     return vec(id, std::vector{f, fs...});
 }
 
+inline DynamicFeature vec(std::string) {
+    throw std::logic_error("grunk::vec must have at least one argument.");
+}
+
 } // namespace grunk

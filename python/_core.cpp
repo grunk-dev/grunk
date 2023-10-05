@@ -343,6 +343,18 @@ PYBIND11_MODULE(_core, m)
 
     m.def("script", &grunk::script, py::arg("steps"), py::arg("returns"));
 
+    m.def(
+        "vec", 
+        [](std::string const& id, py::args pyargs){
+            return grunkpy::invoke_variadic_rt<grunk::DynamicFeature>(
+                [&](auto&&...args){
+                    return grunk::vec(id, std::forward<decltype(args)>(args)...);
+                },
+                pyargs
+            );
+        }
+    );
+
     // io
 
     m.def("read", &grunk::read);
