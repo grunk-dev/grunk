@@ -15,6 +15,7 @@ class Vec<reflect::DynamicObject> : public parametric::ComputeNode<Vec<reflect::
 {
 public:
     Vec() = default;
+
     void eval() const override final
     {
         std::vector<reflect::DynamicObject> v;
@@ -25,6 +26,33 @@ public:
         if (auto r =  this->template res<0>(); r) {
             r->set_value(reflect::DynamicObject(std::move(v)));
         }
+    }
+
+    std::string serialize() const override final
+    {
+        YAML::Node s;
+
+        YAML::Node o;
+        for (auto const& c : this->childs) {
+            if ( !c.expired() ) {
+                o.push_back(c.lock()->id());
+            }
+        }
+        s.push_back(o);
+
+        YAML::Node i;
+        for (auto const& p : this->parents) {
+            i.push_back(p->id());
+        }
+        s.push_back(i);
+
+        s.SetStyle(YAML::EmitterStyle::Flow);
+
+        auto tag = YAML::VerbatimTag("vec");
+        YAML::Emitter out;
+        out << tag << s;
+        return out.c_str();
+
     }
 
 private:

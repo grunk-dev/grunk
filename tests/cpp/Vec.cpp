@@ -70,3 +70,21 @@ TEST_F(VecTest, dynamic_mode_vector_as_argument)
     auto s = grunk::action("s", "sum", grunk::vec("z", x, y)).output();
     EXPECT_NEAR(s.value().as<double>(), 0.3, 1e-15);
 }
+
+TEST_F(VecTest, dynamic_mode_serialize)
+{
+    auto x = grunk::Feature("x", "double", 0.1);
+    auto y = grunk::Feature("y", "double", 0.2);
+    auto s = grunk::action("s", "sum", grunk::vec("z", x, y)).output();
+    YAML::Node n = grunk::serialize(s);
+
+    EXPECT_EQ(n["steps"].size(), 2);
+    auto step0 = n["steps"][0];
+    EXPECT_EQ(step0.Tag(), "vec");
+    EXPECT_EQ(step0.size(), 2);
+    EXPECT_EQ(step0[0].size(), 1);
+    EXPECT_EQ(step0[0][0].as<std::string>(), "z");
+    EXPECT_EQ(step0[1].size(), 2);
+    EXPECT_EQ(step0[1][0].as<std::string>(), "x");
+    EXPECT_EQ(step0[1][1].as<std::string>(), "y");
+}
