@@ -36,15 +36,6 @@ namespace details {
 using Visited = std::unordered_map<parametric::DAGNode const*, bool>;
 
 /**
- * @brief checks a YAML tree for duplicate feature names
- * 
- * @param root The root node of the YAML representation
- * @return true if the tree has unique feature names
- * @return false otherwise
- */
-bool has_unique_feature_names(YAML::Node const& root);
-
-/**
  * @brief parses a Feature<Arg> for any given type arg to yaml. While doing so
  * it parses recursively all ancestors of the feature, that is all parametric::ComputeNodes
  * and all parameters the input feature depends on.
@@ -58,7 +49,7 @@ bool has_unique_feature_names(YAML::Node const& root);
  * @param visited The Visited structure to check, if a node has already been visited
  */
 template <typename Arg>
-void parse_feature(Feature<Arg> const& arg, YAML::Node& yaml_root, Visited& visited)
+void parse_feature(Feature<Arg> const& arg, YAML::Node& yaml_root, Visited& visited, std::unordered_map<std::string, int>& feature_names)
 {
 
     /**
@@ -75,9 +66,10 @@ void parse_feature(Feature<Arg> const& arg, YAML::Node& yaml_root, Visited& visi
         * @param v Visited instance to check, if a node as already
         *          been visited
         */
-        ToStringVisitor(YAML::Node& r, Visited& v)
+        ToStringVisitor(YAML::Node& r, Visited& v, std::unordered_map<std::string, int>& feature_names)
          : root(r)
          , m_visited(v)
+         , m_names(feature_names)
         {};
 
         /**
@@ -104,6 +96,10 @@ void parse_feature(Feature<Arg> const& arg, YAML::Node& yaml_root, Visited& visi
 
             bool is_root_parameter = (n.num_parents() == 0);
             bool is_compute_node = ((depth %  2) == 1);
+
+            if (!is_compute_node) {
+                m_names[n.id()]++;
+            }
 
             if (is_root_parameter || is_compute_node){
 
@@ -151,11 +147,12 @@ void parse_feature(Feature<Arg> const& arg, YAML::Node& yaml_root, Visited& visi
         }
 
         Visited& m_visited;
+        std::unordered_map<std::string, int>& m_names;
         std::stack<YAML::Node> steps;
         YAML::Node& root;
     };
     
-    ToStringVisitor visitor(yaml_root, visited);
+    ToStringVisitor visitor(yaml_root, visited, feature_names);
     
     auto const& node = *(arg.param().node_pointer());
     node.accept(

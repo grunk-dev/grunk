@@ -1,5 +1,6 @@
 #include <grunk/dynamic/Recipe.hpp>
 #include <grunk/dynamic/Expression.hpp>
+#include <grunk/dynamic/Script.hpp>
 #include <grunk/io/io.hpp>
 
 namespace grunk {
@@ -24,17 +25,21 @@ Recipe::Recipe(Recipe::FeatureContainer const& other) : features(other), recipes
 YAML::Node Recipe::serialize() const
 {
     YAML::Node root;
-    grunk::details::Visited visited;    
+    grunk::details::Visited visited;
+    std::unordered_map<std::string, int> feature_names;
 
     //write grunk version
     root["uses"]["grunk"] = grunk_VERSION;
     
     for (auto const& value: features){
-        grunk::details::parse_feature(value.second, root, visited);
+        grunk::details::parse_feature(value.second, root, visited, feature_names);
     }
 
-    if (!grunk::details::has_unique_feature_names(root)) {
-        throw io_error("The feature tree does not have unique feature names.");
+    for (auto const& kv : feature_names) {
+        if (kv.second > 1) {
+            using namespace std::string_literals;
+            throw io_error("The feature tree does not have unique feature names: \""s + kv.first +"\" appears " + std::to_string(kv.second) + " times");
+        }
     }
 
     // write loaded plugins
@@ -132,6 +137,16 @@ Recipe Recipe::deserialize(YAML::Node const& root)
                     steps[i], 
                     recipe    
                 ); 
+            } else if (function_name == "script") {
+                auto outputs = Script::deserialize(steps[i], recipe.features);
+                for (size_t i = 0; i < outputs.size(); ++i) {
+                    auto const& output = outputs.output(i);
+                    auto output_name = output.id();
+                    if (recipe.features.find(output_name) != recipe.features.end()) {
+                        throw io_error("Error parsing step " + std::to_string(i) + ": A parameter with name \"" + output_name + "\" already exists.");
+                    }
+                    recipe.insert_feature(output);
+                }
             } else {
 
 

@@ -60,11 +60,23 @@ Setup conan to use the paradigms gitlab package registry
 Install grunk
 =============
 
-Now, ``grunk`` can be installed from the conan remote ``gitlab`` via
+How you install grunk depends on wether you want to use the C++ library or the 
+python bindings.
+
+C++ library
+***********
+
 
 .. code-block:: console
 
-    conan install grunk/0.2.1 --build=missing
+    conan install grunk/0.2.1@_/_ --build=missing
+
+python bindings
+***************
+
+.. code-block:: console
+
+    pip install git+https://gitlab.dlr.de/paradigms/grunk
 
 ********************
 Building from source

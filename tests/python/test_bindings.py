@@ -59,3 +59,25 @@ def test_recipe():
     grunk.write("test_nested_recipe.grr", recipe)
 
 
+def test_script():
+    grunk.load("PluginA", version="0.1.0", install_missing=True)
+    grunk.load("PluginB", version="0.1.0", install_missing=True)
+
+    x = grunk.Feature("x", "PluginA::Scalar", -0.25)
+    y = grunk.Feature("y", "PluginA::Scalar", -0.75)
+    p = grunk.script(
+        steps=[
+            grunk.ScriptStep(
+                function_name="PluginA::add", 
+                outputs=["z"], 
+                inputs=[x, y]
+            ),
+            grunk.ScriptStep("PluginB::multiply", ["q"], ["z", y])
+        ],
+        returns=["q"]
+    ).output()
+    
+    assert (0.75) == pytest.approx(p.value().as_float())
+
+    # just make sure this doesn't fail:
+    grunk.write("script_action.grr", p)
