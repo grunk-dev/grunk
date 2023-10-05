@@ -28,12 +28,17 @@ public:
 private:
 };
 
-template <typename T, typename... Ts>
-std::enable_if_t<!std::is_same_v<T, reflect::DynamicObject>, Feature<std::vector<T>>> 
- vec(std::string const& id, Feature<T> const& f, Feature<Ts> const&... fs)
+namespace {
+    template <typename... Ts>
+    using FirstType = std::tuple_element_t<0,std::tuple<Ts...>>;
+}
+
+template <typename... Ts>
+Feature<std::vector<FirstType<Ts...>>> vec(std::string const& id, Feature<Ts> const&... fs)
 {
+    using T = FirstType<Ts...>;
     static_assert((std::is_same_v<T, Ts> && ...));
-    auto ret = parametric::compute<Vec<T>>(f.param(), fs.param()...);
+    auto ret = parametric::compute<Vec<T>>(fs.param()...);
     ret.set_id(id);
     return ret;
 }
