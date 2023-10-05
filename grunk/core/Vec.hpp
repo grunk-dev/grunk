@@ -34,7 +34,11 @@ namespace {
 }
 
 template <typename... Ts>
-Feature<std::vector<FirstType<Ts...>>> vec(std::string const& id, Feature<Ts> const&... fs)
+std::enable_if_t<
+    !std::is_same_v<std::decay_t<FirstType<Ts...>>, reflect::DynamicObject>,
+    Feature<std::vector<FirstType<Ts...>>>
+>
+vec(std::string const& id, Feature<Ts> const&... fs)
 {
     using T = FirstType<Ts...>;
     static_assert((std::is_same_v<T, Ts> && ...));
