@@ -88,3 +88,19 @@ TEST_F(VecTest, dynamic_mode_serialize)
     EXPECT_EQ(step0[1][0].as<std::string>(), "x");
     EXPECT_EQ(step0[1][1].as<std::string>(), "y");
 }
+
+TEST_F(VecTest, dynamic_mode_deserialize)
+{
+    YAML::Node n;
+    {
+        auto x = grunk::Feature("x", "double", 0.1);
+        auto y = grunk::Feature("y", "double", 0.2);
+        auto s = grunk::action("s", "sum", grunk::vec("z", x, y)).output();
+        n = grunk::serialize(s);
+    }
+    auto recipe = grunk::Recipe::deserialize(n);
+
+    EXPECT_EQ(recipe.num_features(), 4);
+    EXPECT_EQ(recipe.num_recipes(), 0);
+    EXPECT_NEAR(recipe["s"].value().as<double>(), 0.3, 1e-10);
+}

@@ -5,16 +5,29 @@
 #include <grunk/helper/common.hpp>
 #include <grunk/core/Vec.hpp>
 #include <grunk/dynamic/DynamicFeature.hpp>
+#include <grunk/dynamic/Recipe.hpp>
 
 #include <vector>
 
 namespace grunk {
 
+DynamicFeature vec(std::string const& id, std::vector<DynamicFeature> const& args);
+
 template <>
 class Vec<reflect::DynamicObject> : public parametric::ComputeNode<Vec<reflect::DynamicObject>, parametric::Results<reflect::DynamicObject>, details::ignore>
 {
-public:
+
+    friend DynamicFeature vec(std::string const& id, std::vector<DynamicFeature> const& args);
     Vec() = default;
+
+public:
+
+    void connect_inputs(std::vector<DynamicFeature> const& inputs) 
+    {
+        for (auto const& input : inputs) {
+            this->depends_on(input.param());
+        }
+    }
 
     void eval() const override final
     {
@@ -54,6 +67,20 @@ public:
         return out.c_str();
 
     }
+    
+    static DynamicFeature deserialize(YAML::Node const& yml, Recipe::FeatureContainer const& features)
+    {
+        auto out_id = yml[0][0].as<std::string>();
+
+        std::vector<DynamicFeature> inputs;
+        inputs.reserve(yml[1].size());
+        for (auto const& input_node : yml[1]) {
+            auto in_id = input_node.as<std::string>();
+            inputs.push_back(features.at(in_id));
+        }
+
+        return vec(out_id, inputs);
+    }
 
 private:
 };
@@ -70,11 +97,7 @@ template <typename... Args>
 std::enable_if_t<is_dynamic_feature_v<Args...>, DynamicFeature> 
 vec(std::string const& id, DynamicFeature const& f, Args const&... fs)
 {
-    static_assert((std::is_same_v<std::decay_t<Args>, DynamicFeature> && ...));
-
-    auto ret = parametric::compute<DynamicVec>(f.param(), fs.param()...);
-    ret.set_id(id);
-    return DynamicFeature(std::move(ret), reflect::resolve<std::vector<reflect::DynamicObject>>());
+    return vec(id, std::vector{f, fs...});
 }
 
 } // namespace grunk
