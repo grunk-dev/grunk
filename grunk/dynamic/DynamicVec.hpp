@@ -13,6 +13,15 @@ namespace grunk {
 
 DynamicFeature vec(std::string const& id, std::vector<DynamicFeature> const& args);
 
+/**
+ * @brief This class represents a compute node, that maps several DynamicFeatures, where each is assumed to 
+ * type-erase the same type T, to a DynamicFeature type-erasing an std::vector<reflect::DynamicObject> containing
+ * the input values. 
+ *
+ * This class must be constructed via the factory function ::grunk::vec.
+ * 
+ * @tparam  
+ */
 template <>
 class Vec<reflect::DynamicObject> : public parametric::ComputeNode<Vec<reflect::DynamicObject>, parametric::Results<reflect::DynamicObject>, details::ignore>
 {
@@ -22,6 +31,11 @@ class Vec<reflect::DynamicObject> : public parametric::ComputeNode<Vec<reflect::
 
 public:
 
+    /**
+     * @brief connect this compute node to the inputs
+     * 
+     * @param inputs
+     */
     void connect_inputs(std::vector<DynamicFeature> const& inputs) 
     {
         for (auto const& input : inputs) {
@@ -29,6 +43,10 @@ public:
         }
     }
 
+    /**
+     * @brief evaluate this compute node
+     * 
+     */
     void eval() const override final
     {
         std::vector<reflect::DynamicObject> v;
@@ -41,6 +59,11 @@ public:
         }
     }
 
+    /**
+     * @brief serializes this compute node to yaml
+     * 
+     * @return std::string 
+     */
     std::string serialize() const override final
     {
         YAML::Node s;
@@ -68,6 +91,13 @@ public:
 
     }
     
+    /**
+     * @brief desersializes this compute node from yaml. 
+     * 
+     * @param yml 
+     * @param features 
+     * @return DynamicFeature 
+     */
     static DynamicFeature deserialize(YAML::Node const& yml, Recipe::FeatureContainer const& features)
     {
         auto out_id = yml[0][0].as<std::string>();
@@ -81,8 +111,6 @@ public:
 
         return vec(out_id, inputs);
     }
-
-private:
 };
 
 using DynamicVec = Vec<reflect::DynamicObject>;
@@ -93,6 +121,16 @@ namespace {
     constexpr bool is_dynamic_feature_v = std::is_same_v<std::tuple<DynamicFeature, Ts...>, std::tuple<Ts..., DynamicFeature>>;
 }
 
+/**
+ * @ingroup dynamic
+ * @brief creates a DynamicFeature type-erasing an std::vector<reflect::DynamicObject> from several DynamicFeatures.
+ * 
+ * @tparam Args The DynamicFeatures
+ * @param id id of the returned feature
+ * @param f The first input feature
+ * @param fs The remaining input Features
+ * @return DynamicFeature
+ */
 template <typename... Args>
 std::enable_if_t<is_dynamic_feature_v<Args...>, DynamicFeature> 
 vec(std::string const& id, DynamicFeature const& f, Args const&... fs)
@@ -100,6 +138,12 @@ vec(std::string const& id, DynamicFeature const& f, Args const&... fs)
     return vec(id, std::vector{f, fs...});
 }
 
+/**
+ * @ingroup advanced
+ * @brief throws an exception. ::grunk::vec should be called with at least one argument.
+ * 
+ * @return DynamicFeature 
+ */
 inline DynamicFeature vec(std::string) {
     throw std::logic_error("grunk::vec must have at least one argument.");
 }

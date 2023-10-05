@@ -503,6 +503,90 @@ Use ``grunk::expression`` to create a compute node representing an expression.
 Under the hood, `muparser <https://beltoforion.de/en/muparser/>`_ is used and thus 
 most (all?) functionality of muparser is supported.
 
+.. _vec:
+
+Vec
+---
+
+Use ``grunk::vec`` to map several ``DynamicFeature``\s to a ``DynamicFeature``, which type-erases a 
+``std::vector<reflect::DynamicObject>``.
+
+.. tabs::
+
+   .. code-tab:: cpp 
+
+         auto x = grunk::Feature("x", "double", 0.1);
+         auto y = grunk::Feature("y", "double", 0.2);
+         auto v = grunk::vec("z", x, y);
+
+   .. code-tab:: python
+
+         x = grunk.Feature("x", "double", 0.1)
+         y = grunk.Feature("y", "double", 0.2)
+         v = grunk.vec("z", x, y)
+
+   .. code-tab:: yaml
+
+         uses:
+           grunk: 0.2.1
+         parameters:
+           x: !<double> 0.1
+           y: !<double> 0.2
+         steps:
+           - !<vec> [[v], [x, y]]
+
+This is useful to pass ``std::vector<T>`` instances to functions. Consider the following example:
+
+.. code-block:: cpp
+
+   Curve interpolate(std::vector<Point> const&);
+   Surface interpolate(std::vector<Curve> const&);
+
+If we have several ``DynamicFeature``\s type-erasing ``Curve``, we can 
+create an ``std::vector<DynamicFeature>``, but firstly, ``interpolate`` is not 
+invokable on this kind of vector and secondly, the creation of the vector must 
+have a yaml-representation.
+
+Therefore, we pass the curve features
+to ``grunk::vec`` and obtain a ``DynamicFeature`` type-erasing 
+``std::vector<reflect::DynamicObject>``. Any ``std::vector<T>`` used by a plugin 
+is automatically registered with an additional converting constructor from 
+``std::vector<reflect::DynamicObject>`` that checks for the correct type at runtime.
+
+.. tabs::
+
+   .. code-tab:: cpp 
+
+         // ...
+         auto curve1 = grunk::action("c1", "my_cad::interpolate", points1).output();
+         auto curve2 = grunk::action("c2", "my_cad::interpolate", points2).output();
+         auto curve3 = grunk::action("c3", "my_cad::interpolate", points3).output();
+         auto curves = grunk::vec("curves", curve1, curve2, curve2);
+         auto surface = grunk::action("s", "my_cad::interpolate", curves).output();
+
+   .. code-tab:: python
+
+         # ...
+         curve1 = grunk.action("c1", "my_cad::interpolate", points1).output()
+         curve2 = grunk.action("c2", "my_cad::interpolate", points2).output()
+         curve3 = grunk.action("c3", "my_cad::interpolate", points3).output()
+         curves = grunk.vec("curves", curve1, curve2, curve2)
+         surface = grunk.action("s", "my_cad::interpolate", curves).output()
+
+   .. code-tab:: yaml
+
+         uses:
+           grunk: 0.2.1
+           my_cad: 1.0.0
+         parameters:
+           # ...
+         steps:
+           - !<my_cad::interpolate> [[c1], [points1]]
+           - !<my_cad::interpolate> [[c2], [points2]]
+           - !<my_cad::interpolate> [[c3], [points3]]
+           - !<vec> [[curves], [c1, c2, c3]]
+           - !<my_cad::interpolate> [[s], [curves]]
+
 .. _script:
 
 Script
