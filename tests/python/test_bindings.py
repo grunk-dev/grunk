@@ -81,3 +81,14 @@ def test_script():
 
     # just make sure this doesn't fail:
     grunk.write("script_action.grr", p)
+
+def test_vec():
+    grunk.load("PluginA", version="0.1.0", install_missing=True)
+    grunk.load("PluginB", version="0.1.0", install_missing=True)
+
+    x = grunk.Feature("x", "PluginA::Scalar", -0.25)
+    y = grunk.Feature("y", "PluginA::Scalar", -0.75)
+    v = grunk.vec("v", x, y)
+
+    # just make sure this doesn't fail:
+    grunk.write("vec_action.grr", v)

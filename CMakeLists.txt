@@ -32,6 +32,8 @@ set(grunk_SRC
     grunk/core/Action.cpp
     grunk/core/Feature.hpp
     grunk/core/Feature.cpp
+    grunk/core/Vec.hpp
+    grunk/core/Vec.cpp
     grunk/parametric_core.hpp
     grunk/io/io_error.hpp
     grunk/io/io.hpp
@@ -46,6 +48,8 @@ set(grunk_SRC
     grunk/dynamic/DynamicFeature.hpp
     grunk/dynamic/DynamicFeature.inl
     grunk/dynamic/DynamicFeature.cpp
+    grunk/dynamic/DynamicVec.hpp
+    grunk/dynamic/DynamicVec.cpp
     grunk/dynamic/Expression.hpp
     grunk/dynamic/Expression.cpp
     grunk/dynamic/Recipe.hpp
@@ -55,6 +59,7 @@ set(grunk_SRC
     grunk/grunk.hpp
     grunk/helper/String.hpp
     grunk/helper/String.cpp
+    grunk/helper/common.hpp
 )
 
 # create a library and add source files

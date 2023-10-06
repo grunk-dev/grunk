@@ -1,6 +1,7 @@
 #include <grunk/dynamic/Recipe.hpp>
 #include <grunk/dynamic/Expression.hpp>
 #include <grunk/dynamic/Script.hpp>
+#include <grunk/dynamic/DynamicVec.hpp>
 #include <grunk/io/io.hpp>
 
 namespace grunk {
@@ -147,8 +148,14 @@ Recipe Recipe::deserialize(YAML::Node const& root)
                     }
                     recipe.insert_feature(output);
                 }
+            } else if (function_name == "vec") {
+                auto output = DynamicVec::deserialize(steps[i], recipe.features);
+                auto output_name = output.id();
+                if (recipe.features.find(output_name) != recipe.features.end()) {
+                    throw io_error("Error parsing step " + std::to_string(i) + ": A parameter with name \"" + output_name + "\" already exists.");
+                }
+                recipe.features.emplace(output_name, output);
             } else {
-
 
                 auto output_nodes = DynamicAction::deserialize(steps[i], recipe.features);
 
