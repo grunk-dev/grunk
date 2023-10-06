@@ -1,3 +1,14 @@
+# v0.2.2
+
+ - bump reflect to 0.1.7
+ - bump parametric to 0.3.0
+ - New logo!
+ - Implementation of `grunk::Recipe`. This allows calling recipes like compute nodes and modularizing a recipe via the call to subrecipes (#40)
+ - Implementation of `grunk::Script` that allows calling a sequence of steps within a single compute node. The steps within the compute node are 
+   not performed lazily and results are not cached. In contrast to a `grunk::Recipe`, steps are allowed to use functions that are not referentially 
+   transparent, such as non-const getters or setters, so long as they are not called on inputs of the script (#70)
+ - Implementation of `grunk::Vec` whic allows passing several `DynamicFeature` instances to a function expecting an `std::vector<T>` (#60).
+
 # v0.2.1
 
  - bump reflect to 0.1.6
