@@ -767,7 +767,6 @@ class Module:
         settings["prefix"] = prefix
         settings["module_name_parents"] = ""
 
-
         return settings
 
     def set_prefix(self, config):
@@ -775,7 +774,7 @@ class Module:
         eprefix = self.settings["prefix"]
         if "prefix" in config:
             # this module overwrites the prefix settings
-            eprefix = Prefix(config["prefix"])
+            eprefix = Prefix[config["prefix"]]
 
         if eprefix == Prefix.module_name:
             self.prefix = self.name
@@ -839,6 +838,8 @@ class Module:
 
         preamble = ""
         contents = ""
+
+        self.code_generator.prefix = self.prefix
 
         for header in self.headers:
             preamble = preamble + f'#include "{header.relative_path}"\n'
