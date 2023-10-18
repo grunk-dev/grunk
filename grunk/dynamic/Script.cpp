@@ -166,16 +166,52 @@ Script::Script(
  : steps(s) 
  , returns(r)
 {
-    // enumerate the arguments
+    // enumerate the arguments, resolve input types
+    std::vector<reflect::TypeDescriptor const*> input_types;
     int i = 0;
     for (auto& s : steps) {
+
         for (auto& a : s.arguments) {
             if (std::holds_alternative<DynamicFeature>(a)) {
+                input_types.push_back(std::get<DynamicFeature>(a).get_type_descriptor());
                 a = i++;
             } else if (std::holds_alternative<int>(a)) {
                 throw script_error("Step arguments for new scripts must either be strings or DynamicFeatures. integer arguments are for interal use only.");
             }
         }
+    }
+
+    // resolve return types
+    std::unordered_map<std::string, reflect::TypeDescriptor const*> types;
+    for (auto const& step : steps) {
+
+        std::vector<reflect::DynamicFunction::SpecifiedArgument> spec_args;
+        spec_args.reserve(step.arguments.size());
+
+        for (auto const& arg : step.arguments) {
+            reflect::TypeDescriptor const* descr = nullptr;
+            if ( std::holds_alternative<std::string>(arg)) {
+                std::string as = std::get<std::string>(arg);
+                if (auto search = types.find(as); search != types.end()) {
+                    descr = search->second;
+                } else {
+                    throw script_error("Could not resolve type of input variable \""s + as + "\".");
+                }
+            } else {
+                descr = input_types[std::get<int>(arg)];
+            }
+            spec_args.push_back({descr, reflect::DynamicFunction::ArgumentSpecifier::PtrOrRef});
+        }
+        auto const& overload = reflect::resolve_function(step.function_name);
+        auto const& function = overload.resolve(spec_args);
+
+        for (size_t i = 0; i< step.outputs.size(); ++i) {
+            types[step.outputs[i]] = function.get_return_type(i);
+        };
+    }
+
+    for (auto const& r : returns) {
+        return_types.push_back(types.at(r));
     }
 }
 
@@ -204,10 +240,14 @@ void Script::connect_inputs(std::vector<Step> const& steps_)
 
 Script::ResultType Script::initialize_results() const
 {
-    return Script::ResultType(
-        returns.size(), 
-        DynamicFeature(parametric::new_param<reflect::DynamicObject>())
-    );
+    auto ret = Script::ResultType();
+    ret.reserve(returns.size());
+    for (size_t i = 0; i < returns.size(); ++i) {
+        ret.push_back(
+            DynamicFeature(parametric::new_param<reflect::DynamicObject>(), return_types[i])
+        );
+    }
+    return ret;
 }
 
 void Script::connect_results(Script::ResultType const& res) {
