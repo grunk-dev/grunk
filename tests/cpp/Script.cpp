@@ -72,6 +72,20 @@ TEST_F(ScriptTest, basic_usage)
 
 }
 
+TEST_F(ScriptTest, no_inputs)
+{
+    // issue #88 on gitlab
+    auto s = grunk::script(
+        {
+            {"Pnt", {"p"}, {}},
+        },
+        {"p"}
+    );
+    auto yml = grunk::serialize(s.output());
+    EXPECT_EQ(yml["parameters"].size(), 0);
+    EXPECT_EQ(yml["steps"].size(), 1);
+}
+
 TEST_F(ScriptTest, serialize)
 {
     grunk::Feature u("u", "double", 0.1);
