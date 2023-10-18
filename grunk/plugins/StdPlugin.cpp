@@ -17,7 +17,18 @@ std::string StdPlugin::version() const
 
 void StdPlugin::init() const
 {
-    register_type<bool>("bool");
+    register_type<bool>("bool")
+    .add_constructor<bool>()
+    .add_constructor<int>()
+    .add_conversion<int>()
+    .add_member_function(
+        [](bool const& v){ return YAML::Node(v); }, 
+        "serialize"
+    )
+    .add_member_function(
+        [](YAML::Node const& y){ return y.as<bool>(); },
+        "deserialize"
+    );
 
     register_type<int>("int")
     .add_constructor<int>()
