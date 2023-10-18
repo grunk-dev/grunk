@@ -70,6 +70,7 @@ TEST_F(ScriptTest, basic_usage)
     EXPECT_EQ(pnt.y, 0.2);
     EXPECT_EQ(pnt.z, 0.0);
 
+    EXPECT_TRUE(s.output().get_type_descriptor());
 }
 
 TEST_F(ScriptTest, serialize)
