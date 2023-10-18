@@ -94,8 +94,8 @@ void parse_feature(Feature<Arg> const& arg, YAML::Node& yaml_root, Visited& visi
                 return;
             }
 
-            bool is_root_parameter = (n.num_parents() == 0);
             bool is_compute_node = ((depth %  2) == 1);
+            bool is_root_parameter = (n.num_parents() == 0) && !is_compute_node;
 
             if (!is_compute_node) {
                 m_names[n.id()]++;
