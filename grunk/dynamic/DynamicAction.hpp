@@ -365,7 +365,9 @@ ResultHolder<DynamicAction> action(std::string const& id, std::string const& nam
     auto to_specified_arg = [](auto const& f){
         using F = std::decay_t<decltype(f)>;
         if constexpr ( std::is_same_v<F, DynamicFeature>) {
-            assert(f.get_type_descriptor() != nullptr);
+            if (f.get_type_descriptor() == nullptr) {
+                throw std::logic_error("Unexpected error: Unknown type of dynamic feature.");
+            }
             return reflect::DynamicFunction::SpecifiedArgument{
                 f.get_type_descriptor(),
                 reflect::DynamicFunction::ArgumentSpecifier::PtrOrRefToConst

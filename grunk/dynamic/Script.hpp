@@ -185,6 +185,7 @@ private:
 
     std::vector<Step> mutable steps;
     std::vector<std::string> const returns;
+    std::vector<reflect::TypeDescriptor const*> return_types;
 };
 
 /**
