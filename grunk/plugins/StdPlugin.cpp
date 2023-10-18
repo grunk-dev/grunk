@@ -19,7 +19,6 @@ void StdPlugin::init() const
 {
     register_type<bool>("bool")
     .add_constructor<bool>()
-    .add_constructor<int>()
     .add_conversion<int>()
     .add_member_function(
         [](bool const& v){ return YAML::Node(v); }, 
