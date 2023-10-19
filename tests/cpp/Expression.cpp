@@ -82,3 +82,12 @@ TEST_F(ExpressionTest, EmptyString)
     auto z = expression("z", "", x,y);
     EXPECT_THROW(z.value(), grunk::io_error);
 }
+
+TEST_F(ExpressionTest, IsThisABug)
+{
+    //https://gitlab.dlr.de/paradigms/grunk/-/issues/90
+    auto x = Feature("x", "double", 1.);
+    auto y = expression("y", "0.75*x", x);
+    auto z = expression("z", "y/3.", y);
+    EXPECT_NEAR(0.25, z.value().as<double>(), 1e-10);
+}
