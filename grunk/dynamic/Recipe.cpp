@@ -261,7 +261,13 @@ Recipe Recipe::clone() const
     auto cloned_nodes = parametric::DAGNode::new_cloned_node_map();
     FeatureContainer cloned;
     for (auto const& [id, f] : features) {
-        cloned.emplace(id, DynamicFeature(f.param().clone(cloned_nodes)));
+        cloned.emplace(
+            id, 
+            DynamicFeature(
+                f.param().clone(cloned_nodes), 
+                f.get_type_descriptor()
+            )
+        );
     }
 
     Recipe out(cloned);

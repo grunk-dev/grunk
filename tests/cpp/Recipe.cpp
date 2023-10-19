@@ -51,6 +51,8 @@ TEST_F(RecipeTest, clone)
     EXPECT_EQ(clone.num_features(), 3);
     EXPECT_EQ(clone.num_recipes(), 0);
 
+    EXPECT_TRUE(clone.at("x").get_type_descriptor());
+    
     EXPECT_EQ(clone.at("x").value().as<double>(), 12.3);
     EXPECT_EQ(clone.at("y").value().as<double>(), 29.7);
     EXPECT_NEAR(clone.at("z").value().as<double>(), 42.0, 1e-15);
