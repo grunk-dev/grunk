@@ -44,14 +44,14 @@ void Expression::eval() const
             + e.GetMsg());
     }
     auto result = reflect::DynamicObject(std::move(res));
-     if (auto out = this->template res<0>(); out) {
+    if (auto out = this->template res<reflect::DynamicObject>(0); out) {
         out->set_value(result);
     }
 }
 
 void Expression::post_connect() const
 {
-    if (auto out = this->template res<0>(); out) {
+    if (auto out = this->template res<reflect::DynamicObject>(0); out) {
        out->set_id(this->id());
    }
 }
@@ -59,7 +59,7 @@ void Expression::post_connect() const
 std::string Expression::serialize() const
 {
     YAML::Node s;
-    if (auto out = this->template res<0>(); out) {
+    if (auto out = this->template res<reflect::DynamicObject>(0); out) {
         s.push_back(out->id());
         s.push_back(expr);
     }
