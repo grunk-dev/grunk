@@ -40,7 +40,7 @@ void PluginRegistry::load_all() {
                     boost::dll::shared_library lib(it->path(), error);
                     if (error) {
                         //TODO: Logging!!! This is a warning
-                        std::cout << "Error loading " << it->path() << ". Did you properly setup the environment using \"grunk virtualrunenv\"?\n";
+                        std::cout << "Error loading " << it->path() << " (error code " << error.value() << "). Did you properly setup the environment using \"grunk virtualrunenv\"?\n";
                         continue;
                     }
 
