@@ -1,16 +1,18 @@
 import grunk
 import numpy as np
 
-def seat_cushion_recipe(
-    w_armrest : grunk.Feature, 
-    w_sitting_surface : grunk.Feature,
-    h_sitting_surface : grunk.Feature,
-    h_cushion : grunk.Feature,
-    l_cushion : grunk.Feature,
-    seat_fillet_radius_leftright : grunk.Feature,
-    seat_fillet_radius_frontback : grunk.Feature,
-) -> grunk.Recipe:
 
+def seat_cushion_recipe():
+
+    w_armrest                    = grunk.Feature("w_armrest", "double", 0.05)
+    
+    w_sitting_surface            = grunk.Feature("w_sitting_surface", "double", 0.45)
+    h_sitting_surface            = grunk.Feature("h_sitting_surface", "double", 0.4)
+    h_cushion                    = grunk.Feature("h_cushion", "double", 0.12)
+    l_cushion                    = grunk.Feature("l_cushion", "double", 0.45)
+    seat_fillet_radius_leftright = grunk.Feature("seat_fillet_radius_leftright", "double", 0.01)
+    seat_fillet_radius_frontback = grunk.expression("seat_fillet_radius_frontback", "h_cushion / 2.05", h_cushion)
+    
     seat_x = grunk.Feature("seat_x", "double", 0.)
     seat_y = grunk.expression("seat_y", "- w_armrest / 2", w_armrest)
     seat_z = grunk.expression("seat_z", "h_sitting_surface - h_cushion", h_sitting_surface, h_cushion)
@@ -43,27 +45,29 @@ def seat_cushion_recipe(
         ],
         returns=["seat_cushion"]
     ).output()
-    return grunk.Recipe(w_sitting_surface, w_armrest, h_sitting_surface, h_cushion, l_cushion, seat_cushion)
+    return grunk.Recipe(seat_cushion, w_sitting_surface, h_sitting_surface, h_cushion, l_cushion, w_armrest)
 
 
-def backrest_recipe(
-    h_sitting_surface : grunk.Feature,
-    w_sitting_surface : grunk.Feature,
-    h_cushion : grunk.Feature,
-    l_cushion : grunk.Feature,
-    dx_back : grunk.Feature,
-    h_back : grunk.Feature,
-    backrest_radius_leftright : grunk.Feature,
-    backrest_radius_top : grunk.Feature,
-    t_headrest : grunk.Feature,
-    border_headrest : grunk.Feature,
-    h_headrest : grunk.Feature,
-    headrest_radius : grunk.Feature,
-    headrest_radius2 : grunk.Feature,
-    phi_recline : grunk.Feature
-) -> grunk.Recipe:
+def backrest_recipe():
 
-    # define backrest
+    w_sitting_surface            = grunk.Feature("w_sitting_surface", "double", 0.45)
+    h_sitting_surface            = grunk.Feature("h_sitting_surface", "double", 0.4)
+    h_cushion                    = grunk.Feature("h_cushion", "double", 0.12)
+    l_cushion                    = grunk.Feature("l_cushion", "double", 0.45)
+
+    dx_back                      = grunk.Feature("dx_back", "double", 0.05)
+    h_back                       = grunk.Feature("h_back", "double", 0.82)
+    backrest_radius_leftright    = grunk.Feature("backrest_radius_leftright", "double", 0.1)
+    backrest_radius_top          = grunk.expression("backrest_radius_top", "0.9 * dx_back", dx_back)
+
+    t_headrest                   = grunk.Feature("t_headrest", "double", 0.02)
+    border_headrest              = grunk.Feature("border_headrest", "double", 0.02)
+    h_headrest                   = grunk.Feature("h_headrest", "double", 0.2)
+    headrest_radius              = grunk.Feature("headrest_radius", "double", 0.08)
+    headrest_radius2             = grunk.Feature("headrest_radius2", "double", 0.015)
+
+    phi_recline                  = grunk.Feature("phi_recline", "double", 10.0 / 180.0 * np.pi)
+
     backrest_posy = grunk.Feature("backrest_posy", "double", 0.)
     seat_z = grunk.expression("seat_z", "h_sitting_surface - h_cushion", h_sitting_surface, h_cushion)
     backrest_posz = grunk.expression("backrest_posz", "h_sitting_surface - h_cushion", h_sitting_surface, h_cushion)
@@ -157,17 +161,19 @@ def backrest_recipe(
         returns=["backrest_reclined"]
 
     ).output()
-    return grunk.Recipe(backrest_reclined, dx_back, phi_recline, w_sitting_surface, h_sitting_surface, h_cushion, l_cushion)
+    return grunk.Recipe(backrest_reclined, dx_back, phi_recline, h_cushion, l_cushion, h_sitting_surface, w_sitting_surface)
 
-def armrest_recipe(
-    w_armrest : grunk.Feature,
-    h_armrest : grunk.Feature,
-    h_sitting_surface : grunk.Feature,
-    l_cushion : grunk.Feature,
-    dx_back : grunk.Feature, 
-    phi_recline : grunk.Feature
-) -> grunk.Recipe:
 
+def armrest_recipe():
+
+    h_sitting_surface            = grunk.Feature("h_sitting_surface", "double", 0.4)
+    l_cushion                    = grunk.Feature("l_cushion", "double", 0.45)
+    dx_back                      = grunk.Feature("dx_back", "double", 0.05)
+    phi_recline                  = grunk.Feature("phi_recline", "double", 10.0 / 180.0 * np.pi)
+
+    w_armrest                    = grunk.Feature("w_armrest", "double", 0.05)
+    h_armrest                    = grunk.Feature("h_armrest", "double", 0.2)
+    
     l_armrest = grunk.expression("l_armrest", "0.75*l_cushion", l_cushion)
     armrest_posx = grunk.expression("armrest_posx", "l_cushion - l_armrest + dx_back * cos(phi_recline) / 2", l_cushion, l_armrest, dx_back, phi_recline)
     armrest_posy = grunk.expression("armrest_posy", "- w_armrest", w_armrest)
@@ -204,26 +210,21 @@ def armrest_recipe(
         ],
         returns = ["armrest"]
     ).output()
-    return grunk.Recipe(armrest, l_armrest, l_cushion, w_armrest, h_sitting_surface, dx_back, phi_recline)
+    return grunk.Recipe(armrest, h_sitting_surface, dx_back, l_cushion, phi_recline, w_armrest)
 
 
-def single_seat_recipe(
-    w_armrest : grunk.Feature, 
-    w_sitting_surface : grunk.Feature,
-    seat_cushion_r : grunk.Feature,
-    backrest_r : grunk.Feature,
-    armrest_r : grunk.Recipe
-) -> grunk.Recipe:
+def single_seat_recipe():
+    
+    w_sitting_surface            = grunk.Feature("w_sitting_surface", "double", 0.45)
+    w_armrest                    = grunk.Feature("w_armrest", "double", 0.05)
 
-    # insert parameters and recipes into new recipe
-    seat_recipe = grunk.Recipe(w_armrest, w_sitting_surface)
-
-    seat_recipe.insert_recipe("seat_cushion", seat_cushion_r)
-    seat_recipe.insert_recipe("backrest", backrest_r)
-    seat_recipe.insert_recipe("armrest", armrest_r)
+    recipe = grunk.Recipe(w_armrest, w_sitting_surface)
+    recipe.insert_recipe("seat_cushion", seat_cushion_recipe())
+    recipe.insert_recipe("backrest", backrest_recipe())
+    recipe.insert_recipe("armrest", armrest_recipe())
 
     # evaluate seat_cushion recipe
-    seat_recipe.recipe(
+    recipe.recipe(
         "seat_cushion", 
         {
             # outputs to be passed from seat_cushion recipe to seat_recipe
@@ -240,7 +241,7 @@ def single_seat_recipe(
     )
     
     # evaluate backrest recipe
-    seat_recipe.recipe(
+    recipe.recipe(
         "backrest", 
         {
             # outputs to be passed from backrest recipe to seat_recipe
@@ -250,15 +251,15 @@ def single_seat_recipe(
         }, 
         {
             #inputs to be passed from seat_recipe to backrest recipe
-            "w_sitting_surface" : seat_recipe["w_sitting_surface"],
-            "h_sitting_surface" : seat_recipe["h_sitting_surface"],
-            "h_cushion" : seat_recipe["h_cushion"],
-            "l_cushion" : seat_recipe["l_cushion"]
+            "w_sitting_surface" : w_sitting_surface,
+            "h_sitting_surface" : recipe["h_sitting_surface"],
+            "h_cushion" : recipe["h_cushion"],
+            "l_cushion" : recipe["l_cushion"]
         }
     )
     
     # evaluate armrest recipe
-    seat_recipe.recipe(
+    recipe.recipe(
         "armrest", 
         {
             # outputs to be passed from armrest recipe to seat_recipe
@@ -267,13 +268,12 @@ def single_seat_recipe(
         {
             #inputs to be passed from seat_recipe to armrest recipe
             "w_armrest" : w_armrest,
-            "h_sitting_surface" : seat_recipe["h_sitting_surface"],
-            "l_cushion" : seat_recipe["l_cushion"],
-            "dx_back" : seat_recipe["dx_back"],
-            "phi_recline" : seat_recipe["phi_recline"]
+            "h_sitting_surface" : recipe["h_sitting_surface"],
+            "l_cushion" : recipe["l_cushion"],
+            "dx_back" : recipe["dx_back"],
+            "phi_recline" : recipe["phi_recline"]
         }
     )
-
 
     # make everything a compound
     single_seat = grunk.script(
@@ -281,26 +281,26 @@ def single_seat_recipe(
             grunk.ScriptStep("grocc::TopoDS_Compound", ["single_seat"], []),
             grunk.ScriptStep("grocc::BRep_Builder", ["aBuilder"], []),
             grunk.ScriptStep("grocc::BRep_Builder::MakeCompound", [], ["aBuilder", "single_seat"]),
-            grunk.ScriptStep("grocc::BRep_Builder::Add", [], ["aBuilder", "single_seat", seat_recipe["cushion"]]),
-            grunk.ScriptStep("grocc::BRep_Builder::Add", [], ["aBuilder", "single_seat", seat_recipe["back"]]),
-            grunk.ScriptStep("grocc::BRep_Builder::Add", [], ["aBuilder", "single_seat", seat_recipe["armrest"]]),
+            grunk.ScriptStep("grocc::BRep_Builder::Add", [], ["aBuilder", "single_seat", recipe["cushion"]]),
+            grunk.ScriptStep("grocc::BRep_Builder::Add", [], ["aBuilder", "single_seat", recipe["back"]]),
+            grunk.ScriptStep("grocc::BRep_Builder::Add", [], ["aBuilder", "single_seat", recipe["armrest"]]),
         ],
         returns = ["single_seat"]
     ).output()
-    seat_recipe.insert_feature(single_seat)
+    recipe.insert_feature(single_seat)
 
-    return seat_recipe
+    return recipe
 
 
-def support_recipe(
-    w_support : grunk.Feature,
-    dx_support : grunk.Feature,
-    l_cushion : grunk.Feature,
-    h_cushion : grunk.Feature,
-    h_sitting_surface : grunk.Feature
-) -> grunk.Recipe:
-    
-    
+def support_recipe():
+
+    h_sitting_surface            = grunk.Feature("h_sitting_surface", "double", 0.4)
+    h_cushion                    = grunk.Feature("h_cushion", "double", 0.12)
+    l_cushion                    = grunk.Feature("l_cushion", "double", 0.45)
+
+    w_support   = grunk.Feature("w_support", "double", 0.03)
+    dx_support  = grunk.expression("dx_support", "0.5*l_cushion", l_cushion)
+
     support_x = grunk.expression("support_x", "(l_cushion - dx_support) / 2", l_cushion, dx_support)
     support_y = grunk.Feature("support_y", "double", 0.0)
     support_z = grunk.Feature("support_z", "double", 0.0)
@@ -309,20 +309,17 @@ def support_recipe(
     support = grunk.action("support", "grocc::BRepPrimAPI_MakeBox", support_pos, dx_support, w_support, dz_support).output()
     return grunk.Recipe(support)
 
+def seat_row_recipe():
 
-def seat_row_recipe(
-    n_seats : grunk.Feature,
-    n_supports : grunk.Feature,
-    w_sitting_surface : grunk.Feature,
-    w_armrest : grunk.Feature,
-    seat_r : grunk.Recipe,
-    support_r : grunk.Recipe
-) -> grunk.Recipe:
+    n_seats                      = grunk.Feature("n_seats", "int", 4)
+    n_supports                   = grunk.Feature("n_supports", "int", 3)
 
-    # insert parameters and seat recipe into new recipe
-    recipe = grunk.Recipe(n_seats, n_supports, w_armrest, w_sitting_surface)
-    recipe.insert_recipe("seat", seat_r)
-    recipe.insert_recipe("support", support_r)
+    w_sitting_surface            = grunk.Feature("w_sitting_surface", "double", 0.45)
+    w_armrest                    = grunk.Feature("w_armrest", "double", 0.05)
+
+    recipe = grunk.Recipe()
+    recipe.insert_recipe("seat", single_seat_recipe())
+    recipe.insert_recipe("support", support_recipe())
 
     # evaluate seat recipe
     recipe.recipe(
@@ -333,16 +330,11 @@ def seat_row_recipe(
         },
         {
             #inputs to be passed from seat_recipe to armrest recipe
-            "w_sitting_surface" : recipe["w_sitting_surface"],
-            "w_armrest" : recipe["w_armrest"]
+            "w_sitting_surface" : w_sitting_surface,
+            "w_armrest" : w_armrest
         }
     )
 
-    #TODO:
-    # - evaluate support
-    # - duplicate supports
-    # - duplicate seats
-    # - final armrest
     return recipe
 
 if __name__ == '__main__':
@@ -350,107 +342,11 @@ if __name__ == '__main__':
     grunk.load("grocc", "0.1.1", install_missing=True)
     grunk.load("geo", "0.2.0", install_missing=True)
 
-    # define input parameters
-    n_seats                      = grunk.Feature("n_seats", "int", 4)
-    n_supports                   = grunk.Feature("n_supports", "int", 3)
+    seat_model = seat_row_recipe()
+    grunk.write("seat_model.grr", seat_model)
+    # seat_model = grunk.read("seat_model.grr")
 
-    w_sitting_surface            = grunk.Feature("w_sitting_surface", "double", 0.45)
-    h_sitting_surface            = grunk.Feature("h_sitting_surface", "double", 0.4)
-    h_cushion                    = grunk.Feature("h_cushion", "double", 0.12)
-    l_cushion                    = grunk.Feature("l_cushion", "double", 0.45)
-    seat_fillet_radius_leftright = grunk.Feature("seat_fillet_radius_leftright", "double", 0.01)
-    seat_fillet_radius_frontback = grunk.expression("seat_fillet_radius_frontback", "h_cushion / 2.05", h_cushion)
-
-    dx_back                      = grunk.Feature("dx_back", "double", 0.05)
-    h_back                       = grunk.Feature("h_back", "double", 0.82)
-    backrest_radius_leftright    = grunk.Feature("backrest_radius_leftright", "double", 0.1)
-    backrest_radius_top          = grunk.expression("backrest_radius_top", "0.9 * dx_back", dx_back)
-
-    t_headrest                   = grunk.Feature("t_headrest", "double", 0.02)
-    border_headrest              = grunk.Feature("border_headrest", "double", 0.02)
-    h_headrest                   = grunk.Feature("h_headrest", "double", 0.2)
-    headrest_radius              = grunk.Feature("headrest_radius", "double", 0.08)
-    headrest_radius2             = grunk.Feature("headrest_radius2", "double", 0.015)
-
-    phi_recline                  = grunk.Feature("phi_recline", "double", 10.0 / 180.0 * np.pi)
-
-    w_armrest                    = grunk.Feature("w_armrest", "double", 0.05)
-    h_armrest                    = grunk.Feature("h_armrest", "double", 0.2)
-
-    w_support   = grunk.Feature("w_support", "double", 0.03)
-    dx_support  = grunk.expression("dx_support", "0.5*l_cushion", l_cushion)
-
-    # create recipe for seat cushion
-    seat_cushion_r = seat_cushion_recipe(
-        w_armrest,
-        w_sitting_surface, 
-        h_sitting_surface,
-        h_cushion,
-        l_cushion,
-        seat_fillet_radius_leftright,
-        seat_fillet_radius_frontback,
-    )
-
-    # create recipe for back rest
-    backrest_r  = backrest_recipe(
-        h_sitting_surface,
-        w_sitting_surface,
-        h_cushion,
-        l_cushion,
-        dx_back,
-        h_back,
-        backrest_radius_leftright,
-        backrest_radius_top,
-        t_headrest,
-        border_headrest,
-        h_headrest,
-        headrest_radius,
-        headrest_radius2,
-        phi_recline
-    )
-
-    # create recipe for armrest
-    armrest_r = armrest_recipe(
-        w_armrest,
-        h_armrest,
-        h_sitting_surface,
-        l_cushion,
-        dx_back, 
-        phi_recline
-    )
-    grunk.write("armrest.grr", armrest_r)
-
-    # define recipe for assembled seat
-    single_seat_r = single_seat_recipe(
-        w_armrest, 
-        w_sitting_surface,
-        seat_cushion_r,
-        backrest_r,
-        armrest_r
-    )
-
-    support_r = support_recipe(
-        w_support,
-        dx_support,
-        l_cushion,
-        h_cushion,
-        h_sitting_surface
-    )
-
-    # define recipe for seat row
-    seat_row_r = seat_row_recipe(
-        n_seats,
-        n_supports,
-        w_sitting_surface,
-        w_armrest,
-        single_seat_r,
-        support_r
-    )
-
-    # write recipe to grr
-    grunk.write("seat_model.grr", seat_row_r)
-    seat_row_r = grunk.read("seat_model.grr")
-
-    # export result as brep
     filename = grunk.Feature("filename", "String", "seat_row.brep")
-    grunk.action("", "grocc::BRepTools::Write", seat_row_r["seat"], filename).eval()
+    grunk.action("", "grocc::BRepTools::Write", seat_model["seat"], filename).eval()
+
+    

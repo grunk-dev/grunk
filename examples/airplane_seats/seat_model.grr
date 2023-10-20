@@ -5,8 +5,6 @@ uses:
 parameters:
   w_armrest: !<double> 0.050000000000000003
   w_sitting_surface: !<double> 0.45000000000000001
-  n_supports: !<int> 3
-  n_seats: !<int> 4
 steps:
   - !<recipes::seat> [{seat: single_seat}, {w_armrest: w_armrest, w_sitting_surface: w_sitting_surface}]
 recipes:
@@ -46,6 +44,7 @@ recipes:
           - !<grocc::BRep_Builder> [[aBuilder], ~]
           - !<grocc::BRep_Builder::MakeCompound> [~, [aBuilder, single_seat]]
           - !<grocc::BRep_Builder::Add> [~, [aBuilder, single_seat, cushion]]
+          - !<grocc::BRep_Builder::Add> [~, [aBuilder, single_seat, back]]
           - !<grocc::BRep_Builder::Add> [~, [aBuilder, single_seat, armrest]]
         returns:
           - single_seat
@@ -57,11 +56,11 @@ recipes:
           grocc: 0.1.1
         parameters:
           h_cushion: !<double> 0.12
-          h_sitting_surface: !<double> 0.40000000000000002
           w_armrest: !<double> 0.050000000000000003
-          seat_x: !<double> 0
+          h_sitting_surface: !<double> 0.40000000000000002
           l_cushion: !<double> 0.45000000000000001
           w_sitting_surface: !<double> 0.45000000000000001
+          seat_x: !<double> 0
           f1_i1: !<int> 1
           f1_i3: !<int> 3
           f2_i0: !<int> 0
@@ -98,9 +97,9 @@ recipes:
           geo: 0.2.0
           grocc: 0.1.1
         parameters:
-          h_cushion: !<double> 0.12
-          l_cushion: !<double> 0.45000000000000001
           w_sitting_surface: !<double> 0.45000000000000001
+          l_cushion: !<double> 0.45000000000000001
+          h_cushion: !<double> 0.12
           h_sitting_surface: !<double> 0.40000000000000002
           phi_recline: !<double> 0.17453292519943295
           dx_back: !<double> 0.050000000000000003
@@ -195,10 +194,10 @@ recipes:
           geo: 0.2.0
           grocc: 0.1.1
         parameters:
+          l_cushion: !<double> 0.45000000000000001
+          w_armrest: !<double> 0.050000000000000003
           phi_recline: !<double> 0.17453292519943295
           h_sitting_surface: !<double> 0.40000000000000002
-          w_armrest: !<double> 0.050000000000000003
-          l_cushion: !<double> 0.45000000000000001
           dx_back: !<double> 0.050000000000000003
           pnt_y: !<double> 0
           dir_y: !<double> 0
@@ -208,9 +207,9 @@ recipes:
           f6_i01: !<int> 1
           armrest_radius: !<double> 0.050000000000000003
         steps:
-          - !<expr> [l_armrest, 0.75*l_cushion]
           - !<expr> [armrest_dx, l_armrest + h_armrest * sin(phi_recline)]
           - !<expr> [armrest_posy, "- w_armrest"]
+          - !<expr> [l_armrest, 0.75*l_cushion]
           - !<expr> [armrest_posx, l_cushion - l_armrest + dx_back * cos(phi_recline) / 2]
           - !<grocc::gp_Pnt> [[armrest_pos], [armrest_posx, armrest_posy, h_sitting_surface]]
           - !<grocc::BRepPrimAPI_MakeBox> [[armrest_box], [armrest_pos, armrest_dx, w_armrest, h_armrest]]
