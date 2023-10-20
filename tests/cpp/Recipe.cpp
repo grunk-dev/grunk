@@ -102,6 +102,11 @@ TEST_F(RecipeTest, clone_with_subrecipes)
     EXPECT_EQ(other.num_features(), 3);
     EXPECT_EQ(other.num_recipes(), 1);
     EXPECT_EQ(other.get_recipe("addition").num_features(), 3);
+    EXPECT_NEAR(
+        other["c"].value().as<double>(), 
+        recipe["c"].value().as<double>(), 
+        1e-10
+    );
 }
 
 TEST_F(RecipeTest, as_function)

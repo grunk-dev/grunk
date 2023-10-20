@@ -3,6 +3,8 @@
 #include <grunk/dynamic/Script.hpp>
 #include <grunk/dynamic/DynamicVec.hpp>
 #include <grunk/io/io.hpp>
+#include <stdexcept>
+#include <string>
 
 namespace grunk {
 
@@ -195,12 +197,26 @@ Recipe::FeatureContainer& Recipe::get_features()
 
 DynamicFeature& Recipe::at(std::string const& id) 
 {
-    return features.at(id);
+    // return feature if it is in feature contaiiner
+    if (features.find(id) != features.end()) {
+        return features.at(id);
+    }
+
+    //TODO: It would be cool if we could walk the tree up to look for ancestors with the id
+    using namespace std::string_literals;
+    throw std::out_of_range("Cannot find feature with id \"" + id + "\" in recipe.");
 }
 
 DynamicFeature const& Recipe::at(std::string const& id) const
 {
-    return features.at(id);
+    // return feature if it is in feature contaiiner
+    if (features.find(id) != features.end()) {
+        return features.at(id);
+    }
+
+    //TODO: It would be cool if we could walk the tree up to look for ancestors with the id
+    using namespace std::string_literals;
+    throw std::out_of_range("Cannot find feature with id \"" + id + "\" in recipe.");
 }
 
 DynamicFeature& Recipe::operator[](std::string const& id)
@@ -313,8 +329,9 @@ Recipe::FeatureContainer Recipe::Action::initialize_results()
 
 void Recipe::Action::connect_results(Recipe::FeatureContainer const& res)
 {
-    for (auto const& item : res) {
-        computes(item.second.param());
+    int i =0;
+    for (auto const& id_pair : output_ids) {
+        computes(res.at(id_pair.id_to).param());
     }
 }
 
