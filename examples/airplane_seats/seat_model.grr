@@ -2,6 +2,13 @@ uses:
   grunk: 0.2.2
   geo: 0.2.0
   grocc: 0.1.1
+parameters:
+  w_armrest: !<double> 0.050000000000000003
+  w_sitting_surface: !<double> 0.45000000000000001
+  n_supports: !<int> 3
+  n_seats: !<int> 4
+steps:
+  - !<recipes::seat> [{seat: single_seat}, {w_armrest: w_armrest, w_sitting_surface: w_sitting_surface}]
 recipes:
   support:
     uses:
@@ -14,9 +21,9 @@ recipes:
       support_z: !<double> 0
       w_support: !<double> 0.029999999999999999
       h_sitting_surface: !<double> 0.40000000000000002
-      dz_cushion: !<double> 0.12
+      h_cushion: !<double> 0.12
     steps:
-      - !<expr> [dz_support, h_sitting_surface - dz_cushion]
+      - !<expr> [dz_support, h_sitting_surface - h_cushion]
       - !<expr> [dx_support, 0.5*l_cushion]
       - !<expr> [support_x, (l_cushion - dx_support) / 2]
       - !<grocc::gp_Pnt> [[support_pos], [support_x, support_y, support_z]]
@@ -26,17 +33,19 @@ recipes:
       grunk: 0.2.2
       geo: 0.2.0
       grocc: 0.1.1
+    parameters:
+      w_armrest: !<double> 0.050000000000000003
+      w_sitting_surface: !<double> 0.45000000000000001
     steps:
-      - !<recipes::seat_cushion> [{cushion: seat_cushion}, ~]
-      - !<recipes::backrest> [{back: backrest_reclined}, ~]
-      - !<recipes::armrest> [{armrest: armrest}, ~]
+      - !<recipes::seat_cushion> [{h_sitting_surface: h_sitting_surface, h_cushion: h_cushion, l_cushion: l_cushion, cushion: seat_cushion}, {w_sitting_surface: w_sitting_surface, w_armrest: w_armrest}]
+      - !<recipes::backrest> [{back: backrest_reclined, dx_back: dx_back, phi_recline: phi_recline}, {h_cushion: h_cushion, h_sitting_surface: h_sitting_surface, l_cushion: l_cushion, w_sitting_surface: w_sitting_surface}]
+      - !<recipes::armrest> [{armrest: armrest}, {dx_back: dx_back, l_cushion: l_cushion, phi_recline: phi_recline, h_sitting_surface: h_sitting_surface, w_armrest: w_armrest}]
       - !<script>
         steps:
           - !<grocc::TopoDS_Compound> [[single_seat], ~]
           - !<grocc::BRep_Builder> [[aBuilder], ~]
           - !<grocc::BRep_Builder::MakeCompound> [~, [aBuilder, single_seat]]
           - !<grocc::BRep_Builder::Add> [~, [aBuilder, single_seat, cushion]]
-          - !<grocc::BRep_Builder::Add> [~, [aBuilder, single_seat, back]]
           - !<grocc::BRep_Builder::Add> [~, [aBuilder, single_seat, armrest]]
         returns:
           - single_seat
@@ -47,10 +56,10 @@ recipes:
           geo: 0.2.0
           grocc: 0.1.1
         parameters:
-          seat_x: !<double> 0
-          w_armrest: !<double> 0.050000000000000003
+          h_cushion: !<double> 0.12
           h_sitting_surface: !<double> 0.40000000000000002
-          dz_cushion: !<double> 0.12
+          w_armrest: !<double> 0.050000000000000003
+          seat_x: !<double> 0
           l_cushion: !<double> 0.45000000000000001
           w_sitting_surface: !<double> 0.45000000000000001
           f1_i1: !<int> 1
@@ -59,12 +68,12 @@ recipes:
           seat_fillet_radius_leftright: !<double> 0.01
           f2_i3: !<int> 3
         steps:
-          - !<expr> [seat_fillet_radius_frontback, dz_cushion / 2.05]
+          - !<expr> [seat_fillet_radius_frontback, h_cushion / 2.05]
           - !<expr> [w_cushion, w_sitting_surface + w_armrest]
-          - !<expr> [seat_z, h_sitting_surface - dz_cushion]
-          - !<expr> [seat_y, -w_armrest / 2]
+          - !<expr> [seat_z, h_sitting_surface - h_cushion]
+          - !<expr> [seat_y, "- w_armrest / 2"]
           - !<grocc::gp_Pnt> [[seat_pos], [seat_x, seat_y, seat_z]]
-          - !<grocc::BRepPrimAPI_MakeBox> [[seat_box], [seat_pos, l_cushion, w_cushion, dz_cushion]]
+          - !<grocc::BRepPrimAPI_MakeBox> [[seat_box], [seat_pos, l_cushion, w_cushion, h_cushion]]
           - !<script>
             steps:
               - !<grocc::BRepFilletAPI_MakeFillet> [[f1], [seat_box]]
@@ -89,17 +98,17 @@ recipes:
           geo: 0.2.0
           grocc: 0.1.1
         parameters:
+          h_cushion: !<double> 0.12
           l_cushion: !<double> 0.45000000000000001
-          rot_pnt_y: !<double> 0
+          w_sitting_surface: !<double> 0.45000000000000001
           h_sitting_surface: !<double> 0.40000000000000002
+          phi_recline: !<double> 0.17453292519943295
+          dx_back: !<double> 0.050000000000000003
+          rot_pnt_y: !<double> 0
           rot_dir_x: !<double> 0
           rot_dir_y: !<double> 1
           rot_dir_z: !<double> 0
-          phi_recline: !<double> 0.17453292519943295
           backrest_posy: !<double> 0
-          dz_cushion: !<double> 0.12
-          dx_back: !<double> 0.050000000000000003
-          w_sitting_surface: !<double> 0.45000000000000001
           h_back: !<double> 0.81999999999999995
           f2_i0: !<int> 9
           backrest_radius_leftright: !<double> 0.10000000000000001
@@ -117,7 +126,7 @@ recipes:
           headrest_radius2: !<double> 0.014999999999999999
         steps:
           - !<expr> [headrest_width, w_sitting_surface - 2 * border_headrest]
-          - !<expr> [backrest_posz, h_sitting_surface + h_back - dz_cushion - h_headrest - border_headrest]
+          - !<expr> [backrest_posz, h_sitting_surface + h_back - h_cushion - h_headrest - border_headrest]
           - !<expr> [headrest_posx, l_cushion - t_headrest]
           - !<grocc::gp_Pnt> [[headrest_pos], [headrest_posx, border_headrest, backrest_posz]]
           - !<grocc::BRepPrimAPI_MakeBox> [[headrest_box], [headrest_pos, t_headrest, headrest_width, h_headrest]]
@@ -142,7 +151,7 @@ recipes:
             returns:
               - headrest
           - !<expr> [backrest_radius_top, 0.9 * dx_back]
-          - !<expr> [seat_z, h_sitting_surface - dz_cushion]
+          - !<expr> [seat_z, h_sitting_surface - h_cushion]
           - !<grocc::gp_Pnt> [[backrest_pos], [l_cushion, backrest_posy, seat_z]]
           - !<grocc::BRepPrimAPI_MakeBox> [[backrest_box], [backrest_pos, dx_back, w_sitting_surface, h_back]]
           - !<script>
@@ -186,22 +195,22 @@ recipes:
           geo: 0.2.0
           grocc: 0.1.1
         parameters:
+          phi_recline: !<double> 0.17453292519943295
+          h_sitting_surface: !<double> 0.40000000000000002
+          w_armrest: !<double> 0.050000000000000003
           l_cushion: !<double> 0.45000000000000001
           dx_back: !<double> 0.050000000000000003
-          phi_recline: !<double> 0.17453292519943295
           pnt_y: !<double> 0
-          h_sitting_surface: !<double> 0.40000000000000002
           dir_y: !<double> 0
           uvmin: !<double> 0
           uvmax: !<double> 1
-          w_armrest: !<double> 0.050000000000000003
           h_armrest: !<double> 0.20000000000000001
           f6_i01: !<int> 1
           armrest_radius: !<double> 0.050000000000000003
         steps:
+          - !<expr> [l_armrest, 0.75*l_cushion]
           - !<expr> [armrest_dx, l_armrest + h_armrest * sin(phi_recline)]
           - !<expr> [armrest_posy, "- w_armrest"]
-          - !<expr> [l_armrest, 0.75*l_cushion]
           - !<expr> [armrest_posx, l_cushion - l_armrest + dx_back * cos(phi_recline) / 2]
           - !<grocc::gp_Pnt> [[armrest_pos], [armrest_posx, armrest_posy, h_sitting_surface]]
           - !<grocc::BRepPrimAPI_MakeBox> [[armrest_box], [armrest_pos, armrest_dx, w_armrest, h_armrest]]

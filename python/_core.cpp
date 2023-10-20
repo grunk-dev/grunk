@@ -185,7 +185,6 @@ PYBIND11_MODULE(_core, m)
     m_reflect.def("help", static_cast<std::string (*)(reflect::DynamicObject const&)>(&reflect::help));
     m_reflect.def("help", static_cast<std::string (*)(std::string const&)>(&reflect::help));
 
-
     // dynamic
 
     using ResultHolder_DynamicAction = ResultHolder<DynamicAction>;
