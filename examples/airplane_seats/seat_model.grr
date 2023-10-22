@@ -207,9 +207,9 @@ recipes:
           f6_i01: !<int> 1
           armrest_radius: !<double> 0.050000000000000003
         steps:
-          - !<expr> [armrest_dx, l_armrest + h_armrest * sin(phi_recline)]
           - !<expr> [armrest_posy, "- w_armrest"]
           - !<expr> [l_armrest, 0.75*l_cushion]
+          - !<expr> [armrest_dx, l_armrest + h_armrest * sin(phi_recline)]
           - !<expr> [armrest_posx, l_cushion - l_armrest + dx_back * cos(phi_recline) / 2]
           - !<grocc::gp_Pnt> [[armrest_pos], [armrest_posx, armrest_posy, h_sitting_surface]]
           - !<grocc::BRepPrimAPI_MakeBox> [[armrest_box], [armrest_pos, armrest_dx, w_armrest, h_armrest]]
