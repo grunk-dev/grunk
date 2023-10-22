@@ -26,17 +26,17 @@ Recipe::Recipe(Recipe::FeatureContainer const& other) : features(other), recipes
 YAML::Node Recipe::serialize() const
 {
     YAML::Node root;
-    grunk::details::Visited visited;
-    std::unordered_map<std::string, int> feature_names;
 
     //write grunk version
     root["uses"]["grunk"] = grunk_VERSION;
     
-    for (auto const& value: features){
-        grunk::details::parse_feature(value.second, root, visited, feature_names);
+    grunk::details::ToStringVisitor visitor(root);
+    for (auto const& kv: features){
+        grunk::details::parse_feature(kv.second, visitor);
     }
+    visitor.unwind_steps();
 
-    for (auto const& kv : feature_names) {
+    for (auto const& kv : visitor.feature_names_count) {
         if (kv.second > 1) {
             using namespace std::string_literals;
             throw io_error("The feature tree does not have unique feature names: \""s + kv.first +"\" appears " + std::to_string(kv.second) + " times");

@@ -28,12 +28,69 @@ namespace grunk {
 
 namespace details {
 
-/**
- * @brief parse_feature uses a Visitor pattern to recursively parse all dependent nodes.
- * While doing so, it must remember which nodes it has already visited and which nodes it 
- * hasn't. For this purpose, it stores a collection of type Visited.
- */
-using Visited = std::unordered_map<parametric::DAGNode const*, bool>;
+
+class ToStringVisitor
+{
+public:
+    using Visited = std::unordered_map<parametric::DAGNode const*, bool>;
+    /**
+    * @brief Construct a new ToStringVisitor object
+    * 
+    * @param r Reference to the root yaml node of the tree
+    * @param v Visited instance to check, if a node as already
+    *          been visited
+    */
+    ToStringVisitor(YAML::Node& r);
+
+    /**
+     * @brief Specify the start node. Dependent nodes of the start node
+     * are ignored. Dependent nodes of other nodes are not ignored, because
+     * they need to be visited in the DFS traversal to get the correct topological
+     * order of compute nodes
+     * 
+     * @param n the start node
+     */
+    void set_start_node(parametric::DAGNode const& n);
+
+    /**
+     * @brief visit a node and serialize to yaml.
+     *
+     * Here it is assumed, that every other node is a ComputeNode.
+     * These compute nodes will be stored on an intermediate stack,
+     * so that unstacking it will result in a topological orderd list
+     * of serialized compute nodes, which will be written into the 
+     * "steps" block of the yaml node.
+     * 
+     * Parameter nodes will directly be added to the "parameters" block,
+     * if they are independent root nodes
+     * 
+     * @param n The current node to be visited
+     * @param depth The current depth of the DFS traversal
+     */
+    void visit(parametric::DAGNode const& n, size_t depth);
+
+    /**
+        * @brief unwinding the steps maeks sure we write the steps in 
+        * topological order. Without calling this function after the DFS traversal,
+        * no "steps" will be added to the root yaml node.
+        * 
+        */
+    void unwind_steps();
+
+    std::unordered_map<std::string, int> feature_names_count;
+
+private:
+
+    inline bool visited(parametric::DAGNode const* key) {
+        return (m_visited.find(key) != m_visited.end());
+    }
+
+    parametric::DAGNode const* start_node;
+    Visited m_visited;
+    std::stack<YAML::Node> steps;
+    YAML::Node& root;
+};
+
 
 /**
  * @brief parses a Feature<Arg> for any given type arg to yaml. While doing so
@@ -49,118 +106,16 @@ using Visited = std::unordered_map<parametric::DAGNode const*, bool>;
  * @param visited The Visited structure to check, if a node has already been visited
  */
 template <typename Arg>
-void parse_feature(Feature<Arg> const& arg, YAML::Node& yaml_root, Visited& visited, std::unordered_map<std::string, int>& feature_names)
+void parse_feature(Feature<Arg> const& arg, ToStringVisitor& visitor)
 {
-
-    /**
-     * @brief This visitor will visit all ancesstors of arg to collect
-     * the feature tree in the yaml representation stored in the YAML::Node yaml_root.
-     */
-    class ToStringVisitor
-    {
-    public:
-        /**
-        * @brief Construct a new ToStringVisitor object
-        * 
-        * @param r Reference to the root yaml node of the tree
-        * @param v Visited instance to check, if a node as already
-        *          been visited
-        */
-        ToStringVisitor(YAML::Node& r, Visited& v, std::unordered_map<std::string, int>& feature_names)
-         : root(r)
-         , m_visited(v)
-         , m_names(feature_names)
-        {};
-
-        /**
-         * @brief visit a node and serialize to yaml.
-         *
-         * Here it is assumed, that every other node is a ComputeNode.
-         * These compute nodes will be stored on an intermediate stack,
-         * so that unstacking it will result in a topological orderd list
-         * of serialized compute nodes, which will be written into the 
-         * "steps" block of the yaml node.
-         * 
-         * Parameter nodes will directly be added to the "parameters" block,
-         * if they are independent root nodes
-         * 
-         * @param n The current node to be visited
-         * @param depth The current depth of the DFS traversal
-         */
-        void visit(parametric::DAGNode const& n, size_t depth)
-        {
-            // check if the node has already been parsed...
-            if (visited(&n)) {
-                return;
-            }
-
-            bool is_compute_node = ((depth %  2) == 1);
-            bool is_root_parameter = (n.num_parents() == 0) && !is_compute_node;
-
-            if (!is_compute_node) {
-                m_names[n.id()]++;
-            }
-
-            if (is_root_parameter || is_compute_node){
-
-                auto node =  YAML::Load(n.serialize());
-
-                if (is_root_parameter) {
-
-
-                    if (root["parameters"][n.id()]) {
-                        throw io_error(
-                            "The feature tree does not have unique feature names. Found duplicate parameter \""
-                            + n.id() + "\"."
-                        );
-                    }
-
-                    node.SetStyle(YAML::EmitterStyle::Flow);
-                    root["parameters"][n.id()] = node;
-                }
-                else {
-                    // is action
-                    steps.push(node);
-                }
-            }
-
-            m_visited[&n] = true;
-        }
-
-        /**
-         * @brief unwinding the steps maeks sure we write the steps in 
-         * topological order. Without calling this function after the DFS traversal,
-         * no "steps" will be added to the root yaml node.
-         * 
-         */
-        void unwind_steps() {
-            while (!steps.empty()) {
-                root["steps"].push_back(steps.top());
-                steps.pop();
-            }
-        }
-
-    private:
-
-        bool visited(parametric::DAGNode const* key) {
-            return (m_visited.find(key) != m_visited.end());
-        }
-
-        Visited& m_visited;
-        std::unordered_map<std::string, int>& m_names;
-        std::stack<YAML::Node> steps;
-        YAML::Node& root;
-    };
-    
-    ToStringVisitor visitor(yaml_root, visited, feature_names);
     
     auto const& node = *(arg.param().node_pointer());
+    visitor.set_start_node(node);
     node.accept(
         visitor,
         0,
         parametric::DAGNode::Direction::up
     );
-    visitor.unwind_steps();
 }
 
 } //namespace details

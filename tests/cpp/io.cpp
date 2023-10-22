@@ -34,6 +34,11 @@ public:
             [](double const& l, double const& r){ return l+r;}, 
             "plus"
         );
+
+        reflect::register_function(
+            [](double x){ return x*x; },
+            "squared"
+        );
     } 
 
 };
@@ -368,4 +373,38 @@ TEST_F(IOTest, fully_qualified_name)
  
     auto step1 = y["steps"][0];
     EXPECT_EQ(step1.Tag(), "SimplePlugin::MyDouble::half");
+}
+
+TEST_F(IOTest, topo_order){
+    // https://gitlab.dlr.de/paradigms/grunk/-/issues/91
+    auto a= Feature("a", "double", 2);
+    auto b = action("b", "squared", a).output();
+    auto c = action("c", "squared", b).output();
+    auto d = action("d", "squared", b).output();
+    auto e = action("e", "plus", c, d).output();
+    auto x = Feature("x", "double", 4);
+    auto z = action("z", "plus", e, x).output();
+
+
+    YAML::Node root;
+    details::ToStringVisitor visitor(root);
+
+    details::parse_feature(x, visitor);
+    details::parse_feature(z, visitor);
+
+    visitor.unwind_steps();
+
+    std::unordered_map<std::string, bool> nodes;
+    // add parameters to the "parsed" nodes manually
+    nodes["a"] = true;
+    nodes["x"] = true;
+    for (auto const& s : root["steps"]) {
+        for (auto const& input : s[1]) {
+            // make sure all inputs have already been added to the nodes
+            ASSERT_TRUE(nodes[input.as<std::string>()]);
+        }
+        for (auto const& output : s[0]) {
+            nodes[output.as<std::string>()] = true;
+        }
+    }
 }
