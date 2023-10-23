@@ -20,31 +20,15 @@ def seat_cushion_recipe():
     w_cushion = grunk.expression("w_cushion", "w_sitting_surface + w_armrest", w_sitting_surface, w_armrest)
     seat_box = grunk.action("seat_box", "grocc::BRepPrimAPI_MakeBox", seat_pos, l_cushion, w_cushion, h_cushion).output()
 
-    f1_i1 = grunk.Feature("f1_i1", "int", 1)
-    f1_i3 = grunk.Feature("f1_i3", "int", 3)
-    f1 = grunk.script(
-        [
-            grunk.ScriptStep("grocc::BRepFilletAPI_MakeFillet", ["f1"], [seat_box]),
-            grunk.ScriptStep("geo::internal::GetEdge", ["e1"], [seat_box, f1_i1]),
-            grunk.ScriptStep("grocc::BRepFilletAPI_MakeFillet::Add", [], ["f1", seat_fillet_radius_frontback, "e1"]),
-            grunk.ScriptStep("geo::internal::GetEdge", ["e3"], [seat_box, f1_i3]),
-            grunk.ScriptStep("grocc::BRepFilletAPI_MakeFillet::Add", [], ["f1", seat_fillet_radius_frontback, "e3"])
-        ],
-        returns=["f1"]
-    ).output()
+    f1_i1 = grunk.Feature("f1_i1", "int", 2)
+    f1_i3 = grunk.Feature("f1_i3", "int", 4)
+    f1_idx = grunk.vec("f1_idx", f1_i1, f1_i3)
+    f1 = grunk.action("f1", "geo::make_fillet", seat_box, f1_idx, seat_fillet_radius_frontback).output()
 
-    f2_i0 = grunk.Feature("f2_i0", "int", 0)
-    f2_i3 = grunk.Feature("f2_i3", "int", 3)
-    seat_cushion = grunk.script(
-        [
-            grunk.ScriptStep("grocc::BRepFilletAPI_MakeFillet", ["seat_cushion"], [f1]),
-            grunk.ScriptStep("geo::internal::GetEdge", ["e1"], [f1, f2_i0]),
-            grunk.ScriptStep("grocc::BRepFilletAPI_MakeFillet::Add", [], ["seat_cushion", seat_fillet_radius_leftright, "e1"]),
-            grunk.ScriptStep("geo::internal::GetEdge", ["e3"], [f1, f2_i3]),
-            grunk.ScriptStep("grocc::BRepFilletAPI_MakeFillet::Add", [], ["seat_cushion", seat_fillet_radius_leftright, "e3"])
-        ],
-        returns=["seat_cushion"]
-    ).output()
+    f2_i0 = grunk.Feature("f2_i0", "int", 1)
+    f2_i3 = grunk.Feature("f2_i3", "int", 4)
+    f2_idx = grunk.vec("f2_idx", f2_i0, f2_i3)
+    seat_cushion = grunk.action("seat_cushion", "geo::make_fillet", f1, f2_idx, seat_fillet_radius_leftright).output()
     return grunk.Recipe(seat_cushion, w_sitting_surface, h_sitting_surface, h_cushion, l_cushion, w_armrest)
 
 
@@ -74,28 +58,13 @@ def backrest_recipe():
     backrest_pos = grunk.action("backrest_pos", "grocc::gp_Pnt", l_cushion, backrest_posy, seat_z).output()
     backrest_box = grunk.action("backrest_box", "grocc::BRepPrimAPI_MakeBox", backrest_pos, dx_back, w_sitting_surface, h_back).output()
 
-    f3_i09 = grunk.Feature("f2_i0", "int", 9)
-    f3_i11 = grunk.Feature("f2_i3", "int", 11)
-    f3 = grunk.script(
-        [
-            grunk.ScriptStep("grocc::BRepFilletAPI_MakeFillet", ["f3"], [backrest_box]),
-            grunk.ScriptStep("geo::internal::GetEdge", ["e09"], [backrest_box, f3_i09]),
-            grunk.ScriptStep("grocc::BRepFilletAPI_MakeFillet::Add", [], ["f3", backrest_radius_leftright, "e09"]),
-            grunk.ScriptStep("geo::internal::GetEdge", ["e11"], [backrest_box, f3_i11]),
-            grunk.ScriptStep("grocc::BRepFilletAPI_MakeFillet::Add", [], ["f3", backrest_radius_leftright, "e11"])
-        ],
-        returns=["f3"]
-    ).output()
+    f3_i09 = grunk.Feature("f2_i0", "int", 10)
+    f3_i11 = grunk.Feature("f2_i3", "int", 12)
+    f3_idx = grunk.vec("f3_idx", f3_i09, f3_i11)
+    f3 = grunk.action("f3", "geo::make_fillet", backrest_box, f3_idx, backrest_radius_leftright).output()
     
-    f4_i06 = grunk.Feature("f4_i06", "int", 6)
-    backrest = grunk.script(
-        [
-            grunk.ScriptStep("grocc::BRepFilletAPI_MakeFillet", ["backrest"], [f3]),
-            grunk.ScriptStep("geo::internal::GetEdge", ["e06"], [f3, f4_i06]),
-            grunk.ScriptStep("grocc::BRepFilletAPI_MakeFillet::Add", [], ["backrest", backrest_radius_top, "e06"]),
-        ],
-        returns=["backrest"]
-    ).output()
+    f4_i06 = grunk.Feature("f4_i06", "int", 7)
+    backrest = grunk.action("backrest", "geo::make_fillet", f3, f4_i06, backrest_radius_top).output()
 
     # define headrest
     headrest_posx = grunk.expression("headrest_posx", "l_cushion - t_headrest", l_cushion, t_headrest)
@@ -103,34 +72,15 @@ def backrest_recipe():
     headrest_width = grunk.expression("headrest_width", "w_sitting_surface - 2 * border_headrest", w_sitting_surface, border_headrest)
     headrest_pos = grunk.action("headrest_pos", "grocc::gp_Pnt", headrest_posx, border_headrest, headrest_posz).output()
     headrest_box = grunk.action("headrest_box", "grocc::BRepPrimAPI_MakeBox", headrest_pos, t_headrest, headrest_width, h_headrest).output()
-    f5_i08 = grunk.Feature("f5_i08", "int", 8)
-    f5_i09 = grunk.Feature("f5_i09", "int", 9)
-    f5_i10 = grunk.Feature("f5_i10", "int",10)
-    f5_i11 = grunk.Feature("f5_i11", "int",11)
-    f5 = grunk.script(
-        [
-            grunk.ScriptStep("grocc::BRepFilletAPI_MakeFillet", ["f5"], [headrest_box]),
-            grunk.ScriptStep("geo::internal::GetEdge", ["e08"], [headrest_box, f5_i08]),
-            grunk.ScriptStep("grocc::BRepFilletAPI_MakeFillet::Add", [], ["f5", headrest_radius, "e08"]),
-            grunk.ScriptStep("geo::internal::GetEdge", ["e09"], [headrest_box, f5_i09]),
-            grunk.ScriptStep("grocc::BRepFilletAPI_MakeFillet::Add", [], ["f5", headrest_radius, "e09"]),
-            grunk.ScriptStep("geo::internal::GetEdge", ["e10"], [headrest_box, f5_i10]),
-            grunk.ScriptStep("grocc::BRepFilletAPI_MakeFillet::Add", [], ["f5", headrest_radius, "e10"]),
-            grunk.ScriptStep("geo::internal::GetEdge", ["e11"], [headrest_box, f5_i11]),
-            grunk.ScriptStep("grocc::BRepFilletAPI_MakeFillet::Add", [], ["f5", headrest_radius, "e11"])
-        ],
-        returns=["f5"]
-    ).output()
+    f5_i08 = grunk.Feature("f5_i08", "int", 9)
+    f5_i09 = grunk.Feature("f5_i09", "int",10)
+    f5_i10 = grunk.Feature("f5_i10", "int",11)
+    f5_i11 = grunk.Feature("f5_i11", "int",12)
+    edge_idx_vec = grunk.vec("edge_idx_vec", f5_i08, f5_i09, f5_i10, f5_i11)
+    f5 = grunk.action("f5", "geo::make_fillet", headrest_box, edge_idx_vec, headrest_radius).output()
     
-    f6_i0 = grunk.Feature("f6_i0", "int", 0)
-    headrest = grunk.script(
-        [
-            grunk.ScriptStep("grocc::BRepFilletAPI_MakeFillet", ["headrest"], [f5]),
-            grunk.ScriptStep("geo::internal::GetEdge", ["e"], [f5, f6_i0]),
-            grunk.ScriptStep("grocc::BRepFilletAPI_MakeFillet::Add", [], ["headrest", headrest_radius2, "e"]),
-        ],
-        returns=["headrest"]
-    ).output()
+    f6_i0 = grunk.Feature("f6_i0", "int", 1)
+    headrest = grunk.action("headrest", "geo::make_fillet", f5, f6_i0, headrest_radius2).output()
 
     back = grunk.script(
         [
@@ -177,15 +127,9 @@ def armrest_recipe():
     armrest_dx = grunk.expression("armrest_dx", "l_armrest + h_armrest * sin(phi_recline)", l_armrest, h_armrest, phi_recline)
     armrest_box = grunk.action("armrest_box", "grocc::BRepPrimAPI_MakeBox", armrest_pos, armrest_dx, w_armrest, h_armrest).output()
     armrest_radius = grunk.Feature("armrest_radius", "double", 0.05)
-    f6_i01 = grunk.Feature("f6_i01", "int", 1)
-    armrest_nobop = grunk.script(
-        [
-            grunk.ScriptStep("grocc::BRepFilletAPI_MakeFillet", ["armrest_nobop"], [armrest_box]),
-            grunk.ScriptStep("geo::internal::GetEdge", ["e"], [armrest_box, f6_i01]),
-            grunk.ScriptStep("grocc::BRepFilletAPI_MakeFillet::Add", [], ["armrest_nobop", armrest_radius, "e"]),
-        ],
-        returns = ["armrest_nobop"]
-    ).output()
+    f6_i01 = grunk.Feature("f6_i01", "int", 2)
+    armrest_nobop = grunk.action("armrest_nobop", "geo::make_fillet", armrest_box, f6_i01, armrest_radius).output()
+
     pnt_x = grunk.expression("pnt_x", "l_cushion + dx_back * cos(phi_recline) / 2.0", l_cushion, dx_back, phi_recline)
     pnt_y = grunk.Feature("pnt_y", "double", 0.)
     dir_x = grunk.expression("dir_x", "cos(phi_recline)", phi_recline)

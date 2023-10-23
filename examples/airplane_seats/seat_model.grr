@@ -61,36 +61,22 @@ recipes:
           l_cushion: !<double> 0.45000000000000001
           w_sitting_surface: !<double> 0.45000000000000001
           seat_x: !<double> 0
-          f1_i1: !<int> 1
-          f1_i3: !<int> 3
-          f2_i0: !<int> 0
+          f1_i1: !<int> 2
+          f1_i3: !<int> 4
+          f2_i0: !<int> 1
+          f2_i3: !<int> 4
           seat_fillet_radius_leftright: !<double> 0.01
-          f2_i3: !<int> 3
         steps:
+          - !<vec> [[f2_idx], [f2_i0, f2_i3]]
           - !<expr> [seat_fillet_radius_frontback, h_cushion / 2.05]
+          - !<vec> [[f1_idx], [f1_i1, f1_i3]]
           - !<expr> [w_cushion, w_sitting_surface + w_armrest]
           - !<expr> [seat_z, h_sitting_surface - h_cushion]
           - !<expr> [seat_y, "- w_armrest / 2"]
           - !<grocc::gp_Pnt> [[seat_pos], [seat_x, seat_y, seat_z]]
           - !<grocc::BRepPrimAPI_MakeBox> [[seat_box], [seat_pos, l_cushion, w_cushion, h_cushion]]
-          - !<script>
-            steps:
-              - !<grocc::BRepFilletAPI_MakeFillet> [[f1], [seat_box]]
-              - !<geo::internal::GetEdge> [[e1], [seat_box, f1_i1]]
-              - !<grocc::BRepFilletAPI_MakeFillet::Add> [~, [f1, seat_fillet_radius_frontback, e1]]
-              - !<geo::internal::GetEdge> [[e3], [seat_box, f1_i3]]
-              - !<grocc::BRepFilletAPI_MakeFillet::Add> [~, [f1, seat_fillet_radius_frontback, e3]]
-            returns:
-              - f1
-          - !<script>
-            steps:
-              - !<grocc::BRepFilletAPI_MakeFillet> [[seat_cushion], [f1]]
-              - !<geo::internal::GetEdge> [[e1], [f1, f2_i0]]
-              - !<grocc::BRepFilletAPI_MakeFillet::Add> [~, [seat_cushion, seat_fillet_radius_leftright, e1]]
-              - !<geo::internal::GetEdge> [[e3], [f1, f2_i3]]
-              - !<grocc::BRepFilletAPI_MakeFillet::Add> [~, [seat_cushion, seat_fillet_radius_leftright, e3]]
-            returns:
-              - seat_cushion
+          - !<geo::make_fillet> [[f1], [seat_box, f1_idx, seat_fillet_radius_frontback]]
+          - !<geo::make_fillet> [[seat_cushion], [f1, f2_idx, seat_fillet_radius_leftright]]
       backrest:
         uses:
           grunk: 0.2.2
@@ -107,66 +93,36 @@ recipes:
           rot_dir: !<grocc::gp_Dir> [0, 1, 0]
           backrest_posy: !<double> 0
           h_back: !<double> 0.81999999999999995
-          f2_i0: !<int> 9
+          f2_i0: !<int> 10
+          f2_i3: !<int> 12
           backrest_radius_leftright: !<double> 0.10000000000000001
-          f2_i3: !<int> 11
-          f4_i06: !<int> 6
+          f4_i06: !<int> 7
           t_headrest: !<double> 0.02
           border_headrest: !<double> 0.02
           h_headrest: !<double> 0.20000000000000001
-          f5_i08: !<int> 8
+          f5_i08: !<int> 9
+          f5_i09: !<int> 10
+          f5_i10: !<int> 11
+          f5_i11: !<int> 12
           headrest_radius: !<double> 0.080000000000000002
-          f5_i09: !<int> 9
-          f5_i10: !<int> 10
-          f5_i11: !<int> 11
-          f6_i0: !<int> 0
+          f6_i0: !<int> 1
           headrest_radius2: !<double> 0.014999999999999999
         steps:
+          - !<vec> [[edge_idx_vec], [f5_i08, f5_i09, f5_i10, f5_i11]]
           - !<expr> [headrest_width, w_sitting_surface - 2 * border_headrest]
           - !<expr> [backrest_posz, h_sitting_surface + h_back - h_cushion - h_headrest - border_headrest]
           - !<expr> [headrest_posx, l_cushion - t_headrest]
           - !<grocc::gp_Pnt> [[headrest_pos], [headrest_posx, border_headrest, backrest_posz]]
           - !<grocc::BRepPrimAPI_MakeBox> [[headrest_box], [headrest_pos, t_headrest, headrest_width, h_headrest]]
-          - !<script>
-            steps:
-              - !<grocc::BRepFilletAPI_MakeFillet> [[f5], [headrest_box]]
-              - !<geo::internal::GetEdge> [[e08], [headrest_box, f5_i08]]
-              - !<grocc::BRepFilletAPI_MakeFillet::Add> [~, [f5, headrest_radius, e08]]
-              - !<geo::internal::GetEdge> [[e09], [headrest_box, f5_i09]]
-              - !<grocc::BRepFilletAPI_MakeFillet::Add> [~, [f5, headrest_radius, e09]]
-              - !<geo::internal::GetEdge> [[e10], [headrest_box, f5_i10]]
-              - !<grocc::BRepFilletAPI_MakeFillet::Add> [~, [f5, headrest_radius, e10]]
-              - !<geo::internal::GetEdge> [[e11], [headrest_box, f5_i11]]
-              - !<grocc::BRepFilletAPI_MakeFillet::Add> [~, [f5, headrest_radius, e11]]
-            returns:
-              - f5
-          - !<script>
-            steps:
-              - !<grocc::BRepFilletAPI_MakeFillet> [[headrest], [f5]]
-              - !<geo::internal::GetEdge> [[e], [f5, f6_i0]]
-              - !<grocc::BRepFilletAPI_MakeFillet::Add> [~, [headrest, headrest_radius2, e]]
-            returns:
-              - headrest
+          - !<geo::make_fillet> [[f5], [headrest_box, edge_idx_vec, headrest_radius]]
+          - !<geo::make_fillet> [[headrest], [f5, f6_i0, headrest_radius2]]
           - !<expr> [backrest_radius_top, 0.9 * dx_back]
+          - !<vec> [[f3_idx], [f2_i0, f2_i3]]
           - !<expr> [seat_z, h_sitting_surface - h_cushion]
           - !<grocc::gp_Pnt> [[backrest_pos], [l_cushion, backrest_posy, seat_z]]
           - !<grocc::BRepPrimAPI_MakeBox> [[backrest_box], [backrest_pos, dx_back, w_sitting_surface, h_back]]
-          - !<script>
-            steps:
-              - !<grocc::BRepFilletAPI_MakeFillet> [[f3], [backrest_box]]
-              - !<geo::internal::GetEdge> [[e09], [backrest_box, f2_i0]]
-              - !<grocc::BRepFilletAPI_MakeFillet::Add> [~, [f3, backrest_radius_leftright, e09]]
-              - !<geo::internal::GetEdge> [[e11], [backrest_box, f2_i3]]
-              - !<grocc::BRepFilletAPI_MakeFillet::Add> [~, [f3, backrest_radius_leftright, e11]]
-            returns:
-              - f3
-          - !<script>
-            steps:
-              - !<grocc::BRepFilletAPI_MakeFillet> [[backrest], [f3]]
-              - !<geo::internal::GetEdge> [[e06], [f3, f4_i06]]
-              - !<grocc::BRepFilletAPI_MakeFillet::Add> [~, [backrest, backrest_radius_top, e06]]
-            returns:
-              - backrest
+          - !<geo::make_fillet> [[f3], [backrest_box, f3_idx, backrest_radius_leftright]]
+          - !<geo::make_fillet> [[backrest], [f3, f4_i06, backrest_radius_top]]
           - !<script>
             steps:
               - !<grocc::TopoDS_Compound> [[back], ~]
@@ -201,7 +157,7 @@ recipes:
           uvmin: !<double> 0
           uvmax: !<double> 1
           h_armrest: !<double> 0.20000000000000001
-          f6_i01: !<int> 1
+          f6_i01: !<int> 2
           armrest_radius: !<double> 0.050000000000000003
         steps:
           - !<expr> [armrest_posy, "- w_armrest"]
@@ -210,13 +166,7 @@ recipes:
           - !<expr> [armrest_posx, l_cushion - l_armrest + dx_back * cos(phi_recline) / 2]
           - !<grocc::gp_Pnt> [[armrest_pos], [armrest_posx, armrest_posy, h_sitting_surface]]
           - !<grocc::BRepPrimAPI_MakeBox> [[armrest_box], [armrest_pos, armrest_dx, w_armrest, h_armrest]]
-          - !<script>
-            steps:
-              - !<grocc::BRepFilletAPI_MakeFillet> [[armrest_nobop], [armrest_box]]
-              - !<geo::internal::GetEdge> [[e], [armrest_box, f6_i01]]
-              - !<grocc::BRepFilletAPI_MakeFillet::Add> [~, [armrest_nobop, armrest_radius, e]]
-            returns:
-              - armrest_nobop
+          - !<geo::make_fillet> [[armrest_nobop], [armrest_box, f6_i01, armrest_radius]]
           - !<expr> [dir_z, -sin(phi_recline)]
           - !<expr> [dir_x, cos(phi_recline)]
           - !<expr> [pnt_x, l_cushion + dx_back * cos(phi_recline) / 2.0]
