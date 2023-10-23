@@ -22,6 +22,73 @@ std::string io_error::get_message() const
 
 namespace details {
 
+ToStringVisitor::ToStringVisitor(YAML::Node& r) : root(r) {}
+
+void ToStringVisitor::set_start_node(parametric::DAGNode const& n)
+{
+    start_node = &n;
+}
+
+void ToStringVisitor::visit(parametric::DAGNode const& n, size_t depth)
+{
+    // check if the node has already been parsed...
+    if (visited(&n)) {
+        return;
+    }
+    m_visited[&n] = true;
+
+    // we visit children only if this is not the start node, or if 
+    // no start node was specified.
+    if ( (start_node && start_node != &n) || !start_node ) {
+        // make sure that we have visited all direct children
+        // for topological order of compute nodes
+        n.accept(
+                *this,
+                depth,
+                parametric::DAGNode::Direction::down
+        );
+    }
+
+    bool is_compute_node = ((depth %  2) == 1);
+    bool is_root_parameter = (n.num_parents() == 0) && !is_compute_node;
+
+    if (!is_compute_node) {
+        feature_names_count[n.id()]++;
+    }
+
+    if (is_root_parameter || is_compute_node){
+
+        auto node =  YAML::Load(n.serialize());
+
+        if (is_root_parameter) {
+
+
+            if (root["parameters"][n.id()]) {
+                throw io_error(
+                    "The feature tree does not have unique feature names. Found duplicate parameter \""
+                    + n.id() + "\"."
+                );
+            }
+
+            node.SetStyle(YAML::EmitterStyle::Flow);
+            root["parameters"][n.id()] = node;
+        }
+        else {
+            // is action
+            steps.push(node);
+        }
+    }
+
+}
+
+void ToStringVisitor::unwind_steps() 
+{
+    while (!steps.empty()) {
+        root["steps"].push_back(steps.top());
+        steps.pop();
+    }
+}
+
 reflect::DynamicObject deserialize(
     std::string const& type_name,
     YAML::Node const & yaml_node
