@@ -146,11 +146,7 @@ def backrest_recipe():
     # recline back
     rot_pnt_y = grunk.Feature("rot_pnt_y", "double", 0.)
     rot_pnt = grunk.action("rot_pnt", "grocc::gp_Pnt", l_cushion, rot_pnt_y, h_sitting_surface).output()
-    #TODO wouldn't need to define double features, if gpgp_Dir_Ax had serialize/deserialze
-    rot_dir_x = grunk.Feature("rot_dir_x", "double", 0.)
-    rot_dir_y = grunk.Feature("rot_dir_y", "double", 1.)
-    rot_dir_z = grunk.Feature("rot_dir_z", "double", 0.)
-    rot_dir = grunk.action("rot_dir", "grocc::gp_Dir", rot_dir_x, rot_dir_y, rot_dir_z).output()
+    rot_dir = grunk.Feature("rot_dir", "grocc::gp_Dir", 0., 1., 0.)
     rot_ax = grunk.action("rot_ax", "grocc::gp_Ax1", rot_pnt, rot_dir).output()
     backrest_reclined = grunk.script(
         [

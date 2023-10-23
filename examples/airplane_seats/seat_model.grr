@@ -104,9 +104,7 @@ recipes:
           phi_recline: !<double> 0.17453292519943295
           dx_back: !<double> 0.050000000000000003
           rot_pnt_y: !<double> 0
-          rot_dir_x: !<double> 0
-          rot_dir_y: !<double> 1
-          rot_dir_z: !<double> 0
+          rot_dir: !<grocc::gp_Dir> [0, 1, 0]
           backrest_posy: !<double> 0
           h_back: !<double> 0.81999999999999995
           f2_i0: !<int> 9
@@ -178,7 +176,6 @@ recipes:
               - !<grocc::BRep_Builder::Add> [~, [aBuilder, back, headrest]]
             returns:
               - back
-          - !<grocc::gp_Dir> [[rot_dir], [rot_dir_x, rot_dir_y, rot_dir_z]]
           - !<grocc::gp_Pnt> [[rot_pnt], [l_cushion, rot_pnt_y, h_sitting_surface]]
           - !<grocc::gp_Ax1> [[rot_ax], [rot_pnt, rot_dir]]
           - !<script>
