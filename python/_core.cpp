@@ -263,7 +263,7 @@ PYBIND11_MODULE(_core, m)
     .def(
         "__getitem__",
         [](Recipe& r, std::string const& key) {
-            return r.at(key);
+            return r[key];
         }
     )
     .def("insert_feature", &grunk::Recipe::insert_feature)
@@ -278,6 +278,10 @@ PYBIND11_MODULE(_core, m)
                 pyargs
             );
         }
+    )
+    .def(
+        "get_features", 
+        py::overload_cast<>(&Recipe::get_features, py::const_)
     )
     .def(
         "get_recipe", 
