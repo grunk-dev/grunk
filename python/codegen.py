@@ -140,8 +140,9 @@ class CodeGenerator(ABC):
             s = s + "){ return "
             if decl.parent and not decl.is_static:
                 s = s + "x."
-            if decl.parent and decl.is_static:
-                s = s + decl.parent.type.spelling + "::"
+            # if decl.parent and decl.is_static:
+                #TODO: why is this here?
+                # s = s + decl.parent.type.spelling + "::"
             if decl.parent:
                 s = s + decl.parent.type.spelling + "::" + decl.name
             else:
