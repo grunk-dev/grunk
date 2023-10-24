@@ -3,10 +3,10 @@ uses:
   geo: 0.2.0
   grocc: 0.1.1
 parameters:
+  n_supports: !<int> 3
   w_armrest: !<double> 0.050000000000000003
   w_sitting_surface: !<double> 0.45000000000000001
   dx_seat: !<double> 0
-  n_supports: !<int> 3
   dz_seat: !<double> 0
   n_seats: !<int> 4
   dx_support: !<double> 0
@@ -20,16 +20,16 @@ steps:
   - !<grocc::gp_Vec> [[seat_repeat_start], [dx_seat, seat_dy_start, dz_seat]]
   - !<grocc::gp_Vec> [[seat_repeat_dir], [dx_seat, dy_seat, dz_seat]]
   - !<recipes::seat> [{seat: single_seat, h_sitting_surface: h_sitting_surface, h_cushion: h_cushion, l_cushion: l_cushion, dx_back: dx_back, phi_recline: phi_recline}, {w_armrest: w_armrest, w_sitting_surface: w_sitting_surface}]
+  - !<geo::moved> [[seat_start], [seat, seat_repeat_start]]
+  - !<geo::repeat_shape> [[seats], [seat_start, seat_repeat_dir, n_seats]]
+  - !<recipes::armrest> [{armrest: armrest}, {dx_back: dx_back, l_cushion: l_cushion, phi_recline: phi_recline, h_sitting_surface: h_sitting_surface, w_armrest: w_armrest}]
+  - !<geo::moved> [[armrest_start], [armrest, seat_repeat_start]]
+  - !<geo::repeat_shape> [[armrests], [armrest_start, seat_repeat_dir, n_armrests]]
   - !<recipes::support> [{support: support, w_support: w_support}, {l_cushion: l_cushion, h_cushion: h_cushion, h_sitting_surface: h_sitting_surface}]
   - !<expr> [support_dy_start, seat_dy_start + dy_support - w_support/2 - w_armrest/2]
   - !<grocc::gp_Vec> [[support_repeat_start], [dx_seat, support_dy_start, dz_seat]]
   - !<geo::moved> [[support_start], [support, support_repeat_start]]
   - !<geo::repeat_shape> [[supports], [support_start, support_repeat_dir, n_supports]]
-  - !<recipes::armrest> [{armrest: armrest}, {dx_back: dx_back, l_cushion: l_cushion, phi_recline: phi_recline, h_sitting_surface: h_sitting_surface, w_armrest: w_armrest}]
-  - !<geo::moved> [[armrest_start], [armrest, seat_repeat_start]]
-  - !<geo::repeat_shape> [[armrests], [armrest_start, seat_repeat_dir, n_armrests]]
-  - !<geo::moved> [[seat_start], [seat, seat_repeat_start]]
-  - !<geo::repeat_shape> [[seats], [seat_start, seat_repeat_dir, n_seats]]
   - !<script>
     steps:
       - !<grocc::TopoDS_Compound> [[row], ~]

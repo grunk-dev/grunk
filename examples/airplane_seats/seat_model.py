@@ -335,7 +335,9 @@ def seat_row_recipe():
         ],
         returns = ["row"]
     ).output()
-    recipe.insert_feature(row)
+
+    for f in [row, n_seats, w_sitting_surface, w_armrest, n_supports, recipe["w_support"]]:
+        recipe.insert_feature(f)
 
     return recipe
 
@@ -346,7 +348,11 @@ if __name__ == '__main__':
 
     seat_model = seat_row_recipe()
     grunk.write("seat_model.grr.yml", seat_model)
-    seat_model = grunk.read("seat_model.grr.yml")
 
-    filename = grunk.Feature("filename", "String", "seat_row.brep")
-    grunk.action("", "grocc::BRepTools::Write", seat_model["row"], filename).eval()
+    for n_seats in range(2,5):
+        seat_model["n_seats"].set_value(n_seats)
+        for width_cm in range(35, 56, 10):
+            seat_model["w_sitting_surface"].set_value(width_cm/100)
+
+            filename = grunk.Feature("filename", "String", f"seat_row_n_{n_seats}_w_{width_cm}.brep")
+            grunk.action("", "grocc::BRepTools::Write", seat_model["row"], filename).eval()
