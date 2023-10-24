@@ -43,6 +43,8 @@ void StdPlugin::init() const
     
     register_type<double>("double")
     .add_constructor<double>()
+    .add_constructor<int>()
+    .add_conversion<int>()
     .add_member_function(
         [](double const& v){ return YAML::Node(v); }, 
         "serialize"
