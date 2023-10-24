@@ -161,7 +161,6 @@ def single_seat_recipe():
     recipe = grunk.Recipe(w_armrest, w_sitting_surface)
     recipe.insert_recipe("seat_cushion", seat_cushion_recipe())
     recipe.insert_recipe("backrest", backrest_recipe())
-    recipe.insert_recipe("armrest", armrest_recipe())
 
     # evaluate seat_cushion recipe
     recipe.recipe(
@@ -197,23 +196,6 @@ def single_seat_recipe():
             "l_cushion" : recipe["l_cushion"]
         }
     )
-    
-    # evaluate armrest recipe
-    recipe.recipe(
-        "armrest", 
-        {
-            # outputs to be passed from armrest recipe to seat_recipe
-            "armrest": "armrest"
-        }, 
-        {
-            #inputs to be passed from seat_recipe to armrest recipe
-            "w_armrest" : w_armrest,
-            "h_sitting_surface" : recipe["h_sitting_surface"],
-            "l_cushion" : recipe["l_cushion"],
-            "dx_back" : recipe["dx_back"],
-            "phi_recline" : recipe["phi_recline"]
-        }
-    )
 
     # make everything a compound
     single_seat = grunk.script(
@@ -223,7 +205,6 @@ def single_seat_recipe():
             grunk.ScriptStep("grocc::BRep_Builder::MakeCompound", [], ["aBuilder", "single_seat"]),
             grunk.ScriptStep("grocc::BRep_Builder::Add", [], ["aBuilder", "single_seat", recipe["cushion"]]),
             grunk.ScriptStep("grocc::BRep_Builder::Add", [], ["aBuilder", "single_seat", recipe["back"]]),
-            grunk.ScriptStep("grocc::BRep_Builder::Add", [], ["aBuilder", "single_seat", recipe["armrest"]]),
         ],
         returns = ["single_seat"]
     ).output()
@@ -247,7 +228,7 @@ def support_recipe():
     support_pos = grunk.action("support_pos", "grocc::gp_Pnt", support_x, support_y, support_z).output()
     dz_support = grunk.expression("dz_support", "h_sitting_surface - h_cushion", h_sitting_surface, h_cushion)
     support = grunk.action("support", "grocc::BRepPrimAPI_MakeBox", support_pos, dx_support, w_support, dz_support).output()
-    return grunk.Recipe(support)
+    return grunk.Recipe(support, w_support, l_cushion, h_cushion, h_sitting_surface)
 
 def seat_row_recipe():
 
@@ -260,13 +241,20 @@ def seat_row_recipe():
     recipe = grunk.Recipe()
     recipe.insert_recipe("seat", single_seat_recipe())
     recipe.insert_recipe("support", support_recipe())
+    recipe.insert_recipe("armrest", armrest_recipe())
+
 
     # evaluate seat recipe
     recipe.recipe(
         "seat",
         {
             # outputs to be passed from armrest recipe to seat_recipe
-            "seat": "single_seat"
+            "seat": "single_seat",
+            "h_sitting_surface" : "h_sitting_surface",
+            "h_cushion" : "h_cushion",
+            "l_cushion" : "l_cushion",
+            "dx_back" : "dx_back",
+            "phi_recline" : "phi_recline"
         },
         {
             #inputs to be passed from seat_recipe to armrest recipe
@@ -274,6 +262,80 @@ def seat_row_recipe():
             "w_armrest" : w_armrest
         }
     )
+
+    dx_seat = grunk.Feature("dx_seat", "double", 0.)
+    dy_seat = grunk.expression("dy_seat", "w_sitting_surface + w_armrest", w_sitting_surface, w_armrest)
+    dz_seat = grunk.Feature("dz_seat", "double", 0.)
+    seat_repeat_dir = grunk.action("seat_repeat_dir", "grocc::gp_Vec", dx_seat, dy_seat, dz_seat).output()
+    
+    seat_dy_start = grunk.expression("seat_dy_start", "-0.5*dy_seat * n_supports + w_armrest/2", dy_seat, n_supports, w_armrest)
+    seat_repeat_start = grunk.action("seat_repeat_start", "grocc::gp_Vec", dx_seat, seat_dy_start, dz_seat).output()
+    
+    seat_start = grunk.action("seat_start", "geo::moved", recipe["seat"], seat_repeat_start).output()
+    seats = grunk.action("seats", "geo::repeat_shape", seat_start, seat_repeat_dir, n_seats).output()
+
+    # evaluate armrest recipe
+    recipe.recipe(
+        "armrest", 
+        {
+            # outputs to be passed from armrest recipe to seat_recipe
+            "armrest": "armrest"
+        }, 
+        {
+            #inputs to be passed from seat_recipe to armrest recipe
+            "w_armrest" : w_armrest,
+            "h_sitting_surface" : recipe["h_sitting_surface"],
+            "l_cushion" : recipe["l_cushion"],
+            "dx_back" : recipe["dx_back"],
+            "phi_recline" : recipe["phi_recline"]
+        }
+    )
+
+    n_armrests = grunk.expression("n_armrests", "n_seats+1", n_seats)
+    armrest_start = grunk.action("armrest_start", "geo::moved", recipe["armrest"], seat_repeat_start).output()
+    armrests = grunk.action("armrests", "geo::repeat_shape", armrest_start, seat_repeat_dir, n_armrests).output()
+
+    # evaluate support
+    recipe.recipe(
+        "support",
+        {
+            "support": "support",
+            "w_support": "w_support"
+        },
+        {
+            "h_sitting_surface" : recipe["h_sitting_surface"],
+            "h_cushion" : recipe["h_cushion"],
+            "l_cushion" : recipe["l_cushion"]
+        }
+    )
+
+    dx_support = grunk.Feature("dx_support", "double", 0.)
+    dy_support = grunk.expression("dy_support", "(n_seats+1)*dy_seat/(n_supports+2)", n_seats, dy_seat, n_supports)
+    dz_support = grunk.Feature("dz_support", "double", 0.)
+    support_repeat_dir = grunk.action("support_repeat_dir", "grocc::gp_Vec", dx_support, dy_support, dz_support).output()
+    
+    support_dy_start = grunk.expression(
+        "support_dy_start", 
+        "seat_dy_start + dy_support - w_support/2 - w_armrest/2", 
+        seat_dy_start, dy_support, recipe["w_support"], w_armrest
+    )
+    support_repeat_start = grunk.action("support_repeat_start", "grocc::gp_Vec", dx_seat, support_dy_start, dz_seat).output()
+
+    support_start = grunk.action("support_start", "geo::moved", recipe["support"], support_repeat_start).output()
+    supports = grunk.action("supports", "geo::repeat_shape", support_start, support_repeat_dir, n_supports).output()
+
+    row = grunk.script(
+        [
+            grunk.ScriptStep("grocc::TopoDS_Compound", ["row"], []),
+            grunk.ScriptStep("grocc::BRep_Builder", ["aBuilder"], []),
+            grunk.ScriptStep("grocc::BRep_Builder::MakeCompound", [], ["aBuilder", "row"]),
+            grunk.ScriptStep("grocc::BRep_Builder::Add", [], ["aBuilder", "row", seats]),
+            grunk.ScriptStep("grocc::BRep_Builder::Add", [], ["aBuilder", "row", supports]),
+            grunk.ScriptStep("grocc::BRep_Builder::Add", [], ["aBuilder", "row", armrests])
+        ],
+        returns = ["row"]
+    ).output()
+    recipe.insert_feature(row)
 
     return recipe
 
@@ -283,10 +345,8 @@ if __name__ == '__main__':
     grunk.load("geo", "0.2.0", install_missing=True)
 
     seat_model = seat_row_recipe()
-    grunk.write("seat_model.grr", seat_model)
-    # seat_model = grunk.read("seat_model.grr")
+    grunk.write("seat_model.grr.yml", seat_model)
+    seat_model = grunk.read("seat_model.grr.yml")
 
     filename = grunk.Feature("filename", "String", "seat_row.brep")
-    grunk.action("", "grocc::BRepTools::Write", seat_model["seat"], filename).eval()
-
-    
+    grunk.action("", "grocc::BRepTools::Write", seat_model["row"], filename).eval()
