@@ -205,7 +205,7 @@ class ResultHolder<DynamicAction> {
 
 public:
 
-    ResultHolder(result_type const& res, parametric::DAGNode const& c) : result(res), m_compute_node(c) {}
+    ResultHolder(result_type const& res, std::shared_ptr<parametric::DAGNode> const& c) : result(res), m_compute_node(c) {}
 
     /**
      * @brief returns the i-th output 
@@ -231,7 +231,7 @@ public:
      * 
      * @return DynamicAction const& the DynamicAction instance
      */
-    parametric::DAGNode const& compute_node() const {
+    std::shared_ptr<parametric::DAGNode> const& compute_node() const {
         return m_compute_node;
     }
 
@@ -240,12 +240,12 @@ public:
      * 
      */
     void eval() const {
-        compute_node().eval();
+        compute_node()->eval();
     }
 
 
 private:
-    parametric::DAGNode const& m_compute_node;
+    std::shared_ptr<parametric::DAGNode> m_compute_node;
     result_type result;
 };
 
@@ -287,7 +287,7 @@ struct DynamicActionFactory
 
         return ResultHolder<DynamicAction>(
             parametric::compute(ptr, args), 
-            *ptr
+            ptr
         );
 
     }

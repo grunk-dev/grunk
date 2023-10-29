@@ -223,7 +223,7 @@ ResultHolder<DynamicAction> script(
     auto ptr = std::shared_ptr<Script>(new Script(steps, returns));
     return ResultHolder<DynamicAction>(
         parametric::compute(ptr, steps),
-        *ptr
+        ptr
     );
 }
 

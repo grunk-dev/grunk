@@ -98,7 +98,7 @@ public:
 
         if constexpr (nresults > 1) {
             auto ret = call(std::make_index_sequence<sizeof...(Args)>{});
-            set_outputs(std::make_index_sequence<nresults>{}, ret);
+            set_outputs(std::make_index_sequence<nresults>{}, &ret);
         }
         else if constexpr (nresults == 1) {
             set_output<0>(call(std::make_index_sequence<sizeof...(Args)>{}));
@@ -151,9 +151,9 @@ private:
      * @param ret The tuple returned by the wrapped function
      */
     template <size_t... I>
-    void set_outputs(std::index_sequence<I...>, ReturnType const& ret) const
+    void set_outputs(std::index_sequence<I...>, ReturnType const* ret) const
     {
-        (set_output<I>(std::get<I>(ret)), ...);
+        (set_output<I>(std::get<I>(*ret)), ...);
     }
 
     /**
@@ -235,6 +235,13 @@ struct Param2Feature<std::tuple<parametric::param<Ts>...>>
     using type = std::tuple<Feature<Ts>...>;
 };
 
+// in case parametric::compute returns a pointer to a DAGNode (void functions), the type stays the same
+template <>
+struct Param2Feature<std::shared_ptr<parametric::DAGNode>>
+{
+    using type = std::shared_ptr<parametric::DAGNode>;
+};
+
 template <typename... Ts>
 using param2feature_t = typename Param2Feature<Ts...>::type;
 
@@ -243,9 +250,7 @@ using param2feature_t = typename Param2Feature<Ts...>::type;
 /**
  * @ingroup advanced
  * @brief The ResultHolder class template is a proxy for holding the result of a ::grunk::Action
- * instance. The results can be either a tuple of features, a feature or nothing for void functions. 
- * In addition to storing the result, it stores a const reference to the compute_node so that void functions
- * can be evaluated as well.
+ * instance. The results can be either a tuple of features, a feature or a shared_ptr<DAGNode> for void functions. 
  * 
  * @tparam C A template realization of ::grunk::Action, i.e. a specific compute node in the feature tree
  */
@@ -260,7 +265,7 @@ class ResultHolder
 
 private:
 
-    ResultHolder(result_type const& res, C const& c) : result(res), m_compute_node(c) {}
+    ResultHolder(result_type const& res) : result(res) {}
 
 public:
     /**
@@ -292,24 +297,26 @@ public:
     }
 
     /**
-     * @brief returns a const-reference to the compute node
-     * 
-     * @return C const& the compute node
+     * @brief returns the compute node of this action
      */
-    C const& compute_node() const {
-        return m_compute_node;
+    decltype(auto) compute_node() const {
+        if constexpr (std::is_void_v<typename C::ReturnType>) {
+            return result;
+        } else {
+            return output().param().node_pointer()->compute_node();
+        }
     }
 
+
     /**
-     * @brief evaluates the compute node
+     * @brief evaluates the compute node. 
      * 
      */
     void eval() const {
-        compute_node().eval();
+        compute_node()->eval();
     }
 
 private:
-    C const& m_compute_node;
     result_type result;
 };
 
@@ -349,10 +356,11 @@ struct ActionFactory
     static decltype(auto) new_action(std::string const& id, F const& fun, Feature<Args> const&... args)
     {
         using MyAction = Action<F, Args...>;
-        auto ptr = std::shared_ptr<MyAction>(new MyAction(id, fun));
         return ResultHolder<MyAction>(
-            parametric::compute(ptr, args.param()...),
-            *ptr
+            parametric::compute(
+                std::shared_ptr<MyAction>(new MyAction(id, fun)), 
+                args.param()...
+            )
         );
     }
 
