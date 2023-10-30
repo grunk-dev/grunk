@@ -181,16 +181,13 @@ public:
         std::string id_from;
     };
 
-    // helper struct to explicitly mark the template parameter of ComputeNode as ignored
-    struct ignore {};
-
     /**
      * @private
      * @brief This class represents the use of a ::grunk::Recipe as a ::grunk::Action
      * in a feature tree.
      * 
      */
-    class Action : public parametric::ComputeNode<Action, ignore, ignore>
+    class Action : public parametric::ComputeNode<Action>
     {
         friend class Recipe;
 
