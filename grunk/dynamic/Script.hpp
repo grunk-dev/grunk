@@ -2,7 +2,6 @@
 
 #include <grunk/dynamic/DynamicFeature.hpp>
 #include <grunk/dynamic/Recipe.hpp>
-#include <grunk/helper/common.hpp>
 #include <grunk/parametric_core.hpp>
 #include <unordered_map>
 #include <yaml-cpp/yaml.h>
@@ -53,7 +52,7 @@ private:
  * @ingroup dynamic_advanced
  * 
  */
-class Script : public parametric::ComputeNode<Script, details::ignore, details::ignore>
+class Script : public parametric::ComputeNode<Script>
 {
 public:
 

@@ -2,7 +2,6 @@
 
 #include <grunk/core/Feature.hpp>
 #include <grunk/parametric_core.hpp>
-#include <grunk/helper/common.hpp>
 #include <grunk/core/Vec.hpp>
 #include <grunk/dynamic/DynamicFeature.hpp>
 #include <grunk/dynamic/Recipe.hpp>
@@ -23,7 +22,7 @@ DynamicFeature vec(std::string const& id, std::vector<DynamicFeature> const& arg
  * @tparam  
  */
 template <>
-class Vec<reflect::DynamicObject> : public parametric::ComputeNode<Vec<reflect::DynamicObject>, parametric::Results<reflect::DynamicObject>, details::ignore>
+class Vec<reflect::DynamicObject> : public parametric::ComputeNode<Vec<reflect::DynamicObject>, parametric::Results<reflect::DynamicObject>>
 {
 
     friend DynamicFeature vec(std::string const& id, std::vector<DynamicFeature> const& args);

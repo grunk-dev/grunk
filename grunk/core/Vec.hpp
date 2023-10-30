@@ -2,7 +2,6 @@
 
 #include <grunk/core/Feature.hpp>
 #include <grunk/parametric_core.hpp>
-#include <grunk/helper/common.hpp>
 
 #include <vector>
 
@@ -17,7 +16,7 @@ namespace grunk {
  * @tparam T The types of the input features
  */
 template <typename T>
-class Vec : public parametric::ComputeNode<Vec<T>, parametric::Results<std::vector<T>>, details::ignore>
+class Vec : public parametric::ComputeNode<Vec<T>, parametric::Results<std::vector<T>>>
 {
 public:
     Vec() = default;

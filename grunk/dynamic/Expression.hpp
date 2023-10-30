@@ -3,7 +3,6 @@
 #include <grunk/dynamic/DynamicFeature.hpp>
 
 #include <grunk/parametric_core.hpp>
-#include <grunk/helper/common.hpp>
 #include <yaml-cpp/yaml.h>
 #include "muParser.h"
 
@@ -26,7 +25,7 @@ namespace grunk {
      *
      * @ingroup dynamic_advanced
      */
-    class Expression : public parametric::ComputeNode<Expression, details::ignore, details::ignore>
+    class Expression : public parametric::ComputeNode<Expression>
     {
         /**
          * @brief Construct a new Expression instance

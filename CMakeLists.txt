@@ -59,7 +59,6 @@ set(grunk_SRC
     grunk/grunk.hpp
     grunk/helper/String.hpp
     grunk/helper/String.cpp
-    grunk/helper/common.hpp
 )
 
 # create a library and add source files
