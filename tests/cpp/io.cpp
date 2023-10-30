@@ -94,7 +94,7 @@ TEST_F(IOTest, serialize_DAGNode)
     EXPECT_EQ(sy, parametric::serialize(reflect::make_dynamic("double", 0.5)));
 
     // compute node
-    auto szc = z.compute_node().serialize();
+    auto szc = z.compute_node()->serialize();
     auto yc = YAML::Load(szc); 
     EXPECT_EQ(yc.Tag(), "SimplePlugin::add");
 
@@ -111,7 +111,7 @@ TEST_F(IOTest, serialize_DAGNode)
     EXPECT_EQ(yc[1][1].as<std::string>(), "y");
 
     // Can't serialize action with non registered function
-    EXPECT_THROW(w.compute_node().serialize(), std::logic_error);
+    EXPECT_THROW(w.compute_node()->serialize(), std::logic_error);
 
     // dependent parameter
     auto zo = z;

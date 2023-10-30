@@ -88,6 +88,8 @@ std::tuple<double, double> get_components(Point const& p){
     return std::make_tuple(p.x, p.y);
 }
 
+void a_void_function(double){};
+
 } //namespace
 
 
@@ -120,6 +122,8 @@ public:
 
         reflect::register_type<Counter>("Counter")
         .add_constructor<bool>();
+
+        reflect::register_function(&a_void_function, "a_void_function");
     } 
 
     static void TearDownTestCase() {
@@ -309,4 +313,13 @@ TEST_F(DynamicActionTest, ConstructorCall)
     EXPECT_EQ(Counter::move, 0);
     EXPECT_EQ(Counter::move_assignment, 0);
     EXPECT_EQ(Counter::dtor, 1);
+}
+
+TEST_F(DynamicActionTest, void_function)
+{
+    auto result_holder = [](){
+        auto x = DynamicFeature("x", "double", 0.321);
+        return action("y", "a_void_function", x);
+    }();
+    result_holder.eval();    
 }

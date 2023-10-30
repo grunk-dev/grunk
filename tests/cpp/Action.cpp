@@ -118,3 +118,12 @@ TEST(ActionTest, UnnamedFeature)
     EXPECT_NEAR(z.value(), 0.8, 1e-15);
     EXPECT_TRUE(z.is_valid());
 }
+
+TEST(ActionTest, void_function)
+{
+    auto result_holder = [](){
+        auto x = Feature("x", 0.321);
+        return action("y", [](double){}, x);
+    }();
+    result_holder.eval();    
+}
