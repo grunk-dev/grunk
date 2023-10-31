@@ -1,7 +1,7 @@
 import grunk
 import pytest
 
-def test_integration_hello_world():
+def test_integration_hello_world(tmp_path):
     grunk.load("PluginA", version="0.1.0", install_missing=True)
     assert grunk.get_plugin_registry().count() == 1
 
@@ -9,15 +9,15 @@ def test_integration_hello_world():
     b = grunk.Feature("b", "PluginA::Scalar", 2.2)
     c = grunk.action("c", "PluginA::add", a, b).output()
     assert 5.5 == pytest.approx(c.value().get("value").as_float())
-    grunk.write("test.grr", c)
+    grunk.write(str(tmp_path / "test.grr.yml"), c)
 
     grunk.load("PluginB", version="0.1.0", install_missing=True)
     assert grunk.get_plugin_registry().count() == 2
     
     d = grunk.Feature("d", "PluginA::Scalar", 2)
-    e = grunk.action("e", "PluginB::multiply", d, grunk.read("test.grr")["c"]).output()
+    e = grunk.action("e", "PluginB::multiply", d, grunk.read(str(tmp_path / "test.grr.yml"))["c"]).output()
     assert 11 == pytest.approx(e.value().get("value").as_float())
-    grunk.write("test2.grr", e)
+    grunk.write(str(tmp_path / "test2.grr.yml"), e)
 
     a.access_value().set("value", 4.4)
     assert 6.6 == pytest.approx(c.value().get("value").as_float())
@@ -30,7 +30,7 @@ def test_expression():
     c = grunk.expression("z", "2*cos(x)*y+1", a, b)
     assert 2.5 == pytest.approx(c.value().as_float())
 
-def test_recipe():
+def test_recipe(tmp_path):
     grunk.load("PluginA", version="0.1.0", install_missing=True)
     grunk.load("PluginB", version="0.1.0", install_missing=True)
     
@@ -56,10 +56,10 @@ def test_recipe():
     assert ( 2. *  5.) == pytest.approx(recipe.get_recipe("multiply")["z"].value().as_float())
 
     # just make sure this doesn't fail:
-    grunk.write("test_nested_recipe.grr", recipe)
+    grunk.write(str(tmp_path / "test_nested_recipe.grr.yml"), recipe)
 
 
-def test_script():
+def test_script(tmp_path):
     grunk.load("PluginA", version="0.1.0", install_missing=True)
     grunk.load("PluginB", version="0.1.0", install_missing=True)
 
@@ -80,9 +80,9 @@ def test_script():
     assert (0.75) == pytest.approx(p.value().as_float())
 
     # just make sure this doesn't fail:
-    grunk.write("script_action.grr", p)
+    grunk.write(str(tmp_path / "script_action.grr.yml"), p)
 
-def test_vec():
+def test_vec(tmp_path):
     grunk.load("PluginA", version="0.1.0", install_missing=True)
     grunk.load("PluginB", version="0.1.0", install_missing=True)
 
@@ -91,4 +91,12 @@ def test_vec():
     v = grunk.vec("v", x, y)
 
     # just make sure this doesn't fail:
-    grunk.write("vec_action.grr", v)
+    grunk.write(str(tmp_path / "vec_action.grr.yml"), v)
+
+def test_constant(tmp_path):
+    grunk.load("PluginA", version="0.1.0", install_missing=True)
+    grunk.load("PluginB", version="0.1.0", install_missing=True)
+
+    a = grunk.Feature("a", "PluginA::Scalar", 3.3)
+    c = grunk.action("c", "PluginA::add", a, 2.2).output()
+    grunk.write(str(tmp_path / "constant.grr.yml"), c)
