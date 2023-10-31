@@ -107,13 +107,22 @@ TEST_F(VecTest, dynamic_mode_deserialize)
 
 TEST_F(VecTest, dynamic_mode_constants)
 {
-    auto x = grunk::Feature("", "double", 0.1);
-    auto y = grunk::Feature("", "double", 0.2);
-    auto s = grunk::action("s", "sum", grunk::vec("z", x, y)).output();
-    YAML::Node n = grunk::serialize(s);
-    EXPECT_FALSE(n["parameters"]);
-    EXPECT_EQ(n["steps"].size(), 2);
-    EXPECT_EQ(n["steps"][0].Tag(), "vec");
-    EXPECT_EQ(n["steps"][0][1][0].Tag(), "double");
-    EXPECT_EQ(n["steps"][0][1][1].Tag(), "double");
+    {
+        auto x = grunk::Feature("", "double", 0.1);
+        auto y = grunk::Feature("", "double", 0.2);
+        auto s = grunk::action("s", "sum", grunk::vec("z", x, y)).output();
+        YAML::Node n = grunk::serialize(s);
+        EXPECT_FALSE(n["parameters"]);
+        EXPECT_EQ(n["steps"].size(), 2);
+        EXPECT_EQ(n["steps"][0].Tag(), "vec");
+        EXPECT_EQ(n["steps"][0][1][0].Tag(), "double");
+        EXPECT_EQ(n["steps"][0][1][1].Tag(), "double");
+
+        grunk::write("tmp.grr.yml", s);
+    }
+
+    auto r = grunk::read("tmp.grr.yml");
+    EXPECT_EQ(r.num_features(), 2);
+    EXPECT_NEAR(r["s"].value().as<double>(), 0.3, 1e-10);
+
 }
