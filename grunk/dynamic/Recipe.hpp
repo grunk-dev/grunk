@@ -206,13 +206,18 @@ public:
             Recipe& recipe
         );
 
+        std::string name() const;
+        std::shared_ptr<Recipe> get_recipe() const {
+            return m_recipe;
+        }
+
     private:
         Action(std::string const& name, Recipe const&, std::vector<IDPair> const& output_ids);
 
-        std::string name;
+        std::string m_name;
         std::vector<std::string> input_ids;
         std::vector<IDPair> output_ids;
-        std::shared_ptr<Recipe> recipe;
+        std::shared_ptr<Recipe> m_recipe;
     };
 
     /**

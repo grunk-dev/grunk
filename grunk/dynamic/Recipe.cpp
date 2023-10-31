@@ -282,9 +282,9 @@ Recipe::Action::Action(
     std::string const& n, 
     Recipe const& other, 
     std::vector<Recipe::IDPair> const& oid)
- : name(n)
+ : m_name(n)
  , output_ids(oid)
- , recipe(std::make_shared<Recipe>(std::move(other.clone())))
+ , m_recipe(std::make_shared<Recipe>(std::move(other.clone())))
  {}
 
 void Recipe::Action::connect_inputs(Recipe::FeatureContainer const& inputs) 
@@ -304,7 +304,7 @@ Recipe::FeatureContainer Recipe::Action::initialize_results()
             id_pair.id_to,
             DynamicFeature(
                 parametric::new_param<reflect::DynamicObject>(), 
-                recipe->at(id_pair.id_from).get_type_descriptor()
+                m_recipe->at(id_pair.id_from).get_type_descriptor()
             )
         );
     }
@@ -330,13 +330,13 @@ void Recipe::Action::post_connect()
 void Recipe::Action::eval() const
 {
     for (size_t i = 0; i < this->num_parents(); ++i) {
-        recipe->at(input_ids[i]).access_value() 
+        m_recipe->at(input_ids[i]).access_value() 
             = this->template arg<reflect::DynamicObject>(i).value();
     }
 
     for (size_t i=0; i < this->num_children(); ++i) {
         if (auto r = this->template res<reflect::DynamicObject>(i); r) {
-            r->set_value(recipe->at(output_ids[i].id_from).value());
+            r->set_value(m_recipe->at(output_ids[i].id_from).value());
         }
     }
 }
@@ -353,8 +353,13 @@ std::string Recipe::Action::serialize() const
 
     YAML::Node inputs;
     for (size_t i=0; i < this->num_parents(); ++i) {
-        auto id_from = this->template arg<reflect::DynamicObject>(i).id();
-        inputs[input_ids[i]] = id_from;
+        auto const& input = this->template arg<reflect::DynamicObject>(i);
+        if (input.id() == "" && input.num_parents() == 0) {
+            // this is a constant
+            inputs[input_ids[i]] = YAML::Load(input.serialize());
+        } else {
+            inputs[input_ids[i]] = input.id();
+        }
     }
     s.push_back(inputs);
 
@@ -362,7 +367,7 @@ std::string Recipe::Action::serialize() const
     YAML::Emitter out;
 
     using namespace std::string_literals;
-    auto tag = YAML::VerbatimTag("recipes::"s + name);
+    auto tag = YAML::VerbatimTag("recipes::"s + name());
     out << tag << s;
     return out.c_str();
 }
@@ -390,8 +395,22 @@ void Recipe::Action::deserialize(
     FeatureContainer inputs;
     for (YAML::const_iterator it=node[1].begin();it!=node[1].end();++it ) {
         auto key = it->first.as<std::string>();
-        auto val = it->second.as<std::string>();
-        inputs.insert({key, recipe.features.at(val)});
+        if (it->second.Tag() == "" || it->second.Tag() == "?") {
+            // input is a named feature
+            auto val = it->second.as<std::string>();
+            inputs.insert({key, recipe.features.at(val)});
+        } else {
+            inputs.insert(
+                {
+                    key,
+                    grunk::Feature(
+                        "",
+                        grunk::details::deserialize(it->second.Tag(), it->second)
+                    )
+                }
+            );
+        }
+        
     }
 
     // call the subrecipe 
@@ -400,6 +419,11 @@ void Recipe::Action::deserialize(
         output_ids, 
         inputs
     );
+}
+
+std::string Recipe::Action::name() const 
+{
+    return m_name;
 }
 
 Recipe::FeatureContainer Recipe::operator()(

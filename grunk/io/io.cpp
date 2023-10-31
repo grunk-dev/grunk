@@ -77,6 +77,14 @@ void ToStringVisitor::visit(parametric::DAGNode const& n, size_t depth)
         }
         else {
             // is action
+
+            if (auto const* recipe_action_ptr = dynamic_cast<Recipe::Action const*>(&n); recipe_action_ptr) {
+                if (!recipes[recipe_action_ptr->name()]) {
+                    recipes[recipe_action_ptr->name()] 
+                        = recipe_action_ptr->get_recipe()->serialize();
+                }
+            }
+
             steps.push(node);
         }
     }
@@ -88,6 +96,9 @@ void ToStringVisitor::unwind_steps()
     while (!steps.empty()) {
         root["steps"].push_back(steps.top());
         steps.pop();
+    }
+    if (recipes && recipes.size() > 0) {
+        root["recipes"] = recipes;
     }
 }
 
