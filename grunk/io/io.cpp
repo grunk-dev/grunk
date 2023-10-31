@@ -62,16 +62,18 @@ void ToStringVisitor::visit(parametric::DAGNode const& n, size_t depth)
 
         if (is_root_parameter) {
 
+            if (n.id() != "") {
+                // constants are unnamed
+                if (root["parameters"][n.id()]) {
+                    throw io_error(
+                        "The feature tree does not have unique feature names. Found duplicate parameter \""
+                        + n.id() + "\"."
+                    );
+                }
 
-            if (root["parameters"][n.id()]) {
-                throw io_error(
-                    "The feature tree does not have unique feature names. Found duplicate parameter \""
-                    + n.id() + "\"."
-                );
+                node.SetStyle(YAML::EmitterStyle::Flow);
+                root["parameters"][n.id()] = node;
             }
-
-            node.SetStyle(YAML::EmitterStyle::Flow);
-            root["parameters"][n.id()] = node;
         }
         else {
             // is action

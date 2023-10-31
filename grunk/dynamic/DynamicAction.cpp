@@ -10,24 +10,36 @@ ResultHolder<DynamicAction> DynamicAction::deserialize(
 )
 {
     auto const& features = recipe.get_features();
-    auto const function_name = node.Tag();
+    std::string function_name = node.Tag();
 
     std::vector<DynamicFeature> input_vec;
     auto const inputs = node[1];
     for (auto const& input: inputs) {
-        auto input_name = input.as<std::string>();
-        auto feature_it = features.find(input_name);
-        if (feature_it == std::end(features)) {
-            throw io_error(
-                "Could not find input "s
-                    + input_name + " for function call to " + function_name
-                    + ". Are the steps in the correct topological order?"
+        if (input.Tag() == "" || input.Tag() == "?") {
+            // input is a named feature
+            auto input_name = input.as<std::string>();
+            auto feature_it = features.find(input_name);
+            if (feature_it == std::end(features)) {
+                throw io_error(
+                    "Could not find input "s
+                        + input_name + " for function call to " + function_name
+                        + ". Are the steps in the correct topological order?"
+                );
+            }
+            input_vec.push_back(feature_it->second);
+        } else {
+            // input is a constant
+            input_vec.push_back(
+                grunk::Feature(
+                    "",
+                    grunk::details::deserialize(input.Tag(), input)
+                )
             );
         }
-        input_vec.push_back(feature_it->second);
     }
 
-    return grunk::action("", function_name, std::move(input_vec));
+    auto const& v = input_vec; // make sure correct overload of grunk::action is chosen.
+    return grunk::action("", function_name, v);
 
 }
 
