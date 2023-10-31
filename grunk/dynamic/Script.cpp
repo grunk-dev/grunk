@@ -44,9 +44,23 @@ YAML::Node Script::serialize(Script::Step const& step) const
         if (std::holds_alternative<std::string>(a)) {
             i.push_back(std::get<std::string>(a));
         } else if (std::holds_alternative<DynamicFeature>(a)) {
-            i.push_back(std::get<DynamicFeature>(a).id());
+            auto const& f = std::get<DynamicFeature>(a);
+            std::cout << f.param().node_pointer()->num_parents() << "\n";
+            if ( (f.param().node_pointer()->num_parents() == 0) && (f.id() == "")) {
+                // is a constant
+                YAML::Node n = YAML::Load(f.param().node_pointer()->serialize());
+                i.push_back(n);
+            } else {
+                i.push_back(f.id());
+            }
         } else {
-            i.push_back(this->arg<reflect::DynamicObject>(std::get<int>(a)).id());
+            auto const& input = this->arg<reflect::DynamicObject>(std::get<int>(a));
+            if ( (input.num_parents() == 0) && (input.id() == "")) {
+                YAML::Node n = YAML::Load(input.serialize());
+                i.push_back(n);
+            } else {
+                i.push_back(input.id());
+            }
         }
     }
     s.push_back(i);
@@ -94,11 +108,22 @@ Script::Step Script::Step::deserialize(YAML::Node const& node, Recipe::FeatureCo
     std::vector<Script::Step::Argument> inputs;
     if (node[1]) {
         for (auto const& i : node[1]) {
-            auto id = i.as<std::string>();
-            if (auto search = features.find(id); search != features.end()) {
-                inputs.push_back(search->second);
+            if (i.Tag() == "" || i.Tag() == "?") {
+                // input is a named feature
+                auto id = i.as<std::string>();
+                if (auto search = features.find(id); search != features.end()) {
+                    inputs.push_back(search->second);
+                } else {
+                    inputs.push_back(id);
+                }
             } else {
-                inputs.push_back(id);
+                // input is a constant
+                inputs.push_back(
+                    grunk::Feature(
+                        "",
+                        grunk::details::deserialize(i.Tag(), i)
+                    )
+                );
             }
         }
     }

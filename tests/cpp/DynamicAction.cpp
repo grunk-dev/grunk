@@ -322,7 +322,7 @@ TEST_F(DynamicActionTest, void_function)
     result_holder.eval();    
 }
 
-TEST_F(DynamicActionTest, anonymous_feature)
+TEST_F(DynamicActionTest, constant)
 {
     // string-like arguments should be converted internally to String
     {

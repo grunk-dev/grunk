@@ -52,7 +52,7 @@ void ToStringVisitor::visit(parametric::DAGNode const& n, size_t depth)
     bool is_compute_node = ((depth %  2) == 1);
     bool is_root_parameter = (n.num_parents() == 0) && !is_compute_node;
 
-    if (!is_compute_node) {
+    if (!is_compute_node && n.id() != "") {
         feature_names_count[n.id()]++;
     }
 
