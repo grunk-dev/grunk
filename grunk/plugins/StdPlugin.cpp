@@ -43,7 +43,7 @@ void StdPlugin::init() const
     
     register_type<double>("double")
     .add_constructor<double>()
-    .add_constructor<int>()
+    .add_constructor([](int x){ return double(x); }) // construct from int, avoid narrowing conversion error in MSVC
     .add_conversion<int>()
     .add_member_function(
         [](double const& v){ return YAML::Node(v); }, 

@@ -25,8 +25,8 @@ Script::Step::Step(
     std::vector<Argument> const& inputs
 )
     : function_name(fun)
-    , outputs(outputs_)
     , arguments(inputs)
+    , outputs(outputs_)
 {};
 
 YAML::Node Script::serialize(Script::Step const& step) const 
@@ -288,7 +288,7 @@ void Script::eval() const
         eval(s, vars);
     }
 
-    for (size_t i=0; i< returns.size(); ++i) {
+    for (int i=0; i< returns.size(); ++i) {
         if (auto out = this->template res<reflect::DynamicObject>(i); out) {
             out->set_value(vars.at(returns[i]));
         }
@@ -297,7 +297,7 @@ void Script::eval() const
 
 void Script::post_connect() const 
 {
-    for (size_t i=0; i < returns.size(); ++i) {
+    for (int i=0; i < returns.size(); ++i) {
         if (auto out = this->template res<reflect::DynamicObject>(i); out) {
             out->set_id(returns[i]);
         }

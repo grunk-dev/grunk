@@ -121,7 +121,7 @@ Recipe Recipe::deserialize(YAML::Node const& root)
 
     if (auto const steps = root["steps"]; steps)
     {
-        for (size_t i = 0; i < steps.size(); i++) {
+        for (int i = 0; i < steps.size(); i++) {
             
             auto const function_name = steps[i].Tag();
 
@@ -142,7 +142,7 @@ Recipe Recipe::deserialize(YAML::Node const& root)
                 ); 
             } else if (function_name == "script") {
                 auto outputs = Script::deserialize(steps[i], recipe.features);
-                for (size_t i = 0; i < outputs.size(); ++i) {
+                for (int i = 0; i < outputs.size(); ++i) {
                     auto const& output = outputs.output(i);
                     auto output_name = output.id();
                     if (recipe.features.find(output_name) != recipe.features.end()) {
@@ -166,7 +166,7 @@ Recipe Recipe::deserialize(YAML::Node const& root)
                     throw io_error("Number of given outputs doesn't match number of outputs of function "s + function_name);
                 }
 
-                size_t idx = 0;
+                int idx = 0;
                 for (auto const& node : outputs) {
                     auto output_name = node.as<std::string>();
 
@@ -337,7 +337,7 @@ void Recipe::Action::connect_results(Recipe::FeatureContainer const& res)
 
 void Recipe::Action::post_connect()
 {
-    for (size_t i=0; i < this->num_children(); ++i) {
+    for (int i=0; i < this->num_children(); ++i) {
         if (auto r = this->template res<reflect::DynamicObject>(i); r) {
             r->set_id(output_ids[i].id_to);
         }
@@ -346,12 +346,12 @@ void Recipe::Action::post_connect()
 
 void Recipe::Action::eval() const
 {
-    for (size_t i = 0; i < this->num_parents(); ++i) {
+    for (int i = 0; i < this->num_parents(); ++i) {
         m_recipe->at(input_ids[i]).access_value() 
             = this->template arg<reflect::DynamicObject>(i).value();
     }
 
-    for (size_t i=0; i < this->num_children(); ++i) {
+    for (int i=0; i < this->num_children(); ++i) {
         if (auto r = this->template res<reflect::DynamicObject>(i); r) {
             r->set_value(m_recipe->at(output_ids[i].id_from).value());
         }
@@ -369,7 +369,7 @@ std::string Recipe::Action::serialize() const
     s.push_back(outputs);
 
     YAML::Node inputs;
-    for (size_t i=0; i < this->num_parents(); ++i) {
+    for (int i=0; i < this->num_parents(); ++i) {
         auto const& input = this->template arg<reflect::DynamicObject>(i);
         if (input.id() == "" && input.num_parents() == 0) {
             // this is a constant

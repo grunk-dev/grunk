@@ -50,7 +50,7 @@ public:
     {
         std::vector<reflect::DynamicObject> v;
         v.reserve(this->parents.size());
-        for (size_t i=0; i<this->parents.size(); ++i) {
+        for (int i=0; i<this->parents.size(); ++i) {
             v.push_back(this->template arg<reflect::DynamicObject>(i).value());
         }
         if (auto r =  this->template res<0>(); r) {

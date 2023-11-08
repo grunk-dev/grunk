@@ -101,7 +101,7 @@ public:
 
     void post_connect() const
     {
-        for (size_t i = 0; i < function.num_outputs(); ++i) {
+        for (int i = 0; i < function.num_outputs(); ++i) {
             std::string output_id = id();
             if( auto r = this->template res<reflect::DynamicObject>(i); r) {
                 if (function.num_outputs() > 1) {
@@ -122,7 +122,7 @@ public:
         // tranform input nodes to vector of DynamicObjects
         std::vector<reflect::DynamicObject> inputs_vec;
         inputs_vec.reserve(this->num_parents());
-        for (size_t i = 0; i < this->num_parents(); ++i) {
+        for (int i = 0; i < this->num_parents(); ++i) {
             inputs_vec.push_back(this->arg<reflect::DynamicObject>(i).value().as_const());
         }
 
@@ -130,7 +130,7 @@ public:
         auto ret = function.invoke(inputs_vec);
 
         // transform to outputs
-        for (size_t i=0; i < this->num_children(); ++i) {
+        for (int i=0; i < this->num_children(); ++i) {
             if (auto output = this->template res<reflect::DynamicObject>(i); output) {
                 output->set_value(ret[i]);
             }
@@ -153,14 +153,14 @@ public:
         // outputs
         auto const& outputs = this->template res<0>();
         y.push_back(YAML::Node());
-        for (size_t i = 0; i < this->num_children(); ++i){
+        for (int i = 0; i < this->num_children(); ++i){
             if(auto const& output = this->res<reflect::DynamicObject>(i); output)
                 y[0].push_back(output->id());
         }
 
         // inputs
         y.push_back(YAML::Node());
-        for (size_t i = 0; i < this->num_parents(); ++i){
+        for (int i = 0; i < this->num_parents(); ++i){
             auto const& input = this->arg<reflect::DynamicObject>(i);
             
             if ( input.num_parents() == 0 && input.id() == "") {

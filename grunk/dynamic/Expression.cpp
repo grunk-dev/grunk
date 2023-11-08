@@ -19,7 +19,7 @@ void Expression::eval() const
     mu::Parser parser;
     parser.SetExpr(expr);
     std::unordered_map<std::string, double> vars;
-    for (size_t i = 0; i < this->num_parents(); ++i) {
+    for (int i = 0; i < this->num_parents(); ++i) {
         auto const& input = this->template arg<reflect::DynamicObject>(i);
         auto ret = vars.emplace(
             std::make_pair(
