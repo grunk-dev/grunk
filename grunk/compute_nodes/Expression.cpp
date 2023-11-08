@@ -1,6 +1,6 @@
 #include "Expression.hpp"
-#include <grunk/dynamic/Recipe.hpp>
-#include <grunk/io/io_error.hpp>
+#include <grunk/Recipe.hpp>
+#include <grunk/common/io_error.hpp>
 #include <unordered_map>
 
 namespace grunk {

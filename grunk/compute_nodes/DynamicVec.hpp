@@ -1,10 +1,10 @@
 #pragma once 
 
-#include <grunk/core/Feature.hpp>
+#include <grunk/Feature.hpp>
 #include <grunk/parametric_core.hpp>
-#include <grunk/core/Vec.hpp>
-#include <grunk/dynamic/DynamicFeature.hpp>
-#include <grunk/dynamic/Recipe.hpp>
+#include <grunk/compute_nodes/Vec.hpp>
+#include <grunk/DynamicFeature.hpp>
+#include <grunk/Recipe.hpp>
 
 #include <vector>
 

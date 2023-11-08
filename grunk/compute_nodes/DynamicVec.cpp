@@ -1,4 +1,4 @@
-#include <grunk/dynamic/DynamicVec.hpp>
+#include <grunk/compute_nodes/DynamicVec.hpp>
 
 namespace grunk {
 

@@ -1,4 +1,4 @@
-#include <grunk/dynamic/Script.hpp>
+#include "Script.hpp"
 #include <vector>
 
 using namespace std::string_literals;

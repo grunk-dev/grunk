@@ -8,9 +8,9 @@
  */
 
 #pragma once
-#include <grunk/parametric_core.hpp>
-#include <parametric/core.hpp>
+#include "parametric_core.hpp"
 
+#include <parametric/core.hpp>
 #include <reflect/reflect.hpp>
 #include <type_traits>
 
@@ -327,4 +327,4 @@ Feature(std::string const&, T&&) -> Feature<T>;
 
 } //namespace grunk
 
-#include "Action.hpp"
+#include "compute_nodes/Action.hpp"

@@ -1,6 +1,6 @@
 #pragma once 
 
-#include <grunk/core/Feature.hpp>
+#include <grunk/Feature.hpp>
 #include <grunk/parametric_core.hpp>
 
 #include <vector>

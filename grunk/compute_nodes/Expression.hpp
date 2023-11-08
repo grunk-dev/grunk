@@ -1,8 +1,8 @@
 #pragma once 
 
-#include <grunk/dynamic/DynamicFeature.hpp>
-
+#include <grunk/DynamicFeature.hpp>
 #include <grunk/parametric_core.hpp>
+
 #include <yaml-cpp/yaml.h>
 #include "muParser.h"
 

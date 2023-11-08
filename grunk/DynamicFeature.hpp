@@ -15,7 +15,7 @@
 
 #pragma once
 
-#include <grunk/core/Feature.hpp>
+#include <grunk/Feature.hpp>
 
 namespace grunk {
 

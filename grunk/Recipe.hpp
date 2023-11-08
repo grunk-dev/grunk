@@ -1,7 +1,7 @@
 #pragma once
 
-#include <grunk/dynamic/DynamicFeature.hpp>
-#include <grunk/io/io.hpp>
+#include <grunk/DynamicFeature.hpp>
+#include <grunk/common/io.hpp>
 
 #include <initializer_list>
 

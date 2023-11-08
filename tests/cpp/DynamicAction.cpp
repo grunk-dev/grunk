@@ -1,7 +1,7 @@
 #include <gtest/gtest.h>
 
 #include <grunk/grunk.hpp>
-#include <grunk/helper/String.hpp>
+#include <grunk/common/String.hpp>
 
 using namespace grunk;
 

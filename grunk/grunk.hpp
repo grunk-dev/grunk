@@ -3,12 +3,12 @@
 // to be included when linking against grunk
 
 #include <grunk/version.hpp>
-#include <grunk/io/io.hpp>
+#include <grunk/common/io.hpp>
 #include <grunk/plugins/PluginRegistry.hpp>
 #include <grunk/plugins/StdPlugin.hpp>
-#include <grunk/dynamic/DynamicFeature.hpp>
-#include <grunk/dynamic/DynamicAction.hpp>
-#include <grunk/dynamic/Expression.hpp>
-#include <grunk/dynamic/Script.hpp>
-#include <grunk/dynamic/Recipe.hpp>
-#include <grunk/dynamic/DynamicVec.hpp>
+#include <grunk/DynamicFeature.hpp>
+#include <grunk/compute_nodes/DynamicAction.hpp>
+#include <grunk/compute_nodes/Expression.hpp>
+#include <grunk/compute_nodes/Script.hpp>
+#include <grunk/compute_nodes/DynamicVec.hpp>
+#include <grunk/Recipe.hpp>

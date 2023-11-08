@@ -3,7 +3,7 @@
 #include <pybind11/stl.h>
 #include <pybind11/stl_bind.h>
 #include <grunk/grunk.hpp>
-#include <grunk/helper/String.hpp>
+#include <grunk/common/String.hpp>
 
 namespace grunkpy {
 
@@ -294,7 +294,7 @@ PYBIND11_MODULE(_core, m)
     .def(
         "insert_recipe", 
         [](grunk::Recipe& r, std::string const& id, grunk::Recipe const& other) {
-            r.insert_recipe(id, std::move(other.clone()));
+            r.insert_recipe(id, other.clone());
         }
     )
     .def("num_recipes", &grunk::Recipe::num_recipes)

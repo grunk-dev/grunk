@@ -1,5 +1,5 @@
-#include "DynamicFeature.hpp"
-#include "DynamicAction.hpp"
+#include <grunk/DynamicFeature.hpp>
+#include <grunk/compute_nodes/DynamicAction.hpp>
 
 namespace grunk {
 

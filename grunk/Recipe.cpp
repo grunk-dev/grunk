@@ -1,8 +1,8 @@
-#include <grunk/dynamic/Recipe.hpp>
-#include <grunk/dynamic/Expression.hpp>
-#include <grunk/dynamic/Script.hpp>
-#include <grunk/dynamic/DynamicVec.hpp>
-#include <grunk/io/io.hpp>
+#include <grunk/Recipe.hpp>
+#include <grunk/compute_nodes/Expression.hpp>
+#include <grunk/compute_nodes/Script.hpp>
+#include <grunk/compute_nodes/DynamicVec.hpp>
+#include <grunk/common/io.hpp>
 #include <stdexcept>
 #include <string>
 

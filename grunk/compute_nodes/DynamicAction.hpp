@@ -14,9 +14,9 @@
 
 #include <yaml-cpp/yaml.h>
 
-#include <grunk/core/Action.hpp>
-#include <grunk/dynamic/DynamicFeature.hpp>
-#include <grunk/helper/String.hpp>
+#include <grunk/compute_nodes/Action.hpp>
+#include <grunk/DynamicFeature.hpp>
+#include <grunk/common/String.hpp>
 
 namespace grunk {
 
