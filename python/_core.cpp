@@ -181,7 +181,10 @@ PYBIND11_MODULE(_core, m)
     .def("as_str", static_cast<std::string (reflect::DynamicObject::*)() const>(&reflect::DynamicObject::as<std::string>));
     py::implicitly_convertible<std::string, reflect::DynamicObject>();
 
-    m_reflect.def("help", &reflect::help);
+    m_reflect.def("help", [](grunk::DynamicFeature const& f){ return reflect::help(*f.get_type_descriptor()); } );
+    m_reflect.def("help", static_cast<std::string (*)(reflect::DynamicObject const&)>(&reflect::help));
+    m_reflect.def("help", static_cast<std::string (*)(std::string const&)>(&reflect::help));
+
 
     // dynamic
 
