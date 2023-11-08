@@ -1,6 +1,7 @@
 #include <gtest/gtest.h>
 
-#include <grunk/dynamic/DynamicAction.hpp>
+#include <grunk/grunk.hpp>
+#include <grunk/helper/String.hpp>
 
 using namespace grunk;
 
@@ -90,6 +91,8 @@ std::tuple<double, double> get_components(Point const& p){
 
 void a_void_function(double){};
 
+int squared(int i) { return i*i; }
+
 } //namespace
 
 
@@ -99,11 +102,8 @@ public:
 
     static void SetUpTestCase() {
 
-        reflect::register_type<double>("double")
-        .add_constructor<double>();
-
-        reflect::register_type<int>("int")
-        .add_constructor<int>();
+        grunk::StdPlugin p;
+        p.init();
 
         reflect::register_type<MyDouble>("MyDouble")
         .add_constructor<double>()
@@ -124,6 +124,8 @@ public:
         .add_constructor<bool>();
 
         reflect::register_function(&a_void_function, "a_void_function");
+
+        reflect::register_function(&squared, "squared");
     } 
 
     static void TearDownTestCase() {
@@ -322,4 +324,72 @@ TEST_F(DynamicActionTest, void_function)
         return action("y", "a_void_function", x);
     }();
     result_holder.eval();    
+}
+
+TEST_F(DynamicActionTest, constant)
+{
+    // string-like arguments should be converted internally to String
+    {
+        // string-literal
+        auto f = reflect::Callable([](std::string const& v){ return v;});
+        auto s = grunk::serialize(action("y", f, "Hello World").output());
+        EXPECT_FALSE(s["parameters"]);
+        EXPECT_EQ(s["steps"].size(), 1);
+        EXPECT_EQ(s["steps"][0][1][0].Tag(), "String");
+    }
+    {
+        // std::string&&
+        auto f = reflect::Callable([](std::string const& v){ return v;});
+        auto s = grunk::serialize(action("y", f, std::string("Hello World")).output());
+        EXPECT_FALSE(s["parameters"]);
+        EXPECT_EQ(s["steps"].size(), 1);
+        EXPECT_EQ(s["steps"][0][1][0].Tag(), "String");
+    }
+    {
+        // std::string&
+        std::string str = "Hello World";
+        auto f = reflect::Callable([](std::string const& v){ return v;});
+        auto s = grunk::serialize(action("y", f, str).output());
+        EXPECT_FALSE(s["parameters"]);
+        EXPECT_EQ(s["steps"].size(), 1);
+        EXPECT_EQ(s["steps"][0][1][0].Tag(), "String");
+    }
+    {
+        // std::string const&
+        std::string const str = "Hello World";
+        auto f = reflect::Callable([](std::string const& v){ return v;});
+        auto s = grunk::serialize(action("y", f, str).output());
+        EXPECT_FALSE(s["parameters"]);
+        EXPECT_EQ(s["steps"].size(), 1);
+        EXPECT_EQ(s["steps"][0][1][0].Tag(), "String");
+    }
+    {
+        // std::string_view&&
+        std::string str = "Hello World";
+        auto f = reflect::Callable([](std::string const& v){ return v;});
+        auto s = grunk::serialize(action("y", f, std::string_view(str)).output());
+        EXPECT_FALSE(s["parameters"]);
+        EXPECT_EQ(s["steps"].size(), 1);
+        EXPECT_EQ(s["steps"][0][1][0].Tag(), "String");
+    }
+
+    // int-argument
+    {
+        auto f = reflect::Callable([](int v){ return v; });
+        auto s = grunk::serialize(action("y",f, 42).output());
+        EXPECT_FALSE(s["parameters"]);
+        EXPECT_EQ(s["steps"].size(), 1);
+        EXPECT_EQ(s["steps"][0][1][0].Tag(), "int");
+    }
+
+    //deserialization       
+    {
+        auto y = action("y","squared", 8).output();
+        grunk::write("tmp.grr.yml", y);
+    }
+     
+    auto r = grunk::read("tmp.grr.yml");
+    EXPECT_EQ(r.num_features(), 1);
+    EXPECT_EQ(r["y"].value().as<int>(), 64);
+    
 }

@@ -52,7 +52,7 @@ void ToStringVisitor::visit(parametric::DAGNode const& n, size_t depth)
     bool is_compute_node = ((depth %  2) == 1);
     bool is_root_parameter = (n.num_parents() == 0) && !is_compute_node;
 
-    if (!is_compute_node) {
+    if (!is_compute_node && n.id() != "") {
         feature_names_count[n.id()]++;
     }
 
@@ -62,19 +62,29 @@ void ToStringVisitor::visit(parametric::DAGNode const& n, size_t depth)
 
         if (is_root_parameter) {
 
+            if (n.id() != "") {
+                // constants are unnamed
+                if (root["parameters"][n.id()]) {
+                    throw io_error(
+                        "The feature tree does not have unique feature names. Found duplicate parameter \""
+                        + n.id() + "\"."
+                    );
+                }
 
-            if (root["parameters"][n.id()]) {
-                throw io_error(
-                    "The feature tree does not have unique feature names. Found duplicate parameter \""
-                    + n.id() + "\"."
-                );
+                node.SetStyle(YAML::EmitterStyle::Flow);
+                root["parameters"][n.id()] = node;
             }
-
-            node.SetStyle(YAML::EmitterStyle::Flow);
-            root["parameters"][n.id()] = node;
         }
         else {
             // is action
+
+            if (auto const* recipe_action_ptr = dynamic_cast<Recipe::Action const*>(&n); recipe_action_ptr) {
+                if (!recipes[recipe_action_ptr->name()]) {
+                    recipes[recipe_action_ptr->name()] 
+                        = recipe_action_ptr->get_recipe()->serialize();
+                }
+            }
+
             steps.push(node);
         }
     }
@@ -86,6 +96,9 @@ void ToStringVisitor::unwind_steps()
     while (!steps.empty()) {
         root["steps"].push_back(steps.top());
         steps.pop();
+    }
+    if (recipes && recipes.size() > 0) {
+        root["recipes"] = recipes;
     }
 }
 

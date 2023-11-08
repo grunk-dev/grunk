@@ -166,3 +166,32 @@ TEST_F(ScriptTest, deserialize)
     EXPECT_NEAR(pnt.y, 0.2, 1e-10);
     EXPECT_NEAR(pnt.z, 0.0, 1e-10);
 }
+
+TEST_F(ScriptTest, constants)
+{
+    {
+        grunk::Feature u("", "double", 0.1);
+        grunk::Feature v("", "double", 0.2);
+        auto s = grunk::script(
+            {
+                {"Pnt", {"p"}, {}},                 // create a new point p
+                {"Pnt::set_x", {}, {"p", u}},       // invoke non-const setter
+                {"Pnt::set_y", {}, {"p", v}},       // invoke non-const setter
+            },
+            {"p"}                                   // return new point p
+        );
+
+        YAML::Node node = serialize(s.output());
+        EXPECT_FALSE(node["parameters"]);
+        EXPECT_EQ(node["steps"][0]["steps"][1][1][1].Tag(), "double");
+        EXPECT_EQ(node["steps"][0]["steps"][2][1][1].Tag(), "double");
+
+        grunk::write("tmp.grr.yml", s.output());
+    }
+
+    auto r = grunk::read("tmp.grr.yml");
+    EXPECT_EQ(r.num_features(), 1);
+    EXPECT_EQ(r["p"].value().as<Pnt>().x, 0.1);
+    EXPECT_EQ(r["p"].value().as<Pnt>().y, 0.2);
+
+}

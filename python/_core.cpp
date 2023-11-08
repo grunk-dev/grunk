@@ -7,11 +7,30 @@
 
 namespace grunkpy {
 
+    template <typename T>
+    T cast(pybind11::object const& obj) {
+        return pybind11::cast<T>(obj);
+    }
+
+    template <>
+    grunk::DynamicFeature cast<grunk::DynamicFeature>(pybind11::object const& obj) {
+        if (pybind11::isinstance<pybind11::float_>(obj)) {
+            return grunk::details::to_dynamic_feature(pybind11::cast<double>(obj));
+        }
+        if (pybind11::isinstance<pybind11::int_>(obj)) {
+            return grunk::details::to_dynamic_feature(pybind11::cast<int>(obj));
+        }
+        if (pybind11::isinstance<pybind11::str>(obj)) {
+            return grunk::details::to_dynamic_feature(pybind11::cast<std::string>(obj));
+        }
+        return pybind11::cast<grunk::DynamicFeature>(obj);
+    }
+
     // invoke a variadic function f on the elements of a py::args, where each element is cast to T. 
     template <typename T, typename F, size_t... idx>
     decltype(auto) invoke_variadic_rt(F&& f, pybind11::args& args, std::index_sequence<idx...>)
     {
-        return std::invoke(f, pybind11::cast<T>(args[idx])...);
+        return std::invoke(f, cast<std::decay_t<T>>(args[idx])...);
     }
 
     // invoke a variadic function f on the elements of a py::args, where each element is cast to T. 

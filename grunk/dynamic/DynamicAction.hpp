@@ -8,6 +8,7 @@
 
 #include <stdexcept>
 #include <initializer_list>
+#include <type_traits>
 #include <vector>
 #include <iterator>
 
@@ -15,6 +16,7 @@
 
 #include <grunk/core/Action.hpp>
 #include <grunk/dynamic/DynamicFeature.hpp>
+#include <grunk/helper/String.hpp>
 
 namespace grunk {
 
@@ -160,7 +162,15 @@ public:
         y.push_back(YAML::Node());
         for (size_t i = 0; i < this->num_parents(); ++i){
             auto const& input = this->arg<reflect::DynamicObject>(i);
-            y[1].push_back(input.id());
+            
+            if ( input.num_parents() == 0 && input.id() == "") {
+                // handle constants, i.e. parent-less nodes with id "":
+                YAML::Node n = YAML::Load(input.serialize());
+                y[1].push_back(n);
+            } else {
+                // push the name of the input
+                y[1].push_back(input.id());
+            }
         }
         y.SetStyle(YAML::EmitterStyle::Flow);
         YAML::Emitter out;
@@ -312,6 +322,39 @@ struct DynamicActionFactory
  */
 ResultHolder<DynamicAction> action(std::string const& id, reflect::DynamicFunction const& fun, std::vector<DynamicFeature> const& args);
 
+namespace details {
+
+template<typename T>
+struct is_string
+        : public std::disjunction<
+                    std::is_same<char *, std::decay_t<T>>,
+                    std::is_same<const char *, std::decay_t<T>>,
+                    std::is_same<std::string, std::decay_t<T>>,
+                    std::is_same<std::string_view, std::decay_t<T>>
+        > 
+{};
+
+template <typename T>
+constexpr bool is_string_v = is_string<T>::value;
+
+template <typename Arg>
+DynamicFeature to_dynamic_feature(Arg&& arg)
+{
+    using T = std::decay_t<Arg>;
+    if constexpr (details::is_feature_v<T>){
+        return std::forward<Arg>(arg);
+    } else {
+        // special handling of string-like types: We want to always conert them to String first
+        if constexpr (details::is_string_v<Arg>) {
+            return Feature("", reflect::DynamicObject(helper::String(std::forward<Arg>(arg))));
+        } else {
+            return Feature("", reflect::DynamicObject(std::forward<Arg>(arg)));
+        }
+    }
+}
+
+} // namespace details
+
 /**
  * @brief Given a function and some features in the feature tree, this 
  * function creates a DynamicAlgoritm instance representing the evaluation
@@ -334,16 +377,47 @@ template <
 >
 ResultHolder<DynamicAction> action(std::string const& id, reflect::DynamicFunction const& fun, Args&&... args)
 {
-    auto to_feature = [](auto&& arg){
-        using Arg = std::decay_t<decltype(arg)>;
-        if constexpr (details::is_feature_v<Arg>){
-            return std::forward<decltype(arg)>(arg);
-        } else {
-            return Feature("", reflect::DynamicObject(std::forward<Arg>(arg))); //TODO: Until we properly support unnamed features, this will be an empty string
-        }
-    };
-    return action(id, fun, std::vector<DynamicFeature>{to_feature(std::forward<Args>(args))...});
+    return action(
+        id, 
+        fun, 
+        std::vector<DynamicFeature>{details::to_dynamic_feature(std::forward<Args>(args))...}
+    );
 }
+
+namespace details {
+
+template <typename T>
+reflect::DynamicFunction::SpecifiedArgument to_specified_argument(T&& f)
+{
+    using F = std::decay_t<T>;
+    reflect::DynamicFunction::ArgumentSpecifier spec 
+        = reflect::DynamicFunction::ArgumentSpecifier::PtrOrRefToConst;
+    if constexpr (std::is_rvalue_reference_v<T>) {
+        spec = reflect::DynamicFunction::ArgumentSpecifier::Value;
+    }
+
+    if constexpr ( std::is_same_v<F, DynamicFeature>) {
+        if (f.get_type_descriptor() == nullptr) {
+            throw std::logic_error("Unexpected error: Unknown type of dynamic feature.");
+        }
+        return reflect::DynamicFunction::SpecifiedArgument{
+            f.get_type_descriptor(),
+            spec
+        };
+    } else if constexpr (details::is_feature_v<F>) {
+        return reflect::DynamicFunction::SpecifiedArgument{
+            reflect::resolve<typename F::value_type>(),
+            spec
+        };
+    } else {
+        return reflect::DynamicFunction::SpecifiedArgument{
+            reflect::resolve<F>(),
+            spec
+        };
+    }
+}
+
+} // namespace details
 
 /**
  * @brief Given a string identifier of a function, that has previously been registered
@@ -360,32 +434,15 @@ ResultHolder<DynamicAction> action(std::string const& id, reflect::DynamicFuncti
  * @ingroup dynamic
  */
 template <typename... Args>
-ResultHolder<DynamicAction> action(std::string const& id, std::string const& name, Feature<Args> const&... args)
+ResultHolder<DynamicAction> action(std::string const& id, std::string const& name, Args&&... args)
 {
-    auto to_specified_arg = [](auto const& f){
-        using F = std::decay_t<decltype(f)>;
-        if constexpr ( std::is_same_v<F, DynamicFeature>) {
-            if (f.get_type_descriptor() == nullptr) {
-                throw std::logic_error("Unexpected error: Unknown type of dynamic feature.");
-            }
-            return reflect::DynamicFunction::SpecifiedArgument{
-                f.get_type_descriptor(),
-                reflect::DynamicFunction::ArgumentSpecifier::PtrOrRefToConst
-            };
-        } else {
-            return reflect::DynamicFunction::SpecifiedArgument{
-                reflect::resolve<typename F::value_type>(),
-                reflect::DynamicFunction::ArgumentSpecifier::PtrOrRefToConst
-            };
-        }
-    };
     std::vector<reflect::DynamicFunction::SpecifiedArgument> specified_args{
-        to_specified_arg(args)...
+        details::to_specified_argument(std::forward<Args>(args))...
     };
 
     auto const& overload = reflect::resolve_function(name);
     auto const& function = overload.resolve(specified_args);
-    return action(id, function, args...);
+    return action(id, function, std::forward<Args>(args)...);
 }
 
 ResultHolder<DynamicAction> action(std::string const& id, std::string const& name, std::vector<DynamicFeature> const& args);

@@ -89,6 +89,7 @@ private:
     Visited m_visited;
     std::stack<YAML::Node> steps;
     YAML::Node& root;
+    YAML::Node recipes;
 };
 
 

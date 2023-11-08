@@ -408,3 +408,26 @@ TEST_F(IOTest, topo_order){
         }
     }
 }
+
+TEST_F(IOTest, constants)
+{
+    YAML::Node s;
+    {
+        auto a = action("a", "squared", 2.).output();
+        s = grunk::serialize(a);
+    }
+    EXPECT_FALSE(s["parameters"]);
+    EXPECT_EQ(s["steps"].size(), 1);
+    auto step = s["steps"][0];
+    EXPECT_EQ(step.size(), 2);
+    EXPECT_EQ(step.Tag(), "squared");
+    EXPECT_EQ(step[0].size(), 1);
+    EXPECT_EQ(step[0][0].as<std::string>(), "a");
+    EXPECT_EQ(step[1].size(), 1);
+    EXPECT_EQ(step[1][0].Tag(), "double");
+    EXPECT_NEAR(step[1][0].as<double>(), 2., 1e-10);
+
+    auto recipe = grunk::Recipe::deserialize(s);
+    EXPECT_EQ(recipe.get_features().size(), 1);
+    EXPECT_NEAR(recipe["a"].value().as<double>(), 4, 1e-10);
+}

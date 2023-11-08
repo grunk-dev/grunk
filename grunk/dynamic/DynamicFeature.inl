@@ -6,7 +6,7 @@
 namespace grunk {
 
     template <typename... Args>
-    ResultHolder<Action<reflect::DynamicFunction>> action(std::string const& id, std::string const& name, Feature<Args> const&... args);
+    ResultHolder<Action<reflect::DynamicFunction>> action(std::string const& id, std::string const& name, Args&&... args);
 
     template <typename... Args>
     DynamicFeature::Feature(std::string const& id, std::string const& typeName, Args const&... args)

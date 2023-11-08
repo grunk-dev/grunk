@@ -77,7 +77,13 @@ public:
 
         YAML::Node i;
         for (auto const& p : this->parents) {
-            i.push_back(p->id());
+            if ( p->id() == "" && p->num_parents() == 0) {
+                // p is a constant
+                YAML::Node n = YAML::Load(p->serialize());
+                i.push_back(n);
+            } else {
+                i.push_back(p->id());
+            }
         }
         s.push_back(i);
 
@@ -104,8 +110,19 @@ public:
         std::vector<DynamicFeature> inputs;
         inputs.reserve(yml[1].size());
         for (auto const& input_node : yml[1]) {
-            auto in_id = input_node.as<std::string>();
-            inputs.push_back(features.at(in_id));
+            if (input_node.Tag() == "" || input_node.Tag() == "?") {
+                // input_node is a named feature
+                auto in_id = input_node.as<std::string>();
+                inputs.push_back(features.at(in_id));
+            }
+            else {
+                inputs.push_back(
+                    grunk::Feature(
+                        "",
+                        grunk::details::deserialize(input_node.Tag(), input_node)
+                    )
+                );
+            }
         }
 
         return vec(out_id, inputs);

@@ -390,3 +390,34 @@ TEST_F(RecipeTest, deserialize_recipe_action)
     EXPECT_EQ(subrecipe.at("y").value().as<double>(), 5.);
     EXPECT_EQ(subrecipe.at("z").value().as<double>(), 22.);
 }
+
+TEST_F(RecipeTest, constants)
+{
+    {
+        Feature x("x", "double", 12.3);
+        Feature y("y", "double", 29.7);
+        Feature z = action("z", "add", x, y).output();
+        Recipe my_recipe({x, y, z});
+
+        Feature a("", "double", -10.);
+        auto res = my_recipe(
+            "my_recipe",
+            {{"my_z", "z"}}, // create a new node my_z that contains the value of the inner node z
+            {{"x", a}} // map the inner node x to input parameter a
+        );
+        Feature my_z = res.at("my_z");
+        
+        YAML::Node n = grunk::serialize(my_z);
+        EXPECT_FALSE(n["parameters"]);
+        EXPECT_EQ(n["steps"].size(), 1);
+        EXPECT_EQ(n["recipes"].size(), 1);
+        EXPECT_EQ(n["steps"][0][1]["x"].Tag(), "double");
+
+        grunk::write("tmp.grr.yml", my_z);
+    }
+
+    auto r = grunk::read("tmp.grr.yml");
+    EXPECT_EQ(r.num_features(), 1);
+    EXPECT_EQ(r.num_recipes(), 1);
+    EXPECT_NEAR(r["my_z"].value().as<double>(), 19.7, 1e-15);
+}
