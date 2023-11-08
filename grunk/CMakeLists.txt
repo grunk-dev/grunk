@@ -26,6 +26,8 @@ set(grunk_SRC
     DynamicFeature.cpp
     Feature.hpp
     Feature.cpp
+    FeatureBase.hpp
+    FeatureBase.cpp
     grunk.hpp
     parametric_core.hpp
     Recipe.hpp
