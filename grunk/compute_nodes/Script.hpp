@@ -2,7 +2,7 @@
 
 #include <grunk/DynamicFeature.hpp>
 #include <grunk/Recipe.hpp>
-#include <grunk/parametric_core.hpp>
+#include <grunk/common/parametric_core.hpp>
 
 #include <yaml-cpp/yaml.h>
 

@@ -11,7 +11,7 @@
 #pragma once 
 
 #include <grunk/common/io_error.hpp>
-#include <grunk/parametric_core.hpp>
+#include <grunk/common/parametric_core.hpp>
 #include <grunk/DynamicFeature.hpp>
 #include <grunk/plugins/PluginRegistry.hpp>
 #include <grunk/version.hpp>

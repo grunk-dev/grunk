@@ -14,6 +14,7 @@ set(grunk_SRC
     common/io_error.hpp
     common/io.hpp
     common/io.cpp
+    common/parametric_core.hpp
     common/String.hpp
     common/String.cpp
     plugins/IPlugin.hpp
@@ -29,7 +30,6 @@ set(grunk_SRC
     FeatureBase.hpp
     FeatureBase.cpp
     grunk.hpp
-    parametric_core.hpp
     Recipe.hpp
     Recipe.cpp
 )
@@ -53,8 +53,8 @@ target_include_directories(grunk PUBLIC
 )
 
 configure_file(
-        ${CMAKE_CURRENT_SOURCE_DIR}/version.hpp.in 
-        ${CMAKE_CURRENT_BINARY_DIR}/version.hpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/common/version.hpp.in 
+        ${CMAKE_CURRENT_BINARY_DIR}/common/version.hpp
 )
 
 # install grunk

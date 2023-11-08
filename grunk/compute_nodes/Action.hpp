@@ -7,7 +7,7 @@
 
 #pragma once
 
-#include <grunk/parametric_core.hpp>
+#include <grunk/common/parametric_core.hpp>
 #include <grunk/Feature.hpp>
 
 #include <reflect/reflect.hpp>
