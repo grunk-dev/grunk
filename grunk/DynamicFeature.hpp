@@ -186,4 +186,4 @@ using DynamicFeature = Feature<reflect::DynamicObject>;
 
 }
 
-#include "DynamicFeature.inl"
+#include <grunk/DynamicFeature.inl>

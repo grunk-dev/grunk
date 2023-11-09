@@ -38,31 +38,4 @@ public:
     }
 };
 
-/**
- * @ingroup static
- * @brief Given several Feature<T> instances, this function returns a Feature<std::vector<T>>.
- * 
- * @tparam T The type of the input features
- * @tparam Ts The type of the input features. Each U in Ts must be T
- * @param id The id of the returned feature
- * @param f The first input feature
- * @param fs The remaining input features
- * @return std::enable_if_t<
- * !std::is_same_v<std::decay_t<T>, reflect::DynamicObject>,
- * Feature<std::vector<T>>
- * > 
- */
-template <typename T, typename... Ts>
-std::enable_if_t<
-    !std::is_same_v<std::decay_t<T>, reflect::DynamicObject>,
-    Feature<std::vector<T>>
->
-vec(std::string const& id, Feature<T> const& f, Feature<Ts> const&... fs)
-{
-    static_assert((std::is_same_v<T, Ts> && ...));
-    auto ret = parametric::compute<Vec<T>>(f.param(), fs.param()...);
-    ret.set_id(id);
-    return ret;
-}
-
 } // namespace grunk

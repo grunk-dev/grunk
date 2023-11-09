@@ -1,4 +1,5 @@
-#include "Expression.hpp"
+#include <grunk/compute_nodes/Expression.hpp>
+#include <grunk/expression.hpp>
 #include <grunk/Recipe.hpp>
 #include <grunk/common/io_error.hpp>
 #include <unordered_map>
@@ -99,11 +100,6 @@ DynamicFeature Expression::deserialize(
     }
 
     return grunk::expression("", expr, std::move(input_vec));
-}
-
-DynamicFeature expression(std::string const& id, std::string const& expr, std::vector<DynamicFeature> const& args)
-{
-    return parametric::compute(std::shared_ptr<Expression>(new Expression(id, expr)), args);
 }
 
 } // namespace grunk

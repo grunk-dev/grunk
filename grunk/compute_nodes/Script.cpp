@@ -240,18 +240,6 @@ Script::Script(
     }
 }
 
-ResultHolder<DynamicAction> script(
-    std::vector<Script::Step> const& steps,
-    std::vector<std::string> const& returns
-)
-{
-    auto ptr = std::shared_ptr<Script>(new Script(steps, returns));
-    return ResultHolder<DynamicAction>(
-        parametric::compute(ptr, steps),
-        ptr
-    );
-}
-
 void Script::connect_inputs(std::vector<Step> const& steps_)
 {
     for (auto s : steps_) {

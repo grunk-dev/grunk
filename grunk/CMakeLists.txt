@@ -29,9 +29,17 @@ set(grunk_SRC
     Feature.cpp
     FeatureBase.hpp
     FeatureBase.cpp
-    grunk.hpp
     Recipe.hpp
     Recipe.cpp
+    #action.hpp
+    #action.cpp
+    expression.hpp
+    expression.cpp
+    grunk.hpp
+    script.hpp
+    script.cpp
+    vec.hpp
+    vec.cpp
 )
 
 # create a library and add source files

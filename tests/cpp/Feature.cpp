@@ -1,6 +1,6 @@
 #include <gtest/gtest.h>
 
-#include <grunk/Feature.hpp>
+#include <grunk/grunk.hpp>
 
 using namespace grunk;
 

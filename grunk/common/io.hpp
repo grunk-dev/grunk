@@ -14,7 +14,7 @@
 #include <grunk/common/parametric_core.hpp>
 #include <grunk/DynamicFeature.hpp>
 #include <grunk/plugins/PluginRegistry.hpp>
-#include <grunk/version.hpp>
+#include <grunk/common/version.hpp>
 
 #include <utility>
 #include <initializer_list>
