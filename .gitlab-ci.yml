@@ -154,7 +154,7 @@ test-windows:
   - cd $BUILD_DIR
   - conan install .. --generator=virtualrunenv -s build_type=$BUILD_TYPE -b missing -pr:b=default
   # add googletest dll to path
-  - $env:Path = "$pwd\$BUILD_TYPE;$pwd\bin\$BUILD_TYPE;$env:Path"
+  - $env:Path = "$pwd\grunk\$BUILD_TYPE;$pwd\bin\$BUILD_TYPE;$env:Path"
   - .\activate_run.ps1
   - cd tests\cpp
   # Powershell sucks so much....:
