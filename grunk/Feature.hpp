@@ -61,10 +61,7 @@ template <typename F,
             && !details::is_dynamic_callable_v<std::decay_t<F>>
           >,
           typename... Args>
-ResultHolder<Action<F, Args...>> action(std::string const& id, F const& fun, Feature<Args> const&... args)
-{
-    return details::ActionFactory::new_action(id, fun, args...);
-}
+ResultHolder<Action<F, Args...>> action(std::string const& id, F const& fun, Feature<Args> const&... args);
 
 } // namespace details
 
