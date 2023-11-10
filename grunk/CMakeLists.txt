@@ -15,6 +15,8 @@ set(grunk_SRC
     common/io.hpp
     common/io.cpp
     common/parametric_core.hpp
+    common/ResultHolder.hpp
+    common/ResultHolder.cpp
     common/String.hpp
     common/String.cpp
     plugins/IPlugin.hpp
