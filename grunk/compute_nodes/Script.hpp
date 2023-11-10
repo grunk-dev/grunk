@@ -1,12 +1,12 @@
 #pragma once 
 
-#include <grunk/dynamic/DynamicFeature.hpp>
-#include <grunk/dynamic/Recipe.hpp>
-#include <grunk/parametric_core.hpp>
-#include <unordered_map>
+#include <grunk/DynamicFeature.hpp>
+#include <grunk/Recipe.hpp>
+#include <grunk/common/parametric_core.hpp>
+
 #include <yaml-cpp/yaml.h>
 
-#include <vector>
+#include <unordered_map>
 #include <vector>
 #include <variant>
 
@@ -186,24 +186,5 @@ private:
     std::vector<std::string> const returns;
     std::vector<reflect::TypeDescriptor const*> return_types;
 };
-
-/**
- * @brief Given a sequence of steps, each representing a function call of a dynamic function, 
- * as well as a list of output ids of intermediate variables, this function creates a compute node
- * that represents the evaluation of these steps within a compute node of a parametric tree. 
- *
- * This is useful, if
- *  * some operations should be performed without intermediate lazy evaluation and caching
- *  * we want to create a class and modify it using non-const setter methods.
- *
- *
- * @param steps 
- * @param returns 
- * @return ResultHolder<DynamicAction> 
- */
-ResultHolder<DynamicAction> script(
-    std::vector<Script::Step> const& steps,
-    std::vector<std::string> const& returns
-);
 
 }

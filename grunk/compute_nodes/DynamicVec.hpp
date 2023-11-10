@@ -1,10 +1,10 @@
 #pragma once 
 
-#include <grunk/core/Feature.hpp>
-#include <grunk/parametric_core.hpp>
-#include <grunk/core/Vec.hpp>
-#include <grunk/dynamic/DynamicFeature.hpp>
-#include <grunk/dynamic/Recipe.hpp>
+#include <grunk/Feature.hpp>
+#include <grunk/common/parametric_core.hpp>
+#include <grunk/compute_nodes/Vec.hpp>
+#include <grunk/DynamicFeature.hpp>
+#include <grunk/Recipe.hpp>
 
 #include <vector>
 
@@ -130,38 +130,5 @@ public:
 };
 
 using DynamicVec = Vec<reflect::DynamicObject>;
-
-namespace {
-    // needed because of bug in MSVC 2017: Can't use a fold expression in std::enable_if_t of vec definition
-    template <typename... Ts>
-    constexpr bool is_dynamic_feature_v = std::is_same_v<std::tuple<DynamicFeature, Ts...>, std::tuple<Ts..., DynamicFeature>>;
-}
-
-/**
- * @ingroup dynamic
- * @brief creates a DynamicFeature type-erasing an std::vector<reflect::DynamicObject> from several DynamicFeatures.
- * 
- * @tparam Args The DynamicFeatures
- * @param id id of the returned feature
- * @param f The first input feature
- * @param fs The remaining input Features
- * @return DynamicFeature
- */
-template <typename... Args>
-std::enable_if_t<is_dynamic_feature_v<Args...>, DynamicFeature> 
-vec(std::string const& id, DynamicFeature const& f, Args const&... fs)
-{
-    return vec(id, std::vector{f, fs...});
-}
-
-/**
- * @ingroup advanced
- * @brief throws an exception. ::grunk::vec should be called with at least one argument.
- * 
- * @return DynamicFeature 
- */
-inline DynamicFeature vec(std::string) {
-    throw std::logic_error("grunk::vec must have at least one argument.");
-}
 
 } // namespace grunk

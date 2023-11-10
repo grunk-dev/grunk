@@ -1,8 +1,8 @@
-#include "io.hpp"
+#include <grunk/common/io.hpp>
 
-#include <grunk/dynamic/DynamicAction.hpp>
-#include <grunk/dynamic/Expression.hpp>
-#include <grunk/dynamic/Recipe.hpp>
+#include <grunk/compute_nodes/DynamicAction.hpp>
+#include <grunk/compute_nodes/Expression.hpp>
+#include <grunk/Recipe.hpp>
 
 namespace grunk {
 

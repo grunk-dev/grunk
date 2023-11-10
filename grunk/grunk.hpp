@@ -2,13 +2,13 @@
 // convenience header for external use. This is the only header that needs
 // to be included when linking against grunk
 
-#include <grunk/version.hpp>
-#include <grunk/io/io.hpp>
+#include <grunk/common/version.hpp>
+#include <grunk/common/io.hpp>
 #include <grunk/plugins/PluginRegistry.hpp>
 #include <grunk/plugins/StdPlugin.hpp>
-#include <grunk/dynamic/DynamicFeature.hpp>
-#include <grunk/dynamic/DynamicAction.hpp>
-#include <grunk/dynamic/Expression.hpp>
-#include <grunk/dynamic/Script.hpp>
-#include <grunk/dynamic/Recipe.hpp>
-#include <grunk/dynamic/DynamicVec.hpp>
+#include <grunk/DynamicFeature.hpp>
+#include <grunk/Recipe.hpp>
+#include <grunk/action.hpp>
+#include <grunk/expression.hpp>
+#include <grunk/script.hpp>
+#include <grunk/vec.hpp>

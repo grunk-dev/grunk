@@ -7,14 +7,15 @@
 
 #pragma once
 
-
-#include <functional>
-#include <grunk/parametric_core.hpp>
-#include <type_traits>
-#include <utility>
+#include <grunk/common/parametric_core.hpp>
+#include <grunk/common/ResultHolder.hpp>
+#include <grunk/Feature.hpp>
 
 #include <reflect/reflect.hpp>
-#include "Feature.hpp"
+
+#include <functional>
+#include <type_traits>
+#include <utility>
 
 namespace grunk {
 
@@ -203,123 +204,6 @@ private:
 
 };
 
-namespace {
-
-/**
- * @brief A meta-programming helper struct to transform param<T> to Feature<T> and 
- * std::tuple<param<Ts>...> to std::tuple<Feature<Ts>...>
- *
- * Default is void so that it can be applied to all three possible return values of 
- * parametric::compute
- * 
- * @tparam T 
- */
-template <typename T>
-struct Param2Feature
-{
-    // handles the case where T is neither a param, nor a tuple of params
-    using type = void;
-};
-
-// specialization for param<T>
-template <typename T>
-struct Param2Feature<parametric::param<T>>
-{
-    using type=Feature<T>;
-};
-
-// specialization for tuple<param<Ts>...>
-template <typename... Ts>
-struct Param2Feature<std::tuple<parametric::param<Ts>...>>
-{
-    using type = std::tuple<Feature<Ts>...>;
-};
-
-// in case parametric::compute returns a pointer to a DAGNode (void functions), the type stays the same
-template <>
-struct Param2Feature<std::shared_ptr<parametric::DAGNode>>
-{
-    using type = std::shared_ptr<parametric::DAGNode>;
-};
-
-template <typename... Ts>
-using param2feature_t = typename Param2Feature<Ts...>::type;
-
-} // anonymous namespace
-
-/**
- * @ingroup advanced
- * @brief The ResultHolder class template is a proxy for holding the result of a ::grunk::Action
- * instance. The results can be either a tuple of features, a feature or a shared_ptr<DAGNode> for void functions. 
- * 
- * @tparam C A template realization of ::grunk::Action, i.e. a specific compute node in the feature tree
- */
-template <typename C>
-class ResultHolder
-{
-    using result_type = param2feature_t<
-        typename parametric::compute_return_value<parametric::Results<typename C::ReturnType>>
-    >;
-
-    friend struct details::ActionFactory;
-
-private:
-
-    ResultHolder(result_type const& res) : result(res) {}
-
-public:
-    /**
-     * @brief returns the i-th output
-     * 
-     * @tparam i index of the queried output
-     * @return decltype(auto) the i-th output feature
-     */
-    template <int i=0>
-    decltype(auto) output() const {
-        if constexpr ( reflect::details::is_tuple_v<result_type> ) {
-            return std::get<i>(result);
-        } else {
-            return result;
-        }
-    }
-
-    /**
-     * @brief returns the number of outputs
-     * 
-     * @return constexpr size_t the number of outputs
-     */
-    constexpr size_t size() const {
-        if constexpr (reflect::details::is_tuple_v<result_type> ) {
-            return std::tuple_size_v<result_type>;
-        } else {
-            return 0;
-        }
-    }
-
-    /**
-     * @brief returns the compute node of this action
-     */
-    decltype(auto) compute_node() const {
-        if constexpr (std::is_void_v<typename C::ReturnType>) {
-            return result;
-        } else {
-            return output().param().node_pointer()->compute_node();
-        }
-    }
-
-
-    /**
-     * @brief evaluates the compute node. 
-     * 
-     */
-    void eval() const {
-        compute_node()->eval();
-    }
-
-private:
-    result_type result;
-};
-
 namespace details {
 
 
@@ -353,7 +237,7 @@ struct ActionFactory
      */
     template <typename F,
               typename... Args>
-    static decltype(auto) new_action(std::string const& id, F const& fun, Feature<Args> const&... args)
+    static ResultHolder<Action<F, Args...>> new_action(std::string const& id, F const& fun, Feature<Args> const&... args)
     {
         using MyAction = Action<F, Args...>;
         return ResultHolder<MyAction>(
@@ -366,70 +250,6 @@ struct ActionFactory
 
 };
 
-/**
- * @brief Given a function and some features in the feature tree, this 
- * function creates an Action instance representing the evaluation
- * of the input function for the input features.
- *
- * This function accepts only features as arguments to the given function.
- * 
- * @tparam F The type of the function to be wrapped. This can be any referentially transparent function, 
-             In particular, the function must be invokable on const 
-             references.
- * @tparam Args The types of the arguments expected by the input function
- * @param id The id used for the output of the function
- * @param fun The input function
- * @param args The input features of the feature tree
- * @return ResultHolder wrapping the outputs of the Action
- */
-template <typename F,
-          typename = std::enable_if_t<
-            !std::is_convertible_v<std::decay_t<F>, std::string>
-            && !details::is_dynamic_callable_v<std::decay_t<F>>
-          >,
-          typename... Args>
-decltype(auto) action(std::string const& id, F const& fun, Feature<Args> const&... args)
-{
-    return details::ActionFactory::new_action(id, fun, args...);
-}
-
-
 } //namespace details
-
-/**
- * @brief Given a function and some features in the feature tree, this 
- * function creates an Action instance representing the evaluation
- * of the input function for the input features.
- *
- * This function accepts features as arguments for the functions, as well
- * as instances that are not wrapped in features. Internally, the latter will
- * be wrapped in an unnamed/anonymous feature
- * 
- * @tparam F The type of the function to be wrapped. This can be any referentially transparent function, 
-             In particular, the function must be invokable on const 
-             references.
- * @tparam Args The types of the arguments expected by the input function
- * @param id the id of the output Feature
- * @param fun The input function
- * @param args The input features of the feature tree
- * @return ResultHolder wrapping the outputs of the Action
- *
- * @ingroup static
- */
-template <typename F,
-          typename,
-          typename... Args>
-decltype(auto) action(std::string const& id, F const& fun, Args&&... args)
-{
-    auto to_feature = [](auto&& arg){
-        using Arg = std::decay_t<decltype(arg)>;
-        if constexpr (details::is_feature_v<Arg>){
-            return arg;
-        } else {
-            return Feature("", std::forward<Arg>(arg)); //TODO: Until we properly support unnamed features, this will be an empty string
-        }
-    };
-    return details::action(id, fun, to_feature(args)...);
-}
 
 } //namespace grunk

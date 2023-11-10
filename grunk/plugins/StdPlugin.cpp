@@ -1,6 +1,6 @@
 #include <grunk/plugins/StdPlugin.hpp>
-#include <grunk/version.hpp>
-#include <grunk/helper/String.hpp>
+#include <grunk/common/version.hpp>
+#include <grunk/common/String.hpp>
 #include <yaml-cpp/yaml.h>
 
 namespace grunk {

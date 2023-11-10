@@ -10,11 +10,11 @@
 
 #pragma once 
 
-#include <grunk/io/io_error.hpp>
-#include <grunk/parametric_core.hpp>
-#include <grunk/dynamic/DynamicFeature.hpp>
+#include <grunk/common/io_error.hpp>
+#include <grunk/common/parametric_core.hpp>
+#include <grunk/DynamicFeature.hpp>
 #include <grunk/plugins/PluginRegistry.hpp>
-#include <grunk/version.hpp>
+#include <grunk/common/version.hpp>
 
 #include <utility>
 #include <initializer_list>

@@ -1,7 +1,7 @@
 #pragma once 
 
-#include "DynamicFeature.hpp"
-#include "DynamicAction.hpp"
+#include <grunk/DynamicFeature.hpp>
+#include <grunk/compute_nodes/DynamicAction.hpp>
 
 namespace grunk {
 
@@ -26,7 +26,7 @@ namespace grunk {
     >
     DynamicFeature::Feature(Feature<T> const& f)
      : Feature(
-            action(
+            details::action(
                 f.param().id(),
                 [](T const& t){
                      return reflect::DynamicObject(t);

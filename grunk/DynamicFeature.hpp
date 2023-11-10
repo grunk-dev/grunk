@@ -15,7 +15,7 @@
 
 #pragma once
 
-#include <grunk/core/Feature.hpp>
+#include <grunk/Feature.hpp>
 
 namespace grunk {
 
@@ -186,4 +186,4 @@ using DynamicFeature = Feature<reflect::DynamicObject>;
 
 }
 
-#include "DynamicFeature.inl"
+#include <grunk/DynamicFeature.inl>
