@@ -23,6 +23,9 @@ class Feature;
 template <typename F, typename... Args>
 class Action;
 
+template <typename T>
+class ResultHolder;
+
 namespace details {
 
     /**
@@ -49,6 +52,8 @@ namespace details {
         std::is_base_of_v<reflect::OverloadSet, F>;
 }
 
+namespace details {
+
 // forward declaration
 template <typename F,
           typename = std::enable_if_t<
@@ -56,7 +61,12 @@ template <typename F,
             && !details::is_dynamic_callable_v<std::decay_t<F>>
           >,
           typename... Args>
-decltype(auto) action(std::string const& id, F const& fun, Args&&... args);
+ResultHolder<Action<F, Args...>> action(std::string const& id, F const& fun, Feature<Args> const&... args)
+{
+    return details::ActionFactory::new_action(id, fun, args...);
+}
+
+} // namespace details
 
 /**
  * @brief The Feature class template represents a feature node in the 
@@ -129,7 +139,7 @@ public:
     >
     Feature(std::string const& id, Feature<Args> const&... args)
      : Feature(
-        action(
+        details::action(
             id,
             [](Args const&... in){
 
@@ -157,7 +167,7 @@ public:
     template <typename MemberPtr>
     decltype(auto) get(std::string const& id, MemberPtr ptr) const
     {
-        return action(
+        return details::action(
             id,
             [=](auto const& wrapped){ 
                 return wrapped.*ptr; 
@@ -200,5 +210,3 @@ template <typename T>
 Feature(std::string const&, T&&) -> Feature<T>;
 
 } //namespace grunk
-
-#include "compute_nodes/Action.hpp"

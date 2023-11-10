@@ -26,7 +26,7 @@ namespace grunk {
     >
     DynamicFeature::Feature(Feature<T> const& f)
      : Feature(
-            action(
+            details::action(
                 f.param().id(),
                 [](T const& t){
                      return reflect::DynamicObject(t);

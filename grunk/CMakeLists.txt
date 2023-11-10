@@ -31,8 +31,8 @@ set(grunk_SRC
     FeatureBase.cpp
     Recipe.hpp
     Recipe.cpp
-    #action.hpp
-    #action.cpp
+    action.hpp
+    action.cpp
     expression.hpp
     expression.cpp
     grunk.hpp

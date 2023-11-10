@@ -8,7 +8,7 @@
 #include <grunk/plugins/StdPlugin.hpp>
 #include <grunk/DynamicFeature.hpp>
 #include <grunk/Recipe.hpp>
-#include <grunk/compute_nodes/DynamicAction.hpp>
+#include <grunk/action.hpp>
 #include <grunk/expression.hpp>
 #include <grunk/script.hpp>
 #include <grunk/vec.hpp>

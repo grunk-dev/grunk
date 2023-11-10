@@ -1,52 +1,21 @@
-#pragma once 
+#pragma once
 
 #include <grunk/compute_nodes/Action.hpp>
 #include <grunk/compute_nodes/DynamicAction.hpp>
 
 namespace grunk {
 
-namespace details {
-
 /**
- * @brief Given a function and some features in the feature tree, this 
- * function creates an Action instance representing the evaluation
- * of the input function for the input features.
- *
- * This function accepts only features as arguments to the given function.
- * 
- * @tparam F The type of the function to be wrapped. This can be any referentially transparent function, 
-             In particular, the function must be invokable on const 
-             references.
- * @tparam Args The types of the arguments expected by the input function
- * @param id The id used for the output of the function
- * @param fun The input function
- * @param args The input features of the feature tree
- * @return ResultHolder wrapping the outputs of the Action
- */
-template <typename F,
-          typename = std::enable_if_t<
-            !std::is_convertible_v<std::decay_t<F>, std::string>
-            && !details::is_dynamic_callable_v<std::decay_t<F>>
-          >,
-          typename... Args>
-decltype(auto) action(std::string const& id, F const& fun, Feature<Args> const&... args)
-{
-    return details::ActionFactory::new_action(id, fun, args...);
-}
-
-} //namespace details
-
-/**
- * @brief Given a function and some features in the feature tree, this 
+ * @brief Given a function and some features in the feature tree, this
  * function creates an Action instance representing the evaluation
  * of the input function for the input features.
  *
  * This function accepts features as arguments for the functions, as well
  * as instances that are not wrapped in features. Internally, the latter will
  * be wrapped in an unnamed/anonymous feature
- * 
- * @tparam F The type of the function to be wrapped. This can be any referentially transparent function, 
-             In particular, the function must be invokable on const 
+ *
+ * @tparam F The type of the function to be wrapped. This can be any referentially transparent function,
+             In particular, the function must be invokable on const
              references.
  * @tparam Args The types of the arguments expected by the input function
  * @param id the id of the output Feature
@@ -57,7 +26,10 @@ decltype(auto) action(std::string const& id, F const& fun, Feature<Args> const&.
  * @ingroup static
  */
 template <typename F,
-          typename,
+          typename = std::enable_if_t<
+              !std::is_convertible_v<std::decay_t<F>, std::string>
+              && !details::is_dynamic_callable_v<std::decay_t<F>>
+          >,
           typename... Args>
 decltype(auto) action(std::string const& id, F const& fun, Args&&... args)
 {
@@ -73,12 +45,12 @@ decltype(auto) action(std::string const& id, F const& fun, Args&&... args)
 }
 
 /**
- * @brief Given a function and a vector of features in the feature 
- * tree, this function creates a DynamicAlgoritm instance representing the 
+ * @brief Given a function and a vector of features in the feature
+ * tree, this function creates a DynamicAlgoritm instance representing the
  * evaluation of the input function for the input features.
- * 
- * @tparam F The type of the function to be wrapped. This can be any referentially transparent function, 
-             In particular, the function must be invokable on const 
+ *
+ * @tparam F The type of the function to be wrapped. This can be any referentially transparent function,
+             In particular, the function must be invokable on const
              references.
  * @param id The id of the output ::grunk::DynamicFeature
  * @param fun The input function
@@ -97,7 +69,7 @@ struct is_string
                     std::is_same<const char *, std::decay_t<T>>,
                     std::is_same<std::string, std::decay_t<T>>,
                     std::is_same<std::string_view, std::decay_t<T>>
-        > 
+        >
 {};
 
 template <typename T>
@@ -122,14 +94,14 @@ DynamicFeature to_dynamic_feature(Arg&& arg)
 } // namespace details
 
 /**
- * @brief Given a function and some features in the feature tree, this 
+ * @brief Given a function and some features in the feature tree, this
  * function creates a DynamicAlgoritm instance representing the evaluation
  * of the input function for the input features.
  *
  * This function accepts features as arguments for the functions, as well
  * as instances that are not wrapped in features. Internally, the latter will
  * be wrapped in an unnamed/anonymous feature
- * 
+ *
  * @tparam Args The types of the arguments expected by the input function
  * @param id The id of the output ::grunk::DynamicFeature
  * @param fun The input function
@@ -144,8 +116,8 @@ template <
 ResultHolder<DynamicAction> action(std::string const& id, reflect::DynamicFunction const& fun, Args&&... args)
 {
     return action(
-        id, 
-        fun, 
+        id,
+        fun,
         std::vector<DynamicFeature>{details::to_dynamic_feature(std::forward<Args>(args))...}
     );
 }
@@ -156,7 +128,7 @@ template <typename T>
 reflect::DynamicFunction::SpecifiedArgument to_specified_argument(T&& f)
 {
     using F = std::decay_t<T>;
-    reflect::DynamicFunction::ArgumentSpecifier spec 
+    reflect::DynamicFunction::ArgumentSpecifier spec
         = reflect::DynamicFunction::ArgumentSpecifier::PtrOrRefToConst;
     if constexpr (std::is_rvalue_reference_v<T>) {
         spec = reflect::DynamicFunction::ArgumentSpecifier::Value;
@@ -187,10 +159,10 @@ reflect::DynamicFunction::SpecifiedArgument to_specified_argument(T&& f)
 
 /**
  * @brief Given a string identifier of a function, that has previously been registered
- * in the static function registry as well as input features of the feature tree, 
- * this function represents the evaluation of the registered function when it gets 
+ * in the static function registry as well as input features of the feature tree,
+ * this function represents the evaluation of the registered function when it gets
  * passed the input features.
- * 
+ *
  * @tparam Args The types of the arguments expected by the registered function
  * @param id The id of the output ::grunk::DynamicFeature
  * @param name The string identifier of the registered function
