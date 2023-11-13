@@ -50,39 +50,6 @@ public:
     template <typename... Args>
     Feature(std::string const& id, std::string const& typeName, Args const&... args);
 
-
-    /**
-     * @brief Construct a new DynamicFeature object given constructor arguments
-     * Feature<Args>..., where T is constructable from Args...
-     *
-     * Example: 
-     * @code
-     *
-     * struct Foo {
-     *      Foo(double, int){}
-     * };
-     *
-     * Feature<double> x(4.2);
-     * Feature<int> y(13);
-     *
-     * DynamicFeature z("Foo", x, y);
-     * \endcode
-     *
-     * Whenever one of the constructor arguments x or y changes, the Feature z will 
-     * be marked for lazy reconstruction.
-     *
-     * Caveat: We cannot pass DynamicFeatures as input arguments, because this would
-     * not allow grunk to deduce the correct Constructor arguments to select
-     * the correct constructor.
-     * 
-     * @tparam Args Constructor argument types for the type to be constructed
-     * @param id The id of the Feature
-     * @param typeName The string representation of the reflected type
-     * @param args input Features for the constructor for the type to b constructed 
-     */
-    template <typename... Args>
-    static Feature create(std::string const& id, std::string const& typeName, Feature<Args> const&... args);
-
     /**
      * @brief Construct a new DynamicFeature given a parametric::param<T>.
      *
@@ -127,32 +94,6 @@ public:
      */
     template <typename T, typename = std::enable_if_t<!std::is_same_v<T, reflect::DynamicObject>>>
     operator Feature<T>() const;
-
-    /**
-     * @brief retrieve a data member of the wrapped object and 
-     * register the retrieval of the data member in the feature tree
-     * 
-     * This will return the data member wrapped in a Feature and register
-     * the dependency of the returned feature to this.
-     * 
-     * @param id id to be assigned to the Feature wrapping the retrieved data member
-     * @param memberName  The string representation of the member name
-     * @return DynamicFeature The data member wrapped in a Feature
-     */
-    Feature<reflect::DynamicObject> get(std::string const& id, std::string const& memberName) const;
-
-    /**
-     * @brief invoke a member function of the wrapped object and register
-     * the dependencies of the outputs on this in the feature tree
-     * 
-     * @tparam Args The argument types expected by the member function
-     * @param id The id of the output Feature
-     * @param memberFunName The string representation of the member function
-     * @param args The arguments of the member function
-     * @return DynamicFeature The return value of the member function 
-     */
-    template <typename... Args>
-    decltype(auto) invoke(std::string const& id, std::string const& memberFunName, Feature<Args> const&... args) const;
 
     /**
      * @brief get_type_descriptor returns a pointer to the type descriptor class of the held type.

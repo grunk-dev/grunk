@@ -58,7 +58,7 @@ public:
 TEST_F(DynamicFeatureTest, ctor)
 {
     Feature<double> x("x", 0.25);
-    auto y = DynamicFeature::create("y", "MyStruct", x);
+    auto y = grunk::action("y", "MyStruct", x).output();
 
     EXPECT_FALSE(y.is_valid());
     EXPECT_EQ(reflect::cast<MyStruct>(y.value()).val, 0.25);
@@ -91,7 +91,7 @@ TEST_F(DynamicFeatureTest, get)
 {
     Feature x("x", "MyStruct", 0.5);
 
-    Feature v = x.get("v", "val");
+    Feature v = grunk::action("v", "MyStruct::val", x).output();
     EXPECT_EQ(reflect::cast<double>(v.value()), 0.5);
 
      x.access_value().set("val", 0.3);
@@ -104,7 +104,7 @@ TEST_F(DynamicFeatureTest, invoke)
     Feature x("x", "MyStruct", 0.5);
     Feature factor("factor", "double", 3.);
 
-    Feature v = x.invoke("v", "times", factor).output();
+    Feature v = grunk::action("v", "MyStruct::times", x, factor).output();
     
     EXPECT_FALSE(v.is_valid());
     EXPECT_NEAR(reflect::cast<double>(v.value()), 1.5, 1e-12);
@@ -125,5 +125,5 @@ TEST_F(DynamicFeatureTest, invoke_nonConstMemberFun)
 {
     Feature x("x", "MyStruct", 0.5);
     Feature factor("factor", "double", 3.);
-    EXPECT_THROW(x.invoke("", "timesc", factor), reflect::Unresolvable);
+    EXPECT_THROW(grunk::action("", "MyStruct::timesc", x, factor), reflect::Unresolvable);
 }

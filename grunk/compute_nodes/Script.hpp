@@ -1,6 +1,7 @@
 #pragma once 
 
 #include <grunk/DynamicFeature.hpp>
+#include <grunk/compute_nodes/DynamicAction.hpp>
 #include <grunk/Recipe.hpp>
 #include <grunk/common/parametric_core.hpp>
 
