@@ -10,8 +10,8 @@ public:
 
     static void SetUpTestCase() {
 
-        auto p = grunk::StdPlugin();
-        p.init();
+        grunk::init();
+        
     } 
 
     static void TearDownTestCase() {

@@ -16,7 +16,7 @@ class VecTest : public ::testing::Test
 public:
     static void SetUpTestCase() {
 
-        grunk::StdPlugin().init();
+        grunk::init();
 
         reflect::register_function(&sum, "sum");
 

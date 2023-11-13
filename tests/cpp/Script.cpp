@@ -24,7 +24,7 @@ class ScriptTest : public ::testing::Test
 public:
     static void SetUpTestCase() {
 
-        grunk::StdPlugin().init();
+        grunk::init();
 
         reflect::register_type<Pnt>("Pnt")
         .add_constructor<>()
