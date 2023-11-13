@@ -1,23 +1,13 @@
-#include <grunk/plugins/StdPlugin.hpp>
-#include <grunk/common/version.hpp>
+#include <reflect/reflect.hpp>
+#include <grunk/common/init.hpp>
 #include <grunk/common/String.hpp>
 #include <yaml-cpp/yaml.h>
 
 namespace grunk {
 
-std::string StdPlugin::name() const
+void init()
 {
-    return "";
-}
-
-std::string StdPlugin::version() const 
-{
-    return grunk_VERSION;
-}
-
-void StdPlugin::init() const
-{
-    register_type<bool>("bool")
+    reflect::register_type<bool>("bool")
     .add_constructor<bool>()
     .add_conversion<int>()
     .add_member_function(
@@ -29,7 +19,7 @@ void StdPlugin::init() const
         "deserialize"
     );
 
-    register_type<int>("int")
+    reflect::register_type<int>("int")
     .add_constructor<int>()
     .add_conversion<double>()
     .add_member_function(
@@ -41,7 +31,7 @@ void StdPlugin::init() const
         "deserialize"
     );
     
-    register_type<double>("double")
+    reflect::register_type<double>("double")
     .add_constructor<double>()
     .add_constructor([](int x){ return double(x); }) // construct from int, avoid narrowing conversion error in MSVC
     .add_conversion<int>()
@@ -54,7 +44,7 @@ void StdPlugin::init() const
         "deserialize"
     );
 
-    register_type<helper::String>("String")
+    reflect::register_type<helper::String>("String")
     .add_constructor<>()
     .add_constructor<std::string_view>()
     .add_constructor<const char*>()
@@ -74,6 +64,7 @@ void StdPlugin::init() const
         },
         "deserialize"
     );
+
 }
 
 } //namespace grunk

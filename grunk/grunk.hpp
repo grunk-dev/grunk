@@ -4,8 +4,8 @@
 
 #include <grunk/common/version.hpp>
 #include <grunk/common/io.hpp>
+#include <grunk/common/init.hpp>
 #include <grunk/plugins/PluginRegistry.hpp>
-#include <grunk/plugins/StdPlugin.hpp>
 #include <grunk/DynamicFeature.hpp>
 #include <grunk/Recipe.hpp>
 #include <grunk/action.hpp>

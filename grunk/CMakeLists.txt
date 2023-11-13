@@ -11,6 +11,8 @@ set(grunk_SRC
     compute_nodes/Script.cpp
     compute_nodes/Vec.hpp
     compute_nodes/Vec.cpp
+    common/init.hpp
+    common/init.cpp
     common/io_error.hpp
     common/io.hpp
     common/io.cpp
@@ -22,8 +24,6 @@ set(grunk_SRC
     plugins/IPlugin.hpp
     plugins/PluginRegistry.hpp
     plugins/PluginRegistry.cpp
-    plugins/StdPlugin.hpp
-    plugins/StdPlugin.cpp
     DynamicFeature.hpp
     DynamicFeature.inl
     DynamicFeature.cpp

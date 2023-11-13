@@ -1,5 +1,5 @@
 #include "PluginRegistry.hpp"
-#include "StdPlugin.hpp"
+#include <grunk/common/init.hpp>
 #include <boost/dll/import.hpp>
 #include <functional>
 #include <iostream>
@@ -9,9 +9,8 @@ namespace grunk {
 
 PluginRegistry::PluginRegistry()
 {
-    // insert "standard library plugin"
-    auto s = std::make_unique<StdPlugin>();
-    s->init();
+    // make sure built-in types are registered
+    grunk::init();
 }
 
 void PluginRegistry::prepend_path(std::string const& dir)

@@ -102,8 +102,7 @@ public:
 
     static void SetUpTestCase() {
 
-        grunk::StdPlugin p;
-        p.init();
+        grunk::init();
 
         reflect::register_type<MyDouble>("MyDouble")
         .add_constructor<double>()
