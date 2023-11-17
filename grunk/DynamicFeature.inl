@@ -1,24 +1,15 @@
 #pragma once 
 
 #include <grunk/DynamicFeature.hpp>
-#include <grunk/compute_nodes/DynamicAction.hpp>
+#include <grunk/compute_nodes/Action.hpp>
 
 namespace grunk {
-
-    template <typename... Args>
-    ResultHolder<Action<reflect::DynamicFunction>> action(std::string const& id, std::string const& name, Args&&... args);
 
     template <typename... Args>
     DynamicFeature::Feature(std::string const& id, std::string const& typeName, Args const&... args)
      : FeatureBase<reflect::DynamicObject>(id, reflect::make_dynamic(typeName, args...))
      , type_descriptor(reflect::resolve(typeName))
     {}
-
-    template <typename... Args>
-    DynamicFeature DynamicFeature::create(std::string const& id, std::string const& typeName, Feature<Args> const&... args)
-    { 
-        return action(id, typeName, args...).output();
-    }
 
     template <
         typename T,
@@ -46,16 +37,5 @@ namespace grunk {
     {
         return Feature<T>(param().id(), reflect::cast<T>(this->param().value()));
     }
-
-    template <typename... Args>
-    decltype(auto) DynamicFeature::invoke(std::string const& id, std::string const& memberFunName, Feature<Args> const&... args) const
-    {
-        return action(
-            id,
-            type_descriptor->get_name() + "::" + memberFunName,
-            *this,
-            args...
-        );
-    }
-
+    
 } // namespace grunk

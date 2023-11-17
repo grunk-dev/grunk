@@ -212,17 +212,6 @@ PYBIND11_MODULE(_core, m)
         ),
         py::return_value_policy::take_ownership
     )
-    .def("get", &grunk::DynamicFeature::get)
-    .def("invoke", 
-        [](grunk::DynamicFeature const& f, std::string id, std::string const& mName, py::args pyargs){
-            return grunkpy::invoke_variadic_rt<grunk::DynamicFeature>(
-                [&](auto&&... args){
-                    return f.invoke(id, mName, std::forward<decltype(args)>(args)...);
-                },
-                pyargs
-            );
-        }
-    )
     .def("is_valid", &grunk::DynamicFeature::is_valid)
     .def("value", &grunk::DynamicFeature::value)
     .def(

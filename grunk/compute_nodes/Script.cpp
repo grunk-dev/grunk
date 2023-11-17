@@ -1,4 +1,4 @@
-#include "Script.hpp"
+#include <grunk/compute_nodes/Script.hpp>
 #include <vector>
 
 using namespace std::string_literals;

@@ -274,7 +274,7 @@ TEST_F(DynamicActionTest, ConstructorCall)
     // invoke constructor lazily via DynamicFeature, passing DynamicFeature to factory function
     {
         auto b = DynamicFeature("b", "bool", true);
-        auto x = DynamicFeature::create("x", "Counter", b);
+        auto x = grunk::action("x", "Counter", b).output();
         EXPECT_EQ(Counter::ctor, 0);
         EXPECT_EQ(Counter::copy, 0);
         EXPECT_EQ(Counter::copy_assignment, 0);
