@@ -27,8 +27,8 @@ public:
      * @param id The id of the Feature
      * @param t The instance to be wrapped inside this feature
      */
-    FeatureBase(std::string const& id, T&& t)
-     : m_param(parametric::new_param(std::forward<T>(t)), id)
+    FeatureBase(std::string const& id, T const& t)
+     : m_param(t, id)
     {}
 
     /**

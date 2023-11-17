@@ -99,10 +99,10 @@ public:
 
         if constexpr (nresults > 1) {
             auto ret = call(std::make_index_sequence<sizeof...(Args)>{});
-            set_outputs(std::make_index_sequence<nresults>{}, &ret);
+            this->set_outputs(std::make_index_sequence<nresults>{}, ret);
         }
         else if constexpr (nresults == 1) {
-            set_output<0>(call(std::make_index_sequence<sizeof...(Args)>{}));
+            this->set_output<0>(call(std::make_index_sequence<sizeof...(Args)>{}));
         }
         else {
             call(std::make_index_sequence<sizeof...(Args)>{});
@@ -140,7 +140,7 @@ private:
     template <size_t... I>
     ReturnType call(std::index_sequence<I...>) const
     {
-        return function(this->template arg<I>().value()...);
+        return std::invoke(function, this->template arg<I>().value()...);
     }
 
     /**
@@ -151,10 +151,10 @@ private:
      * @tparam I indices of the output values
      * @param ret The tuple returned by the wrapped function
      */
-    template <size_t... I>
-    void set_outputs(std::index_sequence<I...>, ReturnType const* ret) const
+    template <typename T, size_t... I>
+    void set_outputs(std::index_sequence<I...>, T const& ret) const
     {
-        (set_output<I>(std::get<I>(*ret)), ...);
+        (set_output<I>(std::get<I>(ret)), ...);
     }
 
     /**

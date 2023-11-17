@@ -50,7 +50,7 @@ TEST(FeatureTest, get)
 {
     Feature x("x", MyStruct(0.5));
 
-    Feature v = x.get("v", &MyStruct::val).output();
+    Feature v = action("v", &MyStruct::val, x).output();
     EXPECT_EQ(v.value(), 0.5);
 
     x.access_value().val = 0.3;
@@ -64,7 +64,7 @@ TEST(FeatureTest, invoke)
     Feature x("x", MyStruct(0.5));
     Feature factor("factor", 3.);
 
-    Feature v = x.invoke("v", &MyStruct::times, factor).output();
+    Feature v = action("v", &MyStruct::times, x, factor).output();
     
     EXPECT_FALSE(v.is_valid());
     EXPECT_NEAR(v.value(), 1.5, 1e-12);
