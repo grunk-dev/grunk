@@ -56,15 +56,19 @@ TEST_F(IOTest, serialize_type)
 
     // int
     auto i = parametric::serialize(42);
-    EXPECT_EQ(std::stoi(i), 42);
+    auto ni = YAML::Load(i);
+    EXPECT_EQ(ni.as<int>(), 42);
+    EXPECT_EQ(ni.Tag(), "int");
 
     // double
     auto d = parametric::serialize(0.33);
-    EXPECT_NEAR(std::stof(d), 0.33, 1e-6);
+    auto nd = YAML::Load(d);
+    EXPECT_NEAR(nd.as<double>(), 0.33, 1e-6);
+    EXPECT_EQ(nd.Tag(), "double");
 
     // string
     auto s = parametric::serialize(std::string("Hey Universe"));
-    EXPECT_EQ(s, "Hey Universe");
+    EXPECT_EQ(s, "!<String> Hey Universe");
 
     // DynamicObject
     auto x = reflect::DynamicObject(1.23);
@@ -415,6 +419,7 @@ TEST_F(IOTest, constants)
     {
         auto a = action("a", "squared", 2.).output();
         s = grunk::serialize(a);
+        std::cout << grunk::to_string(a);
     }
     EXPECT_FALSE(s["parameters"]);
     EXPECT_EQ(s["steps"].size(), 1);

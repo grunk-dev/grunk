@@ -137,6 +137,16 @@ reflect::DynamicObject deserialize(
     }
 }
 
+YAML::Node serialize(parametric::DAGNode const& node)
+{
+    bool is_constant = (node.num_parents() == 0 && node.id() == "");
+    if (is_constant) {
+        return YAML::Load(node.serialize());
+    } else {
+        return YAML::Node(node.id());
+    }
+}
+
 } // namespace details 
 
 std::string to_string(Recipe const& r)

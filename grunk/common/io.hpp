@@ -166,6 +166,16 @@ void write(std::string const& filename, Feature<Args> const&... args)
 namespace details {
 
 /**
+ * @brief serializes a DAGNode to yaml. This serializes a constant or intermediate feature
+ * without recursion. An intermediate feature will be serialized to its id, a constant to 
+ * its type's serialization and an appropriate tag
+ * 
+ * @param node The DAGNode to be serialized
+ * @return YAML::Node 
+ */
+YAML::Node serialize(parametric::DAGNode const& node);
+
+/**
  * @brief deserializes a yaml node to a DynamicObject
  * 
  * @param type_name The name of the type. This type must be registered

@@ -69,33 +69,6 @@ public:
     explicit Feature(std::string const& id, reflect::DynamicObject&& o);
 
     /**
-     * @brief Converting constructor from a Feature<T>, where T is not
-     * a reflect::DynamicObject
-     *
-     * <b>Caution:</b> The converted DynamicFeature will hold a reference
-     * to the value held by the input Feature. This means that the input Feature
-     * must outlive the converted DynamicFeature. If this is not the case, it is
-     * better to explicitly construct a new DynamicFeature instead of using
-     * this converting constructor.
-     * 
-     * @tparam T The type wrapped by the incoming Feature<T>
-     * @param f The input feature to be converted to a DynamicFeature
-     */
-    template <typename T,
-              typename = std::enable_if_t<!std::is_same_v<reflect::DynamicObject, T>>
-    >
-    Feature(Feature<T> const& f);
-
-    /**
-     * @brief converts a RuntimFeature to a Feature<T>
-     * 
-     * @tparam T The type of the object to be wrapped
-     * @return Feature<T> The converted Feature<T>
-     */
-    template <typename T, typename = std::enable_if_t<!std::is_same_v<T, reflect::DynamicObject>>>
-    operator Feature<T>() const;
-
-    /**
      * @brief get_type_descriptor returns a pointer to the type descriptor class of the held type.
      * This class holds information about the name of the type, base classes, convesion operators,
      * data members and member functions
