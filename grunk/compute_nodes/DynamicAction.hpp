@@ -16,6 +16,7 @@
 
 #include <grunk/compute_nodes/Action.hpp>
 #include <grunk/DynamicFeature.hpp>
+#include <grunk/common/io.hpp>
 #include <grunk/common/String.hpp>
 
 namespace grunk {
@@ -78,7 +79,14 @@ public:
     {
         for (auto const& arg : args) {
             depends_on(arg.param());
+            evaluators.push_back(make_evaluator(arg));
         }
+    }
+
+    template <typename... Args>
+    void connect_inputs(Feature<Args> const&... args){
+        (depends_on(args.param()), ...);
+        (evaluators.push_back(make_evaluator(args)), ...);
     }
 
     std::vector<DynamicFeature> initialize_results() const
@@ -122,8 +130,9 @@ public:
         // tranform input nodes to vector of DynamicObjects
         std::vector<reflect::DynamicObject> inputs_vec;
         inputs_vec.reserve(this->num_parents());
-        for (int i = 0; i < this->num_parents(); ++i) {
-            inputs_vec.push_back(this->arg<reflect::DynamicObject>(i).value().as_const());
+        for (size_t i = 0; i < this->num_parents(); ++i) {
+            auto const& parent = this->get_parents()[i];
+            inputs_vec.push_back(evaluators[i](*parent));
         }
 
         // call the wrapped function
@@ -160,17 +169,8 @@ public:
 
         // inputs
         y.push_back(YAML::Node());
-        for (int i = 0; i < this->num_parents(); ++i){
-            auto const& input = this->arg<reflect::DynamicObject>(i);
-            
-            if ( input.num_parents() == 0 && input.id() == "") {
-                // handle constants, i.e. parent-less nodes with id "":
-                YAML::Node n = YAML::Load(input.serialize());
-                y[1].push_back(n);
-            } else {
-                // push the name of the input
-                y[1].push_back(input.id());
-            }
+        for (auto const& input : this->get_parents()){
+            y[1].push_back(details::serialize(*input));
         }
         y.SetStyle(YAML::EmitterStyle::Flow);
         YAML::Emitter out;
@@ -192,6 +192,25 @@ public:
     );
 
 private:
+
+    using DAGNodeToDynObjFun = reflect::DynamicObject(*)(parametric::DAGNode const&);
+
+    template <typename T>
+    static DAGNodeToDynObjFun make_evaluator(Feature<T> const& f) {
+        if constexpr (std::is_same_v<T, reflect::DynamicObject>) {
+            return [](parametric::DAGNode const& node){
+                return dynamic_cast<parametric::impl::param_holder<reflect::DynamicObject> const&>(node).value();
+            };
+        } else {
+            return [](parametric::DAGNode const& node){
+                return reflect::DynamicObject(dynamic_cast<parametric::impl::param_holder<T> const&>(node).value());
+            };
+        }
+    }
+
+    // store a vector of functions, that evaluate a (parent) DAGNode to a DynamicObject
+    std::vector<DAGNodeToDynObjFun> evaluators;
+
     reflect::DynamicFunction const& function;
 };
 
@@ -300,6 +319,21 @@ struct DynamicActionFactory
             ptr
         );
 
+    }
+
+    template <typename... Args>
+    static ResultHolder<DynamicAction> new_action(
+        std::string const& id, 
+        reflect::DynamicFunction const& fun, 
+        Feature<Args> const&... args
+    )
+    {
+        auto ptr = std::shared_ptr<DynamicAction>(new DynamicAction(id, fun));
+
+        return ResultHolder<DynamicAction>(
+            parametric::compute(ptr, args...), 
+            ptr
+        );
     }
 
 };

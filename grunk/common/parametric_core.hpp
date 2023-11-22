@@ -6,8 +6,22 @@
  * matters with template specialization.
  */
 
+#include <grunk/common/String.hpp>
 #include <reflect/reflect.hpp>
 #include <yaml-cpp/yaml.h>
+
+namespace grunk {
+    namespace details {
+        template <typename T>
+        std::string serialize_impl(T const& v) {
+            auto out = YAML::Node(v);
+            YAML::Emitter e;
+            auto tag = YAML::VerbatimTag(reflect::resolve<T>()->get_name());
+            e << tag << out;
+            return e.c_str();
+        }
+    }
+}
 
 namespace parametric {
 
@@ -25,7 +39,7 @@ std::string serialize(T const&);
  */
 template <>
 inline std::string serialize(int const& v) {
-    return YAML::Node(v).as<std::string>();
+    return grunk::details::serialize_impl(v);
 }
 
 /**
@@ -39,7 +53,7 @@ inline std::string serialize(int const& v) {
  */
 template <>
 inline std::string serialize(double const& v) {
-    return YAML::Node(v).as<std::string>();
+    return grunk::details::serialize_impl(v);
 }
 
 /**
@@ -53,7 +67,18 @@ inline std::string serialize(double const& v) {
  */
 template <>
 inline std::string serialize(std::string const& v) {
-    return v;
+    YAML::Node out(v);
+
+    YAML::Emitter e;
+
+    auto tag = YAML::VerbatimTag(reflect::resolve<grunk::helper::String>()->get_name());
+    e << tag << out;
+    return e.c_str();
+}
+
+template <>
+inline std::string serialize(grunk::helper::String const& v) {
+    return serialize(std::string(v));
 }
 
 /**

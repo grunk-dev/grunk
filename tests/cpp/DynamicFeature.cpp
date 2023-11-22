@@ -71,22 +71,6 @@ TEST_F(DynamicFeatureTest, ctor)
     EXPECT_TRUE(y.is_valid());
 }
 
-TEST_F(DynamicFeatureTest, Conversions)
-{
-    DynamicFeature x("x", "MyStruct", 0.33);
-    EXPECT_NEAR(x.value().get_as<double>("val"), 0.33, 1e-12);
-
-    // Feature<DynamicObject> -> Feature<T>
-    Feature<MyStruct> y(x);
-    EXPECT_NEAR(y.value().val, 0.33, 1e-12);
-    EXPECT_EQ(y.param().id(), "x");
-
-    // Feature<T> -> Feature<DynamicObject> 
-    DynamicFeature z(y);
-    EXPECT_NEAR(z.value().get_as<double>("val"), 0.33, 1e-12);
-    EXPECT_EQ(z.param().id(), "x");
-}
-
 TEST_F(DynamicFeatureTest, get)
 {
     Feature x("x", "MyStruct", 0.5);

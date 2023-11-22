@@ -88,7 +88,7 @@ template <typename T>
 constexpr bool is_string_v = is_string<T>::value;
 
 template <typename Arg>
-DynamicFeature to_dynamic_feature(Arg&& arg)
+decltype(auto) to_feature(Arg&& arg)
 {
     using T = std::decay_t<Arg>;
     if constexpr (details::is_feature_v<T>){
@@ -96,9 +96,9 @@ DynamicFeature to_dynamic_feature(Arg&& arg)
     } else {
         // special handling of string-like types: We want to always conert them to String first
         if constexpr (details::is_string_v<Arg>) {
-            return Feature("", reflect::DynamicObject(helper::String(std::forward<Arg>(arg))));
+            return Feature("", helper::String(std::forward<Arg>(arg)));
         } else {
-            return Feature("", reflect::DynamicObject(std::forward<Arg>(arg)));
+            return Feature("", std::forward<Arg>(arg));
         }
     }
 }
@@ -127,11 +127,7 @@ template <
 >
 ResultHolder<DynamicAction> action(std::string const& id, reflect::DynamicFunction const& fun, Args&&... args)
 {
-    return action(
-        id,
-        fun,
-        std::vector<DynamicFeature>{details::to_dynamic_feature(std::forward<Args>(args))...}
-    );
+    return details::DynamicActionFactory::new_action(id, fun, details::to_feature(std::forward<Args>(args))...);
 }
 
 namespace details {
