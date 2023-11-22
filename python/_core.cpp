@@ -1,3 +1,4 @@
+#include <iterator>
 #define PYBIND11_DETAILED_ERROR_MESSAGES
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
@@ -8,20 +9,20 @@
 namespace grunkpy {
 
     template <typename T>
-    T cast(pybind11::object const& obj) {
+    T cast(pybind11::handle const& obj) {
         return pybind11::cast<T>(obj);
     }
 
     template <>
-    grunk::DynamicFeature cast<grunk::DynamicFeature>(pybind11::object const& obj) {
+    grunk::DynamicFeature cast<grunk::DynamicFeature>(pybind11::handle const& obj) {
         if (pybind11::isinstance<pybind11::float_>(obj)) {
-            return grunk::details::to_dynamic_feature(pybind11::cast<double>(obj));
+            return grunk::Feature("", reflect::DynamicObject(pybind11::cast<double>(obj)));
         }
         if (pybind11::isinstance<pybind11::int_>(obj)) {
-            return grunk::details::to_dynamic_feature(pybind11::cast<int>(obj));
+            return grunk::Feature("", reflect::DynamicObject(pybind11::cast<int>(obj)));
         }
         if (pybind11::isinstance<pybind11::str>(obj)) {
-            return grunk::details::to_dynamic_feature(pybind11::cast<std::string>(obj));
+            return grunk::Feature("", reflect::DynamicObject(pybind11::cast<std::string>(obj)));
         }
         return pybind11::cast<grunk::DynamicFeature>(obj);
     }
@@ -107,6 +108,21 @@ namespace {
         }
 
         return m;
+    }
+
+    std::vector<grunk::DynamicFeature> to_feature_vec(py::args const& pyargs)
+    {
+        std::vector<grunk::DynamicFeature> args;
+        args.reserve(pyargs.size());
+        std::transform(
+            pyargs.begin(),
+            pyargs.end(),
+            std::back_inserter(args),
+            [](pybind11::handle const& obj){
+                return grunkpy::cast<grunk::DynamicFeature>(obj);
+            }
+        );
+        return args;
     }
 
 } // anonymouos namespace
@@ -323,12 +339,8 @@ PYBIND11_MODULE(_core, m)
     m.def(
         "action", 
         [](std::string const& id, std::string const& name, py::args pyargs){
-            return grunkpy::invoke_variadic_rt<grunk::DynamicFeature const&>(
-                [&](auto&&... args){
-                    return grunk::action(id, name, std::forward<decltype(args)>(args)...);
-                },
-                pyargs
-            );
+            auto const v = to_feature_vec(pyargs);
+            return grunk::action(id, name, v);
         }
     );
 
