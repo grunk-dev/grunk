@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.12)
 
-project(grunk VERSION 0.2.2)
+project(grunk VERSION 0.2.3)
 
 include(GNUInstallDirs)
 
