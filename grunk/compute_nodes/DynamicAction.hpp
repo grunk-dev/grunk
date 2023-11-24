@@ -160,7 +160,6 @@ public:
         YAML::Node y;
 
         // outputs
-        auto const& outputs = this->template res<0>();
         y.push_back(YAML::Node());
         for (int i = 0; i < this->num_children(); ++i){
             if(auto const& output = this->res<reflect::DynamicObject>(i); output)
