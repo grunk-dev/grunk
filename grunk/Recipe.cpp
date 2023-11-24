@@ -27,38 +27,16 @@ Recipe::Recipe(Recipe::FeatureContainer const& other) : features(other), recipes
 
 YAML::Node Recipe::serialize() const
 {
-    YAML::Node root;
+    YAML::Node root = grunk::serialize(features);
 
-    //write grunk version
-    root["uses"]["grunk"] = grunk_VERSION;
-    
-    grunk::details::ToStringVisitor visitor(root);
-    for (auto const& kv: features){
-        grunk::details::parse_feature(kv.second, visitor);
-    }
-    visitor.unwind_steps();
-
-    for (auto const& kv : visitor.feature_names_count) {
-        if (kv.second > 1) {
-            using namespace std::string_literals;
-            throw io_error("The feature tree does not have unique feature names: \""s + kv.first +"\" appears " + std::to_string(kv.second) + " times");
-        }
-    }
-
-    // write loaded plugins
-    auto const& registry = get_plugin_registry();
-    for(auto const& [name, entry] : registry.plugins()){
-        root["uses"][name] = entry.plugin->version();
-    }
-
-    // write recipes
+     // write recipes
     if (recipes.size() > 0) {
         root["recipes"] = YAML::Node();
         for (auto const& [key, value] : recipes) {
             root["recipes"][key] = value->serialize();
         }
     }
-
+    
     return root;
 }
 

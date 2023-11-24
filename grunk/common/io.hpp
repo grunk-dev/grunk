@@ -70,12 +70,18 @@ public:
     void visit(parametric::DAGNode const& n, size_t depth);
 
     /**
-        * @brief unwinding the steps maeks sure we write the steps in 
-        * topological order. Without calling this function after the DFS traversal,
-        * no "steps" will be added to the root yaml node.
-        * 
-        */
+     * @brief unwinding the steps maeks sure we write the steps in 
+     * topological order. Without calling this function after the DFS traversal,
+     * no "steps" will be added to the root yaml node.
+     * 
+     */
     void unwind_steps();
+
+    /**
+     * @brief calls unwind_steps, checks for duplicate names and adds the used plugins
+     * 
+     */
+    void finalize();
 
     std::unordered_map<std::string, int> feature_names_count;
 
@@ -131,8 +137,37 @@ std::string to_string(Recipe const&);
  */
 void write(std::string const& filename, Recipe const& recipe);
 
+/**
+ * @brief serialize Features to yaml
+ * 
+ * @tparam Args the types stored in the features
+ * @param args the featues to be serialized
+ * @return YAML::Node a yaml representation of a recipe containing the input features
+ */
 template <typename... Args>
-YAML::Node serialize(Feature<Args> const&... args);
+YAML::Node serialize(Feature<Args> const&... args)
+{
+    YAML::Node root;
+
+    //write grunk version
+    root["uses"]["grunk"] = grunk_VERSION;
+    
+    grunk::details::ToStringVisitor visitor(root);
+    
+    (grunk::details::parse_feature(args, visitor),...);
+
+    visitor.finalize();
+
+    return root;
+}
+
+/**
+ * @brief serialize an unodered map of Features to yaml
+ * 
+ * @param args the featues to be serialized
+ * @return YAML::Node a yaml representation of a recipe containing the input features
+ */
+YAML::Node serialize(std::unordered_map<std::string, DynamicFeature> const& features);
 
 /**
  * @brief writes several ::grunk::Feature instances to string

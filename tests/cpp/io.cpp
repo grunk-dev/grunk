@@ -299,7 +299,7 @@ TEST_F(IOTest, write_duplicate_name)
 
         EXPECT_THROW(
             serialize(a, b),
-            std::logic_error
+            io_error
         );
     }
 
@@ -419,7 +419,6 @@ TEST_F(IOTest, constants)
     {
         auto a = action("a", "squared", 2.).output();
         s = grunk::serialize(a);
-        std::cout << grunk::to_string(a);
     }
     EXPECT_FALSE(s["parameters"]);
     EXPECT_EQ(s["steps"].size(), 1);
@@ -435,4 +434,21 @@ TEST_F(IOTest, constants)
     auto recipe = grunk::Recipe::deserialize(s);
     EXPECT_EQ(recipe.get_features().size(), 1);
     EXPECT_NEAR(recipe["a"].value().as<double>(), 4, 1e-10);
+}
+
+TEST_F(IOTest, serialize_static_mode)
+{
+    grunk::Feature a("a", 0.5);
+    YAML::Node n = grunk::serialize(a);
+    
+    EXPECT_EQ(n.size(), 2);
+    EXPECT_TRUE(n["uses"]);
+    EXPECT_TRUE(n["parameters"]);
+    EXPECT_EQ(n["parameters"].size(), 1);
+    EXPECT_TRUE(n["parameters"]["a"]);
+    YAML::Node na = n["parameters"]["a"];
+    EXPECT_EQ(na.Tag(), "double");
+    EXPECT_NEAR(na.as<double>(), 0.5, 1e-15);
+    EXPECT_FALSE(n["steps"]);
+    EXPECT_FALSE(n["recipes"]);
 }
