@@ -102,6 +102,24 @@ void ToStringVisitor::unwind_steps()
     }
 }
 
+void ToStringVisitor::finalize() 
+{
+    unwind_steps();
+
+    for (auto const& kv : feature_names_count) {
+        if (kv.second > 1) {
+            using namespace std::string_literals;
+            throw io_error("The feature tree does not have unique feature names: \""s + kv.first +"\" appears " + std::to_string(kv.second) + " times");
+        }
+    }
+
+    // write loaded plugins
+    auto const& registry = get_plugin_registry();
+    for(auto const& [name, entry] : registry.plugins()){
+        root["uses"][name] = entry.plugin->version();
+    }
+}
+
 reflect::DynamicObject deserialize(
     std::string const& type_name,
     YAML::Node const & yaml_node
@@ -148,6 +166,23 @@ YAML::Node serialize(parametric::DAGNode const& node)
 }
 
 } // namespace details 
+
+YAML::Node serialize(std::unordered_map<std::string, DynamicFeature> const& features)
+{
+    YAML::Node root;
+
+    //write grunk version
+    root["uses"]["grunk"] = grunk_VERSION;
+    
+    grunk::details::ToStringVisitor visitor(root);
+    for (auto const& kv: features){
+        grunk::details::parse_feature(kv.second, visitor);
+    }
+
+    visitor.finalize();
+
+    return root;
+}
 
 std::string to_string(Recipe const& r)
 {

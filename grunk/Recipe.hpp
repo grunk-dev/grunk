@@ -43,7 +43,12 @@ public:
     template <typename... Args>
     Recipe(Feature<Args> const&... args)
      : Recipe({args...}) 
-    {}
+    {
+        static_assert(
+            (std::is_same_v<Args, reflect::DynamicObject> && ...), 
+            "A recipe can only store DynamicFeatures. Constructor was called with a Feature wrapping something other than reflect::DynamicObject.\n"
+        );
+    }
 
     /**
      * @brief serializes a recipe to yaml. This is used to write grunk recipes to file
@@ -258,19 +263,5 @@ private:
     FeatureContainer features;
     RecipeContainer recipes;
 };
-
-/**
- * @brief serialize Features to yaml
- * 
- * @tparam Args the types stored in the features
- * @param args the featues to be serialized
- * @return YAML::Node a yaml representation of a recipe containing the input features
- */
-template <typename... Args>
-YAML::Node serialize(Feature<Args> const&... args)
-{
-    Recipe r(args...);
-    return r.serialize();
-}
 
 } // namespace grunk
