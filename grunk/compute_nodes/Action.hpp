@@ -52,8 +52,8 @@ YAML::Node serialize(parametric::DAGNode const& node);
 template <typename F, typename... Args>
 class Action : public parametric::ComputeNode<
                         Action<F, Args...>,
-                        parametric::Results<std::invoke_result_t<F, Args const&...>>,
-                        parametric::Arguments<Args...>
+                        Results<std::invoke_result_t<F, Args const&...>>,
+                        Arguments<Args...>
                       >
 {
 
@@ -274,7 +274,7 @@ struct ActionFactory
         return ResultHolder<MyAction>(
             parametric::compute(
                 std::shared_ptr<MyAction>(new MyAction(id, fun)), 
-                args.param()...
+                args.get_param()...
             )
         );
     }

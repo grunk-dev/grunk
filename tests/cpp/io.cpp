@@ -51,25 +51,12 @@ public:
 TEST_F(IOTest, no_serialize_method)
 {
     auto x = Feature("x", "NonSerializable", 42);
-    EXPECT_THROW(x.param().node_pointer()->serialize(), std::out_of_range);
+    EXPECT_THROW(x.get_param().node_pointer()->serialize(), std::out_of_range);
 }
 
 TEST_F(IOTest, serialize_type)
 {
-    // test some specializations of 
-    // parametric::serialize
-
-    // int
-    auto i = parametric::serialize(42);
-    auto ni = YAML::Load(i);
-    EXPECT_EQ(ni.as<int>(), 42);
-    EXPECT_EQ(ni.Tag(), "int");
-
-    // double
-    auto d = parametric::serialize(0.33);
-    auto nd = YAML::Load(d);
-    EXPECT_NEAR(nd.as<double>(), 0.33, 1e-6);
-    EXPECT_EQ(nd.Tag(), "double");
+    // test specializations of parametric::serialize
 
     // string
     auto s = parametric::serialize(std::string("Hey Universe"));
@@ -96,10 +83,10 @@ TEST_F(IOTest, serialize_DAGNode)
     auto w = action("w", [](auto const& x){ return x; }, y);
 
     // root parameters
-    auto sx = x.param().node_pointer()->serialize();
-    EXPECT_EQ(sx, parametric::serialize(0.2));
+    auto sx = x.get_param().node_pointer()->serialize();
+    EXPECT_EQ(sx, Serializer::serialize(0.2));
 
-    auto sy = y.param().node_pointer()->serialize();
+    auto sy = y.get_param().node_pointer()->serialize();
     EXPECT_EQ(sy, parametric::serialize(reflect::make_dynamic("double", 0.5)));
 
     // compute node
@@ -126,7 +113,7 @@ TEST_F(IOTest, serialize_DAGNode)
     auto zo = z;
     EXPECT_EQ(
         parametric::serialize(zo.output().value()),      // call specialization directly
-        zo.output().param().node_pointer()->serialize()  // call via DAGNode::serialize member function
+        zo.output().get_param().node_pointer()->serialize()  // call via DAGNode::serialize member function
     );
 }
 

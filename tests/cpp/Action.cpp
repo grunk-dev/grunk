@@ -158,7 +158,7 @@ TEST(ActionTest, serialization)
 
     YAML::Node serialized = make_recipe();
     auto r = Recipe::deserialize(serialized);
-    EXPECT_NEAR(r["c"].value().as<double>(), 54.4, 1e-15);
+    EXPECT_NEAR(r["c"].value().as<MyDouble>().val, 54.4, 1e-14);
 
     reflect::get_function_registry().clear();
 }

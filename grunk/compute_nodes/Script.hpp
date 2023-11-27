@@ -155,6 +155,14 @@ public:
 
 private:
 
+    inline decltype(auto) result(int i) const {
+        return this->res<reflect::DynamicObject, Serializer>(i);
+    }
+
+    inline decltype(auto) argument(int i) const {
+        return this->arg<reflect::DynamicObject, Serializer>(i);
+    }
+
     /**
      * @brief Construct a new Script object given a vector of steps as well as a vector of 
      * ids for the return features. These ids must correspond with variables created as part of the script.

@@ -22,11 +22,19 @@ DynamicFeature vec(std::string const& id, std::vector<DynamicFeature> const& arg
  * @tparam  
  */
 template <>
-class Vec<reflect::DynamicObject> : public parametric::ComputeNode<Vec<reflect::DynamicObject>, parametric::Results<reflect::DynamicObject>>
+class Vec<reflect::DynamicObject> : public parametric::ComputeNode<Vec<reflect::DynamicObject>, Results<reflect::DynamicObject>>
 {
 
     friend DynamicFeature vec(std::string const& id, std::vector<DynamicFeature> const& args);
     Vec() = default;
+
+    inline decltype(auto) result(int i) const {
+        return this->res<reflect::DynamicObject, Serializer>(i);
+    }
+
+    inline decltype(auto) argument(int i) const {
+        return this->arg<reflect::DynamicObject, Serializer>(i);
+    }
 
 public:
 
@@ -38,7 +46,7 @@ public:
     void connect_inputs(std::vector<DynamicFeature> const& inputs) 
     {
         for (auto const& input : inputs) {
-            this->depends_on(input.param());
+            this->depends_on(input.get_param());
         }
     }
 
@@ -51,9 +59,9 @@ public:
         std::vector<reflect::DynamicObject> v;
         v.reserve(this->parents.size());
         for (int i=0; i<this->parents.size(); ++i) {
-            v.push_back(this->template arg<reflect::DynamicObject>(i).value());
+            v.push_back(argument(i).value());
         }
-        if (auto r =  this->template res<0>(); r) {
+        if (auto r =  result(0); r) {
             r->set_value(reflect::DynamicObject(std::move(v)));
         }
     }
@@ -77,13 +85,7 @@ public:
 
         YAML::Node i;
         for (auto const& p : this->parents) {
-            if ( p->id() == "" && p->num_parents() == 0) {
-                // p is a constant
-                YAML::Node n = YAML::Load(p->serialize());
-                i.push_back(n);
-            } else {
-                i.push_back(p->id());
-            }
+            i.push_back(details::serialize(*p));
         }
         s.push_back(i);
 

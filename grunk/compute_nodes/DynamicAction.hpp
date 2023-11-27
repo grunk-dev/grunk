@@ -49,8 +49,8 @@ namespace details {
 template <>
 class Action<reflect::DynamicFunction> : public parametric::ComputeNode<
                                                     Action<reflect::DynamicFunction>,
-                                                    parametric::Results<std::vector<reflect::DynamicObject>>, /* Results are ignored*/
-                                                    parametric::Arguments<std::vector<reflect::DynamicObject>> /* Arguments are ignored by derived class */
+                                                    Results<std::vector<reflect::DynamicObject>>, /* Results are ignored*/
+                                                    Arguments<std::vector<reflect::DynamicObject>> /* Arguments are ignored by derived class */
                                                 >
 {
 
@@ -72,20 +72,28 @@ private:
         set_id(id);
     }
 
+    inline decltype(auto) result(int i) const {
+        return this->template res<reflect::DynamicObject, Serializer>(i);
+    }
+
+    inline decltype(auto) argument(int i) const {
+        return this->template arg<reflect::DynamicObject, Serializer>(i);
+    }
+
 public:
 
 
     void connect_inputs(std::vector<DynamicFeature> const& args)
     {
         for (auto const& arg : args) {
-            depends_on(arg.param());
+            depends_on(arg.get_param());
             evaluators.push_back(make_evaluator(arg));
         }
     }
 
     template <typename... Args>
     void connect_inputs(Feature<Args> const&... args){
-        (depends_on(args.param()), ...);
+        (depends_on(args.get_param()), ...);
         (evaluators.push_back(make_evaluator(args)), ...);
     }
 
@@ -95,7 +103,7 @@ public:
         res.reserve(function.num_outputs());
 
         for (size_t i = 0; i < function.num_outputs(); ++i) {
-            res.emplace_back(parametric::new_param<reflect::DynamicObject>(), function.get_return_type(i));
+            res.emplace_back(new_param<reflect::DynamicObject>(), function.get_return_type(i));
         }
         return res;
     }
@@ -103,7 +111,7 @@ public:
     void connect_results(std::vector<DynamicFeature> const& res)
     {
         for (auto& f : res) {
-            computes(f.param());
+            computes(f.get_param());
         }
     }
 
@@ -111,7 +119,7 @@ public:
     {
         for (int i = 0; i < function.num_outputs(); ++i) {
             std::string output_id = id();
-            if( auto r = this->template res<reflect::DynamicObject>(i); r) {
+            if( auto r = result(i); r) {
                 if (function.num_outputs() > 1) {
                     output_id += "[" + std::to_string(i) + "]";
                 }
@@ -140,7 +148,7 @@ public:
 
         // transform to outputs
         for (int i=0; i < this->num_children(); ++i) {
-            if (auto output = this->template res<reflect::DynamicObject>(i); output) {
+            if (auto output = result(i); output) {
                 output->set_value(ret[i]);
             }
         }
@@ -162,7 +170,7 @@ public:
         // outputs
         y.push_back(YAML::Node());
         for (int i = 0; i < this->num_children(); ++i){
-            if(auto const& output = this->res<reflect::DynamicObject>(i); output)
+            if(auto const& output = result(i); output)
                 y[0].push_back(output->id());
         }
 
@@ -198,11 +206,11 @@ private:
     static DAGNodeToDynObjFun make_evaluator(Feature<T> const& f) {
         if constexpr (std::is_same_v<T, reflect::DynamicObject>) {
             return [](parametric::DAGNode const& node){
-                return dynamic_cast<parametric::impl::param_holder<reflect::DynamicObject> const&>(node).value();
+                return dynamic_cast<parametric::impl::param_holder<reflect::DynamicObject, Serializer> const&>(node).value();
             };
         } else {
             return [](parametric::DAGNode const& node){
-                return reflect::DynamicObject(dynamic_cast<parametric::impl::param_holder<T> const&>(node).value());
+                return reflect::DynamicObject(dynamic_cast<parametric::impl::param_holder<T, Serializer> const&>(node).value());
             };
         }
     }

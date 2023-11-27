@@ -51,13 +51,13 @@ public:
     Feature(std::string const& id, std::string const& typeName, Args const&... args);
 
     /**
-     * @brief Construct a new DynamicFeature given a parametric::param<T>.
+     * @brief Construct a new DynamicFeature given a param<T>.
      *
-     * @param p The parametric::param<T> to be wrapped in a Feature
+     * @param p The param<T> to be wrapped in a Feature
      * @param t An optional type descriptor, so that we can know the type of the held feature
      *          without having to evaluate the parametric tree.
      */
-    Feature(parametric::param<reflect::DynamicObject>&& p, reflect::TypeDescriptor const* t = nullptr);
+    Feature(param<reflect::DynamicObject>&& p, reflect::TypeDescriptor const* t = nullptr);
     //note: The type descriptor is optional to be consistent with the compile time action.
 
     /**

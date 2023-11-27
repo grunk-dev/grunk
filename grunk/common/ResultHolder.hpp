@@ -1,6 +1,7 @@
 #pragma once 
 
 #include <grunk/common/parametric_core.hpp>
+#include <grunk/FeatureBase.hpp>
 
 #include <parametric/core.hpp>
 #include <tuple>
@@ -37,14 +38,14 @@ struct Param2Feature
 
 // specialization for param<T>
 template <typename T>
-struct Param2Feature<parametric::param<T>>
+struct Param2Feature<param<T>>
 {
     using type=Feature<T>;
 };
 
 // specialization for tuple<param<Ts>...>
 template <typename... Ts>
-struct Param2Feature<std::tuple<parametric::param<Ts>...>>
+struct Param2Feature<std::tuple<param<Ts>...>>
 {
     using type = std::tuple<Feature<Ts>...>;
 };
@@ -72,7 +73,7 @@ template <typename C>
 class ResultHolder
 {
     using result_type = param2feature_t<
-        typename parametric::compute_return_value<parametric::Results<typename C::ReturnType>>
+        typename parametric::compute_return_value<Results<typename C::ReturnType>>
     >;
 
     friend struct details::ActionFactory;
@@ -117,7 +118,7 @@ public:
         if constexpr (std::is_void_v<typename C::ReturnType>) {
             return result;
         } else {
-            return output().param().node_pointer()->compute_node();
+            return output().get_param().node_pointer()->compute_node();
         }
     }
 

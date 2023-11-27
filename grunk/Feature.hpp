@@ -100,10 +100,10 @@ public:
     /**
      * @brief Construct a new Feature object from a parametic::param<T>
      * 
-     * @param p The parametric::param<T> to be wrapped
+     * @param p The param<T> to be wrapped
      */
-    Feature(parametric::param<T>&& p)
-     : FeatureBase<T>(std::forward<parametric::param<T>>(p))
+    Feature(param<T>&& p)
+     : FeatureBase<T>(std::forward<param<T>>(p))
     {}
 
     /**

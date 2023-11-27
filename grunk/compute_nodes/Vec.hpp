@@ -16,7 +16,7 @@ namespace grunk {
  * @tparam T The types of the input features
  */
 template <typename T>
-class Vec : public parametric::ComputeNode<Vec<T>, parametric::Results<std::vector<T>>>
+class Vec : public parametric::ComputeNode<Vec<T>, Results<std::vector<T>>>
 {
 public:
     Vec() = default;
@@ -30,7 +30,7 @@ public:
         std::vector<T> v;
         v.reserve(this->parents.size());
         for (int i=0; i<this->parents.size(); ++i) {
-            v.push_back(this->template arg<T>(i).value());
+            v.push_back(this->template arg<T, Serializer>(i).value());
         }
         if (auto r =  this->template res<0>(); r) {
             r->set_value(std::move(v));

@@ -258,7 +258,7 @@ Recipe Recipe::clone() const
         cloned.emplace(
             id, 
             DynamicFeature(
-                f.param().clone(cloned_nodes), 
+                f.get_param().clone(cloned_nodes), 
                 f.get_type_descriptor()
             )
         );
@@ -285,7 +285,7 @@ void Recipe::Action::connect_inputs(Recipe::FeatureContainer const& inputs)
 {
     input_ids.clear();
     for (auto const& [id, feature] : inputs) {
-        depends_on(feature.param());
+        depends_on(feature.get_param());
         input_ids.push_back(id);
     }
 }
@@ -297,7 +297,7 @@ Recipe::FeatureContainer Recipe::Action::initialize_results()
         features.emplace(
             id_pair.id_to,
             DynamicFeature(
-                parametric::new_param<reflect::DynamicObject>(), 
+                new_param<reflect::DynamicObject>(), 
                 m_recipe->at(id_pair.id_from).get_type_descriptor()
             )
         );
@@ -309,14 +309,14 @@ void Recipe::Action::connect_results(Recipe::FeatureContainer const& res)
 {
     int i =0;
     for (auto const& id_pair : output_ids) {
-        computes(res.at(id_pair.id_to).param());
+        computes(res.at(id_pair.id_to).get_param());
     }
 }
 
 void Recipe::Action::post_connect()
 {
     for (int i=0; i < this->num_children(); ++i) {
-        if (auto r = this->template res<reflect::DynamicObject>(i); r) {
+        if (auto r = result(i); r) {
             r->set_id(output_ids[i].id_to);
         }
     }
@@ -326,11 +326,11 @@ void Recipe::Action::eval() const
 {
     for (int i = 0; i < this->num_parents(); ++i) {
         m_recipe->at(input_ids[i]).access_value() 
-            = this->template arg<reflect::DynamicObject>(i).value();
+            = argument(i).value();
     }
 
     for (int i=0; i < this->num_children(); ++i) {
-        if (auto r = this->template res<reflect::DynamicObject>(i); r) {
+        if (auto r = result(i); r) {
             r->set_value(m_recipe->at(output_ids[i].id_from).value());
         }
     }
@@ -348,7 +348,7 @@ std::string Recipe::Action::serialize() const
 
     YAML::Node inputs;
     for (int i=0; i < this->num_parents(); ++i) {
-        auto const& input = this->template arg<reflect::DynamicObject>(i);
+        auto const& input = argument(i);
         if (input.id() == "" && input.num_parents() == 0) {
             // this is a constant
             inputs[input_ids[i]] = YAML::Load(input.serialize());
