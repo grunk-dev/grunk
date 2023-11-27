@@ -24,6 +24,7 @@ public:
 
     static void TearDownTestCase() {
         reflect::get_type_registry().clear();
+        reflect::get_function_registry().clear();
     } 
 };
 

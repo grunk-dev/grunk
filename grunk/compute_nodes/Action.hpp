@@ -131,7 +131,7 @@ public:
         std::string function_name;
         auto fopt = reflect::resolve_function(function, reflect::ToOptionalTag{});
         if (!fopt) {
-            throw std::logic_error("Cannot serialize Action of an unregistered function.\n");
+            throw std::logic_error("Cannot serialize Action of an unregistered function.");
         } else {
             function_name = (*fopt)->get_full_name();
         }
