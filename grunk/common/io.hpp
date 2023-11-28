@@ -28,7 +28,6 @@ namespace grunk {
 
 namespace details {
 
-
 class ToStringVisitor
 {
 public:
@@ -116,7 +115,7 @@ template <typename Arg>
 void parse_feature(Feature<Arg> const& arg, ToStringVisitor& visitor)
 {
     
-    auto const& node = *(arg.param().node_pointer());
+    auto const& node = *(arg.get_param().node_pointer());
     visitor.set_start_node(node);
     node.accept(
         visitor,

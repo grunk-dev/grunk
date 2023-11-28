@@ -1,6 +1,7 @@
 #pragma once
 
-#include <parametric/core.hpp>
+#include <grunk/common/parametric_core.hpp>
+#include <reflect/reflect.hpp>
 
 namespace grunk {
 
@@ -36,7 +37,7 @@ public:
      * 
      * @param p a parametric::param<T>
      */
-    FeatureBase(parametric::param<T>&& p)
+    FeatureBase(param<T>&& p)
      : m_param(p)
     {}
 
@@ -116,9 +117,9 @@ public:
     /**
      * @brief returns a 
      * 
-     * @return parametric::param<T> const& 
+     * @return param<T> const& 
      */
-    parametric::param<T> const& param() const {
+    param<T> const& get_param() const {
         return m_param;
     }
 
@@ -127,7 +128,7 @@ protected:
     /**
      * @brief m_param FeatureBase is a wrapper around a parametric::param
      */
-    parametric::param<T> m_param;
+    param<T> m_param;
 };
 
 } // namespace grunk

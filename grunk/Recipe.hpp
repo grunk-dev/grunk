@@ -219,6 +219,14 @@ public:
     private:
         Action(std::string const& name, Recipe const&, std::vector<IDPair> const& output_ids);
 
+        inline decltype(auto) argument(int i) const {
+            return this->arg<reflect::DynamicObject, Serializer>(i);
+        }
+
+        inline decltype(auto) result(int i) const {
+            return this->res<reflect::DynamicObject, Serializer>(i);
+        }
+
         std::string m_name;
         std::vector<std::string> input_ids;
         std::vector<IDPair> output_ids;

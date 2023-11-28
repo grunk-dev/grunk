@@ -38,6 +38,14 @@ namespace grunk {
             std::string const& expression
         );
 
+        inline decltype(auto) result(int i) const {
+            return this->res<reflect::DynamicObject, Serializer>(i);
+        }
+
+        inline decltype(auto) argument(int i) const {
+            return this->arg<reflect::DynamicObject, Serializer>(i);
+        }
+
     public:
 
         // factory method
@@ -49,16 +57,16 @@ namespace grunk {
 
         void connect_inputs(std::vector<DynamicFeature> const& inputs) {
             for (auto const& input : inputs) {
-                depends_on(input.param());
+                depends_on(input.get_param());
             }
         };
 
         DynamicFeature initialize_results() const {
-            return DynamicFeature(parametric::new_param<reflect::DynamicObject>(), reflect::resolve<double>());
+            return DynamicFeature(new_param<reflect::DynamicObject>(), reflect::resolve<double>());
         }
 
         void connect_results(DynamicFeature const& res) {
-            computes(res.param());
+            computes(res.get_param());
         }
 
         /**

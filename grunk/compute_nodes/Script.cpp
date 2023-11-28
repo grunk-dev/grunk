@@ -45,16 +45,16 @@ YAML::Node Script::serialize(Script::Step const& step) const
             i.push_back(std::get<std::string>(a));
         } else if (std::holds_alternative<DynamicFeature>(a)) {
             auto const& f = std::get<DynamicFeature>(a);
-            std::cout << f.param().node_pointer()->num_parents() << "\n";
-            if ( (f.param().node_pointer()->num_parents() == 0) && (f.id() == "")) {
+            std::cout << f.get_param().node_pointer()->num_parents() << "\n";
+            if ( (f.get_param().node_pointer()->num_parents() == 0) && (f.id() == "")) {
                 // is a constant
-                YAML::Node n = YAML::Load(f.param().node_pointer()->serialize());
+                YAML::Node n = YAML::Load(f.get_param().node_pointer()->serialize());
                 i.push_back(n);
             } else {
                 i.push_back(f.id());
             }
         } else {
-            auto const& input = this->arg<reflect::DynamicObject>(std::get<int>(a));
+            auto const& input = argument(std::get<int>(a));
             if ( (input.num_parents() == 0) && (input.id() == "")) {
                 YAML::Node n = YAML::Load(input.serialize());
                 i.push_back(n);
@@ -165,7 +165,7 @@ void Script::eval(Script::Step const& s, Script::VariableMap& vars) const
                     throw script_error("Could not resolve input variable \""s + as + "\".");
                 }
             } else if ( std::holds_alternative<int>(a)) {
-                return this->arg<reflect::DynamicObject>(std::get<int>(a)).value();
+                return argument(std::get<int>(a)).value();
             } else {
                 throw script_error("Step is not properly connected to script inputs.");
             }
@@ -245,7 +245,7 @@ void Script::connect_inputs(std::vector<Step> const& steps_)
     for (auto s : steps_) {
         for (auto const& a : s.arguments) {
             if (std::holds_alternative<DynamicFeature>(a)) {
-                depends_on(std::get<DynamicFeature>(a).param());
+                depends_on(std::get<DynamicFeature>(a).get_param());
             }
         }
     }
@@ -257,7 +257,7 @@ Script::ResultType Script::initialize_results() const
     ret.reserve(returns.size());
     for (size_t i = 0; i < returns.size(); ++i) {
         ret.push_back(
-            DynamicFeature(parametric::new_param<reflect::DynamicObject>(), return_types[i])
+            DynamicFeature(new_param<reflect::DynamicObject>(), return_types[i])
         );
     }
     return ret;
@@ -265,7 +265,7 @@ Script::ResultType Script::initialize_results() const
 
 void Script::connect_results(Script::ResultType const& res) {
     for (auto const& f : res) {
-        computes(f.param());
+        computes(f.get_param());
     }
 }
 
@@ -277,7 +277,7 @@ void Script::eval() const
     }
 
     for (int i=0; i< returns.size(); ++i) {
-        if (auto out = this->template res<reflect::DynamicObject>(i); out) {
+        if (auto out = result(i); out) {
             out->set_value(vars.at(returns[i]));
         }
     }
@@ -286,7 +286,7 @@ void Script::eval() const
 void Script::post_connect() const 
 {
     for (int i=0; i < returns.size(); ++i) {
-        if (auto out = this->template res<reflect::DynamicObject>(i); out) {
+        if (auto out = result(i); out) {
             out->set_id(returns[i]);
         }
     }

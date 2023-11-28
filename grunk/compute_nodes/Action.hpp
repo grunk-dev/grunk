@@ -14,6 +14,7 @@
 #include <reflect/reflect.hpp>
 
 #include <functional>
+#include <stdexcept>
 #include <type_traits>
 #include <utility>
 
@@ -23,6 +24,8 @@ namespace details {
 
 //forward declaration
 struct ActionFactory;
+
+YAML::Node serialize(parametric::DAGNode const& node);
 
 } // namespace details
 
@@ -49,8 +52,8 @@ struct ActionFactory;
 template <typename F, typename... Args>
 class Action : public parametric::ComputeNode<
                         Action<F, Args...>,
-                        parametric::Results<std::invoke_result_t<F, Args const&...>>,
-                        parametric::Arguments<Args...>
+                        Results<std::invoke_result_t<F, Args const&...>>,
+                        Arguments<Args...>
                       >
 {
 
@@ -125,7 +128,35 @@ public:
      */
     std::string serialize() const override final
     {
-        throw std::logic_error("Only Actions wrapping a registered dynamic function can be serialized\n");
+        std::string function_name;
+        auto fopt = reflect::resolve_function(function, reflect::ToOptionalTag{});
+        if (!fopt) {
+            throw std::logic_error("Cannot serialize Action of an unregistered function.");
+        } else {
+            function_name = (*fopt)->get_full_name();
+        }
+
+        YAML::Node y;
+
+        // outputs
+        y.push_back(YAML::Node());
+        for (auto const& child : this->get_children()){
+            if (!child.expired()) {
+                y[0].push_back(child.lock()->id());
+            }
+        }
+
+        // inputs
+        y.push_back(YAML::Node());
+        for (auto const& input : this->get_parents()){
+            y[1].push_back(details::serialize(*input));
+        }
+        y.SetStyle(YAML::EmitterStyle::Flow);
+        YAML::Emitter out;
+
+        auto tag = YAML::VerbatimTag(function_name);
+        out << tag << y;
+        return out.c_str();
     }
 
 private:
@@ -243,7 +274,7 @@ struct ActionFactory
         return ResultHolder<MyAction>(
             parametric::compute(
                 std::shared_ptr<MyAction>(new MyAction(id, fun)), 
-                args.param()...
+                args.get_param()...
             )
         );
     }

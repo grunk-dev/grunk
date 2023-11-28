@@ -27,7 +27,7 @@ std::enable_if_t<
 vec(std::string const& id, Feature<T> const& f, Feature<Ts> const&... fs)
 {
     static_assert((std::is_same_v<T, Ts> && ...));
-    auto ret = parametric::compute<Vec<T>>(f.param(), fs.param()...);
+    auto ret = parametric::compute<Vec<T>>(f.get_param(), fs.get_param()...);
     ret.set_id(id);
     return ret;
 }
