@@ -13,6 +13,7 @@ include(AddGoogleTest)
 
 set(TESTSOURCES
   testmain.cpp
+  common_functions.cpp
   Action.cpp
   io.cpp
   DynamicAction.cpp
