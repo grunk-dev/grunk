@@ -19,5 +19,3 @@ from ._core import *
 from ._core.reflect import help as reflect_help
 def help(pattern):
     print(reflect_help(pattern))
-
-from .plugin_helper import load

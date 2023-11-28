@@ -138,7 +138,8 @@ PYBIND11_MODULE(_core, m)
     .def("prepend_path", &grunk::PluginRegistry::prepend_path)
     .def("print_plugins", &grunk::PluginRegistry::print_plugins)
     .def("count", &grunk::PluginRegistry::count)
-    .def("load_all", &grunk::PluginRegistry::load_all)
+    .def("load", &grunk::PluginRegistry::load)
+    .def("unload", &grunk::PluginRegistry::load)
     .def("unload_all", &grunk::PluginRegistry::unload_all);
 
     m.def(
@@ -147,7 +148,9 @@ PYBIND11_MODULE(_core, m)
         py::return_value_policy::reference
     );
 
-    // reflect
+    m.def("init", &grunk::init);
+
+    // reflect (TODO: make python bindings of reflect in reflect)
 
     auto m_reflect = m.def_submodule("reflect", "python bindings for reflect");
 
