@@ -25,7 +25,7 @@ public:
 
         auto& plugins = grunk::get_plugin_registry();
         plugins.prepend_path(".");
-        plugins.load_all();
+        plugins.load("SimplePlugin");
 
         reflect::register_type<NonSerializable>("NonSerializable")
         .add_constructor<int>();

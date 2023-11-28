@@ -1,5 +1,6 @@
-#include "PluginRegistry.hpp"
+#include <grunk/plugins/PluginRegistry.hpp>
 #include <grunk/common/init.hpp>
+#include <grunk/common/common_functions.hpp>
 #include <boost/dll/import.hpp>
 #include <functional>
 #include <iostream>
@@ -11,49 +12,98 @@ PluginRegistry::PluginRegistry()
 {
     // make sure built-in types are registered
     grunk::init();
+    populate_path_from_env();
 }
 
 void PluginRegistry::prepend_path(std::string const& dir)
 {
-    path.insert(path.begin(), dir);
+    path.push_front(dir);
 }
 
-void PluginRegistry::load_all() {
+void PluginRegistry::append_path(std::string const& dir)
+{
+    path.push_back(dir);
+}
 
+void PluginRegistry::populate_path_from_env()
+{
+#if defined (__WIN32__)
+    std::string delimiter = ";";
+#else 
+    std::string delimiter = ":";
+#endif
+
+    std::vector<std::string> env_vars = {"DYLD_LIBRARY_PATH", "PATH", "LD_LIBRARY_PATH"};
+    
+    for (auto const& var: env_vars) {
+        if (const char* paths = std::getenv(var.c_str()); paths) {
+            auto dirs = split(paths, delimiter);
+            for (auto const& dir : dirs) {
+                append_path(dir);
+            }
+        }
+    }
+}
+
+std::optional<std::filesystem::path> PluginRegistry::find_shared_lib(std::string_view name) const
+{
     namespace fs = std::filesystem;
 
     // Searching a folder for files with '.so' or '.dll' extension
     for(auto const& plugins_directory : path) {
-        fs::recursive_directory_iterator endit;
-        for (fs::recursive_directory_iterator it(plugins_directory); it != endit; ++it) {
-
+        fs::directory_iterator endit;
+        for (fs::directory_iterator it(plugins_directory); it != endit; ++it) {
             if (!fs::is_regular_file(*it)) {
                 continue;
             }
             
             auto ext = it->path().extension().string();
             if ( ext == ".dll" || ext == ".so" )  {
-
-                boost::dll::fs::error_code error;
-                try {
-                    boost::dll::shared_library lib(it->path(), error);
-                    if (error) {
-                        //TODO: Logging!!! This is a warning
-                        std::cout << "Error loading " << it->path() << " (error code " << error.value() << "). Did you properly setup the environment using \"grunk virtualrunenv\"?\n";
-                        continue;
-                    }
-
-                    if (lib.has("create_grunk_plugin")) {
-                        insert_plugin(std::move(lib));
-                    }
-                } catch (std::bad_alloc e)
-                {
-                    throw std::runtime_error(std::string("Cannot load grunk plugin\n") + e.what());
+                auto stem = it->path().stem().string();
+                if (stem.find(name) != std::string::npos){
+                    return it->path();
                 }
             }
         }
     }
+    return std::nullopt;
+}
 
+void PluginRegistry::load(std::string const& name) 
+{
+    if(auto shared_lib = find_shared_lib(name); shared_lib) {
+        boost::dll::fs::error_code error;
+        try {
+            boost::dll::shared_library lib(*shared_lib, error);
+            if (error) {
+                throw std::runtime_error(
+                    std::string("Error loading ") + 
+                    shared_lib->string() + 
+                    "(error code = " + 
+                    std::to_string(error.value()) + 
+                    "). Did you properly setup the environment using \"grunk virtualrunenv\"?\n"
+                );
+            }
+
+            if (lib.has("create_grunk_plugin")) {
+                insert_plugin(std::move(lib));
+            }
+        } catch (std::bad_alloc e)
+        {
+            throw std::runtime_error(
+                std::string("Cannot load grunk plugin ") + 
+                shared_lib->string() 
+                + "\n" + e.what()
+            );
+        }
+    }
+}
+
+void PluginRegistry::unload(std::string const& name)
+{
+    //TODO: erase all functions and types starting with "name::" from 
+    //function and type registry
+    loaded_plugins.erase(name);
 }
 
 void PluginRegistry::unload_all()
