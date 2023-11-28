@@ -17,12 +17,18 @@ PluginRegistry::PluginRegistry()
 
 void PluginRegistry::prepend_path(std::string const& dir)
 {
-    path.push_front(dir);
+    std::filesystem::path p(dir);
+    if (std::filesystem::is_directory(p)) {
+        path.push_front(p);
+    }
 }
 
 void PluginRegistry::append_path(std::string const& dir)
 {
-    path.push_back(dir);
+    std::filesystem::path p(dir);
+    if (std::filesystem::is_directory(p)) {
+        path.push_back(p);
+    }
 }
 
 void PluginRegistry::populate_path_from_env()
@@ -38,8 +44,11 @@ void PluginRegistry::populate_path_from_env()
     for (auto const& var: env_vars) {
         if (const char* paths = std::getenv(var.c_str()); paths) {
             auto dirs = split(paths, delimiter);
-            for (auto const& dir : dirs) {
-                append_path(dir);
+            for (auto it = dirs.crbegin(); it != dirs.crend(); ++it )
+            {
+                if (!it->empty()) {
+                    prepend_path(*it);
+                }
             }
         }
     }
@@ -96,6 +105,10 @@ void PluginRegistry::load(std::string const& name)
                 + "\n" + e.what()
             );
         }
+    } else {
+        throw std::runtime_error(
+            std::string("Cannot find plugin \"") + name + "\" in the search path.\n"
+        );
     }
 }
 
