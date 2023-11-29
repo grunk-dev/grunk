@@ -5,6 +5,7 @@
 #include <functional>
 #include <iostream>
 #include <stdexcept>
+#include <stdlib.h>
 
 namespace grunk {
 
@@ -33,7 +34,7 @@ void PluginRegistry::append_path(std::string const& dir)
 
 void PluginRegistry::populate_path_from_env()
 {
-#if defined (__WIN32__)
+#if defined (__WIN32__) || defined (__WIN64__) || defined(__CYGWIN__) || defined (_WIN32) || defined(_WIN64)
     std::string delimiter = ";";
 #else 
     std::string delimiter = ":";
