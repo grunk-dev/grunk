@@ -13,7 +13,7 @@ namespace grunk {
 
 namespace details {
 
-class ActionFactory;
+struct ActionFactory;
 
 } // namespace details
 
