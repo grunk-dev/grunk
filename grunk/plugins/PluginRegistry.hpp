@@ -54,11 +54,25 @@ public:
 
     /**
      * @brief prepends the current search path for plugins
-     * 
-     * @param path the directory that shall be added to the 
+     *
+     * @param path the directory that shall be added to the
      * search path
      */
     void prepend_path(std::string const& path);
+
+    /**
+     * @brief appends the current search path for plugins
+     *
+     * @param path the directory that shall be added to the
+     * search path
+     */
+    void append_path(std::string const& path);
+
+    /**
+     * @brief populates the search path for plugins from the environmentall 
+     * variables PATH, LD_LIBRARY_PATH and DYLD_LIBRARY_PATH
+     */
+    void populate_path_from_env();
 
     /**
      * @brief prints the loaded plugins to console
@@ -73,9 +87,18 @@ public:
     std::size_t count() const;
 
     /**
-     * @brief loads all plugins in the directory provided to the construcotr
+     * @brief load a plugin of a given name.
+     * 
+     * @param name name of the plugin
      */
-    void load_all();
+    void load(std::string const& name);
+
+    /**
+     * @brief unloads a plugin of a given name
+     * 
+     * @param name 
+     */
+    void unload(std::string const& name);
 
     /**
      * @brief unloads all currently loaded plugins. Note that
@@ -99,6 +122,9 @@ private:
      * 
      */
     void insert_plugin(BOOST_RV_REF(boost::dll::shared_library) lib);
+
+    // find a .so or .dll file in the path that contains the passed argument as substring
+    std::optional<std::filesystem::path> find_shared_lib(std::string_view name) const;
 
     Path path;
     PluginMap loaded_plugins;

@@ -40,7 +40,8 @@ int main(int argc, char* argv[]) {
     // load plugins
     auto& plugins = grunk::get_plugin_registry();
     plugins.prepend_path(argv[1]);
-    plugins.load_all();
+    plugins.load("pluginA");
+    plugins.load("pluginB");
 
     {
         std::cout << "\n\nUnique plugins " << plugins.count() << ":\n";

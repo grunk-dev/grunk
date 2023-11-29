@@ -11,6 +11,8 @@ set(grunk_SRC
     compute_nodes/Script.cpp
     compute_nodes/Vec.hpp
     compute_nodes/Vec.cpp
+    common/common_functions.hpp
+    common/common_functions.cpp
     common/init.hpp
     common/init.cpp
     common/io_error.hpp
