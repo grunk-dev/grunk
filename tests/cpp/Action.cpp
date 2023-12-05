@@ -162,3 +162,26 @@ TEST(ActionTest, serialization)
 
     reflect::get_function_registry().clear();
 }
+
+TEST(ActionTest, DynamicFeature_argument)
+{
+    reflect::register_type<Point>("Point")
+    .add_constructor<double, double>()
+    .add_data_member(&Point::x, "x")
+    .add_data_member(&Point::y, "y");
+
+    auto squared = [](double x) { return x*x; };
+
+    // dynamic features
+    auto p = grunk::Feature("p", "Point", 2., 1.);
+    auto x = grunk::action("x", "Point::x", p).output();
+
+    // static action
+    auto s = grunk::action("s", squared, x).output();
+
+    // does it work?
+    EXPECT_NEAR(s.value(), 2., 1e-8);
+
+    // cleanup
+    reflect::get_type_registry().clear();
+}
