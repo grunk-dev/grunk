@@ -1032,12 +1032,12 @@ def generate(config_file: str, output_dir: str, include_dirs: typing.Iterable[st
         with open(cpp_file, "w") as f:
             f.write(cpp)
     else:
-
+        
         for [module_name, src] in modules_src.items():
 
             # create .cpp file
-            src.preamble = src.preamble + f'#include "{module_name}Plugin.hpp"\n'
-            src.preamble = src.preamble + "\n#include <grunk/grunk.h>\n"
+            src.preamble = src.preamble + f'#include "{main_module.name}Plugin.hpp"\n'
+            src.preamble = src.preamble + "\n#include <grunk/grunk.hpp>\n"
             cpp = src.string(namespaces)
 
             cpp_file = os.path.join(output_dir, f"{module_name}.cpp")
