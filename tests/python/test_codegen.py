@@ -36,6 +36,20 @@ def parse_Foo():
         ],
     )
 
+@pytest.fixture(scope="session")
+def parse_typedef():
+
+    include_dir = data_dir()
+
+    return parse_headers(
+        [
+            HeaderPath(include_dir, "typedef.hxx"),
+        ],
+        [
+            include_dir,
+        ],
+    )
+
 
 def test_parse_multiple_headers(parse_Foo_and_Included):
 
@@ -307,6 +321,26 @@ def test_codegen_classes_prefix_fully_qualified_names(parse_Foo):
         some_function_cpp_code
         == 'register_function<ns1::Other (*)(const ForwardDeclared &, ns2::Bar *)>(&ns2::some_function, "schurz::ns2::some_function");\n'
     )
+
+
+def test_parse_typedef(parse_typedef):
+
+    classes, functions = parse_typedef
+    c = CodeGenerator()
+    
+    assert len(classes) == 2
+
+    assert classes[0].name == "NonTemplateClass"
+    assert len(classes[0].methods) == 1
+    assert classes[0].methods[0].name == "foo"
+
+    assert classes[1].name == "TemplateClass_int"
+    assert len(classes[1].fields) == 1
+    assert classes[1].fields[0].name == "value"
+    assert len(classes[1].methods) == 1
+    assert classes[1].methods[0].name == "get"
+    
+
 
 
 def test_no_whitelist_no_blacklist():
