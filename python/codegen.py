@@ -410,6 +410,11 @@ def is_class(n):
         clang.cindex.CursorKind.STRUCT_DECL,
     ]
 
+def is_alias(n):
+    return n.kind in [
+        clang.cindex.CursorKind.TYPEDEF_DECL,
+        clang.cindex.CursorKind.TYPE_ALIAS_DECL
+    ]
 
 def is_enum(n):
     return n.kind in [
@@ -573,7 +578,7 @@ def parse_headers(headers: typing.Iterable[str], include_dirs: typing.Iterable[s
     functions = []
     for node in filter_node_list_by_predicate(
         translation_unit.cursor.get_children(),
-        lambda n: is_in_headers(n) and (is_class(n) or is_func(n)),
+        lambda n: is_in_headers(n) and (is_class(n) or is_func(n) or is_alias(n)),
     ):
         if is_class(node):
             if not is_forward_declaration(node) and node.spelling:
@@ -591,6 +596,16 @@ def parse_headers(headers: typing.Iterable[str], include_dirs: typing.Iterable[s
             # We need to know the exact number of arguments (for now...)
             if not fd.is_variadic:
                 functions.append(fd)
+
+        elif is_alias(node):
+            cd = ClassDecl(node.type.get_canonical().get_declaration())
+            cd.name = node.spelling
+
+            # only append type aliases if they haven't been added yet
+            #TODO: We should explicitly allow type aliases in reflect
+            other = next((o for o in classes if o.node == cd.node), None)
+            if not other:
+                classes.append(cd)
 
     return classes, functions
 
