@@ -195,12 +195,12 @@ class Callable(ABC):
 
     def __init__(self, node: clang.cindex.Cursor):
 
-        self.return_type = node.type.get_result().get_canonical().spelling
+        self.return_type = node.type.get_result().spelling
 
         self.num_default_args = 0
         self.arguments = []
         for arg in node.get_arguments():
-            self.arguments.append(arg.type.get_canonical().spelling)
+            self.arguments.append(arg.type.spelling)
 
             if "=" in [token.spelling for token in arg.get_tokens()]:
                 self.num_default_args = self.num_default_args + 1

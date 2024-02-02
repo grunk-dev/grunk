@@ -80,7 +80,7 @@ def test_parse_single_header(parse_Foo):
     assert len(baz.methods) == 1
     assert baz.methods[0].name == "operator new"
     assert baz.methods[0].fully_qualified_name == "Baz::operator new"
-    assert "void * (*)(unsigned long" in baz.methods[0].function_pointer_type # some clang versins make size_t unsigned long, others unsigned long long
+    assert "void * (*)(size_t" in baz.methods[0].function_pointer_type # some clang versins make size_t unsigned long, others unsigned long long
     assert not baz.methods[0].is_const
     assert baz.methods[0].is_static
     assert not baz.methods[0].is_overloaded
@@ -212,7 +212,7 @@ def test_codegen_classes_none(parse_Foo):
     assert classes[0].name == "Baz"
     baz_cpp_code = c.cpp_register_type(classes[0])
     assert 'register_type<Baz>("Baz")' in baz_cpp_code
-    assert '.add_member_function<void * (*)(unsigned long' in baz_cpp_code # size_t is sometimes unsigned long, sometimes unsinged long long
+    assert '.add_member_function<void * (*)(size_t' in baz_cpp_code # size_t is sometimes unsigned long, sometimes unsinged long long
     assert '(&Baz::operator new, "operator new");' in baz_cpp_code
 
     assert classes[1].name == "Bar"
