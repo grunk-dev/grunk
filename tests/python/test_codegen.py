@@ -1,5 +1,5 @@
 import os
-from grunk.codegen import parse_headers, FunctionDecl, Module, generate, HeaderPath, CodeGenerator
+from grunk.codegen import *
 import clang.cindex
 import pytest
 import yaml
@@ -521,6 +521,62 @@ def test_custom_code_generator_from_config():
     assert "register_type<Standard_Transient>" in src
     assert "register_type<Foo, opencascade_handle>" in src
     assert "register_type<Bar>" in src
+
+
+def test_fully_qualified_type_name():
+    """test the function fully_qualified_type_name, specifically applied to 
+    function arguments. All type names should be fully qualified including all nested
+    name specifiers, but in contrasts to clang.cindex.Type.get_canonical, type aliases 
+    and typedefs shall not be expanded.
+    """
+
+    index = clang.cindex.Index.create()
+    header = os.path.join(data_dir(), "my_source.hpp")
+    tu = index.parse(header)
+
+    functions = {}
+    for i in filter_node_list_by_predicate(
+        tu.cursor.get_children(), 
+        lambda n: n.kind in [clang.cindex.CursorKind.FUNCTION_DECL, clang.cindex.CursorKind.CXX_METHOD]
+    ):
+        functions[fully_qualified(i)] = {}
+        fun = functions[fully_qualified(i)]
+        
+        fun["ret"] = fully_qualified_type_name(i.type.get_result())
+        fun["args"] = [
+            fully_qualified_type_name(arg.type) for arg in i.get_arguments()
+        ]
+    
+    assert len(functions) == 4
+
+    assert "ns::Foo::fun1" in functions
+    fun = functions["ns::Foo::fun1"]
+    assert fun["ret"] == "ns::Foo::Bar"
+    assert len(fun["args"]) == 1
+    assert fun["args"][0] == "void *"
+
+    assert "ns::fun2" in functions
+    fun = functions["ns::fun2"]
+    assert fun["ret"] == "double"
+    assert len(fun["args"]) == 3
+    assert fun["args"][0] == "ns::Foo *"
+    assert fun["args"][1] == "ns::Foo::Bar &"
+    assert fun["args"][2] == "const ns::Baz &"
+
+    assert "ns::fun3" in functions
+    fun = functions["ns::fun3"]
+    assert fun["ret"] == "ns::Baz &"
+    assert len(fun["args"]) == 0
+
+    assert "ns::fun4" in functions
+    fun = functions["ns::fun4"]
+    assert fun["ret"] == "ns::Baz"
+    assert len(fun["args"]) == 3
+    assert fun["args"][0] == "ns::Baz"
+    assert fun["args"][1] == "ns::Foo"
+    assert fun["args"][2] == "ns::Foo *"
+
+
 
 # TODO:
 # - test generated code (smaller header, actually compile with clang)
