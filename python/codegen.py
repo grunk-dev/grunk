@@ -457,32 +457,35 @@ def fully_qualified_type_name(typ: clang.cindex.Type):
 
     ret = typ.spelling
 
-    src = None
-    tgt = None
-    is_const = False
+    replacements = {}
+
+    def add_template_replacements(t, replacements):
+        n_targs = t.get_num_template_arguments()
+        if n_targs > 0:
+            for idx in range(0, n_targs):
+                targ = t.get_template_argument_type(idx)
+                src = targ.spelling
+                tgt = fully_qualified_type_name(targ)
+                replacements[src] = tgt
 
     decl = typ.get_declaration()
     if decl.spelling:
-        src = decl.spelling
-        tgt = decl.type.spelling
-        is_const = typ.is_const_qualified()
+        replacements[decl.spelling] = fully_qualified(decl)
+        add_template_replacements(typ, replacements)
     else:
         pointee = typ.get_pointee()
         if pointee.spelling:
-            src = pointee.spelling
+            add_template_replacements(pointee, replacements)
             decl = pointee.get_declaration()
             if decl.spelling:
-                tgt = decl.type.spelling
-            is_const = pointee.is_const_qualified()
+                replacements[decl.spelling] = fully_qualified(decl)
     
-    if src is None or tgt is None:
+    if not replacements:
         return ret
-
-    if is_const:
-        tgt = 'const ' + tgt
             
-    if not tgt in ret:
-        ret = ret.replace(src, tgt)
+    for src, tgt in replacements.items():
+        if not tgt in ret:
+            ret = ret.replace(src, tgt)
 
     return ret
 

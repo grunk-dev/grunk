@@ -2,6 +2,9 @@
 
 namespace ns {
 
+    template <typename T>
+    struct ATemplate {};
+
     struct Foo {
         struct Bar {};
 
@@ -15,4 +18,6 @@ namespace ns {
     Baz& fun3();
 
     Baz fun4(Baz, Foo, Foo*);
+
+    ATemplate<Baz> fun5(ATemplate<Baz>&);
 }
