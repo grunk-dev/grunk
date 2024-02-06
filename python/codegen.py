@@ -195,12 +195,12 @@ class Callable(ABC):
 
     def __init__(self, node: clang.cindex.Cursor):
 
-        self.return_type = node.type.get_result().spelling
+        self.return_type = fully_qualified_type_name(node.type.get_result())
 
         self.num_default_args = 0
         self.arguments = []
         for arg in node.get_arguments():
-            self.arguments.append(arg.type.spelling)
+            self.arguments.append(fully_qualified_type_name(arg.type))
 
             if "=" in [token.spelling for token in arg.get_tokens()]:
                 self.num_default_args = self.num_default_args + 1
@@ -422,7 +422,7 @@ def is_func(n):
     return n.kind == clang.cindex.CursorKind.FUNCTION_DECL
 
 
-def fully_qualified(c):
+def fully_qualified(c : clang.cindex.Cursor):
     """returns the fully qualified name of a node, including all namespaces
 
     :param c: The clang cursor of the node
@@ -439,6 +439,52 @@ def fully_qualified(c):
         if res != "":
             return res + "::" + c.spelling
     return c.spelling
+
+
+
+def fully_qualified_type_name(typ: clang.cindex.Type):
+    """returns the fully qualified name of a type. In constrast to get_canonical, 
+    this function does not resolve type aliases.
+
+    :param typ: The input type
+    :type typ: clang.cindex.Type
+    :return: The fully qualified type name of the input type
+    :rtype: str
+    """
+
+    # get spelling or type and find and replace any types with the type names of the 
+    # type declaration, if any
+
+    ret = typ.spelling
+
+    src = None
+    tgt = None
+    is_const = False
+
+    decl = typ.get_declaration()
+    if decl.spelling:
+        src = decl.spelling
+        tgt = decl.type.spelling
+        is_const = typ.is_const_qualified()
+    else:
+        pointee = typ.get_pointee()
+        if pointee.spelling:
+            src = pointee.spelling
+            decl = pointee.get_declaration()
+            if decl.spelling:
+                tgt = decl.type.spelling
+            is_const = pointee.is_const_qualified()
+    
+    if src is None or tgt is None:
+        return ret
+
+    if is_const:
+        tgt = 'const ' + tgt
+            
+    if not tgt in ret:
+        ret = ret.replace(src, tgt)
+
+    return ret
 
 
 def get_system_include_directories():

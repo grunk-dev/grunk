@@ -142,9 +142,9 @@ def test_parse_single_header(parse_Foo):
     assert (
         len(foo.constructors[1].arguments) == 3
     )  # Foo(Standard_Real, Standard_Real, Standard_Real)
-    assert foo.constructors[1].arguments[0] == "double"
-    assert foo.constructors[1].arguments[1] == "double"
-    assert foo.constructors[1].arguments[2] == "double"
+    assert foo.constructors[1].arguments[0] == "Standard_Real"
+    assert foo.constructors[1].arguments[1] == "Standard_Real"
+    assert foo.constructors[1].arguments[2] == "Standard_Real"
     assert len(foo.constructors[2].arguments) == 1  # Foo(bool)
     assert foo.constructors[2].arguments[0] == "bool"
 
@@ -186,7 +186,7 @@ def test_parse_single_header(parse_Foo):
     assert not static_func.is_const
     assert not static_func.is_overloaded
     assert len(static_func.arguments) == 1
-    assert static_func.arguments[0] == "const std::basic_string<char> &"
+    assert static_func.arguments[0] == "const std::string &"
     assert static_func.return_type == "void"
 
     #################
@@ -234,13 +234,13 @@ def test_codegen_classes_none(parse_Foo):
         == """register_type<ns2::Foo>("Foo")
 .add_base<ns2::Bar>()
 .add_constructor<>()
-.add_constructor<double, double, double>()
+.add_constructor<Standard_Real, Standard_Real, Standard_Real>()
 .add_constructor<bool>()
 .add_conversion<ns1::Other>()
 .add_data_member(&ns2::Foo::data_member, "data_member")
 .add_member_function<double (ns2::Foo::*)(int) const>(&ns2::Foo::baz, "baz")
 .add_member_function<double (ns2::Foo::*)(double) const>(&ns2::Foo::baz, "baz")
-.add_member_function<void (*)(const std::basic_string<char> &)>(&ns2::Foo::static_func, "static_func");
+.add_member_function<void (*)(const std::string &)>(&ns2::Foo::static_func, "static_func");
 """
     )
 
