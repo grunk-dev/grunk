@@ -180,7 +180,6 @@ test-windows-python:
    - python -m pip install .[test]
    - grunk user auth ci_user -p ${CI_JOB_TOKEN}
    - pytest -s
-  allow_failure: true #TODO: I think this currently fails because PluginB links against reflect 0.1.4 while grunk uses 0.1.5, but I am not sure.
 
 create-conan-package-ubuntu:
 # This job creates new release packages. It should only run on git tags

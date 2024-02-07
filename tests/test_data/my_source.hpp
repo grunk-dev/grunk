@@ -19,5 +19,8 @@ namespace ns {
 
     Baz fun4(Baz, Foo, Foo*);
 
-    ATemplate<Baz> fun5(ATemplate<Baz>&);
+    using ABaz = ATemplate<Baz>;
+
+    ABaz fun5(ATemplate<Baz>&, ATemplate<Baz>);
+
 }
