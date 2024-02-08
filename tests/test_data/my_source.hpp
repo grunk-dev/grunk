@@ -25,4 +25,6 @@ namespace ns {
 
     ABaz::value_type fun5(ATemplate<Baz>&, ATemplate<Baz>);
 
+    const char * fun6();
+
 }

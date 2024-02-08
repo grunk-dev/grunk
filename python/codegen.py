@@ -564,8 +564,13 @@ def before_type_str_nq(t: clang.cindex.Type) -> str:
     # TODO: FUNCTIONNOPROTO, pointer-to-member, and possibly others.
 
     else:
-        # For other types, just use the spelling as its "before" syntax.
-        return t.spelling
+        # For other types, just use the spelling as its "before" syntax,
+        # removing any specifiers
+        ret = t.spelling
+        ret = ret.replace('const', '')
+        ret = ret.replace('volatile', '')
+        ret = ret.replace('restrict', '')
+        return ret.strip()
 
 
 def after_type_str(t: clang.cindex.Type) -> str:

@@ -548,7 +548,7 @@ def test_fully_qualified_type_name():
             type_str(arg.type) for arg in i.get_arguments()
         ]
     
-    assert len(functions) == 5
+    assert len(functions) == 6
 
     assert "ns::Foo::fun1" in functions
     fun = functions["ns::Foo::fun1"]
@@ -586,6 +586,11 @@ def test_fully_qualified_type_name():
     assert len(fun["args"]) == 2
     assert fun["args"][0] == "ns::ATemplate<ns::Baz> &"
     assert fun["args"][1] == "ns::ATemplate<ns::Baz>"
+
+    assert "ns::fun6" in functions
+    fun = functions["ns::fun6"]
+    assert fun["ret"] == "char const *"
+    assert len(fun["args"]) == 0
 
 
 
