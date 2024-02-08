@@ -440,7 +440,12 @@ def get_decl_fqn(decl: clang.cindex.Cursor) -> str:
 
     # Otherwise, print the parent name as a qualifier.
     else:
-        return get_decl_fqn(parent) + "::" + decl.spelling
+        # If the parent is a named type, use this as qualifier
+        if parent.type is not None and parent.type.spelling:
+            return parent.type.spelling + "::" + decl.spelling
+        else:
+            #Otherwise, recurse
+            return get_decl_fqn(parent) + "::" + decl.spelling
 
 
 def starts_with_letter(s: str) -> bool:
@@ -466,7 +471,7 @@ def join_type_strs(s1: str, s2: str) -> str:
     joined edge.
     """
 
-    needs_space = ends_with_letter(s1) or s1[-1]=='>' or starts_with_letter(s2)
+    needs_space = ends_with_letter(s1) or s1.endswith('>') or starts_with_letter(s2)
     if s1 != "" and s2 != "" and needs_space:
         return s1 + " " + s2
     else:

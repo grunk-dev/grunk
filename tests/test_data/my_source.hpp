@@ -3,7 +3,9 @@
 namespace ns {
 
     template <typename T>
-    struct ATemplate {};
+    struct ATemplate {
+        using value_type = T;
+    };
 
     struct Foo {
         struct Bar {};
@@ -19,8 +21,8 @@ namespace ns {
 
     Baz fun4(Baz, Foo, Foo*);
 
-    using ABaz = ATemplate<Baz>;
+    typedef ATemplate<Baz> ABaz;
 
-    ABaz fun5(ATemplate<Baz>&, ATemplate<Baz>);
+    ABaz::value_type fun5(ATemplate<Baz>&, ATemplate<Baz>);
 
 }
