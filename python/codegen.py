@@ -471,7 +471,11 @@ def join_type_strs(s1: str, s2: str) -> str:
     joined edge.
     """
 
-    needs_space = ends_with_letter(s1) or s1.endswith('>') or starts_with_letter(s2)
+    needs_space = (ends_with_letter(s1) 
+        or s1.endswith('>') 
+        or starts_with_letter(s2) 
+        or s2.startswith('&') 
+        or s2.startswith('*'))
     if s1 != "" and s2 != "" and needs_space:
         return s1 + " " + s2
     else:
