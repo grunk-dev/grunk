@@ -526,7 +526,7 @@ def get_template_arguments(t: clang.cindex.Type) -> typing.Iterable[str]:
 
     template_arg_strs = []
 
-    cleaned_str = t.get_canonical().spelling.replace(" ", "")
+    cleaned_str = t.get_named_type().spelling.replace(" ", "")
 
     # find outer-most bracket pair <> and extract substring between
     start = cleaned_str.find('<')+1
@@ -563,7 +563,13 @@ def get_template_arguments(t: clang.cindex.Type) -> typing.Iterable[str]:
 
     # Replace all type template parameters with fully qualified names. Keep non-type
     # template parameters
-    for i in range(0, t.get_num_template_arguments()):
+    ntargs = t.get_num_template_arguments()
+    if ntargs>0:
+        # it is possible that the named type has no template arguments in its spelling, 
+        # but the type actually has template arguments. This happens with type aliases 
+        # and default template arguments for instance
+        assert ntargs >= len(template_arg_strs)
+    for i in range(0, len(template_arg_strs)):
         arg_type = t.get_template_argument_type(i)
         if arg_type.spelling:
             template_arg_strs[i] = type_str(arg_type)
