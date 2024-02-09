@@ -513,6 +513,60 @@ def cv_qualifiers_str(t: clang.cindex.Type) -> str:
     return " ".join(qualifiers)
 
 
+def get_template_arguments(t: clang.cindex.Type) -> typing.Iterable[str]:
+    """returns a list of template arguments as a string. Keeps the non-type
+    template arguments verbatim and replaces type template arguments with the 
+    fully qualified type string
+    """
+    # extract template arguments from canoncial type using string methods
+
+    template_arg_strs = []
+
+    cleaned_str = t.get_canonical().spelling.replace(" ", "")
+
+    # find outer-most bracket pair <> and extract substring between
+    start = cleaned_str.find('<')+1
+    if start > 0:
+        end = cleaned_str.rfind('>')
+        assert(end>0)
+        cleaned_str = cleaned_str[start:end]
+
+        nested_bracket_count = 0
+        i = 0
+        while i < len(cleaned_str):
+
+            if cleaned_str[i] == '<':
+                # we are parsing a template argument of a template argument. ignoring all commas
+                # until we hit the corresponding closing bracket
+                nested_bracket_count += 1
+            elif cleaned_str[i] == '>':
+                nested_bracket_count -= 1
+
+            assert(nested_bracket_count >= 0)
+            ignore_characters = (nested_bracket_count>0)
+
+            # seperate arguments at comma
+            if not ignore_characters and cleaned_str[i] == ',':
+                template_arg_strs.append(cleaned_str[0:i].strip())
+                cleaned_str = cleaned_str[i+1:]
+                i = 0
+            else:
+                i = i+1
+
+        # add last argument if any
+        if cleaned_str:
+            template_arg_strs.append(cleaned_str)
+
+    # Replace all type template parameters with fully qualified names. Keep non-type
+    # template parameters
+    for i in range(0, t.get_num_template_arguments()):
+        arg_type = t.get_template_argument_type(i)
+        if arg_type.spelling:
+            template_arg_strs[i] = type_str(arg_type)
+
+    return template_arg_strs
+
+
 def before_type_str_nq(t: clang.cindex.Type) -> str:
     """
     Print the part of 't' that would go before the declarator name in a
@@ -530,14 +584,13 @@ def before_type_str_nq(t: clang.cindex.Type) -> str:
         # we do not want to add the template parameters here. So we need to check 
         # this first. A clue for this is that the end of the  named type is the 
         # same and it contains no <> parenthesis
-        named_type_str = t.get_named_type().spelling
-        ntargs = t.get_num_template_arguments()
-        if ntargs > 0 and not ret.endswith(named_type_str) and '<' in named_type_str:
+        targs = get_template_arguments(t)
+        if not ret.endswith(t.get_named_type().spelling):
             ret += '<'
-            for i in range(0, ntargs):
+            for i in range(0, len(targs)):
                 if i>0:
                     ret+= ', '
-                ret += type_str(t.get_template_argument_type(i))
+                ret += targs[i]
             ret += '>'
         
         return ret

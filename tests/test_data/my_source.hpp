@@ -1,5 +1,8 @@
 #pragma once 
 
+template <typename T, int = 42>
+struct NonTypeTemplateArg {};
+
 namespace ns {
 
     template <typename T>
@@ -26,5 +29,7 @@ namespace ns {
     ABaz::value_type fun5(ATemplate<Baz>&, ATemplate<Baz>);
 
     const char * fun6();
+
+    auto fun7(NonTypeTemplateArg<ATemplate<Baz>, 5>);
 
 }
