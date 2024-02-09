@@ -493,7 +493,7 @@ def before_type_str(t: clang.cindex.Type) -> str:
     declaration of a variable with that type.
     """
 
-    return join_type_strs(before_type_str_nq(t), cv_qualifiers_str(t))
+    return join_type_strs(cv_qualifiers_str(t), before_type_str_nq(t))
 
 
 def cv_qualifiers_str(t: clang.cindex.Type) -> str:

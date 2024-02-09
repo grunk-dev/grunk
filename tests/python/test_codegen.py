@@ -186,7 +186,7 @@ def test_parse_single_header(parse_Foo):
     assert not static_func.is_const
     assert not static_func.is_overloaded
     assert len(static_func.arguments) == 1
-    assert static_func.arguments[0] == "std::string const &"
+    assert static_func.arguments[0] == "const std::string &"
     assert static_func.return_type == "void"
 
     #################
@@ -199,7 +199,7 @@ def test_parse_single_header(parse_Foo):
     assert not sf.is_overloaded
     assert not sf.is_static
     assert len(sf.arguments) == 2
-    assert sf.arguments[0] == "ForwardDeclared const &"
+    assert sf.arguments[0] == "const ForwardDeclared &"
     assert sf.arguments[1] == "ns2::Bar *"
     assert sf.return_type == "ns1::Other"
 
@@ -240,7 +240,7 @@ def test_codegen_classes_none(parse_Foo):
 .add_data_member(&ns2::Foo::data_member, "data_member")
 .add_member_function<double (ns2::Foo::*)(int) const>(&ns2::Foo::baz, "baz")
 .add_member_function<double (ns2::Foo::*)(double) const>(&ns2::Foo::baz, "baz")
-.add_member_function<void (*)(std::string const &)>(&ns2::Foo::static_func, "static_func");
+.add_member_function<void (*)(const std::string &)>(&ns2::Foo::static_func, "static_func");
 """
     )
 
@@ -250,7 +250,7 @@ def test_codegen_classes_none(parse_Foo):
     some_function_cpp_code = c.cpp_register_function(functions[0])
     assert (
         some_function_cpp_code
-        == 'register_function<ns1::Other (*)(ForwardDeclared const &, ns2::Bar *)>(&ns2::some_function, "some_function");\n'
+        == 'register_function<ns1::Other (*)(const ForwardDeclared &, ns2::Bar *)>(&ns2::some_function, "some_function");\n'
     )
 
 
@@ -268,7 +268,7 @@ def test_codegen_classes_fully_qualified_names(parse_Foo):
     some_function_cpp_code = c.cpp_register_function(functions[0])
     assert (
         some_function_cpp_code
-        == 'register_function<ns1::Other (*)(ForwardDeclared const &, ns2::Bar *)>(&ns2::some_function, "ns2::some_function");\n'
+        == 'register_function<ns1::Other (*)(const ForwardDeclared &, ns2::Bar *)>(&ns2::some_function, "ns2::some_function");\n'
     )
 
 
@@ -286,7 +286,7 @@ def test_codegen_classes_prefix(parse_Foo):
     some_function_cpp_code = c.cpp_register_function(functions[0])
     assert (
         some_function_cpp_code
-        == 'register_function<ns1::Other (*)(ForwardDeclared const &, ns2::Bar *)>(&ns2::some_function, "schurz::some_function");\n'
+        == 'register_function<ns1::Other (*)(const ForwardDeclared &, ns2::Bar *)>(&ns2::some_function, "schurz::some_function");\n'
     )
 
 
@@ -305,7 +305,7 @@ def test_codegen_classes_prefix_fully_qualified_names(parse_Foo):
     some_function_cpp_code = c.cpp_register_function(functions[0])
     assert (
         some_function_cpp_code
-        == 'register_function<ns1::Other (*)(ForwardDeclared const &, ns2::Bar *)>(&ns2::some_function, "schurz::ns2::some_function");\n'
+        == 'register_function<ns1::Other (*)(const ForwardDeclared &, ns2::Bar *)>(&ns2::some_function, "schurz::ns2::some_function");\n'
     )
 
 
@@ -562,7 +562,7 @@ def test_fully_qualified_type_name():
     assert len(fun["args"]) == 3
     assert fun["args"][0] == "ns::Foo *"
     assert fun["args"][1] == "ns::Foo::Bar &"
-    assert fun["args"][2] == "ns::Baz const &"
+    assert fun["args"][2] == "const ns::Baz &"
 
     assert "ns::fun3" in functions
     fun = functions["ns::fun3"]
@@ -589,7 +589,7 @@ def test_fully_qualified_type_name():
 
     assert "ns::fun6" in functions
     fun = functions["ns::fun6"]
-    assert fun["ret"] == "char const *"
+    assert fun["ret"] == "const char *"
     assert len(fun["args"]) == 0
 
     assert "ns::fun7" in functions
