@@ -9,21 +9,21 @@ ResultHolder<DynamicAction> action(std::string const& id, reflect::DynamicFuncti
 
 ResultHolder<DynamicAction> action(std::string const& id, std::string const& name, std::vector<DynamicFeature> const& args)
 {
-    std::vector<reflect::DynamicFunction::SpecifiedArgument> specified_args;
+    std::vector<reflect::Parameter> params;
     std::transform(
         std::begin(args),
         std::end(args),
-        std::back_inserter(specified_args),
+        std::back_inserter(params),
         [](DynamicFeature const& f) {
             assert(f.get_type_descriptor() != nullptr);
-            return reflect::DynamicFunction::SpecifiedArgument{
+            return reflect::Parameter{
                 f.get_type_descriptor(),
-                reflect::DynamicFunction::ArgumentSpecifier::PtrOrRefToConst
+                reflect::Parameter::Specifier::PtrOrRefToConst
             };
         }
     );
     auto const& overload = reflect::resolve_function(name);
-    auto const& function = overload.resolve(specified_args);
+    auto const& function = overload.resolve(params);
     return action(id, function, args);
 }
 

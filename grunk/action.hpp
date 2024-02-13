@@ -133,33 +133,30 @@ ResultHolder<DynamicAction> action(std::string const& id, reflect::DynamicFuncti
 namespace details {
 
 template <typename T>
-reflect::DynamicFunction::SpecifiedArgument to_specified_argument(T&& f)
+reflect::Parameter to_parameter(T&& f)
 {
     using F = std::decay_t<T>;
-    reflect::DynamicFunction::ArgumentSpecifier spec
-        = reflect::DynamicFunction::ArgumentSpecifier::PtrOrRefToConst;
+    reflect::Parameter::Specifier spec
+        = reflect::Parameter::Specifier::PtrOrRefToConst;
     if constexpr (std::is_rvalue_reference_v<T>) {
-        spec = reflect::DynamicFunction::ArgumentSpecifier::Value;
+        spec = reflect::Parameter::Specifier::Value;
     }
 
     if constexpr ( std::is_same_v<F, DynamicFeature>) {
         if (f.get_type_descriptor() == nullptr) {
             throw std::logic_error("Unexpected error: Unknown type of dynamic feature.");
         }
-        return reflect::DynamicFunction::SpecifiedArgument{
+        return reflect::Parameter{
             f.get_type_descriptor(),
             spec
         };
     } else if constexpr (details::is_feature_v<F>) {
-        return reflect::DynamicFunction::SpecifiedArgument{
+        return reflect::Parameter{
             reflect::resolve<typename F::value_type>(),
             spec
         };
     } else {
-        return reflect::DynamicFunction::SpecifiedArgument{
-            reflect::resolve<F>(),
-            spec
-        };
+        return reflect::Parameter::resolve(std::forward<T>(f));
     }
 }
 
@@ -182,12 +179,12 @@ reflect::DynamicFunction::SpecifiedArgument to_specified_argument(T&& f)
 template <typename... Args>
 ResultHolder<DynamicAction> action(std::string const& id, std::string const& name, Args&&... args)
 {
-    std::vector<reflect::DynamicFunction::SpecifiedArgument> specified_args{
-        details::to_specified_argument(std::forward<Args>(args))...
+    std::vector<reflect::Parameter> params {
+        details::to_parameter(std::forward<Args>(args))...
     };
 
     auto const& overload = reflect::resolve_function(name);
-    auto const& function = overload.resolve(specified_args);
+    auto const& function = overload.resolve(params);
     return action(id, function, std::forward<Args>(args)...);
 }
 
