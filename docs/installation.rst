@@ -16,14 +16,14 @@ Setup conan
 Install conan
 *************
 
-Install ``conan`` via pip or conda, whichever you prefer. 
+Install ``conan 1.x`` via pip or conda, whichever you prefer. 
 As always, it is recommended to install python packages in an isolated environment. 
 To install ``conan`` into an environment called `paradigms` using conda enter the 
 following commands
 
 .. code-block:: console
 
-   conda create -n paradigms conan
+   conda create -n paradigms "conan<2.0.0"
    conda activate paradigms
 
 If you are using Linux, you should 
