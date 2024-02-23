@@ -210,8 +210,8 @@ Script::Script(
     std::unordered_map<std::string, reflect::TypeDescriptor const*> types;
     for (auto const& step : steps) {
 
-        std::vector<reflect::DynamicFunction::SpecifiedArgument> spec_args;
-        spec_args.reserve(step.arguments.size());
+        std::vector<reflect::Parameter> params;
+        params.reserve(step.arguments.size());
 
         for (auto const& arg : step.arguments) {
             reflect::TypeDescriptor const* descr = nullptr;
@@ -225,10 +225,10 @@ Script::Script(
             } else {
                 descr = input_types[std::get<int>(arg)];
             }
-            spec_args.push_back({descr, reflect::DynamicFunction::ArgumentSpecifier::PtrOrRef});
+            params.push_back({descr, reflect::Parameter::Specifier::PtrOrRef});
         }
         auto const& overload = reflect::resolve_function(step.function_name);
-        auto const& function = overload.resolve(spec_args);
+        auto const& function = overload.resolve(params);
 
         for (size_t i = 0; i< step.outputs.size(); ++i) {
             types[step.outputs[i]] = function.get_return_type(i);
