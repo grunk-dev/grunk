@@ -18,6 +18,11 @@ else()
     find_package(pybind11 REQUIRED)
 endif()
 
+if(MSVC)
+    #https://developercommunity.visualstudio.com/t/error-C2187-syntax-error:-attribute-sp/10439022
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /Zc:lambda")
+endif()
+
 pybind11_add_module(_core MODULE
     _core.cpp
 )
