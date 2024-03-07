@@ -2,6 +2,7 @@
 
  - bump reflect to 0.1.10
  - bump parametric to 0.3.4
+ - Fix compiler error on MSVC 17.9 related to lambdas (!64)
  - several fixes to code generator, specifically to generate portable code (not resolving typedefs) and supporting generated source code 
    that is seperated into one translation unit per module. This speeds up compiplation of grocc.
  - Allow loading and unloading of individual plugins with `grunk::PluginRegistry::load(std::string const& pluginName)`. 
