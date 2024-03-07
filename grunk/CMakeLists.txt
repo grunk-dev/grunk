@@ -46,6 +46,11 @@ set(grunk_SRC
     vec.cpp
 )
 
+if(MSVC)
+    #https://developercommunity.visualstudio.com/t/error-C2187-syntax-error:-attribute-sp/10439022
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /Zc:lambda")
+endif()
+
 # create a library and add source files
 add_library(grunk ${grunk_SRC})
 
