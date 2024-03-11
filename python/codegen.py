@@ -445,7 +445,11 @@ def get_decl_fqn(decl: clang.cindex.Cursor) -> str:
             return parent.type.spelling + "::" + decl.spelling
         else:
             #Otherwise, recurse
-            return get_decl_fqn(parent) + "::" + decl.spelling
+            prefix = get_decl_fqn(parent)
+            if prefix:
+                return get_decl_fqn(parent) + "::" + decl.spelling
+            else:
+                return decl.spelling
 
 
 def starts_with_letter(s: str) -> bool:
