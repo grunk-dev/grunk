@@ -52,15 +52,15 @@ YAML::Node serialize(parametric::DAGNode const& node);
 template <typename F, typename... Args>
 class Action : public parametric::ComputeNode<
                         Action<F, Args...>,
-                        Results<std::invoke_result_t<F, Args const&...>>,
+                        Results<typename reflect::details::function_traits<F>::return_type>,
                         Arguments<Args...>
                       >
 {
 
 public:
     
-    static_assert(std::is_invocable_v<F, Args const& ...>, "\n\nFunction is not invocable with const references. "
-        "Actions can only be used with referentially transparent functions.\n\n");
+    // static_assert(std::is_invocable_v<F, Args const& ...>, "\n\nFunction is not invocable with const references. "
+        // "Actions can only be used with referentially transparent functions.\n\n");
         
     //TODO: This produces a false warning and a false template<> annotation
     //I think this is related to https://github.com/michaeljones/breathe/issues/407, 
@@ -171,7 +171,23 @@ private:
     template <size_t... I>
     ReturnType call(std::index_sequence<I...>) const
     {
-        return std::invoke(function, this->template arg<I>().value()...);
+        return std::invoke(function, get_argument<I>()...);
+    }
+
+    template <size_t I>
+    decltype(auto) get_argument() {
+
+        using SourceType = std::tuple_element_t<I, std::tuple<Args...>>;
+        using ArgumentType = typename reflect::details::function_traits<F>::template argument<I>::type;
+        if constexpr (
+            std::is_same_v<SourceType, reflect::DynamicObject>
+            && !std::is_same_v<ArgumentType, reflect::DynamicObject>
+        ) {
+            return this->template arg<I>().value().template as<ArgumentType>();
+        } else {
+            return this->template arg<I>().value();
+        }
+
     }
 
     /**
