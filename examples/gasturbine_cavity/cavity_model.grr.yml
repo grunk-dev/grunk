@@ -1,0 +1,115 @@
+uses:
+  grunk: 0.3.0
+  grocc: 0.1.1
+parameters:
+  radius: !<double> 150
+  dw: !<double> 1
+  dh: !<double> 1
+  cavity_w: !<double> 20.800000000000001
+  cavity_h: !<double> 50
+  angle_deg: !<double> 30
+  cyl1_dh: !<double> 0.33000000000000002
+  cyl1_height: !<double> 20
+  cyl1_radius: !<double> 1.5
+  cyl2_dir: !<grocc::gp_Dir> [-0.66666666666666663, 0.33333333333333331, -0.66666666666666663]
+  cyl2_shift: !<double> -10
+  cyl2_dh: !<double> 0.5
+  cyl2_height: !<double> 50
+  cyl2_radius: !<double> 3
+  x_min: !<double> -20
+steps:
+  - !<grocc::gp_Dir> [[x_axis], [!<double> 1, !<double> 0, !<double> 0]]
+  - !<expr> [x_min2, x_min*2]
+  - !<grocc::gp_Pnt> [[halfpace_pnt], [x_min2, !<double> 0, !<double> 0]]
+  - !<grocc::gp_Pnt> [[x_min_pnt], [x_min, !<double> 0, !<double> 0]]
+  - !<grocc::gp_Pln> [[halfspace_pln], [x_min_pnt, x_axis]]
+  - !<grocc::BRepBuilderAPI_MakeFace> [[halfspace_face], [halfspace_pln]]
+  - !<grocc::BRepPrimAPI_MakeHalfSpace> [[halfspace], [halfspace_face, halfpace_pnt]]
+  - !<expr> [angle_rad, 3.141592653589793*angle_deg/180.]
+  - !<grocc::gp_Dir> [[d], [!<double> -1, !<double> 0, !<double> 0]]
+  - !<grocc::gp_Pnt> [[o], [!<double> 0, !<double> 0, !<double> 0]]
+  - !<grocc::gp_Ax1> [[ax], [o, d]]
+  - !<expr> [cyl1_pos_x, 0.75*cavity_w]
+  - !<expr> [cyl1_height_corr, cyl1_height+0.25*cavity_w]
+  - !<expr> [cyl2_pos_x, dw]
+  - !<recipes::cavity_sketch> [{cavity_face: face}, {dw: dw, dh: dh, cavity_w: cavity_w, cavity_h: cavity_h}]
+  - !<expr> [cyl2_pos_r, radius + cyl2_dh*cavity_h]
+  - !<expr> [cyl2_pos_z, -cyl2_pos_r*sin(angle_rad/2.)]
+  - !<expr> [cyl2_pos_y, cyl2_pos_r*cos(angle_rad/2.)]
+  - !<grocc::gp_Pnt> [[cyl2_origin], [cyl2_pos_x, cyl2_pos_y, cyl2_pos_z]]
+  - !<recipes::cylinder> [{cylinder2_tmp: cylinder}, {direction: cyl2_dir, origin: cyl2_origin, height: cyl2_height, radius: cyl2_radius}]
+  - !<script>
+    steps:
+      - !<grocc::gp_Vec> [[t1], [cyl2_dir]]
+      - !<grocc::gp_Vec::Multiplied> [[translation], [t1, cyl2_shift]]
+      - !<grocc::gp_Trsf> [[trsf], ~]
+      - !<grocc::gp_Trsf::SetTranslation> [[""], [trsf, translation]]
+      - !<grocc::BRepBuilderAPI_Transform> [[cylinder2], [cylinder2_tmp, trsf]]
+    returns:
+      - cylinder2
+  - !<expr> [cyl1_pos_r, radius + cyl1_dh*cavity_h]
+  - !<expr> [cyl1_pos_z, -cyl1_pos_r*sin(angle_rad/2.)]
+  - !<expr> [cyl1_pos_y, cyl1_pos_r*cos(angle_rad/2.)]
+  - !<grocc::gp_Pnt> [[cyl1_origin], [cyl1_pos_x, cyl1_pos_y, cyl1_pos_z]]
+  - !<recipes::cylinder> [{cylinder1: cylinder}, {origin: cyl1_origin, height: cyl1_height, radius: cyl1_radius}]
+  - !<grocc::gp_Vec> [[translation], [!<double> 0, radius, !<double> 0]]
+  - !<script>
+    steps:
+      - !<grocc::gp_Trsf> [[trsf], ~]
+      - !<grocc::gp_Trsf::SetTranslation> [[""], [trsf, translation]]
+      - !<grocc::BRepBuilderAPI_Transform> [[transformed_face], [cavity_face, trsf]]
+    returns:
+      - transformed_face
+  - !<grocc::BRepPrimAPI_MakeRevol> [[revol], [transformed_face, ax, angle_rad]]
+  - !<grocc::BRepAlgoAPI_Fuse> [[cavity_cyl1], [revol, cylinder1]]
+  - !<grocc::BRepAlgoAPI_Fuse> [[cavity_uncut], [cavity_cyl1, cylinder2]]
+  - !<grocc::BRepAlgoAPI_Cut> [[cavity], [cavity_uncut, halfspace]]
+recipes:
+  cylinder:
+    uses:
+      grunk: 0.3.0
+      grocc: 0.1.1
+    parameters:
+      origin: !<grocc::gp_Pnt> [0, 0, 0]
+      direction: !<grocc::gp_Dir> [1, 0, 0]
+      direction2: !<grocc::gp_Dir> [0, 1, 0]
+      radius: !<double> 1
+      height: !<double> 1
+    steps:
+      - !<grocc::gp_Ax2> [[ax2], [origin, direction, direction2]]
+      - !<grocc::BRepPrimAPI_MakeCylinder> [[cylinder], [ax2, radius, height]]
+  cavity_sketch:
+    uses:
+      grunk: 0.3.0
+      grocc: 0.1.1
+    parameters:
+      cavity_w: !<double> 1
+      dw: !<double> 0.10000000000000001
+      cavity_h: !<double> 1
+      dh: !<double> 0.10000000000000001
+    steps:
+      - !<grocc::gp_Pnt> [[p7], [!<double> 0, dh, !<double> 0]]
+      - !<grocc::gp_Pnt> [[p3], [!<double> 0, cavity_h, !<double> 0]]
+      - !<expr> [h1, cavity_h - dh]
+      - !<grocc::gp_Pnt> [[p4], [!<double> 0, h1, !<double> 0]]
+      - !<grocc::gp_Pnt> [[p6], [dw, dh, !<double> 0]]
+      - !<grocc::gp_Pnt> [[p5], [dw, h1, !<double> 0]]
+      - !<expr> [width, cavity_w + dw]
+      - !<grocc::gp_Pnt> [[p2], [width, cavity_h, !<double> 0]]
+      - !<grocc::gp_Pnt> [[p1], [width, !<double> 0, !<double> 0]]
+      - !<grocc::gp_Pnt> [[p0], [!<double> 0, !<double> 0, !<double> 0]]
+      - !<script>
+        steps:
+          - !<grocc::BRepBuilderAPI_MakePolygon> [[polygon], ~]
+          - !<grocc::BRepBuilderAPI_MakePolygon::Add> [~, [polygon, p0]]
+          - !<grocc::BRepBuilderAPI_MakePolygon::Add> [~, [polygon, p1]]
+          - !<grocc::BRepBuilderAPI_MakePolygon::Add> [~, [polygon, p2]]
+          - !<grocc::BRepBuilderAPI_MakePolygon::Add> [~, [polygon, p3]]
+          - !<grocc::BRepBuilderAPI_MakePolygon::Add> [~, [polygon, p4]]
+          - !<grocc::BRepBuilderAPI_MakePolygon::Add> [~, [polygon, p5]]
+          - !<grocc::BRepBuilderAPI_MakePolygon::Add> [~, [polygon, p6]]
+          - !<grocc::BRepBuilderAPI_MakePolygon::Add> [~, [polygon, p7]]
+          - !<grocc::BRepBuilderAPI_MakePolygon::Close> [~, [polygon]]
+        returns:
+          - polygon
+      - !<grocc::BRepBuilderAPI_MakeFace> [[face], [polygon]]

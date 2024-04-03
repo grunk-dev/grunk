@@ -71,9 +71,6 @@ namespace grunkpy {
 using namespace grunk;
 namespace py = pybind11;
 
-PYBIND11_MAKE_OPAQUE(std::unordered_map<std::string, DynamicFeature>);
-PYBIND11_MAKE_OPAQUE(std::vector<reflect::DynamicObject>);
-
 namespace {
 
     std::vector<grunk::Recipe::IDPair> dict_to_idpair_vec(py::dict const& d)
