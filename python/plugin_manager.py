@@ -211,7 +211,7 @@ class PluginManager:
         )
 
 
-    def create_env(self, name, package_refs):
+    def env_create(self, name, package_refs):
         """creates a subdirectory grunk_dir/name and 
         installs the package_refs into it, including 
         all dependenies.
@@ -222,7 +222,7 @@ class PluginManager:
         :type package_refs: list of package references
         """
 
-        env_path = os.path.join(self.grunk_dir, name)
+        env_path = os.path.join(self.grunk_dir, "envs", name)
         if os.path.isdir(env_path):
             raise RuntimeError(f"A environment named \"{name}\" already exists.")
         else:
@@ -242,6 +242,17 @@ class PluginManager:
         except ConanException as e:
             os.rmdir(env_path)
             raise e
+
+
+    def env_list(self):
+        """
+        
+        """
+        envs_path = os.path.join(self.grunk_dir, "envs")
+        print(f"Environments are stored in {envs_path}\nAvailable environments:\n")
+        dirs = next(os.walk(envs_path))[1]
+        for env_name in dirs:
+            print(f"\t{env_name}\n")
 
 
 
@@ -371,4 +382,5 @@ install = command(PluginManager.install)
 authenticate = command(PluginManager.authenticate)
 remove = command(PluginManager.remove)
 avail = command(PluginManager.list)
-create_env = command(PluginManager.create_env)
+env_create = command(PluginManager.env_create)
+env_list = command(PluginManager.env_list)

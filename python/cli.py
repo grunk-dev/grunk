@@ -96,7 +96,15 @@ def create(environment_name, packages):
 
        grunk env create my_env myplugin/2.0@ford_prefect/release yourplugin/1.2.0
     """
-    return pm.create_env(environment_name, packages)
+    return pm.env_create(environment_name, packages)
+
+
+@env.command()
+def list():
+    """prints a list of all environments
+    """
+    return pm.env_list()
+
 
 @cli.group()
 def user():
