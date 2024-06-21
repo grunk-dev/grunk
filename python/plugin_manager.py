@@ -246,7 +246,7 @@ class PluginManager:
 
     def env_list(self):
         """
-        
+        prints all environments
         """
         envs_path = os.path.join(self.grunk_dir, "envs")
         print(f"Environments are stored in {envs_path}\nAvailable environments:\n")
@@ -255,6 +255,25 @@ class PluginManager:
             print(f"\t{env_name}\n")
 
 
+    def env_show(self, environment_name):
+        """
+        shows all plugins for a given environment
+        """
+        env_dir = os.path.join(self.grunk_dir, "envs", environment_name)
+        print(f"Environment is stored in {env_dir}")
+        print("Plugins:\n")
+        conanfile = os.path.join(env_dir, "conanfile.txt")
+        with open(conanfile) as file:
+            in_requires = False
+            for line in file:
+                if line.startswith("[requires]"):
+                    in_requires = True
+                    continue
+                if in_requires and line.startswith("["):
+                    in_requires = False
+                    continue
+                if in_requires and line and not line.isspace():
+                    print("\t" + line)
 
     def virtualrunenv(
         self,
@@ -384,3 +403,4 @@ remove = command(PluginManager.remove)
 avail = command(PluginManager.list)
 env_create = command(PluginManager.env_create)
 env_list = command(PluginManager.env_list)
+env_show = command(PluginManager.env_show)

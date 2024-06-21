@@ -106,6 +106,14 @@ def list():
     return pm.env_list()
 
 
+@env.command()
+@click.argument("environment_name")
+def show(environment_name):
+    """prints the plugins installed in an environment
+    """
+    return pm.env_show(environment_name)
+
+
 @cli.group()
 def user():
     """
