@@ -289,31 +289,6 @@ class PluginManager:
         else:
             shutil.rmtree(env_dir)
 
-
-    def virtualrunenv(
-        self,
-        package_refs,
-    ):
-        """
-        creates scripts to activate/deactivate a virtual run environment 
-        for the package references (strings) defined in package reFs
-
-        :param package_refs: list of package_ref (name/version)
-        """
-
-        tmp = tempfile.NamedTemporaryFile(mode = "w", delete=False)
-        try:
-            tmp.write("[requires]\n")
-            for ref in package_refs:
-                tmp.write(ref + "\n")
-            tmp.close()
-            self._conan.install(
-                tmp.name,
-                generators=["virtualrunenv"],
-            )
-        finally:
-            os.unlink(tmp.name)
-
     
     def _get_package_ref(self, package_name, package_version, user, channel):
         # To Do: It would be nice to support installation from conancenter. Then we wouldn't
@@ -410,7 +385,6 @@ def command(f):
 
 
 # decorate PluginManager methods
-virtualrunenv = command(PluginManager.virtualrunenv)
 install = command(PluginManager.install)
 authenticate = command(PluginManager.authenticate)
 remove = command(PluginManager.remove)

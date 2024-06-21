@@ -24,20 +24,6 @@ def cli():
 
 @cli.command()
 @click.argument("packages", nargs=-1)
-def virtualrunenv(packages):
-    """create scripts to activate/deactivate a virtual run environment
-
-    This is particularly useful to make sure that all runtime dependencies
-    of plugins are met. 
-
-    You can pass any number of package references in the conan format, e.g.
-    mypackage1/0.1.0 mypackage2/0.2.3 
-    """
-    return pm.virtualrunenv(packages)
-
-
-@cli.command()
-@click.argument("packages", nargs=-1)
 def install(packages):
     """
     install grunk plugins.
@@ -81,7 +67,7 @@ def env():
 def create(environment_name, packages):
     """
     Creates a new isolated environment
-    
+
     This environment contains all runtime dependencies of 
     the specified packages/plugins.
 
