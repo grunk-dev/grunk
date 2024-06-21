@@ -103,21 +103,17 @@ class PluginManager:
         Changes the conan user home to <HOME>/.grunk so that grunk doesn't interfere with an
         existing conan setup and
 
-        * adds grunk_center to the remotes
+        * adds grunkcenter to the remotes
         * sets the default user and channel to "_/_"
         * sets up the default profile. On Linux with GCC>5 it sets  "settings.compiler.libcxx" to "libstdc++11"
         """
 
         # set default variables
         self.grunk_dir = os.path.join(str(Path.home()), ".grunk")
-        self.remote = "grunk_center"
+        self.remote = "grunkcenter"
         self.remote_url = "https://gitlab.dlr.de/api/v4/projects/21487/packages/conan"
         self.default_user = "_"
         self.default_channel = "_"
-
-        # store previous CONAN_USER_HOME so that it can be reset and update CONAN_USER_HOME
-        self.conan_user_home_prev = os.environ.get("CONAN_USER_HOME")
-        os.environ["CONAN_USER_HOME"] = os.getenv("GRUNK_USER_HOME", self.grunk_dir)
 
         self._conan = ConanAPIV1()
 
@@ -166,12 +162,9 @@ class PluginManager:
 
     def __exit__(self, *exc):
         """
-        resets the CONAN_USER_HOME
+        Can be used to reset some variables
         """
-        if self.conan_user_home_prev is None:
-            del os.environ["CONAN_USER_HOME"]
-        else:
-            os.environ["CONAN_USER_HOME"] = self.conan_user_home_prev
+        pass
 
     def install(
         self,
