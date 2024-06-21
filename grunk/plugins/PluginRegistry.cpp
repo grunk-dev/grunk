@@ -13,7 +13,6 @@ PluginRegistry::PluginRegistry()
 {
     // make sure built-in types are registered
     grunk::init();
-    populate_path_from_env();
 }
 
 void PluginRegistry::prepend_path(std::string const& dir)
@@ -21,6 +20,49 @@ void PluginRegistry::prepend_path(std::string const& dir)
     std::filesystem::path p(dir);
     if (std::filesystem::is_directory(p)) {
         path.push_front(p);
+    }
+}
+
+std::filesystem::path PluginRegistry::get_environment_path(std::string const& env_name)
+{
+    std::filesystem::path p(get_home_dir());
+    p /= ".grunk";
+    p /= "envs";
+    p /= env_name;
+#if defined(_WIN32) || defined(_WIN64)
+    p /= "bin";
+#else 
+    p /= "lib";
+#endif
+    return p;
+}
+
+std::optional<std::string> PluginRegistry::active_environment() const
+{
+    return m_active_environment;
+}
+
+void PluginRegistry::activate_environment(std::string const& env_name)
+{
+    if (active_environment()) {
+        deactivate_environment();
+    }
+    auto p = get_environment_path(env_name);
+    if (std::filesystem::is_directory(p)) {
+        if (std::find(path.begin(), path.end(), p) == path.end()) {
+            path.push_front(p);
+        }
+    }
+    m_active_environment = env_name;
+}
+
+void PluginRegistry::deactivate_environment() {
+    if (!active_environment()) {
+        return;
+    } else {
+        auto p = get_environment_path(*active_environment());
+        std::remove(path.begin(), path.end(), p);
+        m_active_environment = std::nullopt;
     }
 }
 
@@ -91,7 +133,7 @@ void PluginRegistry::load(std::string const& name)
                     shared_lib->string() + 
                     "(error code = " + 
                     std::to_string(error.value()) + 
-                    "). Did you properly setup the environment using \"grunk virtualrunenv\"?\n"
+                    "). Did you properly setup a grunk environment using the command line?\n"
                 );
             }
 

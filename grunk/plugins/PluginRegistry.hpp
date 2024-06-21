@@ -2,12 +2,12 @@
 
 #define BOOST_DLL_USE_STD_FS 1
 
+#include "IPlugin.hpp"
+
 #include <boost/dll/shared_library.hpp>
 #include <unordered_map>
 #include <deque>
 #include <filesystem>
-
-#include "IPlugin.hpp"
 
 namespace grunk {
 
@@ -69,6 +69,23 @@ public:
     void append_path(std::string const& path);
 
     /**
+     * @brief returns the currently active environment, if any
+     * 
+     * @return std::optional<std::string> 
+     */
+    std::optional<std::string> active_environment() const;
+
+    /**
+     * @brief prepends the environment path to the current search
+     * paths for a given grunk environment
+     * 
+     * @param env_name 
+     */
+    void activate_environment(std::string const& env_name);
+
+    void deactivate_environment();
+
+    /**
      * @brief populates the search path for plugins from the environmentall 
      * variables PATH, LD_LIBRARY_PATH and DYLD_LIBRARY_PATH
      */
@@ -126,7 +143,11 @@ private:
     // find a .so or .dll file in the path that contains the passed argument as substring
     std::optional<std::filesystem::path> find_shared_lib(std::string_view name) const;
 
-    Path path;
+    // gets the path containing the runtime dependencies of a given grunk environment
+    static std::filesystem::path get_environment_path(std::string const& env_name);
+
+    std::optional<std::string> m_active_environment;
+    Path path; //search path for plugins
     PluginMap loaded_plugins;
 };
 
