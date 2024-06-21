@@ -80,7 +80,8 @@ def env():
 @click.argument("packages", nargs=-1)
 def create(environment_name, packages):
     """
-    Creates a new isolated environment "environment_name".
+    Creates a new isolated environment
+    
     This environment contains all runtime dependencies of 
     the specified packages/plugins.
 
@@ -112,6 +113,14 @@ def show(environment_name):
     """prints the plugins installed in an environment
     """
     return pm.env_show(environment_name)
+
+
+@env.command()
+@click.argument("environment_name")
+def remove(environment_name):
+    """removes an environment
+    """
+    return pm.env_remove(environment_name)
 
 
 @cli.group()

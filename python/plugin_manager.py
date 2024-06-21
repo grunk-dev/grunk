@@ -1,5 +1,6 @@
 import os
 import tempfile
+import shutil
 from sys import platform
 from pathlib import Path
 from functools import wraps
@@ -224,7 +225,7 @@ class PluginManager:
 
         env_path = os.path.join(self.grunk_dir, "envs", name)
         if os.path.isdir(env_path):
-            raise RuntimeError(f"A environment named \"{name}\" already exists.")
+            raise RuntimeError(f"An environment named \"{name}\" already exists.")
         else:
             os.makedirs(env_path)
 
@@ -240,7 +241,7 @@ class PluginManager:
             os.chdir(env_path)
             self._conan.install(conanfile, output_folder=env_path)
         except ConanException as e:
-            os.rmdir(env_path)
+            shutil.rmtree(env_path)
             raise e
 
 
@@ -274,6 +275,20 @@ class PluginManager:
                     continue
                 if in_requires and line and not line.isspace():
                     print("\t" + line)
+
+
+    def env_remove(self, environment_name):
+        """removes an environment by deleting the corresponding directory
+
+        :param environment_name: name of the environment to be removed
+        :type environment_name: str
+        """
+        env_dir = os.path.join(self.grunk_dir, "envs", environment_name)
+        if not os.path.isdir(env_dir):
+            print(f"An environment named \"{environment_name}\" does not exist.")
+        else:
+            shutil.rmtree(env_dir)
+
 
     def virtualrunenv(
         self,
@@ -316,7 +331,6 @@ class PluginManager:
         return reconstruct_package_string(
             package_name, package_version, user, channel
         )
-
 
 
     def authenticate(
@@ -404,3 +418,4 @@ avail = command(PluginManager.list)
 env_create = command(PluginManager.env_create)
 env_list = command(PluginManager.env_list)
 env_show = command(PluginManager.env_show)
+env_remove = command(PluginManager.env_remove)
