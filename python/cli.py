@@ -48,7 +48,7 @@ def install(packages):
 
     The version part can be a string or a version range. If no version is specified grunk installs the latest version.
 
-    You may ommit user/channel for packages in the grunk_center.
+    You may ommit user/channel for packages in the grunkcenter.
 
     Example:
 
@@ -68,6 +68,35 @@ def install(packages):
                 'Could not find package "' + package_str + '" in remotes.'
             )  # TODO: logging
 
+@cli.group()
+def env():
+    """
+    interact with isolated grunk environments
+    """
+    pass
+
+@env.command()
+@click.argument("environment_name")
+@click.argument("packages", nargs=-1)
+def create(environment_name, packages):
+    """
+    Creates a new isolated environment "environment_name".
+    This environment contains all runtime dependencies of 
+    the specified packages/plugins.
+
+    Accepts a list of package references as an argument. These are of the form
+    <package_name> or <package_name>/<package_version> or <package_name>/<package_version>@<user>/<channel>,
+    see also the conan documentation.
+
+    The version part can be a string or a version range. If no version is specified grunk installs the latest version.
+
+    You may ommit user/channel for packages in the grunkcenter.
+
+    Example:
+
+       grunk env create my_env myplugin/2.0@ford_prefect/release yourplugin/1.2.0
+    """
+    return pm.create_env(environment_name, packages)
 
 @cli.group()
 def user():
@@ -103,7 +132,7 @@ def user():
     "-p", "--password", help="Password for authentification with remote", default=None
 )
 @click.option(
-    "-r", "--remote", help="remote server", default="grunk_center", show_default=True
+    "-r", "--remote", help="remote server", default="grunkcenter", show_default=True
 )
 @click.option(
     "-s",

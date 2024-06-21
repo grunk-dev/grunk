@@ -5,6 +5,7 @@ from pathlib import Path
 from functools import wraps
 from conans.client.conan_api import ConanAPIV1
 from conans.model.ref import ConanFileReference, PackageReference
+from conans.errors import ConanException
 from grunk._util import HiddenPrints, reconstruct_package_string
 
 
@@ -209,6 +210,41 @@ class PluginManager:
             update=update,
         )
 
+
+    def create_env(self, name, package_refs):
+        """creates a subdirectory grunk_dir/name and 
+        installs the package_refs into it, including 
+        all dependenies.
+
+        :param name: Name of the environment to create
+        :type name: str
+        :param package_refs: grunk plugins to install
+        :type package_refs: list of package references
+        """
+
+        env_path = os.path.join(self.grunk_dir, name)
+        if os.path.isdir(env_path):
+            raise RuntimeError(f"A environment named \"{name}\" already exists.")
+        else:
+            os.makedirs(env_path)
+
+        conanfile_content = f"[requires]\n"
+        for ref in package_refs:
+            conanfile_content = conanfile_content + ref + "\n"
+        conanfile_content = conanfile_content + "\n[imports]\nbin, *.dll -> ./bin\nbin, *.exe -> ./bin\nlib, *.dylib* -> ./bin\nlib, *.so -> ./lib\nlib, *.so.* -> ./lib\n"
+        conanfile = os.path.join(env_path, "conanfile.txt")
+        with open(conanfile, "w") as f:
+            f.write(conanfile_content)
+
+        try:
+            os.chdir(env_path)
+            self._conan.install(conanfile, output_folder=env_path)
+        except ConanException as e:
+            os.rmdir(env_path)
+            raise e
+
+
+
     def virtualrunenv(
         self,
         package_refs,
@@ -335,3 +371,4 @@ install = command(PluginManager.install)
 authenticate = command(PluginManager.authenticate)
 remove = command(PluginManager.remove)
 avail = command(PluginManager.list)
+create_env = command(PluginManager.create_env)
