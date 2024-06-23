@@ -181,7 +181,11 @@ void PluginRegistry::load(std::string const& name)
     if(auto shared_lib = find_shared_lib(name); shared_lib) {
         boost::dll::fs::error_code error;
         try {
-            boost::dll::shared_library lib(*shared_lib, error);
+            boost::dll::shared_library lib(
+                *shared_lib, 
+                error, 
+                boost::dll::load_mode::load_with_altered_search_path
+            );
             if (error) {
                 throw std::runtime_error(
                     std::string("Error loading ") + 
