@@ -7,7 +7,7 @@ from functools import wraps
 from conans.client.conan_api import ConanAPIV1
 from conans.model.ref import ConanFileReference, PackageReference
 from conans.errors import ConanException
-from grunk import get_plugin_registry
+from ._core import get_plugin_registry
 from grunk._util import HiddenPrints, reconstruct_package_string
 
 
