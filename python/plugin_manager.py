@@ -7,6 +7,7 @@ from functools import wraps
 from conans.client.conan_api import ConanAPIV1
 from conans.model.ref import ConanFileReference, PackageReference
 from conans.errors import ConanException
+from grunk import get_plugin_registry
 from grunk._util import HiddenPrints, reconstruct_package_string
 
 
@@ -251,8 +252,7 @@ class PluginManager:
         """
         envs_path = os.path.join(self.grunk_dir, "envs")
         print(f"Environments are stored in {envs_path}\nAvailable environments:\n")
-        dirs = next(os.walk(envs_path))[1]
-        for env_name in dirs:
+        for env_name in get_plugin_registry().envs():
             print(f"\t{env_name}\n")
 
 
@@ -263,18 +263,11 @@ class PluginManager:
         env_dir = os.path.join(self.grunk_dir, "envs", environment_name)
         print(f"Environment is stored in {env_dir}")
         print("Plugins:\n")
-        conanfile = os.path.join(env_dir, "conanfile.txt")
-        with open(conanfile) as file:
-            in_requires = False
-            for line in file:
-                if line.startswith("[requires]"):
-                    in_requires = True
-                    continue
-                if in_requires and line.startswith("["):
-                    in_requires = False
-                    continue
-                if in_requires and line and not line.isspace():
-                    print("\t" + line)
+        plugins = get_plugin_registry().env_plugins(environment_name)
+        for plugin in plugins:
+            print(f"\t{plugin}")
+
+        
 
 
     def env_remove(self, environment_name):

@@ -1,9 +1,11 @@
+#include <algorithm>
 #include <grunk/plugins/PluginRegistry.hpp>
 #include <grunk/common/init.hpp>
 #include <grunk/common/common_functions.hpp>
 #include <boost/dll/import.hpp>
 #include <functional>
 #include <iostream>
+#include <fstream>
 #include <stdexcept>
 #include <stdlib.h>
 
@@ -23,11 +25,17 @@ void PluginRegistry::prepend_path(std::string const& dir)
     }
 }
 
-std::filesystem::path PluginRegistry::get_environment_path(std::string const& env_name)
+std::filesystem::path PluginRegistry::get_environments_root() 
 {
     std::filesystem::path p(get_home_dir());
     p /= ".grunk";
     p /= "envs";
+    return p;
+}
+
+std::filesystem::path PluginRegistry::get_environment_path(std::string const& env_name)
+{
+    auto p = get_environments_root();
     p /= env_name;
 #if defined(_WIN32) || defined(_WIN64)
     p /= "bin";
@@ -37,15 +45,15 @@ std::filesystem::path PluginRegistry::get_environment_path(std::string const& en
     return p;
 }
 
-std::optional<std::string> PluginRegistry::active_environment() const
+std::optional<std::string> PluginRegistry::active_env() const
 {
     return m_active_environment;
 }
 
-void PluginRegistry::activate_environment(std::string const& env_name)
+void PluginRegistry::activate_env(std::string const& env_name)
 {
-    if (active_environment()) {
-        deactivate_environment();
+    if (active_env()) {
+        deactivate_env();
     }
     auto p = get_environment_path(env_name);
     if (std::filesystem::is_directory(p)) {
@@ -56,14 +64,61 @@ void PluginRegistry::activate_environment(std::string const& env_name)
     m_active_environment = env_name;
 }
 
-void PluginRegistry::deactivate_environment() {
-    if (!active_environment()) {
+void PluginRegistry::deactivate_env() {
+    if (!active_env()) {
         return;
     } else {
-        auto p = get_environment_path(*active_environment());
+        auto p = get_environment_path(*active_env());
         std::remove(path.begin(), path.end(), p);
         m_active_environment = std::nullopt;
     }
+}
+
+std::vector<std::string> PluginRegistry::envs()
+{
+    std::vector<std::string> subdirs;
+
+    for (auto const& entry : std::filesystem::directory_iterator(get_environments_root())) {
+        if (entry.is_directory()) {
+            subdirs.push_back(entry.path().filename().string());
+        }
+    }
+    return subdirs;
+}
+
+std::vector<std::string> PluginRegistry::env_plugins(std::string const& name)
+{
+    std::vector<std::string> plugins;
+    auto filename = get_environments_root();
+    filename /= name;
+    filename /= "conanfile.txt";
+    std::ifstream file(filename);
+
+    if(!file.is_open()) {
+        throw std::runtime_error(std::string("Could not open the file ") + filename.string());
+    }
+
+    std::string line;
+    bool in_requires_section = false;
+
+    while (std::getline(file, line)) {
+        if (!in_requires_section && line.rfind("[requires]", 0) == 0) {
+            in_requires_section = true;
+            continue;
+        }
+
+        if (in_requires_section) {
+            if (line.find('[') == 0) {
+                break;
+            }
+
+            if (!line.empty()) {
+                plugins.push_back(line);
+            }
+        }
+    }
+    file.close();
+    return plugins;
 }
 
 void PluginRegistry::append_path(std::string const& dir)

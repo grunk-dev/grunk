@@ -73,7 +73,7 @@ public:
      * 
      * @return std::optional<std::string> 
      */
-    std::optional<std::string> active_environment() const;
+    std::optional<std::string> active_env() const;
 
     /**
      * @brief prepends the environment path to the current search
@@ -81,9 +81,31 @@ public:
      * 
      * @param env_name 
      */
-    void activate_environment(std::string const& env_name);
+    void activate_env(std::string const& env_name);
 
-    void deactivate_environment();
+    /**
+     * @brief deactivates an environment, that is removes the 
+     * environment directory from the plugin search path
+     *
+     * TODO: unload all plugins from the env
+     * 
+     */
+    void deactivate_env();
+
+    /**
+     * @brief returns a list all available environments
+     * 
+     * @return std::vector<std::string> names of available environments
+     */
+    static std::vector<std::string> envs();
+
+    /**
+     * @brief returns a list of available plugins within an environment
+     * 
+     * @param name name of the environment
+     * @return std::vector<std::string> package refs of the available plugins
+     */
+    static std::vector<std::string> env_plugins(std::string const& name);
 
     /**
      * @brief populates the search path for plugins from the environmentall 
@@ -142,6 +164,9 @@ private:
 
     // find a .so or .dll file in the path that contains the passed argument as substring
     std::optional<std::filesystem::path> find_shared_lib(std::string_view name) const;
+
+    // gets the root directory, where all environments are stored
+    static std::filesystem::path get_environments_root();
 
     // gets the path containing the runtime dependencies of a given grunk environment
     static std::filesystem::path get_environment_path(std::string const& env_name);
