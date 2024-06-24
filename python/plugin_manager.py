@@ -240,7 +240,7 @@ class PluginManager:
 
         try:
             os.chdir(env_path)
-            self._conan.install(conanfile, output_folder=env_path)
+            self._conan.install(conanfile, output_folder=env_path, build=["missing"])
         except ConanException as e:
             shutil.rmtree(env_path)
             raise e
