@@ -78,6 +78,9 @@ public:
     /**
      * @brief prepends the environment path to the current search
      * paths for a given grunk environment
+     *
+     * Note that this just adds the environment to the search path
+     * for grunk plugins. No plugins are loaded. Use load_env instead.
      * 
      * @param env_name 
      */
@@ -87,10 +90,27 @@ public:
      * @brief deactivates an environment, that is removes the 
      * environment directory from the plugin search path
      *
-     * TODO: unload all plugins from the env
+     * Note that this just removes the environment from the
+     * plugin search path and does not unlaod any plugins.
+     * Use unload_env instead.
      * 
      */
     void deactivate_env();
+
+    /**
+     * @brief activates an environment and loads all of its plugins
+     * @param env_name
+     */
+    void load_env(std::string const& env_name);
+
+
+    /**
+     * @brief unloads all plugins from an environment and deactivates it
+     * @param env_name
+     */
+    void unload_env(std::string const& env_name);
+
+
 
     /**
      * @brief returns a list all available environments

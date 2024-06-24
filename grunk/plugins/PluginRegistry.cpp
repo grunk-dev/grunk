@@ -3,11 +3,9 @@
 #include <grunk/common/init.hpp>
 #include <grunk/common/common_functions.hpp>
 #include <boost/dll/import.hpp>
-#include <functional>
 #include <iostream>
 #include <fstream>
 #include <stdexcept>
-#include <stdlib.h>
 
 namespace grunk {
 
@@ -69,8 +67,27 @@ void PluginRegistry::deactivate_env() {
         return;
     } else {
         auto p = get_environment_path(*active_env());
-        std::remove(path.begin(), path.end(), p);
+        auto it = std::remove(path.begin(), path.end(), p);
+        path.erase(it);
         m_active_environment = std::nullopt;
+    }
+}
+
+void PluginRegistry::load_env(std::string const& env_name)
+{
+    activate_env(env_name);
+    for (auto const& ref : env_plugins(env_name)) {
+        load(grunk::split(ref, "/")[0]);
+    }
+}
+
+void PluginRegistry::unload_env(std::string const& env_name)
+{
+    for (auto const& ref : env_plugins(env_name)) {
+        load(grunk::split(ref, "/")[0]);
+    }
+    if (active_env() && *active_env() == env_name) {
+        deactivate_env();
     }
 }
 
