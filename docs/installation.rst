@@ -16,9 +16,11 @@ Setup conan
 Install conan
 *************
 
-Install ``conan 1.x`` via pip or conda, whichever you prefer. Unfortunately, 
-gitlab is the only free web-hosted service supporting conan binary packages and it 
-still only supports conan 1.x.
+Install ``conan 1.x`` via pip or conda, whichever you prefer. 
+
+.. note::
+   Unfortunately, gitlab is the only free web-hosted service supporting 
+   conan binary packages and it still only supports conan 1.x.
 
 As always, it is recommended to install python packages in an isolated environment. 
 To install ``conan`` into an environment called `paradigms` using conda enter the 
@@ -72,7 +74,11 @@ C++ library
 
 .. code-block:: console
 
-    conan install grunk/0.2.1@_/_ --build=missing
+    conan install grunk/0.3.0@_/_ --build=missing
+
+.. note::
+
+  Please check the latest available version of grunk.
 
 python bindings
 ***************
@@ -141,8 +147,8 @@ Building using CMake
 
   .. code-block:: console
 
-     cmake .. -DCMAKE_BUILD_TYPE=Debug -DGRUNK_TESTS=ON -GNinja
-     ninja
+     cmake .. -DCMAKE_BUILD_TYPE=Debug -DGRUNK_TESTS=ON
+     cmake --build . -j
 
 
 Running the unit tests
