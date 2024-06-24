@@ -10,6 +10,7 @@ import grunk
 import grunk.plugin_manager as pm
 from grunk._util import deconstruct_package_string
 from grunk.codegen import generate
+from ._core import get_plugin_registry
 from conans.errors import ConanException
 
 
@@ -200,8 +201,8 @@ def codegen(config_file, output_dir, include_dir):
 
 @cli.command()
 @click.argument("grunk_recipe", type=click.Path(exists=True))
-@click.option("-i", "--install-missing", is_flag=True, show_default=True, default=False, help="install plugins when not in local cache")
-def exec(grunk_recipe, install_missing):
+@click.option("-e", "--environment", help="name of a grunk environment")
+def exec(grunk_recipe, environment=None):
     """evaluates all features of a grunk recipe
     """
 
@@ -215,12 +216,15 @@ def exec(grunk_recipe, install_missing):
     # parse recipe with pyyaml to parse plugins that need to be loaded
     with open(grunk_recipe, "r")  as file:
         recipe = yaml.load(file, Loader=SafeLoaderIgnoreUnknown)
+
+    if environment is not None:
+        grunk.get_plugin_registry().activate_env(environment)
     
     for name, version in recipe['uses'].items():
         if not name == 'grunk':
-            grunk.load(name, version, install_missing)
+            grunk.get_plugin_registry().load(name)
 
     # parse recipe with grunk and evaluate all nodes
     nodes = grunk.read(grunk_recipe)
-    for n in nodes.values():
+    for n in nodes.get_features().values():
         n.value()
