@@ -38,8 +38,8 @@
       conan profile update settings.compiler.libcxx=libstdc++11 default
     fi; 
 # add Gitlab remote and login using CI credentials
-  - conan remote add gitlab https://gitlab.dlr.de/api/v4/projects/21487/packages/conan
-  - conan user ci_user -r gitlab -p ${CI_JOB_TOKEN}
+  - conan remote add grunkcenter https://gitlab.dlr.de/api/v4/projects/21487/packages/conan
+  - conan user ci_user -r grunkcenter -p ${CI_JOB_TOKEN}
 
 .configure_msvc: &configure_msvc
 # this is a bit hacky...
@@ -57,8 +57,8 @@
 # For some reasone I seem to need this on MSVC 15 2017
   - $env:PreferredToolArchitecture = "x64"
   - conan profile new default --detect --force
-  - conan remote add gitlab https://gitlab.dlr.de/api/v4/projects/21487/packages/conan
-  - conan user ci_user -r gitlab -p ${CI_JOB_TOKEN}
+  - conan remote add grunkcenter https://gitlab.dlr.de/api/v4/projects/21487/packages/conan
+  - conan user ci_user -r grunkcenter -p ${CI_JOB_TOKEN}
 
 
 # CI Jobs
@@ -173,8 +173,8 @@ test-windows-python:
   - python -m pip install --upgrade pip
   - python -m pip install conan==1.59 cmake
   - conan profile new default --detect --force
-  - conan remote add gitlab https://gitlab.dlr.de/api/v4/projects/21487/packages/conan
-  - conan user ci_user -r gitlab -p ${CI_JOB_TOKEN}
+  - conan remote add grunkcenter https://gitlab.dlr.de/api/v4/projects/21487/packages/conan
+  - conan user ci_user -r grunkcenter -p ${CI_JOB_TOKEN}
   script:
    - ./venv/Scripts/Activate.ps1
    - python -m pip install .[test]
