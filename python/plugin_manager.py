@@ -217,7 +217,7 @@ class PluginManager:
         )
 
 
-    def env_create(self, name, package_refs):
+    def env_create(self, name, package_refs, settings, options):
         """creates a subdirectory grunk_dir/name and 
         installs the package_refs into it, including 
         all dependenies.
@@ -237,6 +237,13 @@ class PluginManager:
         conanfile_content = f"[requires]\n"
         for ref in package_refs:
             conanfile_content = conanfile_content + ref + "\n"
+
+        if options:
+            conanfile_content = conanfile_content + "\n[options]\n"
+            for o in options:
+                conanfile_content = conanfile_content + o + "\n"
+
+            
         conanfile_content = conanfile_content + "\n[imports]\nbin, *.dll -> ./bin\nbin, *.exe -> ./bin\nlib, *.dylib* -> ./bin\nlib, *.so -> ./lib\nlib, *.so.* -> ./lib\n"
         conanfile = os.path.join(env_path, "conanfile.txt")
         with open(conanfile, "w") as f:
@@ -244,7 +251,7 @@ class PluginManager:
 
         try:
             os.chdir(env_path)
-            self._conan.install(conanfile, output_folder=env_path, build=["missing"])
+            self._conan.install(conanfile, output_folder=env_path, build=["missing"], settings=settings)
         except ConanException as e:
             shutil.rmtree(env_path)
             raise e
@@ -257,7 +264,7 @@ class PluginManager:
         envs_path = os.path.join(self.grunk_dir, "envs")
         print(f"Environments are stored in {envs_path}\nAvailable environments:\n")
         for env_name in get_plugin_registry().envs():
-            print(f"\t{env_name}\n")
+            print(f"\t{env_name}")
 
 
     def env_show(self, environment_name):

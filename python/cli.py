@@ -75,7 +75,9 @@ def env():
 @env.command()
 @click.argument("environment_name")
 @click.argument("packages", nargs=-1)
-def create(environment_name, packages):
+@click.option("-s", "--settings", type=str, multiple=True, help="settings for the packages")
+@click.option("-o", "--options", type=str, multiple=True, help="options for the packages")
+def create(environment_name, packages, settings, options):
     """
     Creates a new isolated environment
 
@@ -90,11 +92,17 @@ def create(environment_name, packages):
 
     You may ommit user/channel for packages in the grunkcenter.
 
+    Optionally you install the packages using settings passed via -s/--settings. These settings will be
+    forwarded to conan.
+
+    Optionally you install the packages using options passed via -o/--options. These settings will be
+    forwarded to conan.
+
     Example:
 
-       grunk env create my_env myplugin/2.0@ford_prefect/release yourplugin/1.2.0
+       grunk env create my_env myplugin/2.0@ford_prefect/release yourplugin/1.2.0 -s build_type=Debug
     """
-    return pm.env_create(environment_name, packages)
+    return pm.env_create(environment_name, packages, list(settings), list(options))
 
 
 @env.command(name="list") # need to use an alias because I cannot name the function "list" without overriding built-in function "list"
