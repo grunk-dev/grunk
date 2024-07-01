@@ -87,8 +87,8 @@ def create(environment_name, packages):
     return pm.env_create(environment_name, packages)
 
 
-@env.command()
-def list():
+@env.command(name="list") # need to use an alias because I cannot name the function "list" without overriding built-in function "list"
+def list_command():
     """prints a list of all environments
     """
     return pm.env_list()
@@ -183,25 +183,8 @@ def avail():
 
 
 @cli.command()
-@click.option("-o", "--output-dir", help="output directory for generated source files")
-@click.option("-c", "--config-file", help="path to the yml configuration file")
-@click.option("-i", "--include_dir", help="include_directory", multiple=True)
-def codegen(config_file, output_dir, include_dir):
-    """generate C++ code for a new grunk plugin
-
-    Given an existing C++ library, this command generates a grunk plugin
-    that registers all class, struct and function definitions declared
-    in header files. These header files are provided in a yaml configuration
-    file, refer to the documentation for the format of this file.
-
-    You can structure the registered classes into a hierarchy of submodules
-    """
-    return generate(config_file, output_dir, list(include_dir))
-
-
-@cli.command()
 @click.argument("grunk_recipe", type=click.Path(exists=True))
-@click.option("-e", "--environment", help="name of a grunk environment")
+@click.option("-e", "--environment", help="name of a grunk environment", type=str)
 def exec(grunk_recipe, environment=None):
     """evaluates all features of a grunk recipe
     """
@@ -228,3 +211,21 @@ def exec(grunk_recipe, environment=None):
     nodes = grunk.read(grunk_recipe)
     for n in nodes.get_features().values():
         n.value()
+
+
+@cli.command()
+@click.argument("config_file",  type=click.Path(exists=True))
+@click.option("-o", "--output-dir", help="output directory for generated source files",  type=click.Path(exists=True))
+@click.option("-i", "--include-dir", help="include_directory",  type=click.Path(exists=True), multiple=True)
+def codegen(config_file, output_dir, include_dir):
+    """generate C++ code for a new grunk plugin
+
+    Given an existing C++ library, this command generates a grunk plugin
+    that registers all class, struct and function definitions declared
+    in header files. These header files are provided in a yaml configuration
+    file, refer to the documentation for the format of this file.
+
+    You can structure the registered classes into a hierarchy of submodules
+    """
+    return generate(config_file, output_dir, list(include_dir))
+
