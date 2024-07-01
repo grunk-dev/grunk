@@ -25,7 +25,9 @@ def cli():
 
 @cli.command()
 @click.argument("packages", nargs=-1)
-def install(packages):
+@click.option("-s", "--settings", type=str, multiple=True, help="settings for the packages")
+@click.option("-o", "--options", type=str, multiple=True, help="options for the packages")
+def install(packages, settings, options):
     """
     install grunk plugins.
 
@@ -37,9 +39,15 @@ def install(packages):
 
     You may ommit user/channel for packages in the grunkcenter.
 
+    Optionally you install the packages using settings passed via -s/--settings. These settings will be
+    forwarded to conan.
+
+    Optionally you install the packages using options passed via -o/--options. These settings will be
+    forwarded to conan.
+
     Example:
 
-       grunk install PluginA reflect/[>0.0.1] myplugin/2.0@ford_prefect/release
+       grunk install PluginA reflect/[>0.0.1] myplugin/2.0@ford_prefect/release -s build_type=Debug
     """
     for package_str in packages:
         package, version, user, channel = deconstruct_package_string(package_str)
@@ -49,6 +57,8 @@ def install(packages):
                 package_version=version,
                 user=user,
                 channel=channel,
+                settings=list(settings),
+                options=list(options)
             )
         except ConanException:
             print(

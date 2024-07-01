@@ -176,7 +176,9 @@ class PluginManager:
         user: str = None,
         channel: str = None,
         install_dir: str = None,
-        update = False
+        update: bool = False,
+        settings = [],
+        options = []
     ):
         """
         installs a package reference.
@@ -191,7 +193,7 @@ class PluginManager:
         :type user: str, optional
         :param channel: channel string for the package, defaults to ``"testing"``
         :type channel: str, optional
-        :param install_dir: Installation directory, defaults to ``<HOME>/.grunk``
+        :param install_dir: Installation directory, defaults to ``<HOME>/.conan``
         :type install_dir: str, optional
 
         """
@@ -210,6 +212,8 @@ class PluginManager:
             # remote_name=self.remote,
             build=["missing"],
             update=update,
+            settings=settings,
+            options=options
         )
 
 
