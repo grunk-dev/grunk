@@ -156,9 +156,10 @@ test-windows:
   # add googletest dll to path
   - $env:Path = "$pwd\grunk\$BUILD_TYPE;$pwd\bin\$BUILD_TYPE;$pwd\tests\cpp\$BUILD_TYPE;$env:Path"
   - .\activate_run.ps1
-  - cd tests\cpp\$BUILD_TYPE
+  - cd tests\cpp
+  - Copy "$BUILD_TYPE\SimplePlugin.dll" ".\"
   # Powershell sucks so much....:
-  - powershell.exe "runUnitTests.exe"
+  - powershell.exe "$BUILD_TYPE\runUnitTests.exe"
   <<: *windows_config
 
 test-windows-python:
