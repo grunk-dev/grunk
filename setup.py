@@ -128,13 +128,21 @@ class CMakeBuild(build_ext):
         if not build_temp.exists():
             build_temp.mkdir(parents=True)
 
+        conan_install_args = ['--build=missing', '-pr:b=default']
+        conan_install_args += ['-g', 'CMakeDeps', '-g', 'CMakeToolchain']
+        conan_install_args += ['-of', build_temp]
         subprocess.run(
-            ["conan", "install", ext.sourcedir, '--build=missing', '-pr:b=default'], cwd=build_temp, check=True
+            ["conan", "install", ext.sourcedir, *conan_install_args], 
+            cwd=build_temp, 
+            check=True
         )
         
         # Add CMake Toolchain file
-        # cmake paths always use forward slashes
-        cmake_toolchain_file = os.path.join(ext.sourcedir, "build", cfg, "generators", "conan_toolchain.cmake")
+        # Need to search for it because it is placed in different folder
+        # depending on the system
+        ctf_candidates = [str(_.resolve()) for _ in Path(build_temp).rglob('conan_toolchain.cmake')]
+        assert len(ctf_candidates) == 1
+        cmake_toolchain_file = ctf_candidates[0]
         cmake_args += [f"-DCMAKE_TOOLCHAIN_FILE={cmake_toolchain_file}", "-DCMAKE_POLICY_DEFAULT_CMP0091=NEW"]
 
         subprocess.run(

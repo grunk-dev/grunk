@@ -35,7 +35,6 @@ add_custom_command(TARGET _core POST_BUILD
         $<TARGET_FILE_DIR:_core>
 )
 
-set(reflect_dll ${reflect_LIBRARIES})
 if(MSVC)
     # This is a bit hacky. Locate the reflect.dll and copy it 
     # to the site-packages folder manually
@@ -48,7 +47,7 @@ else()
     find_file(
         reflect_dll 
         NAMES libreflect.so
-        PATHS ${reflect_INCLUDE_DIRS}/../bin
+        PATHS ${reflect_INCLUDE_DIRS}/../lib
     )
 endif()
     
