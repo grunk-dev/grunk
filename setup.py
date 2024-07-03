@@ -69,7 +69,6 @@ class CMakeBuild(build_ext):
         if "CMAKE_ARGS" in os.environ:
             cmake_args += [item for item in os.environ["CMAKE_ARGS"].split(" ") if item]
 
-        # In this example, we pass in the version to C++. You might not need to.
         cmake_args += ["-DGRUNK_PYTHON=ON"]
 
         if self.compiler.compiler_type != "msvc":
@@ -132,6 +131,11 @@ class CMakeBuild(build_ext):
         subprocess.run(
             ["conan", "install", ext.sourcedir, '--build=missing', '-pr:b=default'], cwd=build_temp, check=True
         )
+        
+        # Add CMake Toolchain file
+        # cmake paths always use forward slashes
+        cmake_toolchain_file = '/'.join([ext.sourcedir, "build", cfg, "generators", "conan_toolchain.cmake"])
+        cmake_args += [f"-DCMAKE_TOOLCHAIN_FILE={cmake_toolchain_file}", "-DCMAKE_POLICY_DEFAULT_CMP0091=NEW"]
 
         subprocess.run(
             ["cmake", ext.sourcedir, *cmake_args], cwd=build_temp, check=True
