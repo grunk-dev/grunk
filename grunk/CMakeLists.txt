@@ -59,7 +59,7 @@ target_link_libraries(grunk PUBLIC ${CMAKE_DL_LIBS}
                                    parametric::parametric 
                                    reflect::reflect
                                    Boost::headers
-                                   yaml-cpp::yaml-cpp
+                                   yaml-cpp
                                    muparser::muparser
 				   # this is needed to support older gcc versions:
 				   $<$<AND:$<CXX_COMPILER_ID:GNU>,$<VERSION_LESS:$<CXX_COMPILER_VERSION>,9.0>>:stdc++fs>)
