@@ -72,9 +72,6 @@ namespace grunkpy {
 using namespace grunk;
 namespace py = pybind11;
 
-PYBIND11_MAKE_OPAQUE(std::unordered_map<std::string, DynamicFeature>);
-PYBIND11_MAKE_OPAQUE(std::vector<reflect::DynamicObject>);
-
 namespace {
 
     std::vector<grunk::Recipe::IDPair> dict_to_idpair_vec(py::dict const& d)
@@ -136,6 +133,13 @@ PYBIND11_MODULE(_core, m)
 
     py::class_<grunk::PluginRegistry>(m, "PluginRegistry")
     .def("prepend_path", &grunk::PluginRegistry::prepend_path)
+    .def("active_env", &grunk::PluginRegistry::active_env)
+    .def("activate_env", &grunk::PluginRegistry::activate_env)
+    .def("deactivate_env", &grunk::PluginRegistry::deactivate_env)
+    .def("load_env", &grunk::PluginRegistry::load_env)
+    .def("unload_env", &grunk::PluginRegistry::unload_env)
+    .def_static("envs", &grunk::PluginRegistry::envs)
+    .def_static("env_plugins", &grunk::PluginRegistry::env_plugins)
     .def("print_plugins", &grunk::PluginRegistry::print_plugins)
     .def("count", &grunk::PluginRegistry::count)
     .def("load", &grunk::PluginRegistry::load)

@@ -80,7 +80,7 @@ TEST_F(IOTest, serialize_DAGNode)
     auto x = Feature("x", 0.2);
     auto y = Feature("y", "double", 0.5);
     auto z = action("z", "SimplePlugin::add", x, y);
-    auto w = action("w", [](auto const& x){ return x; }, y);
+    auto w = action("w", [](double x){ return x*x/42.; }, x);
 
     // root parameters
     auto sx = x.get_param().node_pointer()->serialize();

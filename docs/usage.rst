@@ -135,10 +135,10 @@ by retaining parent-child relations in the ``Feature<T>`` instances.
 
 .. _using-plugins:
 
-Using Plugins
+Grunk plugins
 =============
 
-What kind of types can I store in a ``Feature``? What kind of functions can I 
+What kind of types can we store in a ``Feature``? What kind of functions can we 
 use with grunk?
 
 (Almost) anything goes: Any kind of type can be stored in a ``Feature``. Functions have
@@ -152,17 +152,104 @@ using our ``add`` function from above, we now want to build a feature tree with 
 ``SomePluginA::add`` and ``SomePluginB::multiply``, both taking instances of 
 ``SomePluginA::MyDouble`` as arguments. 
 
+In this section of the documentation, we will first learn how to use grunk environments to manage
+and install grunk plugins and then see how we can use them as part of a model written in C++ or Python. 
+
+Grunk environments
+------------------
+
+In essence, a grunk plugin is a shared library (.so/.dll) that is responsible for registering types and 
+functions using reflect. 
+
 Let's assume that we have both plugins ``libSomePluginA.so`` and ``libSomePluginB.so`` in the 
 directory ``/home/jan/grunk_plugins/`` *(Note that on Windows the file extension would be .dll)*. 
-We can load the plugins using the ``PluginRegistry``. 
+In the simpleste scenario, we can load the plugins using the ``PluginRegistry``. 
 
 .. tabs::
 
    .. code-tab:: cpp 
    
-         auto& plugins = grunk::get_plugin_registry();
-         plugins.prepend_path("/home/jan/grunk_plugins/");
-         plugins.load_all();
+         grunk::get_plugin_registry().prepend_path("/home/jan/grunk_plugins/");
+         grunk::get_plugin_registry().load("SomePluginA");
+         grunk::get_plugin_registry().load("SomePluginB");
+
+   .. code-tab:: python 
+   
+         grunk.get_plugin_registry().prepend_path("/home/jan/grunk_plugins/")
+         grunk.get_plugin_registry().load("SomePluginA")
+         grunk.get_plugin_registry().load("SomePluginB")
+
+``PluginRegistry::prepend_path`` prepends the search path for plugins by a directory
+passed as an argument and ``PluginRegistry::load`` will load a plugin from the 
+search directories.
+
+.. note::
+
+   It is not recommended to load plugins like this. Prefer grunk environments.
+
+Loading libraries like this can work, but it can become tedious if the libraries have 
+downstream dependencies or we are loading several libraries of different versions that 
+may or may not be compatible to each other. To circumvent this problem, it is better to 
+use a package manager that handles version compatibility issues etc. 
+
+For this reason, grunk builds on the conan API and introduces grunk environments.
+
+The grunk CLI allows the generation of isolated environments for the installation of plugins
+and their runtime dependencies into dedicated directories as well as functions for installing 
+grunk plugins from a local cache or a remote host. This functionality is built upon the conan API.
+
+.. note:: 
+
+   The term "environment" may not be properly used here. For our purposes, it is just a 
+   dedicated directory that stores a set of plugins that are compatible to each other as well as 
+   their respective runtime dependencies.
+
+Let us create a new grunk environment called ``cad`` and install the plugin ```grocc/0.1.1``` into it. 
+Enter the following command into the command line:
+
+.. code:: console 
+
+   grunk env create cad grocc/0.1.1
+
+This command first checks if ``grocc/0.1.1`` is already available in the local conan cache. Otherwise it 
+searches the grunkcenter and conancenter in this order. At the time of writing, the grunkcenter is simply 
+our DLR internal Gitlab package registry. 
+
+If it finds a binary package fitting to the local default conan profile, the plugin will be downloaded 
+in binary form. Otherwise grunk *(resp. conan)* will download the Plugin's source code and try to compile 
+the plugin locally. The latter can take some time. Have a coffee.
+
+If grunk *(resp. conan)* claim that the plugin cannot be found, 
+it is likely that the authentification token has expired and we must authenticate with grunkcenter again: 
+
+.. code:: console
+
+   grunk user auth <GITLAB_USER_NAME> -p <GITLAB_API_TOKEN>
+
+The command ``grunk env list`` will list all environments, ``grunk env show cad`` would show 
+all plugins installed in the environment ``cad`` and ``grunk env remove cad`` would remove the
+environment ``cad```. Type ``grunk env --help`` for details.
+
+Note that you can have any number of environments. This can also help with managing different 
+versions of the same plugin in their respecitve isolated environments. 
+
+``PluginRegistry::activate_env(std::string const& env_name)`` can be used to prepend grunk's 
+search path based on the environment. Then we can load any plugin within this environment using
+``PluginRegistry::load`` as before. 
+
+Note that there is a shorthand for loading all plugins within an environment: ``PluginRegistry::load_env``.
+
+Using grunk plugins
+-------------------
+
+Let's assume that we have both plugins ``SomePluginA`` and ``SomePluginB`` installed in 
+a grunk environment called `my_env`
+
+.. tabs::
+
+   .. code-tab:: cpp 
+   
+         grunk::get_plugin_registry().load_env("my_env");
 
          grunk::Feature x("x", "SomePluginA::MyDouble", 4.3);
          grunk::Feature y("y", "SomePluginA::MyDouble", 3.3);
@@ -173,8 +260,7 @@ We can load the plugins using the ``PluginRegistry``.
 
    .. code-tab:: python 
    
-         grunk.load("PluginA", version="0.1.0", install_missing=True)
-         grunk.load("PluginB", version="0.1.0", install_missing=True)
+         grunk.get_plugin_registry().load_env("my_env")
 
          x = grunk.Feature("x", "SomePluginA::MyDouble", 4.3)
          y = grunk.Feature("y", "SomePluginA::MyDouble", 3.3)
@@ -183,18 +269,7 @@ We can load the plugins using the ``PluginRegistry``.
          a = grunk.action("a", "SomePluginA::add", x, y).output()
          b = grunk.action("b", "SomePluginB::multiply", a, z).output()
 
-.. note::
-
-   Currently, it is not possible to interact with grunk's package manager via the C++ library. Therefore
-   we need to point the plugin registry to the location of the ``.so`` (resp. ``.dll``) files 
-   manually using ``PluginRegistry::prepend_path``. The reason is that grunk's package manager is based on 
-   conan, which is written in python. 
-
-   On the contrary, it is possible to interact with grunk's package manager via the 
-   python module for grunk. It provides ``grunk.load`` to automatically install and/or 
-   load grunk plugins.
-
-When working with plugins, I 
+When working with plugins, we 
 have to use grunk's :ref:`dynamic mode<dynamic-mode>`, while the :ref:`first example<getting-started>` used grunk's 
 :ref:`static mode<static-mode>`. In essence, this means that all features of the above feature tree are now instances of ``Feature<reflect::DynamicObject>``, 
 see also :ref:`design principles<design-dynamic-sublanguage>`. Because the plugins are loaded
@@ -206,10 +281,10 @@ a runtime reflection system used by grunk's plugin system.
 
    Currently, static mode is not supported via the python bindings.
 
-If I evaluate the tree by querying ``b.value()``, I will retrieve an instance of ``reflect::DynamicObject``.
+If we evaluate the tree by querying ``b.value()``, we will retrieve an instance of ``reflect::DynamicObject``.
 Luckily, the type ``SomePluginA::MyDouble`` has a public data member called ``value`` which is of type
-``double``, see also the section on :ref:`writing plugins<writing-plugins>`. I can use ``reflect::DynamicObject::get`` to retrieve this data member and then cast it to a 
-type that I can deal with:
+``double``, see also the section on :ref:`writing plugins<writing-plugins>`. We can use ``reflect::DynamicObject::get`` to retrieve this data member and then cast it to a 
+type that we can deal with:
 
 .. tabs::
 
@@ -226,7 +301,144 @@ type that I can deal with:
 .. code-block:: console
 
    15.2
+
+
+.. _writing-plugins:
+
+Writing Plugins
+---------------
+
+Let us assume we are the authors of the plugin ``SomePluginA`` from the 
+:ref:`previous example<using-plugins>`, so our code looks like this:
+
+.. code-block:: cpp
    
+   struct MyDouble {
+       MyDouble(double v) : value(v) {}
+       double value;
+   };
+
+   MyDouble add(MyDouble const& l, MyDouble const& r)
+   {
+       return {l.value + r.value};
+   }
+
+We can make the type ``MyDouble`` and the function ``add`` available for 
+use in a feature tree by creating a grunk plugin. We do so, by including the 
+grunk header ``grunk/grunk.hpp`` and inheriting from ``grunk::IPlugin``. We 
+have to overwrite the virtual methods ``name``, ``version`` and ``init``. 
+In the ``init`` function we can register all types and functions we want to 
+make available in our grunk interface.
+
+.. code-block:: cpp 
+
+   class SomePluginA: public grunk::IPlugin
+   {
+   public:
+   
+       virtual std::string name() const override final
+       {
+           return "SomePluginA";
+       }
+   
+       virtual std::string version() const override final
+       {
+           return "2.4.19";
+       }
+   
+       virtual void init() const override final 
+       {
+           // register types
+   
+           register_type<MyDouble>("MyDouble")
+           .add_constructor<double>()
+           .add_data_member(&MyDouble::value, "value")
+           .add_member_function(
+               [](MyDouble const& d){
+                   YAML::Node out(d.value);
+                   return out;
+               },
+               "serialize"
+           )
+           .add_member_function(
+               [](YAML::Node const& y){
+                   return MyDouble(y.as<double>());
+               },
+               "deserialize"
+           );
+   
+           // register functions
+   
+           register_function(&add, "add", "adds two MyDouble instances");
+       }
+   
+   };
+   GRUNK_REGISTER_PLUGIN(SomePluginA)
+
+After creating the derived class ``SomePluginA``, we need to register the plugin using 
+the C macro ``GRUNK_REGISTER_PLUGIN``. If the compilation unit containing this code 
+is compiled to a shared library, the plugin can be used in grunk.
+
+Let us take a closer look at the body of the ``init`` function. 
+
+First, the type 
+``MyDouble`` is registered with the call to ``grunk::register_type``. It is given a 
+name to look up the type in grunk's type registry. 
+
+Though this is not necessary 
+for grunk's plugin system, we are letting the type registry know about the 
+constructor taking a ``double`` with ``add_constructor``. This allows users of grunk to 
+create instances of ``MyDouble``, even if the plugin is loaded at runtime and the calling 
+program does not know about the existence of ``MyDouble`` at compile time. 
+
+Next, the public data member ``value`` is added to the grunk interface. It can be queried
+with the string identifier "value", and this was already used in the example 
+:ref:`"Using Plugins"<using-plugins>`.
+
+If ``MyDouble`` had any public member functions, we could register them using 
+``add_member_function``. But ``add_member_function`` is more powerful: We can use it to 
+add free functions as methods, even if they don't exist in the definition of the type. 
+If this free function takes a reference to ``MyDouble`` as first argument, it behaves like a normal
+member function. If it does not, it behaves like a static member function. 
+
+In the above code block, we are adding the free function ``serialize`` as a method to 
+``MyDouble`` using ``add_member_function``. The free function 
+creates a ``YAML::Node`` (see `yaml-cpp <https://github.com/jbeder/yaml-cpp>`_) from an 
+instance of ``MyDouble``. In this example, the ``YAML::Node`` is very simple: It only holds the 
+``MyDouble::value`` as a ``double``. This information is enough to uniquely transform an instance 
+of ``MyDouble`` to yaml and back again.
+
+In addition, a "static" member function is added called ``deserialize``. This method takes 
+a ``YAML::Node`` and creates an instance of ``MyDouble``. 
+
+Adding the functions
+
+.. code-block:: cpp
+   
+   YAML::Node serialize(Type const&);
+   Type deserialize(YAML::Node const&);
+
+as member functions to a type ``Type`` is mandatory, if 
+
+ * it should be possible to use ``Type`` instances as a root parameter of a grunk feature tree **and**
+ * it should be possible to write and read feature trees with ``Type`` instances as root parameters to/from a grunk file.
+
+Finally, in the last line of the ``init`` function, the function ``add`` is registered by a 
+call to ``register_function``. It is given a string identifier for lookup in grunk's function
+registry and (optionally) a short string that serves as a documentation for that function. 
+
+grunk is designed so that it should be easy to add a grunk interface to an existing C++ 
+code base.
+
+.. _sharing-plugins:
+
+Sharing Plugins 
+---------------
+
+To Do
+
+
+
 
 .. _reading-and-writing-to-file:
 
@@ -289,9 +501,7 @@ reconstructed, as long as the two plugins have been loaded:
 
    .. code-tab:: cpp 
    
-         auto& plugins = grunk::get_plugin_registry();
-         plugins.prepend_path("/home/jan/grunk_plugins/");
-         plugins.load_all();
+         grunk::get_plugin_registry().load_env("my_env");
 
          auto features = grunk::read("/home/jan/my_grunk_files/simple.grr")
          auto b = features.at("b");
@@ -300,8 +510,7 @@ reconstructed, as long as the two plugins have been loaded:
 
    .. code-tab:: python 
 
-         grunk.load("PluginA", version="0.1.0", install_missing=True)
-         grunk.load("PluginB", version="0.1.0", install_missing=True)
+         grunk.get_plugin_registry().load_env("my_env")
 
          features = grunk.read("/home/jan/my_grunk_files/simple.grr")
          b = features["b"]
@@ -318,6 +527,7 @@ features, see :ref:`the next section<grunk-recipes>`. Retrieval is based on the 
 Plugins enable experts to create and use domain specific building blocks to model 
 complex systems. grunk files enable experts to share workflows in a collaborative and 
 multidisciplinary environment.
+
 
 .. _grunk-recipes:
 
@@ -694,137 +904,3 @@ Recipe
 ``grunk::Recipe``\s can be used as compute nodes, see :ref:`the section on recipes<grunk-recipes>`. 
 This is useful for modularizing a complex recipe into subrecipes, e.g. a recipe for a car can have 
 subrecipes for the wheels, chassis, motor etc.
-
-.. _writing-plugins:
-
-Writing Plugins
-===============
-
-Let us assume we are the authors of the plugin ``SomePluginA`` from the 
-:ref:`previous example<using-plugins>`, so our code looks like this:
-
-.. code-block:: cpp
-   
-   struct MyDouble {
-       MyDouble(double v) : value(v) {}
-       double value;
-   };
-
-   MyDouble add(MyDouble const& l, MyDouble const& r)
-   {
-       return {l.value + r.value};
-   }
-
-We can make the type ``MyDouble`` and the function ``add`` available for 
-use in a feature tree by creating a grunk plugin. We do so, by including the 
-grunk header ``grunk/grunk.h`` and inheriting from ``grunk::IPlugin``. We 
-have to overwrite the virtual methods ``name``, ``version`` and ``init``. 
-In the ``init`` function we can register all types and functions we want to 
-make available in our grunk interface.
-
-.. code-block:: cpp 
-
-   class SomePluginA: public grunk::IPlugin
-   {
-   public:
-   
-       virtual std::string name() const override final
-       {
-           return "SomePluginA";
-       }
-   
-       virtual std::string version() const override final
-       {
-           return "2.4.19";
-       }
-   
-       virtual void init() const override final 
-       {
-           // register types
-   
-           register_type<MyDouble>("MyDouble")
-           .add_constructor<double>()
-           .add_data_member(&MyDouble::value, "value")
-           .add_member_function(
-               [](MyDouble const& d){
-                   YAML::Node out(d.value);
-                   return out;
-               },
-               "serialize"
-           )
-           .add_member_function(
-               [](YAML::Node const& y){
-                   return MyDouble(y.as<double>());
-               },
-               "deserialize"
-           );
-   
-           // register functions
-   
-           register_function(&add, "add", "adds two MyDouble instances");
-       }
-   
-   };
-   GRUNK_REGISTER_PLUGIN(SomePluginA)
-
-After creating the derived class ``SomePluginA``, we need to register the plugin using 
-the C macro ``GRUNK_REGISTER_PLUGIN``. If the compilation unit containing this code 
-is compiled to a shared library, the plugin can be used in grunk.
-
-Let us take a closer look at the body of the ``init`` function. 
-
-First, the type 
-``MyDouble`` is registered with the call to ``grunk::register_type``. It is given a 
-name to look up the type in grunk's type registry. 
-
-Though this is not necessary 
-for grunk's plugin system, we are letting the type registry know about the 
-constructor taking a ``double`` with ``add_constructor``. This allows users of grunk to 
-create instances of ``MyDouble``, even if the plugin is loaded at runtime and the calling 
-program does not know about the existence of ``MyDouble`` at compile time. 
-
-Next, the public data member ``value`` is added to the grunk interface. It can be queried
-with the string identifier "value", and this was already used in the example 
-:ref:`"Using Plugins"<using-plugins>`.
-
-If ``MyDouble`` had any public member functions, we could register them using 
-``add_member_function``. But ``add_member_function`` is more powerful: We can use it to 
-add free functions as methods, even if they don't exist in the definition of the type. 
-If this free function takes a reference to ``MyDouble`` as first argument, it behaves like a normal
-member function. If it does not, it behaves like a static member function. 
-
-In the above code block, we are adding the free function ``serialize`` as a method to 
-``MyDouble`` using ``add_member_function``. The free function 
-creates a ``YAML::Node`` (see `yaml-cpp <https://github.com/jbeder/yaml-cpp>`_) from an 
-instance of ``MyDouble``. In this example, the ``YAML::Node`` is very simple: It only holds the 
-``MyDouble::value`` as a ``double``. This information is enough to uniquely transform an instance 
-of ``MyDouble`` to yaml and back again.
-
-In addition, a "static" member function is added called ``deserialize``. This method takes 
-a ``YAML::Node`` and creates an instance of ``MyDouble``. 
-
-Adding the functions
-
-.. code-block:: cpp
-   
-   YAML::Node serialize(Type const&);
-   Type deserialize(YAML::Node const&);
-
-as member functions to a type ``Type`` is mandatory, if 
-
- * it should be possible to use ``Type`` instances as a root parameter of a grunk feature tree **and**
- * it should be possible to write and read feature trees with ``Type`` instances as root parameters to/from a grunk file.
-
-Finally, in the last line of the ``init`` function, the function ``add`` is registered by a 
-call to ``register_function``. It is given a string identifier for lookup in grunk's function
-registry and (optionally) a short string that serves as a documentation for that function. 
-
-grunk is designed so that it should be easy to add a grunk interface to an existing C++ 
-code base.
-
-.. _sharing-plugins:
-
-Sharing Plugins 
-===============
-
-To Do

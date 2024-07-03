@@ -34,8 +34,25 @@ add_custom_command(TARGET _core POST_BUILD
         $<TARGET_FILE:grunk>
         $<TARGET_FILE_DIR:_core>
 )
+
+if(MSVC)
+    # This is a bit hacky. Locate the reflect.dll and copy it 
+    # to the site-packages folder manually
+    find_file(
+        reflect_dll 
+        NAMES reflect.dll 
+        PATHS ${reflect_INCLUDE_DIRS}/../bin
+    )
+else()
+    find_file(
+        reflect_dll 
+        NAMES libreflect.so
+        PATHS ${reflect_INCLUDE_DIRS}/../lib
+    )
+endif()
+    
 add_custom_command(TARGET _core POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        ${reflect_LIBRARIES}
+        ${reflect_dll}
         $<TARGET_FILE_DIR:_core>
 )

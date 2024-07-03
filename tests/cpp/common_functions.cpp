@@ -1,6 +1,7 @@
 #include <gtest/gtest.h>
 
 #include <grunk/common/common_functions.hpp>
+#include <filesystem>
 
 TEST(common_functions, split_string)
 {
@@ -43,4 +44,11 @@ TEST(common_functions, split_string)
     EXPECT_EQ(r[0], "ab");
     EXPECT_EQ(r[1], "d");
     }
+}
+
+TEST(common_functions, home_dir)
+{
+    // not much of a test, but better than nothing
+    std::filesystem::path p(grunk::get_home_dir());
+    ASSERT_TRUE(std::filesystem::is_directory(p));
 }
