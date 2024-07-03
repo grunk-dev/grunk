@@ -134,7 +134,7 @@ class CMakeBuild(build_ext):
         
         # Add CMake Toolchain file
         # cmake paths always use forward slashes
-        cmake_toolchain_file = '/'.join([ext.sourcedir, "build", cfg, "generators", "conan_toolchain.cmake"])
+        cmake_toolchain_file = os.path.join(ext.sourcedir, "build", cfg, "generators", "conan_toolchain.cmake")
         cmake_args += [f"-DCMAKE_TOOLCHAIN_FILE={cmake_toolchain_file}", "-DCMAKE_POLICY_DEFAULT_CMP0091=NEW"]
 
         subprocess.run(
