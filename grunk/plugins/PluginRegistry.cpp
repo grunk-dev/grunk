@@ -84,7 +84,7 @@ void PluginRegistry::load_env(std::string const& env_name)
 void PluginRegistry::unload_env(std::string const& env_name)
 {
     for (auto const& ref : env_plugins(env_name)) {
-        load(grunk::split(ref, "/")[0]);
+        unload(grunk::split(ref, "/")[0]);
     }
     if (active_env() && *active_env() == env_name) {
         deactivate_env();

@@ -325,7 +325,7 @@ Let us assume we are the authors of the plugin ``SomePluginA`` from the
 
 We can make the type ``MyDouble`` and the function ``add`` available for 
 use in a feature tree by creating a grunk plugin. We do so, by including the 
-grunk header ``grunk/grunk.h`` and inheriting from ``grunk::IPlugin``. We 
+grunk header ``grunk/grunk.hpp`` and inheriting from ``grunk::IPlugin``. We 
 have to overwrite the virtual methods ``name``, ``version`` and ``init``. 
 In the ``init`` function we can register all types and functions we want to 
 make available in our grunk interface.
