@@ -1,3 +1,15 @@
+# v0.3.1
+
+ - bump reflect to 0.1.11
+ - bump yaml-cpp to 0.8.0
+ - New feature: grunk environments to manage dedicated directories with installed plugins in the user home (#111)
+ - Remove grunk virtualenv feature. Grunk environments should be used instead (#111)
+ - Don't automatically add `PATH`, `LD_LIBRARY_PATH` and `DYLD_LIBRARY_PATH` to the search path.
+   The method `grunk::PluginRegistry::populate_path_form_env()` still exists, but is not called in `grunk::init()`
+ - grunk plugin manager now installes directly into the local conan cache, instead of keeping a seperate cache (#111)
+ - fix installation issue of python bindins: setup.py did not copy reflect.dll into site-packages/grunk (#108)
+ - bugifx in code generator: No more superfluous namespace seperators at the beginning of declaration names (#107)
+
 # v0.3.0
 
  - bump reflect to 0.1.10
