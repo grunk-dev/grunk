@@ -38,7 +38,7 @@ def cavity_sketch():
 if __name__ == '__main__':
 
     grunk.init()
-    grunk.get_plugin_registry().load("grocc")
+    grunk.get_plugin_registry().load_env("cad")
 
     # build cavity recipe
     cavity_w = grunk.Feature("cavity_w", "double", 20.8)
