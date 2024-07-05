@@ -16,7 +16,7 @@ class VecTest : public ::testing::Test
 public:
     static void SetUpTestCase() {
 
-        grunk::StdPlugin().init();
+        grunk::init();
 
         reflect::register_function(&sum, "sum");
 
@@ -24,6 +24,7 @@ public:
 
     static void TearDownTestCase() {
         reflect::get_type_registry().clear();
+        reflect::get_function_registry().clear();
     } 
 };
 

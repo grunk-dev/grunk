@@ -8,7 +8,7 @@ if (GRUNK_BUILD_DOCS)
     set(DOXYGEN_INDEX_FILE ${CMAKE_CURRENT_SOURCE_DIR}/html/index.html)
 
     set(DOXYGEN_INPUT_DIR 
-        "${PROJECT_SOURCE_DIR}/grunk/core ${PROJECT_SOURCE_DIR}/grunk/io ${PROJECT_SOURCE_DIR}/grunk/dynamic ${PROJECT_SOURCE_DIR}/grunk/plugins")
+        "${PROJECT_SOURCE_DIR}/grunk/ ${PROJECT_SOURCE_DIR}/grunk/common ${PROJECT_SOURCE_DIR}/grunk/compute_nodes ${PROJECT_SOURCE_DIR}/grunk/plugins")
     set(DOXYGEN_OUTPUT_DIR ${CMAKE_CURRENT_BINARY_DIR}/doxygen)
     set(DOXYFILE_IN ${CMAKE_CURRENT_SOURCE_DIR}/Doxyfile.in)
     set(DOXYFILE_OUT ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile)

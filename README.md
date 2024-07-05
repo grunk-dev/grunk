@@ -3,7 +3,7 @@
 **share tools - share designs - build together**
 
 [![pipeline status]( https://gitlab.dlr.de/paradigms/grunk/badges/main/pipeline.svg)](https://gitlab.dlr.de/paradigms/grunk/-/commits/main/)
-[![documentation](https://img.shields.io/badge/docs-online-blue)](https://paradigms.pages.gitlab.dlr.de/grunk/)
+[![documentation](https://img.shields.io/badge/docs-online-blue)](https://grunk-paradigms-fa948b0b9b25e1a01f6c9cf07a0b575274b57f414302a5d.pages.gitlab.dlr.de/)
 
 **Disclaimer:** *This is work in progress at a very early stage. Most features have not been implemented yet. Expect the code and API to change frequently!*
 

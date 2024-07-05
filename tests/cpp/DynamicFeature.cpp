@@ -1,6 +1,6 @@
 #include <gtest/gtest.h>
 
-#include <grunk/dynamic/DynamicFeature.hpp>
+#include <grunk/grunk.hpp>
 
 using namespace grunk;
 
@@ -52,13 +52,14 @@ public:
 
     static void TearDownTestCase() {
         reflect::get_type_registry().clear();
+        reflect::get_function_registry().clear();
     } 
 };
 
 TEST_F(DynamicFeatureTest, ctor)
 {
     Feature<double> x("x", 0.25);
-    auto y = DynamicFeature::create("y", "MyStruct", x);
+    auto y = grunk::action("y", "MyStruct", x).output();
 
     EXPECT_FALSE(y.is_valid());
     EXPECT_EQ(reflect::cast<MyStruct>(y.value()).val, 0.25);
@@ -71,27 +72,11 @@ TEST_F(DynamicFeatureTest, ctor)
     EXPECT_TRUE(y.is_valid());
 }
 
-TEST_F(DynamicFeatureTest, Conversions)
-{
-    DynamicFeature x("x", "MyStruct", 0.33);
-    EXPECT_NEAR(x.value().get_as<double>("val"), 0.33, 1e-12);
-
-    // Feature<DynamicObject> -> Feature<T>
-    Feature<MyStruct> y(x);
-    EXPECT_NEAR(y.value().val, 0.33, 1e-12);
-    EXPECT_EQ(y.param().id(), "x");
-
-    // Feature<T> -> Feature<DynamicObject> 
-    DynamicFeature z(y);
-    EXPECT_NEAR(z.value().get_as<double>("val"), 0.33, 1e-12);
-    EXPECT_EQ(z.param().id(), "x");
-}
-
 TEST_F(DynamicFeatureTest, get)
 {
     Feature x("x", "MyStruct", 0.5);
 
-    Feature v = x.get("v", "val");
+    Feature v = grunk::action("v", "MyStruct::val", x).output();
     EXPECT_EQ(reflect::cast<double>(v.value()), 0.5);
 
      x.access_value().set("val", 0.3);
@@ -104,7 +89,7 @@ TEST_F(DynamicFeatureTest, invoke)
     Feature x("x", "MyStruct", 0.5);
     Feature factor("factor", "double", 3.);
 
-    Feature v = x.invoke("v", "times", factor).output();
+    Feature v = grunk::action("v", "MyStruct::times", x, factor).output();
     
     EXPECT_FALSE(v.is_valid());
     EXPECT_NEAR(reflect::cast<double>(v.value()), 1.5, 1e-12);
@@ -125,5 +110,5 @@ TEST_F(DynamicFeatureTest, invoke_nonConstMemberFun)
 {
     Feature x("x", "MyStruct", 0.5);
     Feature factor("factor", "double", 3.);
-    EXPECT_THROW(x.invoke("", "timesc", factor), reflect::Unresolvable);
+    EXPECT_THROW(grunk::action("", "MyStruct::timesc", x, factor), reflect::Unresolvable);
 }

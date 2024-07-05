@@ -1,8 +1,22 @@
 import grunk
 import pytest
 
-def test_integration_hello_world(tmp_path):
-    grunk.load("PluginA", version="0.1.0", install_missing=True)
+@pytest.fixture
+def load_plugins():
+    plugins = [
+        {"name": "PluginA", "version": "0.1.0"},
+        {"name": "PluginB", "version": "0.1.0"}
+    ]
+    for plugin in plugins:
+        if not grunk.plugin_manager.is_installed(plugin["name"], plugin["version"]):
+            with grunk.plugin_manager.PluginManager() as pm:
+                pm.install(plugin["name"], plugin["version"])
+        for dir in grunk.plugin_manager.get_dll_paths(plugin["name"], plugin["version"]):
+            grunk.get_plugin_registry().prepend_path(dir)
+
+
+def test_integration_hello_world(load_plugins, tmp_path):
+    grunk.get_plugin_registry().load("PluginA")
     assert grunk.get_plugin_registry().count() == 1
 
     a = grunk.Feature("a", "PluginA::Scalar", 3.3)
@@ -11,7 +25,7 @@ def test_integration_hello_world(tmp_path):
     assert 5.5 == pytest.approx(c.value().get("value").as_float())
     grunk.write(str(tmp_path / "test.grr.yml"), c)
 
-    grunk.load("PluginB", version="0.1.0", install_missing=True)
+    grunk.get_plugin_registry().load("PluginB")
     assert grunk.get_plugin_registry().count() == 2
     
     d = grunk.Feature("d", "PluginA::Scalar", 2)
@@ -23,16 +37,16 @@ def test_integration_hello_world(tmp_path):
     assert 6.6 == pytest.approx(c.value().get("value").as_float())
 
 def test_expression():
-    grunk.get_plugin_registry() # initializes standard plugin
+    grunk.init()
 
     a = grunk.Feature("x", "double", 0.)
     b = grunk.Feature("y", "double", 0.75)
     c = grunk.expression("z", "2*cos(x)*y+1", a, b)
     assert 2.5 == pytest.approx(c.value().as_float())
 
-def test_recipe(tmp_path):
-    grunk.load("PluginA", version="0.1.0", install_missing=True)
-    grunk.load("PluginB", version="0.1.0", install_missing=True)
+def test_recipe(load_plugins, tmp_path):
+    grunk.get_plugin_registry().load("PluginA")
+    grunk.get_plugin_registry().load("PluginB")
     
     recipe = grunk.Recipe()
     recipe.feature("a", "PluginA::Scalar", 17.)
@@ -59,9 +73,9 @@ def test_recipe(tmp_path):
     grunk.write(str(tmp_path / "test_nested_recipe.grr.yml"), recipe)
 
 
-def test_script(tmp_path):
-    grunk.load("PluginA", version="0.1.0", install_missing=True)
-    grunk.load("PluginB", version="0.1.0", install_missing=True)
+def test_script(load_plugins, tmp_path):
+    grunk.get_plugin_registry().load("PluginA")
+    grunk.get_plugin_registry().load("PluginB")
 
     x = grunk.Feature("x", "PluginA::Scalar", -0.25)
     y = grunk.Feature("y", "PluginA::Scalar", -0.75)
@@ -82,9 +96,9 @@ def test_script(tmp_path):
     # just make sure this doesn't fail:
     grunk.write(str(tmp_path / "script_action.grr.yml"), p)
 
-def test_vec(tmp_path):
-    grunk.load("PluginA", version="0.1.0", install_missing=True)
-    grunk.load("PluginB", version="0.1.0", install_missing=True)
+def test_vec(load_plugins, tmp_path):
+    grunk.get_plugin_registry().load("PluginA")
+    grunk.get_plugin_registry().load("PluginB")
 
     x = grunk.Feature("x", "PluginA::Scalar", -0.25)
     y = grunk.Feature("y", "PluginA::Scalar", -0.75)
@@ -93,9 +107,9 @@ def test_vec(tmp_path):
     # just make sure this doesn't fail:
     grunk.write(str(tmp_path / "vec_action.grr.yml"), v)
 
-def test_constant(tmp_path):
-    grunk.load("PluginA", version="0.1.0", install_missing=True)
-    grunk.load("PluginB", version="0.1.0", install_missing=True)
+def test_constant(load_plugins, tmp_path):
+    grunk.get_plugin_registry().load("PluginA")
+    grunk.get_plugin_registry().load("PluginB")
 
     a = grunk.Feature("a", "PluginA::Scalar", 3.3)
     c = grunk.action("c", "PluginA::add", a, 2.2).output()

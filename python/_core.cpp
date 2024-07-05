@@ -1,27 +1,28 @@
+#include <iterator>
 #define PYBIND11_DETAILED_ERROR_MESSAGES
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
 #include <pybind11/stl_bind.h>
 #include <grunk/grunk.hpp>
-#include <grunk/helper/String.hpp>
+#include <grunk/common/String.hpp>
 
 namespace grunkpy {
 
     template <typename T>
-    T cast(pybind11::object const& obj) {
+    T cast(pybind11::handle const& obj) {
         return pybind11::cast<T>(obj);
     }
 
     template <>
-    grunk::DynamicFeature cast<grunk::DynamicFeature>(pybind11::object const& obj) {
+    grunk::DynamicFeature cast<grunk::DynamicFeature>(pybind11::handle const& obj) {
         if (pybind11::isinstance<pybind11::float_>(obj)) {
-            return grunk::details::to_dynamic_feature(pybind11::cast<double>(obj));
+            return grunk::Feature("", reflect::DynamicObject(pybind11::cast<double>(obj)));
         }
         if (pybind11::isinstance<pybind11::int_>(obj)) {
-            return grunk::details::to_dynamic_feature(pybind11::cast<int>(obj));
+            return grunk::Feature("", reflect::DynamicObject(pybind11::cast<int>(obj)));
         }
         if (pybind11::isinstance<pybind11::str>(obj)) {
-            return grunk::details::to_dynamic_feature(pybind11::cast<std::string>(obj));
+            return grunk::Feature("", reflect::DynamicObject(pybind11::cast<std::string>(obj)));
         }
         return pybind11::cast<grunk::DynamicFeature>(obj);
     }
@@ -106,6 +107,21 @@ namespace {
         return m;
     }
 
+    std::vector<grunk::DynamicFeature> to_feature_vec(py::args const& pyargs)
+    {
+        std::vector<grunk::DynamicFeature> args;
+        args.reserve(pyargs.size());
+        std::transform(
+            pyargs.begin(),
+            pyargs.end(),
+            std::back_inserter(args),
+            [](pybind11::handle const& obj){
+                return grunkpy::cast<grunk::DynamicFeature>(obj);
+            }
+        );
+        return args;
+    }
+
 } // anonymouos namespace
 
 
@@ -117,9 +133,17 @@ PYBIND11_MODULE(_core, m)
 
     py::class_<grunk::PluginRegistry>(m, "PluginRegistry")
     .def("prepend_path", &grunk::PluginRegistry::prepend_path)
+    .def("active_env", &grunk::PluginRegistry::active_env)
+    .def("activate_env", &grunk::PluginRegistry::activate_env)
+    .def("deactivate_env", &grunk::PluginRegistry::deactivate_env)
+    .def("load_env", &grunk::PluginRegistry::load_env)
+    .def("unload_env", &grunk::PluginRegistry::unload_env)
+    .def_static("envs", &grunk::PluginRegistry::envs)
+    .def_static("env_plugins", &grunk::PluginRegistry::env_plugins)
     .def("print_plugins", &grunk::PluginRegistry::print_plugins)
     .def("count", &grunk::PluginRegistry::count)
-    .def("load_all", &grunk::PluginRegistry::load_all)
+    .def("load", &grunk::PluginRegistry::load)
+    .def("unload", &grunk::PluginRegistry::load)
     .def("unload_all", &grunk::PluginRegistry::unload_all);
 
     m.def(
@@ -128,7 +152,9 @@ PYBIND11_MODULE(_core, m)
         py::return_value_policy::reference
     );
 
-    // reflect
+    m.def("init", &grunk::init);
+
+    // reflect (TODO: make python bindings of reflect in reflect)
 
     auto m_reflect = m.def_submodule("reflect", "python bindings for reflect");
 
@@ -208,17 +234,6 @@ PYBIND11_MODULE(_core, m)
         ),
         py::return_value_policy::take_ownership
     )
-    .def("get", &grunk::DynamicFeature::get)
-    .def("invoke", 
-        [](grunk::DynamicFeature const& f, std::string id, std::string const& mName, py::args pyargs){
-            return grunkpy::invoke_variadic_rt<grunk::DynamicFeature>(
-                [&](auto&&... args){
-                    return f.invoke(id, mName, std::forward<decltype(args)>(args)...);
-                },
-                pyargs
-            );
-        }
-    )
     .def("is_valid", &grunk::DynamicFeature::is_valid)
     .def("value", &grunk::DynamicFeature::value)
     .def(
@@ -290,7 +305,7 @@ PYBIND11_MODULE(_core, m)
     .def(
         "insert_recipe", 
         [](grunk::Recipe& r, std::string const& id, grunk::Recipe const& other) {
-            r.insert_recipe(id, std::move(other.clone()));
+            r.insert_recipe(id, other.clone());
         }
     )
     .def("num_recipes", &grunk::Recipe::num_recipes)
@@ -330,12 +345,8 @@ PYBIND11_MODULE(_core, m)
     m.def(
         "action", 
         [](std::string const& id, std::string const& name, py::args pyargs){
-            return grunkpy::invoke_variadic_rt<grunk::DynamicFeature const&>(
-                [&](auto&&... args){
-                    return grunk::action(id, name, std::forward<decltype(args)>(args)...);
-                },
-                pyargs
-            );
+            auto const v = to_feature_vec(pyargs);
+            return grunk::action(id, name, v);
         }
     );
 

@@ -9,7 +9,7 @@ class RecipeTest : public ::testing::Test
 public:
     static void SetUpTestCase() {
 
-        grunk::StdPlugin().init();
+        grunk::init();
 
         reflect::register_function(
             [](double x, double y){ return x+y; }, 
@@ -19,6 +19,7 @@ public:
 
     static void TearDownTestCase() {
         reflect::get_type_registry().clear();
+        reflect::get_function_registry().clear();
     } 
 };
 

@@ -1,5 +1,5 @@
 import os
-from grunk.codegen import parse_headers, FunctionDecl, Module, generate, HeaderPath, CodeGenerator
+from grunk.codegen import *
 import clang.cindex
 import pytest
 import yaml
@@ -80,7 +80,7 @@ def test_parse_single_header(parse_Foo):
     assert len(baz.methods) == 1
     assert baz.methods[0].name == "operator new"
     assert baz.methods[0].fully_qualified_name == "Baz::operator new"
-    assert "void * (*)(unsigned long" in baz.methods[0].function_pointer_type # some clang versins make size_t unsigned long, others unsigned long long
+    assert "void * (*)(size_t" in baz.methods[0].function_pointer_type # some clang versins make size_t unsigned long, others unsigned long long
     assert not baz.methods[0].is_const
     assert baz.methods[0].is_static
     assert not baz.methods[0].is_overloaded
@@ -142,9 +142,9 @@ def test_parse_single_header(parse_Foo):
     assert (
         len(foo.constructors[1].arguments) == 3
     )  # Foo(Standard_Real, Standard_Real, Standard_Real)
-    assert foo.constructors[1].arguments[0] == "double"
-    assert foo.constructors[1].arguments[1] == "double"
-    assert foo.constructors[1].arguments[2] == "double"
+    assert foo.constructors[1].arguments[0] == "Standard_Real"
+    assert foo.constructors[1].arguments[1] == "Standard_Real"
+    assert foo.constructors[1].arguments[2] == "Standard_Real"
     assert len(foo.constructors[2].arguments) == 1  # Foo(bool)
     assert foo.constructors[2].arguments[0] == "bool"
 
@@ -186,7 +186,7 @@ def test_parse_single_header(parse_Foo):
     assert not static_func.is_const
     assert not static_func.is_overloaded
     assert len(static_func.arguments) == 1
-    assert static_func.arguments[0] == "const std::basic_string<char> &"
+    assert static_func.arguments[0] == "const std::string &"
     assert static_func.return_type == "void"
 
     #################
@@ -212,7 +212,7 @@ def test_codegen_classes_none(parse_Foo):
     assert classes[0].name == "Baz"
     baz_cpp_code = c.cpp_register_type(classes[0])
     assert 'register_type<Baz>("Baz")' in baz_cpp_code
-    assert '.add_member_function<void * (*)(unsigned long' in baz_cpp_code # size_t is sometimes unsigned long, sometimes unsinged long long
+    assert '.add_member_function<void * (*)(size_t' in baz_cpp_code # size_t is sometimes unsigned long, sometimes unsinged long long
     assert '(&Baz::operator new, "operator new");' in baz_cpp_code
 
     assert classes[1].name == "Bar"
@@ -234,13 +234,13 @@ def test_codegen_classes_none(parse_Foo):
         == """register_type<ns2::Foo>("Foo")
 .add_base<ns2::Bar>()
 .add_constructor<>()
-.add_constructor<double, double, double>()
+.add_constructor<Standard_Real, Standard_Real, Standard_Real>()
 .add_constructor<bool>()
 .add_conversion<ns1::Other>()
 .add_data_member(&ns2::Foo::data_member, "data_member")
 .add_member_function<double (ns2::Foo::*)(int) const>(&ns2::Foo::baz, "baz")
 .add_member_function<double (ns2::Foo::*)(double) const>(&ns2::Foo::baz, "baz")
-.add_member_function<void (*)(const std::basic_string<char> &)>(&ns2::Foo::static_func, "static_func");
+.add_member_function<void (*)(const std::string &)>(&ns2::Foo::static_func, "static_func");
 """
     )
 
@@ -521,6 +521,84 @@ def test_custom_code_generator_from_config():
     assert "register_type<Standard_Transient>" in src
     assert "register_type<Foo, opencascade_handle>" in src
     assert "register_type<Bar>" in src
+
+
+def test_fully_qualified_type_name():
+    """test the function fully_qualified_type_name, specifically applied to 
+    function arguments. All type names should be fully qualified including all nested
+    name specifiers, but in contrasts to clang.cindex.Type.get_canonical, type aliases 
+    and typedefs shall not be expanded.
+    """
+
+    index = clang.cindex.Index.create()
+    header = os.path.join(data_dir(), "my_source.hpp")
+    tu = index.parse(header)
+
+    functions = {}
+    for i in filter_node_list_by_predicate(
+        tu.cursor.get_children(), 
+        lambda n: n.kind in [clang.cindex.CursorKind.FUNCTION_DECL, clang.cindex.CursorKind.CXX_METHOD]
+    ):
+        key = get_decl_fqn(i)
+        functions[key] = {}
+        fun = functions[key]
+        
+        fun["ret"] = type_str(i.type.get_result())
+        fun["args"] = [
+            type_str(arg.type) for arg in i.get_arguments()
+        ]
+    
+    assert len(functions) == 7
+
+    assert "ns::Foo::fun1" in functions
+    fun = functions["ns::Foo::fun1"]
+    assert fun["ret"] == "ns::Foo::Bar"
+    assert len(fun["args"]) == 1
+    assert fun["args"][0] == "void *"
+
+    assert "ns::fun2" in functions
+    fun = functions["ns::fun2"]
+    assert fun["ret"] == "double"
+    assert len(fun["args"]) == 3
+    assert fun["args"][0] == "ns::Foo *"
+    assert fun["args"][1] == "ns::Foo::Bar &"
+    assert fun["args"][2] == "const ns::Baz &"
+
+    assert "ns::fun3" in functions
+    fun = functions["ns::fun3"]
+    assert fun["ret"] == "ns::Baz &"
+    assert len(fun["args"]) == 0
+
+    assert "ns::fun4" in functions
+    fun = functions["ns::fun4"]
+    assert fun["ret"] == "ns::Baz"
+    assert len(fun["args"]) == 3
+    assert fun["args"][0] == "ns::Baz"
+    assert fun["args"][1] == "ns::Foo"
+    assert fun["args"][2] == "ns::Foo *"
+
+    assert "ns::fun5" in functions
+    fun = functions["ns::fun5"]
+    #TODO: This hs what I wish I would get
+    #assert fun["ret"] == "ns::ABaz::value_type"
+    #TODO: This is what I am settling for for now (Both aliases ABaz and Baz fully resolved)
+    assert fun["ret"] == "ns::ATemplate<ns::Foo::Bar>::value_type"
+    assert len(fun["args"]) == 2
+    assert fun["args"][0] == "ns::ATemplate<ns::Baz> &"
+    assert fun["args"][1] == "ns::ATemplate<ns::Baz>"
+
+    assert "ns::fun6" in functions
+    fun = functions["ns::fun6"]
+    assert fun["ret"] == "const char *"
+    assert len(fun["args"]) == 0
+
+    assert "ns::fun7" in functions
+    fun = functions["ns::fun7"]
+    assert fun["ret"] == "auto"
+    assert len(fun["args"]) == 1
+    assert fun["args"][0] == "NonTypeTemplateArg<ns::ATemplate<ns::Baz>, 5>"
+
+
 
 # TODO:
 # - test generated code (smaller header, actually compile with clang)

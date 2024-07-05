@@ -127,3 +127,38 @@ TEST(ActionTest, void_function)
     }();
     result_holder.eval();    
 }
+
+TEST(ActionTest, serialization)
+{
+    auto make_recipe = [](){
+        Feature a("a", MyDouble(21.2));
+        Feature b("b", MyDouble(33.2));
+        Feature c = action("c", &add, a, b).output();
+        return serialize(c);
+    };
+
+    // cannot serialize Action with unregistered function
+    // Cannot serialize MyDouble
+    EXPECT_THROW(make_recipe(), std::logic_error);
+
+    reflect::register_function(&add, "add");
+    reflect::register_type<MyDouble>("MyDouble")
+    .add_member_function(
+        [](MyDouble const& v){
+            return YAML::Node(v.val);
+        },
+        "serialize"
+    )
+    .add_member_function(
+        [](YAML::Node const& n){
+            return MyDouble(n.as<double>());
+        },
+        "deserialize"
+    );
+
+    YAML::Node serialized = make_recipe();
+    auto r = Recipe::deserialize(serialized);
+    EXPECT_NEAR(r["c"].value().as<MyDouble>().val, 54.4, 1e-14);
+
+    reflect::get_function_registry().clear();
+}

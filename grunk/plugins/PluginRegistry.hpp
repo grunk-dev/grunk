@@ -2,12 +2,12 @@
 
 #define BOOST_DLL_USE_STD_FS 1
 
+#include "IPlugin.hpp"
+
 #include <boost/dll/shared_library.hpp>
 #include <unordered_map>
 #include <deque>
 #include <filesystem>
-
-#include "IPlugin.hpp"
 
 namespace grunk {
 
@@ -54,11 +54,84 @@ public:
 
     /**
      * @brief prepends the current search path for plugins
-     * 
-     * @param path the directory that shall be added to the 
+     *
+     * @param path the directory that shall be added to the
      * search path
      */
     void prepend_path(std::string const& path);
+
+    /**
+     * @brief appends the current search path for plugins
+     *
+     * @param path the directory that shall be added to the
+     * search path
+     */
+    void append_path(std::string const& path);
+
+    /**
+     * @brief returns the currently active environment, if any
+     * 
+     * @return std::optional<std::string> 
+     */
+    std::optional<std::string> active_env() const;
+
+    /**
+     * @brief prepends the environment path to the current search
+     * paths for a given grunk environment
+     *
+     * Note that this just adds the environment to the search path
+     * for grunk plugins. No plugins are loaded. Use load_env instead.
+     * 
+     * @param env_name 
+     */
+    void activate_env(std::string const& env_name);
+
+    /**
+     * @brief deactivates an environment, that is removes the 
+     * environment directory from the plugin search path
+     *
+     * Note that this just removes the environment from the
+     * plugin search path and does not unlaod any plugins.
+     * Use unload_env instead.
+     * 
+     */
+    void deactivate_env();
+
+    /**
+     * @brief activates an environment and loads all of its plugins
+     * @param env_name
+     */
+    void load_env(std::string const& env_name);
+
+
+    /**
+     * @brief unloads all plugins from an environment and deactivates it
+     * @param env_name
+     */
+    void unload_env(std::string const& env_name);
+
+
+
+    /**
+     * @brief returns a list all available environments
+     * 
+     * @return std::vector<std::string> names of available environments
+     */
+    static std::vector<std::string> envs();
+
+    /**
+     * @brief returns a list of available plugins within an environment
+     * 
+     * @param name name of the environment
+     * @return std::vector<std::string> package refs of the available plugins
+     */
+    static std::vector<std::string> env_plugins(std::string const& name);
+
+    /**
+     * @brief populates the search path for plugins from the environmentall 
+     * variables PATH, LD_LIBRARY_PATH and DYLD_LIBRARY_PATH
+     */
+    void populate_path_from_env();
 
     /**
      * @brief prints the loaded plugins to console
@@ -73,9 +146,18 @@ public:
     std::size_t count() const;
 
     /**
-     * @brief loads all plugins in the directory provided to the construcotr
+     * @brief load a plugin of a given name.
+     * 
+     * @param name name of the plugin
      */
-    void load_all();
+    void load(std::string const& name);
+
+    /**
+     * @brief unloads a plugin of a given name
+     * 
+     * @param name 
+     */
+    void unload(std::string const& name);
 
     /**
      * @brief unloads all currently loaded plugins. Note that
@@ -100,7 +182,17 @@ private:
      */
     void insert_plugin(BOOST_RV_REF(boost::dll::shared_library) lib);
 
-    Path path;
+    // find a .so or .dll file in the path that contains the passed argument as substring
+    std::optional<std::filesystem::path> find_shared_lib(std::string_view name) const;
+
+    // gets the root directory, where all environments are stored
+    static std::filesystem::path get_environments_root();
+
+    // gets the path containing the runtime dependencies of a given grunk environment
+    static std::filesystem::path get_environment_path(std::string const& env_name);
+
+    std::optional<std::string> m_active_environment;
+    Path path; //search path for plugins
     PluginMap loaded_plugins;
 };
 

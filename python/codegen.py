@@ -161,7 +161,7 @@ class Decl(ABC):
     def __init__(self, node):
         self.node = node
         self.name = node.spelling
-        self.fully_qualified_name = fully_qualified(node)
+        self.fully_qualified_name = get_decl_fqn(node)
 
     def registered_name(
         self, prefix="", fully_qualified_names=False, template_args=False
@@ -195,12 +195,12 @@ class Callable(ABC):
 
     def __init__(self, node: clang.cindex.Cursor):
 
-        self.return_type = node.type.get_result().get_canonical().spelling
+        self.return_type = type_str(node.type.get_result())
 
         self.num_default_args = 0
         self.arguments = []
         for arg in node.get_arguments():
-            self.arguments.append(arg.type.get_canonical().spelling)
+            self.arguments.append(type_str(arg.type))
 
             if "=" in [token.spelling for token in arg.get_tokens()]:
                 self.num_default_args = self.num_default_args + 1
@@ -311,7 +311,7 @@ class ClassDecl(Decl):
 
         for node in filter_node_list_by_predicate(self.node.get_children(), pred):
             if is_base(node) and is_public(node):
-                self.bases.append(fully_qualified(node.referenced))
+                self.bases.append(get_decl_fqn(node.referenced))
             elif (
                 is_ctor(node)
                 and is_public(node)
@@ -324,7 +324,7 @@ class ClassDecl(Decl):
             elif is_field(node) and is_public(node) and is_direct_child(node):
                 field = {}
                 field["type"] = node.type.get_canonical().spelling
-                field["pointer"] = "&" + fully_qualified(node)
+                field["pointer"] = "&" + get_decl_fqn(node)
                 self.fields[node.spelling] = field
             elif is_method(node) and is_public(node) and is_direct_child(node):
                 fd = FunctionDecl(node, parent=self.node)
@@ -421,24 +421,245 @@ def is_enum(n):
 def is_func(n):
     return n.kind == clang.cindex.CursorKind.FUNCTION_DECL
 
-
-def fully_qualified(c):
-    """returns the fully qualified name of a node, including all namespaces
-
-    :param c: The clang cursor of the node
-    :type c: clang cursor
-    :return: The fully qualified name
-    :rtype: str
+# The following functions are taken from the accepted answer here:
+# https://stackoverflow.com/questions/77941127/how-can-i-get-the-fully-qualified-names-of-return-types-and-argument-types-using
+def get_decl_fqn(decl: clang.cindex.Cursor) -> str:
     """
-    if c is None:
-        return ""
-    elif c.kind == clang.cindex.CursorKind.TRANSLATION_UNIT:
-        return ""
+    Given a Cursor that refers to a Declaration, get its fully
+    qualified name.
+    """
+
+    # The semantic parent is the enclosing class, namespace, or
+    # translation unit.
+    parent = decl.semantic_parent
+    assert(parent is not None)
+
+    # When we hit the TU, just return the simple identifier.
+    if parent.kind == clang.cindex.CursorKind.TRANSLATION_UNIT:
+        return decl.spelling
+
+    # Otherwise, print the parent name as a qualifier.
     else:
-        res = fully_qualified(c.semantic_parent)
-        if res != "":
-            return res + "::" + c.spelling
-    return c.spelling
+        # If the parent is a named type, use this as qualifier
+        if parent.type is not None and parent.type.spelling:
+            return parent.type.spelling + "::" + decl.spelling
+        else:
+            #Otherwise, recurse
+            prefix = get_decl_fqn(parent)
+            if prefix:
+                return get_decl_fqn(parent) + "::" + decl.spelling
+            else:
+                return decl.spelling
+
+
+def starts_with_letter(s: str) -> bool:
+    """
+    True if 's' starts with a letter.
+    """
+
+    return s != "" and s[0].isalpha()
+
+
+def ends_with_letter(s: str) -> bool:
+    """
+    True if 's' ends with a letter.
+    """
+
+    return s != "" and s[-1].isalpha()
+
+
+def join_type_strs(s1: str, s2: str) -> str:
+    """
+    Join two strings containing fragments of type syntax, inserting a
+    space if both are non-empty and either has a letter adjacent to the
+    joined edge.
+    """
+
+    needs_space = (ends_with_letter(s1) 
+        or s1.endswith('>') 
+        or starts_with_letter(s2) 
+        or s2.startswith('&') 
+        or s2.startswith('*'))
+    if s1 != "" and s2 != "" and needs_space:
+        return s1 + " " + s2
+    else:
+        return s1 + s2
+
+
+def type_str(t: clang.cindex.Type) -> str:
+    """
+    Print 't' in C++ syntax, using fully qualified names for named
+    types.  (In contrast, 't.spelling' omits qualifiers.)
+    """
+
+    return join_type_strs(before_type_str(t), after_type_str(t))
+
+
+def before_type_str(t: clang.cindex.Type) -> str:
+    """
+    Print the part of 't' that would go before the declarator name in a
+    declaration of a variable with that type.
+    """
+
+    return join_type_strs(cv_qualifiers_str(t), before_type_str_nq(t))
+
+
+def cv_qualifiers_str(t: clang.cindex.Type) -> str:
+    """
+    If 't' has any const/volatile/restrict qualifiers, return a string
+    containing them, separated by spaces.  Otherwise, return "".
+    """
+
+    qualifiers = []
+    if t.is_const_qualified():
+        qualifiers.append("const")
+    if t.is_volatile_qualified():
+        qualifiers.append("volatile")
+    if t.is_restrict_qualified():
+        qualifiers.append("restrict")
+
+    return " ".join(qualifiers)
+
+
+def get_template_arguments(t: clang.cindex.Type) -> typing.Iterable[str]:
+    """returns a list of template arguments as a string. Keeps the non-type
+    template arguments verbatim and replaces type template arguments with the 
+    fully qualified type string
+    """
+    # extract template arguments from canoncial type using string methods
+
+    template_arg_strs = []
+
+    cleaned_str = t.get_named_type().spelling.replace(" ", "")
+
+    # find outer-most bracket pair <> and extract substring between
+    start = cleaned_str.find('<')+1
+    if start > 0:
+        end = cleaned_str.rfind('>')
+        assert(end>0)
+        cleaned_str = cleaned_str[start:end]
+
+        nested_bracket_count = 0
+        i = 0
+        while i < len(cleaned_str):
+
+            if cleaned_str[i] == '<':
+                # we are parsing a template argument of a template argument. ignoring all commas
+                # until we hit the corresponding closing bracket
+                nested_bracket_count += 1
+            elif cleaned_str[i] == '>':
+                nested_bracket_count -= 1
+
+            assert(nested_bracket_count >= 0)
+            ignore_characters = (nested_bracket_count>0)
+
+            # seperate arguments at comma
+            if not ignore_characters and cleaned_str[i] == ',':
+                template_arg_strs.append(cleaned_str[0:i].strip())
+                cleaned_str = cleaned_str[i+1:]
+                i = 0
+            else:
+                i = i+1
+
+        # add last argument if any
+        if cleaned_str:
+            template_arg_strs.append(cleaned_str)
+
+    # Replace all type template parameters with fully qualified names. Keep non-type
+    # template parameters
+    ntargs = t.get_num_template_arguments()
+    if ntargs>0:
+        # it is possible that the named type has no template arguments in its spelling, 
+        # but the type actually has template arguments. This happens with type aliases 
+        # and default template arguments for instance
+        assert ntargs >= len(template_arg_strs)
+    for i in range(0, len(template_arg_strs)):
+        arg_type = t.get_template_argument_type(i)
+        if arg_type.spelling:
+            template_arg_strs[i] = type_str(arg_type)
+
+    return template_arg_strs
+
+
+def before_type_str_nq(t: clang.cindex.Type) -> str:
+    """
+    Print the part of 't' that would go before the declarator name in a
+    declaration of a variable with that type, ignoring any CV
+    qualifiers.
+    """
+
+    if t.kind == clang.cindex.TypeKind.ELABORATED:
+        # Most named types are represented with the "elaborated" node,
+        # which typically has a name.
+        ret = get_decl_fqn(t.get_declaration())
+
+
+        # Properly handle templates. If t is an alias for a template realization
+        # we do not want to add the template parameters here. So we need to check 
+        # this first. A clue for this is that the end of the  named type is the 
+        # same and it contains no <> parenthesis
+        targs = get_template_arguments(t)
+        if not ret.endswith(t.get_named_type().spelling):
+            ret += '<'
+            for i in range(0, len(targs)):
+                if i>0:
+                    ret+= ', '
+                ret += targs[i]
+            ret += '>'
+        
+        return ret
+
+    elif t.kind == clang.cindex.TypeKind.POINTER:
+        p = t.get_pointee()
+
+        # TODO: This does not handle pointer-to-function properly, since
+        # that requires additional parentheses.
+        return join_type_strs(before_type_str(p), "*")
+
+    elif t.kind == clang.cindex.TypeKind.LVALUEREFERENCE:
+        p = t.get_pointee()
+        return join_type_strs(before_type_str(p), "&")
+
+    elif t.kind == clang.cindex.TypeKind.RVALUEREFERENCE:
+        p = t.get_pointee()
+        return join_type_strs(before_type_str(p), "&&")
+
+    elif t.kind == clang.cindex.TypeKind.FUNCTIONPROTO:
+        rettype = t.get_result()
+        return before_type_str(rettype)
+
+    # TODO: FUNCTIONNOPROTO, pointer-to-member, and possibly others.
+
+    else:
+        # For other types, just use the spelling as its "before" syntax,
+        # removing any specifiers
+        ret = t.spelling
+        ret = ret.replace('const', '')
+        ret = ret.replace('volatile', '')
+        ret = ret.replace('restrict', '')
+        return ret.strip()
+
+
+def after_type_str(t: clang.cindex.Type) -> str:
+    """
+    Print the part of 't' that would go after the declarator name in a
+    declaration of a variable with that type.
+    """
+
+    if t.kind == clang.cindex.TypeKind.FUNCTIONPROTO:
+        res = "("
+        count = 0
+        for argtype in t.argument_types():
+            if count > 0:
+                res += ", "
+            count += 1
+            res += type_str(argtype)
+        res += ")"
+        return res
+
+    # TODO: FUNCTIONNOPROTO and the various array types.
+
+    return ""
 
 
 def get_system_include_directories():
@@ -1032,12 +1253,12 @@ def generate(config_file: str, output_dir: str, include_dirs: typing.Iterable[st
         with open(cpp_file, "w") as f:
             f.write(cpp)
     else:
-
+        
         for [module_name, src] in modules_src.items():
 
             # create .cpp file
-            src.preamble = src.preamble + f'#include "{module_name}Plugin.hpp"\n'
-            src.preamble = src.preamble + "\n#include <grunk/grunk.h>\n"
+            src.preamble = src.preamble + f'#include "{main_module.name}Plugin.hpp"\n'
+            src.preamble = src.preamble + "\n#include <grunk/grunk.hpp>\n"
             cpp = src.string(namespaces)
 
             cpp_file = os.path.join(output_dir, f"{module_name}.cpp")

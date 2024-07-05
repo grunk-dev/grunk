@@ -24,7 +24,7 @@ class ScriptTest : public ::testing::Test
 public:
     static void SetUpTestCase() {
 
-        grunk::StdPlugin().init();
+        grunk::init();
 
         reflect::register_type<Pnt>("Pnt")
         .add_constructor<>()
@@ -38,6 +38,7 @@ public:
 
     static void TearDownTestCase() {
         reflect::get_type_registry().clear();
+        reflect::get_function_registry().clear();
     } 
 };
 

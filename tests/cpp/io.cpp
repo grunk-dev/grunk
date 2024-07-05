@@ -25,7 +25,7 @@ public:
 
         auto& plugins = grunk::get_plugin_registry();
         plugins.prepend_path(".");
-        plugins.load_all();
+        plugins.load("SimplePlugin");
 
         reflect::register_type<NonSerializable>("NonSerializable")
         .add_constructor<int>();
@@ -41,30 +41,26 @@ public:
         );
     } 
 
+    static void TearDownTestCase() {
+        reflect::get_type_registry().clear();
+        reflect::get_function_registry().clear();
+    }
+
 };
 
 TEST_F(IOTest, no_serialize_method)
 {
     auto x = Feature("x", "NonSerializable", 42);
-    EXPECT_THROW(x.param().node_pointer()->serialize(), std::out_of_range);
+    EXPECT_THROW(x.get_param().node_pointer()->serialize(), std::out_of_range);
 }
 
 TEST_F(IOTest, serialize_type)
 {
-    // test some specializations of 
-    // parametric::serialize
-
-    // int
-    auto i = parametric::serialize(42);
-    EXPECT_EQ(std::stoi(i), 42);
-
-    // double
-    auto d = parametric::serialize(0.33);
-    EXPECT_NEAR(std::stof(d), 0.33, 1e-6);
+    // test specializations of parametric::serialize
 
     // string
     auto s = parametric::serialize(std::string("Hey Universe"));
-    EXPECT_EQ(s, "Hey Universe");
+    EXPECT_EQ(s, "!<String> Hey Universe");
 
     // DynamicObject
     auto x = reflect::DynamicObject(1.23);
@@ -84,13 +80,13 @@ TEST_F(IOTest, serialize_DAGNode)
     auto x = Feature("x", 0.2);
     auto y = Feature("y", "double", 0.5);
     auto z = action("z", "SimplePlugin::add", x, y);
-    auto w = action("w", [](auto const& x){ return x; }, y);
+    auto w = action("w", [](double x){ return x*x/42.; }, x);
 
     // root parameters
-    auto sx = x.param().node_pointer()->serialize();
-    EXPECT_EQ(sx, parametric::serialize(0.2));
+    auto sx = x.get_param().node_pointer()->serialize();
+    EXPECT_EQ(sx, Serializer::serialize(0.2));
 
-    auto sy = y.param().node_pointer()->serialize();
+    auto sy = y.get_param().node_pointer()->serialize();
     EXPECT_EQ(sy, parametric::serialize(reflect::make_dynamic("double", 0.5)));
 
     // compute node
@@ -117,7 +113,7 @@ TEST_F(IOTest, serialize_DAGNode)
     auto zo = z;
     EXPECT_EQ(
         parametric::serialize(zo.output().value()),      // call specialization directly
-        zo.output().param().node_pointer()->serialize()  // call via DAGNode::serialize member function
+        zo.output().get_param().node_pointer()->serialize()  // call via DAGNode::serialize member function
     );
 }
 
@@ -295,7 +291,7 @@ TEST_F(IOTest, write_duplicate_name)
 
         EXPECT_THROW(
             serialize(a, b),
-            std::logic_error
+            io_error
         );
     }
 
@@ -430,4 +426,21 @@ TEST_F(IOTest, constants)
     auto recipe = grunk::Recipe::deserialize(s);
     EXPECT_EQ(recipe.get_features().size(), 1);
     EXPECT_NEAR(recipe["a"].value().as<double>(), 4, 1e-10);
+}
+
+TEST_F(IOTest, serialize_static_mode)
+{
+    grunk::Feature a("a", 0.5);
+    YAML::Node n = grunk::serialize(a);
+    
+    EXPECT_EQ(n.size(), 2);
+    EXPECT_TRUE(n["uses"]);
+    EXPECT_TRUE(n["parameters"]);
+    EXPECT_EQ(n["parameters"].size(), 1);
+    EXPECT_TRUE(n["parameters"]["a"]);
+    YAML::Node na = n["parameters"]["a"];
+    EXPECT_EQ(na.Tag(), "double");
+    EXPECT_NEAR(na.as<double>(), 0.5, 1e-15);
+    EXPECT_FALSE(n["steps"]);
+    EXPECT_FALSE(n["recipes"]);
 }

@@ -16,14 +16,19 @@ Setup conan
 Install conan
 *************
 
-Install ``conan`` via pip or conda, whichever you prefer. 
+Install ``conan 1.x`` via pip or conda, whichever you prefer. 
+
+.. note::
+   Unfortunately, gitlab is the only free web-hosted service supporting 
+   conan binary packages and it still only supports conan 1.x.
+
 As always, it is recommended to install python packages in an isolated environment. 
 To install ``conan`` into an environment called `paradigms` using conda enter the 
 following commands
 
 .. code-block:: console
 
-   conda create -n paradigms conan
+   conda create -n paradigms "conan<2.0.0"
    conda activate paradigms
 
 If you are using Linux, you should 
@@ -36,22 +41,22 @@ If you are using Linux, you should
 Setup conan to use the paradigms gitlab package registry
 ********************************************************
 
-- Add the paradigms gitlab package registry and name it ``gitlab``
+- Add the paradigms gitlab package registry and name it ``grunkcenter``
   
   .. code-block:: console
 
-     conan remote add gitlab https://gitlab.dlr.de/api/v4/projects/21487/packages/conan
+     conan remote add grunkcenter https://gitlab.dlr.de/api/v4/projects/21487/packages/conan
   
 - The package registry is private, so to install packages from it, we 
   need to create a personal access token. When you are logged in to Gitlab 
   click your profile picture at the top right and select ``Edit profile``. 
   At the left click ``Access Tokens`` and create a new token with scope
   ``api``. Copy the token and enter the following commands to use this access 
-  token for the remote ``gitlab``:
+  token for the remote ``grunkcenter``:
 
   .. code-block:: console
 
-     conan user <gitlab_username> -r gitlab -p <personal_access_token>
+     conan user <gitlab_username> -r grunkcenter -p <personal_access_token>
   
   Note, that conan doesn't store your credentials outside of your current 
   session. If you cannot install anything from the gitlab package registry, 
@@ -69,7 +74,11 @@ C++ library
 
 .. code-block:: console
 
-    conan install grunk/0.2.1@_/_ --build=missing
+    conan install grunk/0.3.0@_/_ --build=missing
+
+.. note::
+
+  Please check the latest available version of grunk.
 
 python bindings
 ***************
@@ -138,8 +147,8 @@ Building using CMake
 
   .. code-block:: console
 
-     cmake .. -DCMAKE_BUILD_TYPE=Debug -DGRUNK_TESTS=ON -GNinja
-     ninja
+     cmake .. -DCMAKE_BUILD_TYPE=Debug -DGRUNK_TESTS=ON
+     cmake --build . -j
 
 
 Running the unit tests

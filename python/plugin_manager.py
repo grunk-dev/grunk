@@ -1,10 +1,13 @@
 import os
 import tempfile
+import shutil
 from sys import platform
 from pathlib import Path
 from functools import wraps
 from conans.client.conan_api import ConanAPIV1
 from conans.model.ref import ConanFileReference, PackageReference
+from conans.errors import ConanException
+from ._core import get_plugin_registry
 from grunk._util import HiddenPrints, reconstruct_package_string
 
 
@@ -103,21 +106,17 @@ class PluginManager:
         Changes the conan user home to <HOME>/.grunk so that grunk doesn't interfere with an
         existing conan setup and
 
-        * adds grunk_center to the remotes
+        * adds grunkcenter to the remotes
         * sets the default user and channel to "_/_"
         * sets up the default profile. On Linux with GCC>5 it sets  "settings.compiler.libcxx" to "libstdc++11"
         """
 
         # set default variables
         self.grunk_dir = os.path.join(str(Path.home()), ".grunk")
-        self.remote = "grunk_center"
+        self.remote = "grunkcenter"
         self.remote_url = "https://gitlab.dlr.de/api/v4/projects/21487/packages/conan"
         self.default_user = "_"
         self.default_channel = "_"
-
-        # store previous CONAN_USER_HOME so that it can be reset and update CONAN_USER_HOME
-        self.conan_user_home_prev = os.environ.get("CONAN_USER_HOME")
-        os.environ["CONAN_USER_HOME"] = os.getenv("GRUNK_USER_HOME", self.grunk_dir)
 
         self._conan = ConanAPIV1()
 
@@ -166,12 +165,9 @@ class PluginManager:
 
     def __exit__(self, *exc):
         """
-        resets the CONAN_USER_HOME
+        Can be used to reset some variables
         """
-        if self.conan_user_home_prev is None:
-            del os.environ["CONAN_USER_HOME"]
-        else:
-            os.environ["CONAN_USER_HOME"] = self.conan_user_home_prev
+        pass
 
     def install(
         self,
@@ -180,7 +176,9 @@ class PluginManager:
         user: str = None,
         channel: str = None,
         install_dir: str = None,
-        update = False
+        update: bool = False,
+        settings = [],
+        options = []
     ):
         """
         installs a package reference.
@@ -195,7 +193,7 @@ class PluginManager:
         :type user: str, optional
         :param channel: channel string for the package, defaults to ``"testing"``
         :type channel: str, optional
-        :param install_dir: Installation directory, defaults to ``<HOME>/.grunk``
+        :param install_dir: Installation directory, defaults to ``<HOME>/.conan``
         :type install_dir: str, optional
 
         """
@@ -214,31 +212,86 @@ class PluginManager:
             # remote_name=self.remote,
             build=["missing"],
             update=update,
+            settings=settings,
+            options=options
         )
 
-    def virtualrunenv(
-        self,
-        package_refs,
-    ):
-        """
-        creates scripts to activate/deactivate a virtual run environment 
-        for the package references (strings) defined in package reFs
 
-        :param package_refs: list of package_ref (name/version)
+    def env_create(self, name, package_refs, settings, options):
+        """creates a subdirectory grunk_dir/name and 
+        installs the package_refs into it, including 
+        all dependenies.
+
+        :param name: Name of the environment to create
+        :type name: str
+        :param package_refs: grunk plugins to install
+        :type package_refs: list of package references
         """
 
-        tmp = tempfile.NamedTemporaryFile(mode = "w", delete=False)
+        env_path = os.path.join(self.grunk_dir, "envs", name)
+        if os.path.isdir(env_path):
+            raise RuntimeError(f"An environment named \"{name}\" already exists.")
+        else:
+            os.makedirs(env_path)
+
+        conanfile_content = f"[requires]\n"
+        for ref in package_refs:
+            conanfile_content = conanfile_content + ref + "\n"
+
+        if options:
+            conanfile_content = conanfile_content + "\n[options]\n"
+            for o in options:
+                conanfile_content = conanfile_content + o + "\n"
+
+            
+        conanfile_content = conanfile_content + "\n[imports]\nbin, *.dll -> ./bin\nbin, *.exe -> ./bin\nlib, *.dylib* -> ./bin\nlib, *.so -> ./lib\nlib, *.so.* -> ./lib\n"
+        conanfile = os.path.join(env_path, "conanfile.txt")
+        with open(conanfile, "w") as f:
+            f.write(conanfile_content)
+
         try:
-            tmp.write("[requires]\n")
-            for ref in package_refs:
-                tmp.write(ref + "\n")
-            tmp.close()
-            self._conan.install(
-                tmp.name,
-                generators=["virtualrunenv"],
-            )
-        finally:
-            os.unlink(tmp.name)
+            os.chdir(env_path)
+            self._conan.install(conanfile, output_folder=env_path, build=["missing"], settings=settings)
+        except ConanException as e:
+            shutil.rmtree(env_path)
+            raise e
+
+
+    def env_list(self):
+        """
+        prints all environments
+        """
+        envs_path = os.path.join(self.grunk_dir, "envs")
+        print(f"Environments are stored in {envs_path}\nAvailable environments:\n")
+        for env_name in get_plugin_registry().envs():
+            print(f"\t{env_name}")
+
+
+    def env_show(self, environment_name):
+        """
+        shows all plugins for a given environment
+        """
+        env_dir = os.path.join(self.grunk_dir, "envs", environment_name)
+        print(f"Environment is stored in {env_dir}")
+        print("Plugins:\n")
+        plugins = get_plugin_registry().env_plugins(environment_name)
+        for plugin in plugins:
+            print(f"\t{plugin}")
+
+        
+
+
+    def env_remove(self, environment_name):
+        """removes an environment by deleting the corresponding directory
+
+        :param environment_name: name of the environment to be removed
+        :type environment_name: str
+        """
+        env_dir = os.path.join(self.grunk_dir, "envs", environment_name)
+        if not os.path.isdir(env_dir):
+            print(f"An environment named \"{environment_name}\" does not exist.")
+        else:
+            shutil.rmtree(env_dir)
 
     
     def _get_package_ref(self, package_name, package_version, user, channel):
@@ -257,7 +310,6 @@ class PluginManager:
         return reconstruct_package_string(
             package_name, package_version, user, channel
         )
-
 
 
     def authenticate(
@@ -337,8 +389,11 @@ def command(f):
 
 
 # decorate PluginManager methods
-virtualrunenv = command(PluginManager.virtualrunenv)
 install = command(PluginManager.install)
 authenticate = command(PluginManager.authenticate)
 remove = command(PluginManager.remove)
 avail = command(PluginManager.list)
+env_create = command(PluginManager.env_create)
+env_list = command(PluginManager.env_list)
+env_show = command(PluginManager.env_show)
+env_remove = command(PluginManager.env_remove)
