@@ -41,6 +41,12 @@ If you are using Linux, you should
 Setup conan to use the paradigms gitlab package registry
 ********************************************************
 
+- Create a default conan profile if you don't already have one
+
+  .. code-block:: console 
+
+     conan profile new default --detect
+
 - Add the paradigms gitlab package registry and name it ``grunkcenter``
   
   .. code-block:: console
@@ -74,7 +80,7 @@ C++ library
 
 .. code-block:: console
 
-    conan install grunk/0.3.0@_/_ --build=missing
+    conan install grunk/0.3.1@_/_ --build=missing
 
 .. note::
 
@@ -85,7 +91,11 @@ python bindings
 
 .. code-block:: console
 
-    pip install git+https://gitlab.dlr.de/paradigms/grunk
+    pip install git+https://gitlab.dlr.de/paradigms/grunk@v0.3.1
+
+.. note::
+
+  Please check the latest available version of grunk.
 
 ********************
 Building from source
@@ -125,7 +135,7 @@ conan to use the paradigms gitlab package registry, see the
    .. code-block:: console
 
       mkdir build && cd build
-      conan install .. -r gitlab -s build_type=Debug --build=missing
+      conan install .. -r grunkcenter -s build_type=Debug --build=missing
 
 
    This will generate ``Find<XXX>.cmake`` files for you which will be used 
