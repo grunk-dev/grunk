@@ -8,6 +8,7 @@ namespace grunk {
 void init()
 {
     reflect::register_type<bool>("bool")
+    .add_constructor<>()
     .add_constructor<bool>()
     .add_conversion<int>()
     .add_member_function(
@@ -20,8 +21,10 @@ void init()
     );
 
     reflect::register_type<int>("int")
+    .add_constructor<>()
     .add_constructor<int>()
     .add_conversion<double>()
+    .add_conversion<bool>()
     .add_member_function(
         [](int const& v){ return YAML::Node(v); }, 
         "serialize"
@@ -32,6 +35,7 @@ void init()
     );
     
     reflect::register_type<double>("double")
+    .add_constructor<>()
     .add_constructor<double>()
     .add_constructor([](int x){ return double(x); }) // construct from int, avoid narrowing conversion error in MSVC
     .add_conversion<int>()

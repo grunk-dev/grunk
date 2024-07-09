@@ -185,6 +185,10 @@ PYBIND11_MODULE(_core, m)
             );
         }
     );
+
+    dynobj.def(py::init<bool>())
+    .def("as_bool", static_cast<bool (reflect::DynamicObject::*)() const>(&reflect::DynamicObject::as<bool>));
+    py::implicitly_convertible<bool, reflect::DynamicObject>();
     
     dynobj.def(py::init<double>())
     .def("as_float", static_cast<double (reflect::DynamicObject::*)() const>(&reflect::DynamicObject::as<double>));
