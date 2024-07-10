@@ -13,6 +13,7 @@ from grunk.codegen import generate
 from ._core import get_plugin_registry
 from conans.errors import ConanException
 
+CONTEXT_SETTINGS = dict(help_option_names=['-h', '--help'])
 
 @click.group()
 @click.version_option(grunk.__version__)
@@ -23,7 +24,7 @@ def cli():
     pass
 
 
-@cli.command()
+@cli.command(context_settings=CONTEXT_SETTINGS)
 @click.argument("packages", nargs=-1)
 @click.option("-s", "--settings", type=str, multiple=True, help="settings for the packages")
 @click.option("-o", "--options", type=str, multiple=True, help="options for the packages")
@@ -72,7 +73,7 @@ def env():
     """
     pass
 
-@env.command()
+@env.command(context_settings=CONTEXT_SETTINGS)
 @click.argument("environment_name")
 @click.argument("packages", nargs=-1)
 @click.option("-s", "--settings", type=str, multiple=True, help="settings for the packages")
@@ -105,14 +106,14 @@ def create(environment_name, packages, settings, options):
     return pm.env_create(environment_name, packages, list(settings), list(options))
 
 
-@env.command(name="list") # need to use an alias because I cannot name the function "list" without overriding built-in function "list"
+@env.command(name="list", context_settings=CONTEXT_SETTINGS) # need to use an alias because I cannot name the function "list" without overriding built-in function "list"
 def list_command():
     """prints a list of all environments
     """
     return pm.env_list()
 
 
-@env.command()
+@env.command(context_settings=CONTEXT_SETTINGS)
 @click.argument("environment_name")
 def show(environment_name):
     """prints the plugins installed in an environment
@@ -120,7 +121,7 @@ def show(environment_name):
     return pm.env_show(environment_name)
 
 
-@env.command()
+@env.command(context_settings=CONTEXT_SETTINGS)
 @click.argument("environment_name")
 def remove(environment_name):
     """removes an environment
@@ -137,7 +138,7 @@ def user():
 
 
 # TODO
-# @user.command()
+# @user.command(context_settings=CONTEXT_SETTINGS)
 # def clean():
 #     """
 #     remove user and tokens for all remotes
@@ -145,7 +146,7 @@ def user():
 #     pass
 
 
-# @user.command()
+# @user.command(context_settings=CONTEXT_SETTINGS)
 # @click.option(
 #     "-r", "--remote", "string", help="lists users of a specific remote server"
 # )
@@ -156,7 +157,7 @@ def user():
 #     pass
 
 
-@user.command()
+@user.command(context_settings=CONTEXT_SETTINGS)
 @click.argument("USER_NAME")
 @click.option(
     "-p", "--password", help="Password for authentification with remote", default=None
@@ -179,7 +180,7 @@ def auth(user_name, password, remote, skip_auth):
     return pm.authenticate(user_name, password, remote, skip_auth)
 
 
-@cli.command()
+@cli.command(context_settings=CONTEXT_SETTINGS)
 @click.argument("pattern")
 def remove(pattern):
     """
@@ -187,7 +188,7 @@ def remove(pattern):
     """
     return pm.remove(pattern)
 
-@cli.command()
+@cli.command(context_settings=CONTEXT_SETTINGS)
 def avail():
     """
     Lists packages installed in the local cache
@@ -200,7 +201,7 @@ def avail():
         print(p)
 
 
-@cli.command()
+@cli.command(context_settings=CONTEXT_SETTINGS)
 @click.argument("grunk_recipe", type=click.Path(exists=True))
 @click.option("-e", "--environment", help="name of a grunk environment", type=str)
 def exec(grunk_recipe, environment=None):
@@ -231,7 +232,7 @@ def exec(grunk_recipe, environment=None):
         n.value()
 
 
-@cli.command()
+@cli.command(context_settings=CONTEXT_SETTINGS)
 @click.argument("config_file",  type=click.Path(exists=True))
 @click.option("-o", "--output-dir", help="output directory for generated source files",  type=click.Path(exists=True))
 @click.option("-i", "--include-dir", help="include_directory",  type=click.Path(exists=True), multiple=True)
