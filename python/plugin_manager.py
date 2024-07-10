@@ -244,7 +244,7 @@ class PluginManager:
                 conanfile_content = conanfile_content + o + "\n"
 
             
-        conanfile_content = conanfile_content + "\n[imports]\nbin, *.dll -> ./bin\nbin, *.exe -> ./bin\nlib, *.dylib* -> ./bin\nlib, *.so -> ./lib\nlib, *.so.* -> ./lib\n"
+        conanfile_content = conanfile_content + "\n[imports]\nbin, *.dll -> ./bin\nlib, *.dll -> ./bin\nbin, *.exe -> ./bin\nlib, *.dylib* -> ./bin\nlib, *.so -> ./lib\nlib, *.so.* -> ./lib\n"
         conanfile = os.path.join(env_path, "conanfile.txt")
         with open(conanfile, "w") as f:
             f.write(conanfile_content)
