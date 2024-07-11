@@ -66,7 +66,7 @@ def install(packages, settings, options):
                 'Could not find package "' + package_str + '" in remotes.'
             )  # TODO: logging
 
-@cli.group()
+@cli.group(context_settings=CONTEXT_SETTINGS)
 def env():
     """
     interact with isolated grunk environments
@@ -129,7 +129,7 @@ def remove(environment_name):
     return pm.env_remove(environment_name)
 
 
-@cli.group()
+@cli.group(context_settings=CONTEXT_SETTINGS)
 def user():
     """
     interact with the authentification system of remote servers
