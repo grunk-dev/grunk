@@ -52,18 +52,14 @@ Recipe Recipe::deserialize(YAML::Node const& root)
         throw io_error("Missing \"grunk\" in \"uses\" block.");
     }
 
-    try {
-        auto ver = uses["grunk"].as<std::string>();
-        if (ver != grunk_VERSION) {
-            //TODO: Generate a meaningful warning. Throwing an exception is not a 
-            // viable solution. This will be done here anyway as long as grunk is in experimental state.
-            throw io_error("Parsed version "s + ver + " does not match grunk version " + grunk_VERSION);
-        }
+    /*
+    auto ver = uses["grunk"].as<std::string>();
+    if (ver != grunk_VERSION) {
+        //TODO: Generate a meaningful warning. Throwing an exception is not a
+        // viable solution. This will be done here anyway as long as grunk is in experimental state.
+        throw io_error("Parsed version "s + ver + " does not match grunk version " + grunk_VERSION);
     }
-    catch (std::exception const& e) 
-    {
-        throw io_error(e.what());
-    }
+    */
 
     //TODO: Parse plugins from input file and compare with loaded plugins. Handle appropriately
 
