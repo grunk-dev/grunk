@@ -427,3 +427,50 @@ TEST_F(RecipeTest, constants)
     EXPECT_EQ(r.num_recipes(), 1);
     EXPECT_NEAR(r["my_z"].value().as<double>(), 19.7, 1e-15);
 }
+
+TEST_F(RecipeTest, write_read_metadata)
+{
+    YAML::Node serialized;
+
+    YAML::Node metadata;
+    metadata["test"][0] = 1;
+    metadata["test"][1] = 2;
+
+    {
+        Feature x("x", "double", 12.3);
+        Feature y("y", "double", 29.7);
+        Feature z = action("z", "add", x, y).output();
+        Recipe my_recipe({x, y, z});
+        YAML::Node metadata;
+        metadata[0] = 4;
+        metadata[1] = 2;
+        my_recipe.set_metadata("test", metadata);
+
+        ASSERT_THROW(my_recipe.set_metadata("grunk", YAML::Node(42)), std::exception);
+
+        serialized = my_recipe.serialize();
+    }
+
+    auto check_yaml = [](YAML::Node const& node) {
+        ASSERT_EQ(node.size(), 1);
+        ASSERT_TRUE(node["test"]);
+        ASSERT_EQ(node["test"].size(), 2);
+        ASSERT_EQ(node["test"][0].as<int>(), 4);
+        ASSERT_EQ(node["test"][1].as<int>(), 2);
+    };
+
+    // check serialized metadata
+
+    ASSERT_TRUE(serialized["metadata"]);
+    check_yaml(serialized["metadata"]);
+
+    // check deserialized metadata
+
+    Recipe deserialized = Recipe::deserialize(serialized);
+    check_yaml(deserialized.get_metadata());
+
+    // does it round-trip?
+    auto serialized2 = deserialized.serialize();
+    ASSERT_TRUE(serialized["metadata"]);
+    check_yaml(serialized["metadata"]);
+}

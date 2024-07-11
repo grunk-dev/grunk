@@ -266,10 +266,15 @@ public:
         FeatureContainer const& inputs
     );
 
+    YAML::Node const get_metadata() const;
+    YAML::Node get_metadata();
+    void set_metadata(std::string const& key, YAML::Node const& value);
+
 private:
 
     FeatureContainer features;
     RecipeContainer recipes;
+    YAML::Node metadata;
 };
 
 } // namespace grunk
