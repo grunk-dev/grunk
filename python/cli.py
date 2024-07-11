@@ -15,8 +15,8 @@ from conans.errors import ConanException
 
 CONTEXT_SETTINGS = dict(help_option_names=['-h', '--help'])
 
-@click.group()
-@click.version_option(grunk.__version__)
+@click.group(context_settings=CONTEXT_SETTINGS)
+@click.version_option(grunk.__version__, "--version", "-v")
 def cli():
     """
     command line interface for grunk.
