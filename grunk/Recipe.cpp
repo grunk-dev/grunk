@@ -36,6 +36,11 @@ YAML::Node Recipe::serialize() const
             root["recipes"][key] = value->serialize();
         }
     }
+
+    // write metadata
+    if (get_metadata().size()>0) {
+        root["metadata"] = get_metadata();
+    }
     
     return root;
 }
@@ -75,6 +80,10 @@ Recipe Recipe::deserialize(YAML::Node const& root)
             );
             recipe.recipes.emplace(name, std::move(ptr));
         }
+    }
+
+    if (auto const& metadata_node = root["metadata"]; metadata_node) {
+        recipe.metadata = metadata_node;
     }
 
     if (auto const parameters = root["parameters"]; parameters) {
@@ -444,6 +453,25 @@ void Recipe::recipe(
     for (auto const& kv : outputs) {
         insert_feature(kv.second);
     }
+}
+
+YAML::Node const Recipe::get_metadata() const
+{
+    return metadata;
+}
+
+YAML::Node Recipe::get_metadata()
+{
+    return metadata;
+}
+
+void Recipe::set_metadata(std::string const& key, YAML::Node const& value)
+{
+    if (key == "grunk") {
+        throw std::logic_error("\"grunk\" is a reserved metadata keyword");
+        return;
+    }
+    metadata[key] = value;
 }
 
 } // namespace grunk
