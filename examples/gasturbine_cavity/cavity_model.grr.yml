@@ -1,58 +1,49 @@
 uses:
-  grunk: 0.3.0
+  grunk: 0.3.1
   grocc: 0.1.1
 parameters:
-  dw: !<double> 1
   cavity_h: !<double> 50
-  dh: !<double> 1
+  dw: !<double> 1
+  x_min: !<double> -20
   cavity_w: !<double> 20.800000000000001
+  dh: !<double> 1
   cyl2_radius: !<double> 3
   cyl2_dir: !<grocc::gp_Dir> [-0.66666666666666663, 0.33333333333333331, -0.66666666666666663]
-  cyl2_height: !<double> 50
   radius: !<double> 150
-  cyl2_dh: !<double> 0.5
   angle_deg: !<double> 30
   cyl1_radius: !<double> 1.5
   cyl1_height: !<double> 20
   cyl1_dh: !<double> 0.33000000000000002
+  cyl2_height: !<double> 50
+  cyl2_dh: !<double> 0.5
   cyl2_shift: !<double> -10
-  x_min: !<double> -20
 steps:
-  - !<grocc::gp_Dir> [[x_axis], [!<double> 1, !<double> 0, !<double> 0]]
-  - !<expr> [x_min2, x_min*2]
-  - !<grocc::gp_Pnt> [[halfpace_pnt], [x_min2, !<double> 0, !<double> 0]]
-  - !<grocc::gp_Pnt> [[x_min_pnt], [x_min, !<double> 0, !<double> 0]]
-  - !<grocc::gp_Pln> [[halfspace_pln], [x_min_pnt, x_axis]]
-  - !<grocc::BRepBuilderAPI_MakeFace> [[halfspace_face], [halfspace_pln]]
-  - !<grocc::BRepPrimAPI_MakeHalfSpace> [[halfspace], [halfspace_face, halfpace_pnt]]
-  - !<grocc::gp_Dir> [[d], [!<double> -1, !<double> 0, !<double> 0]]
-  - !<grocc::gp_Pnt> [[o], [!<double> 0, !<double> 0, !<double> 0]]
-  - !<grocc::gp_Ax1> [[ax], [o, d]]
-  - !<expr> [angle_rad, 3.141592653589793*angle_deg/180.]
-  - !<grocc::gp_Vec> [[translation], [!<double> 0, radius, !<double> 0]]
-  - !<expr> [cyl1_pos_x, 0.75*cavity_w]
-  - !<expr> [cyl1_height_corr, cyl1_height+0.25*cavity_w]
+  - !<expr> [cyl2_pos_x, dw]
   - !<expr> [cyl2_pos_r, radius + cyl2_dh*cavity_h]
-  - !<expr> [cyl2_pos_z, -cyl2_pos_r*sin(angle_rad/2.)]
-  - !<expr> [cyl2_pos_y, cyl2_pos_r*cos(angle_rad/2.)]
+  - !<grocc::gp_Dir> [[x_axis], [!<double> 1, !<double> 0, !<double> 0]]
   - !<expr> [cyl1_pos_r, radius + cyl1_dh*cavity_h]
-  - !<expr> [cyl1_pos_z, -cyl1_pos_r*sin(angle_rad/2.)]
+  - !<expr> [cyl1_pos_x, 0.75*cavity_w]
+  - !<expr> [angle_rad, 3.141592653589793*angle_deg/180.]
   - !<expr> [cyl1_pos_y, cyl1_pos_r*cos(angle_rad/2.)]
+  - !<expr> [cyl1_pos_z, -cyl1_pos_r*sin(angle_rad/2.)]
   - !<grocc::gp_Pnt> [[cyl1_origin], [cyl1_pos_x, cyl1_pos_y, cyl1_pos_z]]
   - !<recipes::cylinder> [{cylinder1: cylinder}, {radius: cyl1_radius, height: cyl1_height, origin: cyl1_origin}]
-  - !<expr> [cyl2_pos_x, dw]
+  - !<expr> [cyl2_pos_y, cyl2_pos_r*cos(angle_rad/2.)]
+  - !<expr> [cyl2_pos_z, -cyl2_pos_r*sin(angle_rad/2.)]
   - !<grocc::gp_Pnt> [[cyl2_origin], [cyl2_pos_x, cyl2_pos_y, cyl2_pos_z]]
-  - !<recipes::cylinder> [{cylinder2_tmp: cylinder}, {radius: cyl2_radius, direction: cyl2_dir, height: cyl2_height, origin: cyl2_origin}]
+  - !<recipes::cylinder> [{cylinder2_tmp: cylinder}, {radius: cyl2_radius, height: cyl2_height, direction: cyl2_dir, origin: cyl2_origin}]
   - !<script>
     steps:
       - !<grocc::gp_Vec> [[t1], [cyl2_dir]]
-      - !<grocc::gp_Vec::Multiplied> [[translation], [t1, cyl2_shift]]
+      - !<grocc::gp_Vec::Multiplied> [[transl], [t1, cyl2_shift]]
       - !<grocc::gp_Trsf> [[trsf], ~]
-      - !<grocc::gp_Trsf::SetTranslation> [[""], [trsf, translation]]
+      - !<grocc::gp_Trsf::SetTranslation> [[""], [trsf, transl]]
       - !<grocc::BRepBuilderAPI_Transform> [[cylinder2], [cylinder2_tmp, trsf]]
     returns:
       - cylinder2
-  - !<recipes::cavity_sketch> [{cavity_face: face}, {dw: dw, cavity_h: cavity_h, dh: dh, cavity_w: cavity_w}]
+  - !<grocc::gp_Pnt> [[o], [!<double> 0, !<double> 0, !<double> 0]]
+  - !<recipes::cavity_sketch> [{cavity_face: face}, {cavity_h: cavity_h, dw: dw, cavity_w: cavity_w, dh: dh}]
+  - !<grocc::gp_Vec> [[translation], [!<double> 0, radius, !<double> 0]]
   - !<script>
     steps:
       - !<grocc::gp_Trsf> [[trsf], ~]
@@ -60,31 +51,39 @@ steps:
       - !<grocc::BRepBuilderAPI_Transform> [[transformed_face], [cavity_face, trsf]]
     returns:
       - transformed_face
+  - !<grocc::gp_Dir> [[d], [!<double> -1, !<double> 0, !<double> 0]]
+  - !<grocc::gp_Ax1> [[ax], [o, d]]
   - !<grocc::BRepPrimAPI_MakeRevol> [[revol], [transformed_face, ax, angle_rad]]
   - !<grocc::BRepAlgoAPI_Fuse> [[cavity_cyl1], [revol, cylinder1]]
-  - !<grocc::BRepAlgoAPI_Fuse> [[cavity_uncut], [cavity_cyl1, cylinder2]]
-  - !<grocc::BRepAlgoAPI_Cut> [[cavity], [cavity_uncut, halfspace]]
+  - !<expr> [x_min2, x_min*2]
+  - !<grocc::gp_Pnt> [[halfpace_pnt], [x_min2, !<double> 0, !<double> 0]]
+  - !<grocc::gp_Pnt> [[x_min_pnt], [x_min, !<double> 0, !<double> 0]]
+  - !<grocc::gp_Pln> [[halfspace_pln], [x_min_pnt, x_axis]]
+  - !<grocc::BRepBuilderAPI_MakeFace> [[halfspace_face], [halfspace_pln]]
+  - !<grocc::BRepPrimAPI_MakeHalfSpace> [[halfspace], [halfspace_face, halfpace_pnt]]
+  - !<grocc::BRepAlgoAPI_Cut> [[clyinder2_cut], [cylinder2, halfspace]]
+  - !<grocc::BRepAlgoAPI_Fuse> [[cavity], [cavity_cyl1, clyinder2_cut]]
 recipes:
   cavity_sketch:
     uses:
-      grunk: 0.3.0
+      grunk: 0.3.1
       grocc: 0.1.1
     parameters:
-      dw: !<double> 0.10000000000000001
       cavity_h: !<double> 1
-      cavity_w: !<double> 1
+      dw: !<double> 0.10000000000000001
       dh: !<double> 0.10000000000000001
+      cavity_w: !<double> 1
     steps:
-      - !<grocc::gp_Pnt> [[p7], [!<double> 0, dh, !<double> 0]]
+      - !<grocc::gp_Pnt> [[p0], [!<double> 0, !<double> 0, !<double> 0]]
+      - !<expr> [width, cavity_w + dw]
+      - !<grocc::gp_Pnt> [[p1], [width, !<double> 0, !<double> 0]]
+      - !<grocc::gp_Pnt> [[p2], [width, cavity_h, !<double> 0]]
+      - !<grocc::gp_Pnt> [[p3], [!<double> 0, cavity_h, !<double> 0]]
       - !<grocc::gp_Pnt> [[p6], [dw, dh, !<double> 0]]
+      - !<grocc::gp_Pnt> [[p7], [!<double> 0, dh, !<double> 0]]
       - !<expr> [h1, cavity_h - dh]
       - !<grocc::gp_Pnt> [[p5], [dw, h1, !<double> 0]]
       - !<grocc::gp_Pnt> [[p4], [!<double> 0, h1, !<double> 0]]
-      - !<grocc::gp_Pnt> [[p3], [!<double> 0, cavity_h, !<double> 0]]
-      - !<expr> [width, cavity_w + dw]
-      - !<grocc::gp_Pnt> [[p2], [width, cavity_h, !<double> 0]]
-      - !<grocc::gp_Pnt> [[p1], [width, !<double> 0, !<double> 0]]
-      - !<grocc::gp_Pnt> [[p0], [!<double> 0, !<double> 0, !<double> 0]]
       - !<script>
         steps:
           - !<grocc::BRepBuilderAPI_MakePolygon> [[polygon], ~]
@@ -102,7 +101,7 @@ recipes:
       - !<grocc::BRepBuilderAPI_MakeFace> [[face], [polygon]]
   cylinder:
     uses:
-      grunk: 0.3.0
+      grunk: 0.3.1
       grocc: 0.1.1
     parameters:
       origin: !<grocc::gp_Pnt> [0, 0, 0]
@@ -113,3 +112,5 @@ recipes:
     steps:
       - !<grocc::gp_Ax2> [[ax2], [origin, direction, direction2]]
       - !<grocc::BRepPrimAPI_MakeCylinder> [[cylinder], [ax2, radius, height]]
+metadata:
+  grunk-gui: {angle_deg: {id: 8, position: {x: -53.64635036496356, y: -392.1158223198644}}, angle_rad: {id: 23, position: {x: 98.16407591240866, y: -390.3301444297323}}, ax: {id: 46, position: {x: 2030.0099270072992, y: -382.0757129609626}}, cavity: {id: 60, position: {x: 3500, y: 266.88080487138234}}, cavity_cyl1: {id: 48, position: {x: 3102.4714618705075, y: 44.649997331903435}}, cavity_face: {id: 37, position: {x: 1681.9246014407045, y: -726.356976429988}}, cavity_h: {id: 0, position: {x: 12.379927007299255, y: 22.784607884484046}}, cavity_w: {id: 3, position: {x: 1151.333211678832, y: -182.39018473887657}}, clyinder2_cut: {id: 59, position: {x: 3149.641699877005, y: 965.6056202158768}}, cyl1_dh: {id: 11, position: {x: 1524.645783941606, y: 365.88139446285663}}, cyl1_height: {id: 10, position: {x: 2618.391219363342, y: 174.00789916907166}}, cyl1_origin: {id: 26, position: {x: 2530.6981592457423, y: 264.2169454424358}}, cyl1_pos_r: {id: 21, position: {x: 1701.9423532846718, y: 331.4977528622227}}, cyl1_pos_x: {id: 22, position: {x: 2271.2699445255475, y: 180.6647259259833}}, cyl1_pos_y: {id: 24, position: {x: 2107.8549080291973, y: 275.11466707937757}}, cyl1_pos_z: {id: 25, position: {x: 2186.6317460259534, y: 375.21689119981636}}, cyl1_radius: {id: 9, position: {x: 2638.6900965936743, y: 101.56922821442988}}, cyl2_dh: {id: 13, position: {x: 1376.7469226277367, y: 970.7669470389515}}, cyl2_dir: {id: 6, position: {x: 2176.8989502027575, y: 715.8796834915638}}, cyl2_height: {id: 12, position: {x: 2480.1880570559615, y: 844.7697981749368}}, cyl2_origin: {id: 30, position: {x: 2382.275825709651, y: 991.9835367458885}}, cyl2_pos_r: {id: 16, position: {x: 1547.0447065693425, y: 966.3656888849083}}, cyl2_pos_x: {id: 15, position: {x: 2101.912543065693, y: 863.8989277738247}}, cyl2_pos_y: {id: 28, position: {x: 1948.4014481751822, y: 941.084230866942}}, cyl2_pos_z: {id: 29, position: {x: 2012.7770686131382, y: 1058.9891194457036}}, cyl2_radius: {id: 5, position: {x: 2482.1781430589344, y: 781.2964358246858}}, cyl2_shift: {id: 14, position: {x: 2684.0632598134625, y: 819.7590090265326}}, cylinder1: {id: 27, position: {x: 2768.9321172411464, y: 160.70781332812214}}, cylinder2: {id: 32, position: {x: 2935.7005266423344, y: 760.6767726390741}}, cylinder2_tmp: {id: 31, position: {x: 2633.913092538524, y: 899.6494418510636}}, d: {id: 42, position: {x: 1807.3202919708028, y: -235.48672149899156}}, dh: {id: 4, position: {x: 1584.6306569343064, y: -595.5340705423777}}, dw: {id: 1, position: {x: 639.6295620437955, y: -6.897216590266435}}, halfpace_pnt: {id: 50, position: {x: 1707.0595266558537, y: 1985.6751365167675}}, halfspace: {id: 58, position: {x: 2417.2567225931307, y: 1807.977515837536}}, halfspace_face: {id: 57, position: {x: 1938.6240234793195, y: 1696.0676741714828}}, halfspace_pln: {id: 56, position: {x: 1639.213229683699, y: 1556.200312721375}}, o: {id: 33, position: {x: 1812.2722627737223, y: -430.93863919061374}}, radius: {id: 7, position: {x: -20.633211678832122, y: 379.6214033464823}}, revol: {id: 47, position: {x: 2342.759676601784, y: -320.28715027713264}}, transformed_face: {id: 41, position: {x: 2034.9618978102194, y: -490.0346913279458}}, translation: {id: 38, position: {x: 1634.8266423357663, y: -891.3669736322842}}, x_axis: {id: 17, position: {x: 1417.3030715328468, y: 1707.3388470438126}}, x_min: {id: 2, position: {x: 449.2352023795845, y: 1727.4966122423546}}, x_min2: {id: 49, position: {x: 1521.225681021898, y: 1954.3592574424285}}, x_min_pnt: {id: 53, position: {x: 1364.8279000478735, y: 1357.2027062703246}}}

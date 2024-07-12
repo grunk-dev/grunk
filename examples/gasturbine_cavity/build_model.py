@@ -97,7 +97,6 @@ if __name__ == '__main__':
     cyl_r = grunk.Feature("cyl1_radius", "double", 1.5)
     cyl_h = grunk.Feature("cyl1_height", "double", 20)
     cyl_rel_h = grunk.Feature("cyl1_dh", "double", 0.33)
-    cyl_h_corrected = grunk.expression("cyl1_height_corr", "cyl1_height+0.25*cavity_w", cyl_h, cavity_w)
     rpos = grunk.expression("cyl1_pos_r", "radius + cyl1_dh*cavity_h", radius, cyl_rel_h, cavity_h)
     cyl_origin_x = grunk.expression("cyl1_pos_x", "0.75*cavity_w", cavity_w)
     cyl_origin_y = grunk.expression("cyl1_pos_y", "cyl1_pos_r*cos(angle_rad/2.)", rpos, angle_rad)
@@ -142,16 +141,15 @@ if __name__ == '__main__':
     cylinder2 = grunk.script(
         [
             grunk.ScriptStep("grocc::gp_Vec", ["t1"], [dir]),
-            grunk.ScriptStep("grocc::gp_Vec::Multiplied", ["translation"], ["t1", cyl2_shift]),
+            grunk.ScriptStep("grocc::gp_Vec::Multiplied", ["transl"], ["t1", cyl2_shift]),
             grunk.ScriptStep("grocc::gp_Trsf", ["trsf"], []),
-            grunk.ScriptStep("grocc::gp_Trsf::SetTranslation", [""], ["trsf", "translation"]),
+            grunk.ScriptStep("grocc::gp_Trsf::SetTranslation", [""], ["trsf", "transl"]),
             grunk.ScriptStep("grocc::BRepBuilderAPI_Transform", ["cylinder2"], [cavity_recipe["cylinder2_tmp"], "trsf"])
         ],
         returns = ["cylinder2"]
     ).output()
-    cavity_uncut = grunk.action("cavity_uncut", "grocc::BRepAlgoAPI_Fuse", revol_cyl1, cylinder2).output()
 
-    # cut away at xmin
+    # cut away cyl2 at xmin
     xmin = grunk.Feature("x_min", "double", -20)
     xmin2 = grunk.expression("x_min2", "x_min*2", xmin)
     pnt = grunk.action("x_min_pnt", "grocc::gp_Pnt", xmin, 0., 0.).output()
@@ -160,7 +158,8 @@ if __name__ == '__main__':
     f = grunk.action("halfspace_face", "grocc::BRepBuilderAPI_MakeFace", pln).output()
     pnt2 = grunk.action("halfpace_pnt", "grocc::gp_Pnt", xmin2, 0., 0.).output()
     halfspace = grunk.action("halfspace", "grocc::BRepPrimAPI_MakeHalfSpace", f, pnt2).output()
-    cavity = grunk.action("cavity", "grocc::BRepAlgoAPI_Cut", cavity_uncut, halfspace).output()
+    cylinder2_cut = grunk.action("clyinder2_cut", "grocc::BRepAlgoAPI_Cut", cylinder2, halfspace).output()
+    cavity = grunk.action("cavity", "grocc::BRepAlgoAPI_Fuse", revol_cyl1, cylinder2_cut).output()
     cavity_recipe.insert_feature(cavity)
 
     grunk.write("cavity_model.grr.yml", cavity_recipe)
