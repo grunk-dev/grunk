@@ -47,7 +47,7 @@ public:
 
         // register functions
 
-        register_function(&add, "add", "adds two MyDouble instances");
+        register_function(&add, "add", {"l", "r"}, "adds two MyDouble instances");
 
     }
 
