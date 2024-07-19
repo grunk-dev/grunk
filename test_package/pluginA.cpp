@@ -47,7 +47,7 @@ public:
 
         // register functions
 
-        register_function(&add, "add", {"l", "r"}, "adds two MyDouble instances");
+        register_function(&add, "add", {reflect::param("l"), reflect::param("r")}, "adds two MyDouble instances");
 
     }
 

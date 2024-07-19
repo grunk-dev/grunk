@@ -79,12 +79,12 @@ struct IPlugin
     void register_function(
         F&& f,
         std::string const& function_name,
-        std::vector<std::string> const& parameter_names = {},
+        std::vector<reflect::Parameter> const& parameters = {},
         std::string const& doc = ""
     ) const
     {
         std::string prefix = name().empty()? "" : name() + "::";
-        return reflect::register_function(std::forward<F>(f), prefix + function_name, parameter_names, doc);
+        return reflect::register_function(std::forward<F>(f), prefix + function_name, parameters, doc);
     }
 
     /**
