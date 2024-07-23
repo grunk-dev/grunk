@@ -4,8 +4,8 @@ import pytest
 @pytest.fixture
 def load_plugins():
     plugins = [
-        {"name": "PluginA", "version": "0.1.0"},
-        {"name": "PluginB", "version": "0.1.0"}
+        {"name": "PluginA", "version": "0.1.1"},
+        {"name": "PluginB", "version": "0.1.1"}
     ]
     for plugin in plugins:
         if not grunk.plugin_manager.is_installed(plugin["name"], plugin["version"]):
