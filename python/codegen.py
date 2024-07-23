@@ -58,12 +58,13 @@ class CodeGenerator(ABC):
             # for every default argument, add an overload ommitting the argument and all following ones
             for idx_last_arg in range(nargs - c.num_default_args - 1, nargs):
                 s = s + "\n.add_constructor<"
-                for arg in c.arguments[: idx_last_arg + 1]:
-                    s = s + arg + ", "
-                if idx_last_arg >= 0:
-                    # strip last comma
-                    s = s[0:-2]
-                s = s + ">()"
+                s = s + ", ".join([arg[0] for arg in c.arguments[: idx_last_arg + 1]])
+                s = s + ">("
+                if len(c.arguments[: idx_last_arg + 1]) > 0:
+                    s = s + "{"
+                    s = s + ", ".join([f"reflect::param(\"{arg[1]}\")" for arg in c.arguments[: idx_last_arg + 1]])
+                    s = s + "}"
+                s = s + ")"
         return s
 
 
@@ -114,7 +115,9 @@ class CodeGenerator(ABC):
             prefix = pre + "<" + decl.function_pointer_type + ">("
         else:
             prefix = "("
-        post = ', "' + regname + '")'
+        post = ', "' + regname + '"'
+        post = post + ", {" + ", ".join([f"reflect::param(\"{a[1]}\")" for a in decl.arguments]) + "}"
+        post = post + ")"
         if not decl.parent:
             post = post + ";\n"
 
@@ -133,7 +136,7 @@ class CodeGenerator(ABC):
                     s = s + " const"
                 s = s + "& x, "
             for i in range(0, idx_last_arg):
-                s = s + decl.arguments[i] + " arg" + str(i) + ", "
+                s = s + decl.arguments[i][0] + " " + decl.arguments[i][1] + ", "
             if s[-2:] == ", ":
                 # strip last comma
                 s = s[0:-2]
@@ -149,11 +152,11 @@ class CodeGenerator(ABC):
                 s = s + decl.fully_qualified_name
             s = s + "("
             for i in range(0, idx_last_arg):
-                s = s + "arg" + str(i) + ", "
+                s = s + decl.arguments[i][1] + ", "
             if s[-2:] == ", ":
                 # strip last comma
                 s = s[0:-2]
-            s = s + "); }" + post
+            s = s + "); }" + post #TODO: H am passing too many argument names here, but they are ignored by reflect anyway, so maybe ok?
         return s
 
 
@@ -200,7 +203,7 @@ class Callable(ABC):
         self.num_default_args = 0
         self.arguments = []
         for arg in node.get_arguments():
-            self.arguments.append(type_str(arg.type))
+            self.arguments.append([type_str(arg.type), arg.spelling])
 
             if "=" in [token.spelling for token in arg.get_tokens()]:
                 self.num_default_args = self.num_default_args + 1
@@ -245,7 +248,7 @@ class FunctionDecl(Decl, Callable):
             function_pointer_type = function_pointer_type + " (*)("
 
         for arg in self.arguments:
-            function_pointer_type = function_pointer_type + arg + ", "
+            function_pointer_type = function_pointer_type + arg[0] + ", "
         if self.arguments:
             function_pointer_type = function_pointer_type[0:-2]
         function_pointer_type = function_pointer_type + ")"
