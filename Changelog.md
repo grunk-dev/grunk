@@ -1,3 +1,16 @@
+# v0.3.2
+
+ - bump reflect to 0.2.0
+ - added default constructors to double, int, bool and String in `grunk::init` (#112)
+ - added conversion to and from bool (`.as_bool()`) in python bindings (#113)
+ - enable -h and -v shorthands in CLI for --help and --version
+ - fix bugs when creating environments: On Windows, the `lib` directory should be used as a source for copying dlls into the environment folder (#114)
+ - Stop raising an exception, if a recipe's reported grunk version does not match the actual grunk version exactly. A more elaborate version checking still 
+   remains to be done (#116)
+ - Support storing metadata in yaml format in a recipe. The metadata of a recipe is a yaml map with a reserved keyworkd "grunk" for internal metadata 
+   (currently unused). External tools can ammend their tool-specific metadata under another key to the metadata of a node (#117)
+ - It is now possible to pass parameter names when registering free functions, member functions and constructors (#120)
+
 # v0.3.1
 
  - bump reflect to 0.1.11

@@ -76,10 +76,15 @@ struct IPlugin
      *
      */
     template <typename F>
-    void register_function(F&& f, std::string const& function_name, std::string const& doc = "") const
+    void register_function(
+        F&& f,
+        std::string const& function_name,
+        std::vector<reflect::Parameter> const& parameters = {},
+        std::string const& doc = ""
+    ) const
     {
         std::string prefix = name().empty()? "" : name() + "::";
-        return reflect::register_function(std::forward<F>(f), prefix + function_name, doc);
+        return reflect::register_function(std::forward<F>(f), prefix + function_name, parameters, doc);
     }
 
     /**

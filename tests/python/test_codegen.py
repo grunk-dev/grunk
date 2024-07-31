@@ -142,11 +142,11 @@ def test_parse_single_header(parse_Foo):
     assert (
         len(foo.constructors[1].arguments) == 3
     )  # Foo(Standard_Real, Standard_Real, Standard_Real)
-    assert foo.constructors[1].arguments[0] == "Standard_Real"
-    assert foo.constructors[1].arguments[1] == "Standard_Real"
-    assert foo.constructors[1].arguments[2] == "Standard_Real"
+    assert foo.constructors[1].arguments[0] == ["Standard_Real", "x"]
+    assert foo.constructors[1].arguments[1] == ["Standard_Real", "y"]
+    assert foo.constructors[1].arguments[2] == ["Standard_Real", "z"]
     assert len(foo.constructors[2].arguments) == 1  # Foo(bool)
-    assert foo.constructors[2].arguments[0] == "bool"
+    assert foo.constructors[2].arguments[0] == ["bool", ""]
 
     # Fields
 
@@ -166,7 +166,7 @@ def test_parse_single_header(parse_Foo):
     assert not baz0.is_static
     assert baz0.is_const
     assert baz0.is_overloaded
-    assert baz0.arguments[0] == "int"
+    assert baz0.arguments[0] == ["int", ""]
     assert baz0.return_type == "double"
 
     baz1 = foo.methods[1]
@@ -176,7 +176,7 @@ def test_parse_single_header(parse_Foo):
     assert not baz1.is_static
     assert baz1.is_const
     assert baz1.is_overloaded
-    assert baz1.arguments[0] == "double"
+    assert baz1.arguments[0] == ["double", ""]
     assert baz1.return_type == "double"
 
     static_func = foo.methods[2]
@@ -186,7 +186,7 @@ def test_parse_single_header(parse_Foo):
     assert not static_func.is_const
     assert not static_func.is_overloaded
     assert len(static_func.arguments) == 1
-    assert static_func.arguments[0] == "const std::string &"
+    assert static_func.arguments[0] == ["const std::string &", ""]
     assert static_func.return_type == "void"
 
     #################
@@ -199,8 +199,8 @@ def test_parse_single_header(parse_Foo):
     assert not sf.is_overloaded
     assert not sf.is_static
     assert len(sf.arguments) == 2
-    assert sf.arguments[0] == "const ForwardDeclared &"
-    assert sf.arguments[1] == "ns2::Bar *"
+    assert sf.arguments[0] == ["const ForwardDeclared &", "xyz"]
+    assert sf.arguments[1] == ["ns2::Bar *", "abd"]
     assert sf.return_type == "ns1::Other"
 
 
@@ -213,17 +213,17 @@ def test_codegen_classes_none(parse_Foo):
     baz_cpp_code = c.cpp_register_type(classes[0])
     assert 'register_type<Baz>("Baz")' in baz_cpp_code
     assert '.add_member_function<void * (*)(size_t' in baz_cpp_code # size_t is sometimes unsigned long, sometimes unsinged long long
-    assert '(&Baz::operator new, "operator new");' in baz_cpp_code
+    assert '(&Baz::operator new, "operator new", {reflect::param("")});' in baz_cpp_code
 
     assert classes[1].name == "Bar"
     bar_cpp_code = c.cpp_register_type(classes[1])
     assert (
         bar_cpp_code
-        == """register_type<ns2::Bar>("Bar")
+        == r"""register_type<ns2::Bar>("Bar")
 .add_constructor<>()
 .add_data_member(&ns2::Bar::x, "x")
 .add_data_member(&ns2::Bar::y, "y")
-.add_member_function<void (ns2::Bar::*)()>(&ns2::Bar::bar_fun, "bar_fun");
+.add_member_function<void (ns2::Bar::*)()>(&ns2::Bar::bar_fun, "bar_fun", {});
 """
     )
 
@@ -231,16 +231,16 @@ def test_codegen_classes_none(parse_Foo):
     foo_cpp_code = c.cpp_register_type(classes[2])
     assert (
         foo_cpp_code
-        == """register_type<ns2::Foo>("Foo")
+        == r"""register_type<ns2::Foo>("Foo")
 .add_base<ns2::Bar>()
 .add_constructor<>()
-.add_constructor<Standard_Real, Standard_Real, Standard_Real>()
-.add_constructor<bool>()
+.add_constructor<Standard_Real, Standard_Real, Standard_Real>({reflect::param("x"), reflect::param("y"), reflect::param("z")})
+.add_constructor<bool>({reflect::param("")})
 .add_conversion<ns1::Other>()
 .add_data_member(&ns2::Foo::data_member, "data_member")
-.add_member_function<double (ns2::Foo::*)(int) const>(&ns2::Foo::baz, "baz")
-.add_member_function<double (ns2::Foo::*)(double) const>(&ns2::Foo::baz, "baz")
-.add_member_function<void (*)(const std::string &)>(&ns2::Foo::static_func, "static_func");
+.add_member_function<double (ns2::Foo::*)(int) const>(&ns2::Foo::baz, "baz", {reflect::param("")})
+.add_member_function<double (ns2::Foo::*)(double) const>(&ns2::Foo::baz, "baz", {reflect::param("")})
+.add_member_function<void (*)(const std::string &)>(&ns2::Foo::static_func, "static_func", {reflect::param("")});
 """
     )
 
@@ -250,7 +250,7 @@ def test_codegen_classes_none(parse_Foo):
     some_function_cpp_code = c.cpp_register_function(functions[0])
     assert (
         some_function_cpp_code
-        == 'register_function<ns1::Other (*)(const ForwardDeclared &, ns2::Bar *)>(&ns2::some_function, "some_function");\n'
+        == 'register_function<ns1::Other (*)(const ForwardDeclared &, ns2::Bar *)>(&ns2::some_function, "some_function", {reflect::param("xyz"), reflect::param("abd")});\n'
     )
 
 
@@ -268,7 +268,7 @@ def test_codegen_classes_fully_qualified_names(parse_Foo):
     some_function_cpp_code = c.cpp_register_function(functions[0])
     assert (
         some_function_cpp_code
-        == 'register_function<ns1::Other (*)(const ForwardDeclared &, ns2::Bar *)>(&ns2::some_function, "ns2::some_function");\n'
+        == 'register_function<ns1::Other (*)(const ForwardDeclared &, ns2::Bar *)>(&ns2::some_function, "ns2::some_function", {reflect::param("xyz"), reflect::param("abd")});\n'
     )
 
 
@@ -286,7 +286,7 @@ def test_codegen_classes_prefix(parse_Foo):
     some_function_cpp_code = c.cpp_register_function(functions[0])
     assert (
         some_function_cpp_code
-        == 'register_function<ns1::Other (*)(const ForwardDeclared &, ns2::Bar *)>(&ns2::some_function, "schurz::some_function");\n'
+        == 'register_function<ns1::Other (*)(const ForwardDeclared &, ns2::Bar *)>(&ns2::some_function, "schurz::some_function", {reflect::param("xyz"), reflect::param("abd")});\n'
     )
 
 
@@ -305,7 +305,7 @@ def test_codegen_classes_prefix_fully_qualified_names(parse_Foo):
     some_function_cpp_code = c.cpp_register_function(functions[0])
     assert (
         some_function_cpp_code
-        == 'register_function<ns1::Other (*)(const ForwardDeclared &, ns2::Bar *)>(&ns2::some_function, "schurz::ns2::some_function");\n'
+        == 'register_function<ns1::Other (*)(const ForwardDeclared &, ns2::Bar *)>(&ns2::some_function, "schurz::ns2::some_function", {reflect::param("xyz"), reflect::param("abd")});\n'
     )
 
 
@@ -434,7 +434,7 @@ def test_nested_class():
     assert (
         cpp_code
         == """register_type<Foo>("Foo")
-.add_member_function<Foo::Bar (Foo::*)(Foo::Color)>(&Foo::baz, "baz");
+.add_member_function<Foo::Bar (Foo::*)(Foo::Color)>(&Foo::baz, "baz", {reflect::param("")});
 """
     )
 
