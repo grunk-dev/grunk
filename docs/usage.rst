@@ -239,6 +239,11 @@ search path based on the environment. Then we can load any plugin within this en
 
 Note that there is a shorthand for loading all plugins within an environment: ``PluginRegistry::load_env``.
 
+.. note::
+
+   The environments are stored in a subdirectory of the *grunk directory*. The grunk directory defaults to
+   ``<HOME>/.grunk``. This can be overwritten by explicitly setting the environment variable ``GRUNK_DIR``.
+
 Using grunk plugins
 -------------------
 

@@ -7,6 +7,8 @@
 #include <fstream>
 #include <stdexcept>
 
+#pragma warning(disable: 4996) // disable warning on MVSC about getenv being unsafe
+
 namespace grunk {
 
 PluginRegistry::PluginRegistry()
@@ -23,10 +25,21 @@ void PluginRegistry::prepend_path(std::string const& dir)
     }
 }
 
+std::filesystem::path PluginRegistry::get_grunk_dir()
+{
+    std::filesystem::path p;
+    if (const char* grunk_dir = std::getenv("GRUNK_DIR"); grunk_dir) {
+        p = grunk_dir;
+    } else {
+        p = get_home_dir();
+        p /= ".grunk";
+    }
+    return std::filesystem::canonical(p);
+}
+
 std::filesystem::path PluginRegistry::get_environments_root() 
 {
-    std::filesystem::path p(get_home_dir());
-    p /= ".grunk";
+    std::filesystem::path p = get_grunk_dir();
     p /= "envs";
     return p;
 }

@@ -185,7 +185,10 @@ private:
     // find a .so or .dll file in the path that contains the passed argument as substring
     std::optional<std::filesystem::path> find_shared_lib(std::string_view name) const;
 
-    // gets the root directory, where all environments are stored
+    // get the grunk dir
+    static std::filesystem::path get_grunk_dir();
+
+    // gets the root directory, where all environments are stored (subdirectory of grunk dir)
     static std::filesystem::path get_environments_root();
 
     // gets the path containing the runtime dependencies of a given grunk environment
