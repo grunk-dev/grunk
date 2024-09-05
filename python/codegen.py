@@ -435,7 +435,8 @@ def get_decl_fqn(decl: clang.cindex.Cursor) -> str:
     # The semantic parent is the enclosing class, namespace, or
     # translation unit.
     parent = decl.semantic_parent
-    assert(parent is not None)
+    if parent is None:
+        return decl.spelling
 
     # When we hit the TU, just return the simple identifier.
     if parent.kind == clang.cindex.CursorKind.TRANSLATION_UNIT:
