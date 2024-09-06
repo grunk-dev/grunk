@@ -1,0 +1,62 @@
+uses:
+  grunk: 0.3.2
+  grocc: 0.1.4
+  tigl: 0.1.0
+parameters:
+  cpacs_file: !<String> CPACS_30_D150.xml
+  cpacs_config: !<String> ""
+  wing_idx: !<int> 1
+  cs_idx: !<int> 1
+  spar_le_idx: !<int> 1
+  spar_te_idx: !<int> 2
+  ribs_def_root_idx: !<int> 1
+  rib_root_idx: !<int> 1
+  ribs_def_tip_idx: !<int> 7
+  rib_tip_idx: !<int> 1
+steps:
+  - !<tigl::ConfigurationWrapper> [[tigl], [cpacs_file, cpacs_config]]
+  - !<script>
+    steps:
+      - !<tigl::ConfigurationWrapper::get_configuration> [[config], [tigl]]
+      - !<tigl::CCPACSConfiguration::AircraftFusingAlgo> [[fuser], [config]]
+      - !<tigl::CTiglFusePlane::FusedPlane> [[fused_plane], [fuser]]
+      - !<tigl::CNamedShape::Shape> [[fused_shape], [fused_plane]]
+    returns:
+      - fused_shape
+  - !<script>
+    steps:
+      - !<tigl::ConfigurationWrapper::get_configuration> [[config], [tigl]]
+      - !<tigl::CCPACSConfiguration::GetWing> [[wing], [config, wing_idx]]
+    returns:
+      - wing
+  - !<script>
+    steps:
+      - !<tigl::CCPACSWing::GetComponentSegment> [[cs], [wing, cs_idx]]
+      - !<tigl::generated::CPACSComponentSegment::GetStructure> [[structure_opt], [cs]]
+      - !<tigl::CCPACSWingCSStructure_optional::value> [[structure], [structure_opt]] # ugly: need to access value of returend boost::optional
+    returns:
+      - structure
+  - !<tigl::CCPACSWing::GetWingCleanShape> [[wing_loft], [wing]]
+  - !<tigl::CNamedShape::Shape> [[wing_shape], [wing_loft]]
+  - !<tigl::CCPACSWingCSStructure::GetSparSegment> [[spar_le], [structure, spar_le_idx]]
+  - !<tigl::CCPACSWingSparSegment::GetSparCutGeometry> [[spar_le_shape], [spar_le]]
+  - !<grocc::gp_Vec> [[spar_le_extrusion_vec], [!<double> -100., !<double> 0., !<double> 0.]]
+  - !<grocc::BRepPrimAPI_MakePrism> [[wing_le_tool], [spar_le_shape, spar_le_extrusion_vec]]
+  - !<grocc::BRepAlgoAPI_Cut> [[split1], [wing_shape, wing_le_tool]]
+  - !<tigl::CCPACSWingCSStructure::GetSparSegment> [[spar_te], [structure, spar_te_idx]]
+  - !<tigl::CCPACSWingSparSegment::GetSparCutGeometry> [[spar_te_shape], [spar_te]]
+  - !<grocc::gp_Vec> [[spar_te_extrusion_vec], [!<double> 100., !<double> 0., !<double> 0.]]
+  - !<grocc::BRepPrimAPI_MakePrism> [[wing_te_tool], [spar_te_shape, spar_te_extrusion_vec]]
+  - !<grocc::BRepAlgoAPI_Cut> [[split2], [split1, wing_te_tool]]
+  - !<tigl::CCPACSWingCSStructure::GetRibsDefinition> [[ribs_def_root], [structure, ribs_def_root_idx]]
+  - !<tigl::CCPACSWingRibsDefinition::GetRibCutGeometry> [[rib_root_shape_cutgeom], [ribs_def_root, rib_root_idx]]
+  - !<tigl::CutGeometry::shape> [[rib_root_shape], [rib_root_shape_cutgeom]]
+  - !<grocc::gp_Vec> [[rib_root_extrusion_vec], [!<double> 0., !<double> -100., !<double> 0.]]
+  - !<grocc::BRepPrimAPI_MakePrism> [[rib_root_tool], [rib_root_shape, rib_root_extrusion_vec]]
+  - !<grocc::BRepAlgoAPI_Cut> [[split3], [split2, rib_root_tool]]
+  - !<tigl::CCPACSWingCSStructure::GetRibsDefinition> [[ribs_def_tip], [structure, ribs_def_tip_idx]]
+  - !<tigl::CCPACSWingRibsDefinition::GetRibCutGeometry> [[rib_tip_shape_cutgeom], [ribs_def_tip, rib_tip_idx]]
+  - !<tigl::CutGeometry::shape> [[rib_tip_shape], [rib_tip_shape_cutgeom]]
+  - !<grocc::gp_Vec> [[rib_tip_extrusion_vec], [!<double> 0., !<double> 100., !<double> 0.]]
+  - !<grocc::BRepPrimAPI_MakePrism> [[rib_tip_tool], [rib_tip_shape, rib_tip_extrusion_vec]]
+  - !<grocc::BRepAlgoAPI_Cut> [[split4], [split3, rib_tip_tool]]
