@@ -103,8 +103,8 @@ class PluginManager:
 
     def __init__(self):
         """
-        Changes the conan user home to <HOME>/.grunk so that grunk doesn't interfere with an
-        existing conan setup and
+        Sets the grunk directory to <HOME>/.grunk or the enviroment variable GRUNK_DIR. This
+        is where the grunk environments are installed.
 
         * adds grunkcenter to the remotes
         * sets the default user and channel to "_/_"
@@ -112,7 +112,16 @@ class PluginManager:
         """
 
         # set default variables
-        self.grunk_dir = os.path.join(str(Path.home()), ".grunk")
+
+        grunk_dir = os.environ.get(
+            'GRUNK_DIR',
+            os.path.join(str(Path.home()), ".grunk")
+        )
+        self.grunk_dir = os.path.abspath(grunk_dir)
+        env_path = os.path.join(self.grunk_dir, "envs")
+        if not os.path.isdir(env_path):
+            os.makedirs(env_path)
+
         self.remote = "grunkcenter"
         self.remote_url = "https://gitlab.dlr.de/api/v4/projects/21487/packages/conan"
         self.default_user = "_"
@@ -253,7 +262,10 @@ class PluginManager:
             os.chdir(env_path)
             self._conan.install(conanfile, output_folder=env_path, build=["missing"], settings=settings)
         except ConanException as e:
-            shutil.rmtree(env_path)
+            try:
+                shutil.rmtree(env_path)
+            except:
+                pass
             raise e
 
 
