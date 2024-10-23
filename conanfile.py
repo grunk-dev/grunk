@@ -22,7 +22,7 @@ class GrunkConan(ConanFile):
     settings = "os", "compiler", "build_type", "arch"
     options = {"shared": [True], "fPIC": [True, False]}
     default_options = {"shared": True, "fPIC": True}
-    requires = "yaml-cpp/0.8.0", "boost/1.85.0", "muparser/2.3.4", "parametric/0.3.4", "reflect/0.2.0"
+    requires = "sol2/3.3.1", "parametric/0.3.4"
     exports_sources = "grunk*", "CMakeLists.txt", "docs*"
 
     def config_options(self):

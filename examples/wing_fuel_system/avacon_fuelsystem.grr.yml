@@ -1,0 +1,752 @@
+uses:
+  grunk: 0.3.2
+  grocc: 0.1.4
+parameters:
+  n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb134: !<grocc::gp_Pnt> [19.699999999999999, 3.1000000000000001, -1.71]
+  n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb133: !<grocc::gp_Pnt> [20.800000000000001, 3.0941328226215288, -1.6124581760829155]
+  n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb541: !<grocc::gp_Dir> [0.99607740344274454, -0.0053128752806233682, 0.088326551540362494]
+  n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb540_https://dlr.de/sl/ontologies/geometry#hasRadius: !<double> 0.030357748500443663
+  n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb724_https://dlr.de/sl/ontologies/geometry#hasRadius: !<double> 0.029999999999999999
+  n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb137: !<grocc::gp_Pnt> [20.800000000000001, -1.5, -1.6499999999999999]
+  n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb178: !<grocc::gp_Pnt> [20.800000000000001, -1.5, -0.8600000000000001]
+  n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb628: !<grocc::gp_Pnt> [20.800000000000001, -1.5, -0.82686291501015241]
+  n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb630: !<grocc::gp_Pnt> [20.800000000000001, -1.5268629150101525, -0.80000000000000004]
+  n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb632: !<grocc::gp_Pnt> [20.800000000000001, -1.5600000000000001, -0.80000000000000004]
+  n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb1119: !<grocc::gp_Pnt> [20.800000000000001, -2.2399999999999998, -0.80000000000000004]
+  n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb947: !<grocc::gp_Pnt> [20.800000000000001, -2.2731370849898473, -0.80000000000000004]
+  n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb1122: !<grocc::gp_Pnt> [20.826862915010153, -2.2999999999999998, -0.80000000000000004]
+  n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb1124: !<grocc::gp_Pnt> [20.859999999999999, -2.2999999999999998, -0.80000000000000004]
+  n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb899: !<grocc::gp_Pnt> [40.204086027646291, -2.2999999999999998, -0.80000000000000004]
+  n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb1037: !<grocc::gp_Pnt> [40.208019146118801, -2.2999999999999998, -0.80000000000000004]
+  n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb1038: !<grocc::gp_Pnt> [40.211942735049647, -2.2997453343567877, -0.79970895355061467]
+  n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb1039: !<grocc::gp_Pnt> [40.215800166020948, -2.2992396786114861, -0.79913106127027]
+  n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb752: !<grocc::gp_Pnt> [45.547089204699894, -1.6003815649269801, -0.00043607420226289979]
+  n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb753: !<grocc::gp_Pnt> [45.549028549327389, -1.600127343721129, -0.00014553568129016217]
+  n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb689: !<grocc::gp_Pnt> [45.550962676391244, -1.5997880345560564, 9.7150828474141127e-05]
+  n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb754: !<grocc::gp_Pnt> [45.552884504580781, -1.5993648797253321, 0.00029109679255615419]
+  n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb1261: !<grocc::gp_Pnt> [51, -0.40000000000000002, 0.55000000000000004]
+  n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb366: !<grocc::gp_Dir> [0, 0, 1]
+  n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb365_https://dlr.de/sl/ontologies/geometry#hasRadius: !<double> 0.030541509968091192
+  n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb1171_https://dlr.de/sl/ontologies/geometry#hasRadius: !<double> 0.029999999999999999
+  https://example.com/geob222: !<grocc::gp_Pnt> [26.550000000000001, -15.800000000000001, -0.082500000000000004]
+  n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb117: !<grocc::gp_Pnt> [26.542979677469134, -15.800000000000001, -0.065300209799379477]
+  n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb118: !<grocc::gp_Pnt> [26.522050837117241, -15.800000000000001, -0.014024550937244092]
+  n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb8: !<grocc::gp_Pnt> [26.552191122015468, -15.773904438992266, 0.040000000000000001]
+  n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb119: !<grocc::gp_Pnt> [26.601726640991018, -15.749136679504492, 0.040000000000000001]
+  n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb761: !<grocc::gp_Pnt> [27.248876477489326, -15.425561761255338, 0.040000000000000001]
+  n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb325: !<grocc::gp_Pnt> [27.277503579906728, -15.411248210046637, 0.040000000000000001]
+  n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb762: !<grocc::gp_Pnt> [27.312272081884966, -15.421817034462164, 0.042454416376993299]
+  n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb755: !<grocc::gp_Pnt> [27.327888528570224, -15.449579606347063, 0.045577705714044479]
+  n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb782: !<grocc::gp_Pnt> [30.449999999999999, -21, 0.67000000000000004]
+  n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb509: !<grocc::gp_Dir> [-0.37789699742661625, 0, 0.92584764369519668]
+  n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb508_https://dlr.de/sl/ontologies/geometry#hasRadius: !<double> 0.030764248062958459
+  n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb1131_https://dlr.de/sl/ontologies/geometry#hasRadius: !<double> 0.029999999999999999
+  n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb62: !<grocc::gp_Pnt> [26.550000000000001, 15.800000000000001, -0.082500000000000004]
+  n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb61: !<grocc::gp_Pnt> [26.542979677469134, 15.800000000000001, -0.065300209799379477]
+  n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb219: !<grocc::gp_Pnt> [26.522050837117241, 15.800000000000001, -0.014024550937244092]
+  n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb220: !<grocc::gp_Pnt> [26.552191122015468, 15.773904438992266, 0.040000000000000001]
+  n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb218: !<grocc::gp_Pnt> [26.601726640991018, 15.749136679504492, 0.040000000000000001]
+  n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb902: !<grocc::gp_Pnt> [27.248876477489326, 15.425561761255338, 0.040000000000000001]
+  n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb904: !<grocc::gp_Pnt> [27.277503579906728, 15.411248210046637, 0.040000000000000001]
+  n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb906: !<grocc::gp_Pnt> [27.312272081884966, 15.421817034462164, 0.042454416376993299]
+  n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb908: !<grocc::gp_Pnt> [27.327888528570224, 15.449579606347063, 0.045577705714044479]
+  n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb986: !<grocc::gp_Pnt> [30.449999999999999, 21, 0.67000000000000004]
+  n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb436: !<grocc::gp_Dir> [-0.37789699742661625, 0, 0.92584764369519668]
+  n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb946_https://dlr.de/sl/ontologies/geometry#hasRadius: !<double> 0.030764248062958459
+  n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb900_https://dlr.de/sl/ontologies/geometry#hasRadius: !<double> 0.029999999999999999
+  n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb892: !<grocc::gp_Pnt> [19.800000000000001, 3.7999999999999998, -1.6499999999999999]
+  https://dlr.de/sl/ontologies/geometry#zAxis: !<grocc::gp_Dir> [0, 0, 1]
+  https://example.com/geob853_https://dlr.de/sl/ontologies/geometry#hasRadius: !<double> 0.10000000000000001
+  https://example.com/geob853_https://dlr.de/sl/ontologies/geometry#hasHeight: !<double> 0.20000000000000001
+  n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb1100: !<grocc::gp_Pnt> [26.66, -15.619999999999999, 0.040000000000000001]
+  n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb1099: !<grocc::gp_Pnt> [26.699999999999999, -15.700000000000001, 0.040000000000000001]
+  n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb1260: !<grocc::gp_Dir> [0.447213595499942, -0.89442719099992374, 0]
+  n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb854_https://dlr.de/sl/ontologies/geometry#hasRadius: !<double> 0.030503008985286354
+  n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb1210_https://dlr.de/sl/ontologies/geometry#hasRadius: !<double> 0.029999999999999999
+  n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb690: !<grocc::gp_Pnt> [20.800000000000001, 3.7999999999999998, -1.5700000000000001]
+  https://example.com/geob229: !<grocc::gp_Pnt> [20.800000000000001, 2.4717996293622213, -1.6498917516173099]
+  n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb237: !<grocc::gp_Pnt> [20.800000000000001, 2.4706001471414103, -1.6499639009238249]
+  https://example.com/geob228: !<grocc::gp_Pnt> [20.800000000000001, 2.4693987681523377, -1.6499999999999999]
+  n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb238: !<grocc::gp_Pnt> [20.800000000000001, 2.4681971179867439, -1.6499999999999999]
+  n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb392: !<grocc::gp_Pnt> [20.800000000000001, -2.4681971179867439, -1.6499999999999999]
+  n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb236: !<grocc::gp_Pnt> [20.800000000000001, -2.4693987681523377, -1.6499999999999999]
+  n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb395: !<grocc::gp_Pnt> [20.800000000000001, -2.4706001471414103, -1.6499639009238249]
+  n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb313: !<grocc::gp_Pnt> [20.800000000000001, -2.4717996293622213, -1.6498917516173099]
+  n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb768: !<grocc::gp_Pnt> [20.800000000000001, -3.7999999999999998, -1.5700000000000001]
+  n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb977: !<grocc::gp_Dir> [0, -0.99819586028850016, -0.060041856257954801]
+  n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb1287_https://dlr.de/sl/ontologies/geometry#hasRadius: !<double> 0.030541509968091192
+  n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb976_https://dlr.de/sl/ontologies/geometry#hasRadius: !<double> 0.029999999999999999
+  n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb1050: !<grocc::gp_Pnt> [19.699999999999999, -3.1000000000000001, -1.71]
+  n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb1052: !<grocc::gp_Pnt> [20.800000000000001, -3.0941328226215288, -1.6124581760829155]
+  n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb844: !<grocc::gp_Dir> [0.99607740344274454, 0.0053128752806233682, 0.088326551540362494]
+  n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb1080_https://dlr.de/sl/ontologies/geometry#hasRadius: !<double> 0.030357748500443663
+  n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb1152_https://dlr.de/sl/ontologies/geometry#hasRadius: !<double> 0.029999999999999999
+  n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb180: !<grocc::gp_Pnt> [19.800000000000001, -3.7999999999999998, -1.5700000000000001]
+  n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb446: !<grocc::gp_Pnt> [21.061715081768945, -3.7999999999999998, -1.5700000000000001]
+  n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb414: !<grocc::gp_Pnt> [21.085064175352681, -3.7999999999999998, -1.5700000000000001]
+  n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb447: !<grocc::gp_Pnt> [21.106292671953039, -3.8134133270577886, -1.5681121984140891]
+  n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb448: !<grocc::gp_Pnt> [21.116129971853955, -3.8343823084255333, -1.5651610084438139]
+  n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb1144: !<grocc::gp_Pnt> [22.960383084185015, -7.7655534162891069, -1.0118850747444961]
+  n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb1088: !<grocc::gp_Pnt> [22.978858578363834, -7.8049353907229095, -1.0063424264908498]
+  n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb1143: !<grocc::gp_Pnt> [22.949820272102304, -7.8499999999999996, -1]
+  n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb1145: !<grocc::gp_Pnt> [22.905968194100002, -7.8499999999999996, -1]
+  n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb185: !<grocc::gp_Pnt> [18, -7.8499999999999996, -1]
+  n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb1102: !<grocc::gp_Dir> [1, 0, 0]
+  n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb1146_https://dlr.de/sl/ontologies/geometry#hasRadius: !<double> 0.030541509968091192
+  n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb401_https://dlr.de/sl/ontologies/geometry#hasRadius: !<double> 0.029999999999999999
+  https://example.com/geob221: !<grocc::gp_Pnt> [19.800000000000001, 3.7999999999999998, -1.5700000000000001]
+  n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb426: !<grocc::gp_Pnt> [21.061715081768945, 3.7999999999999998, -1.5700000000000001]
+  n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb823: !<grocc::gp_Pnt> [21.085064175352681, 3.7999999999999998, -1.5700000000000001]
+  n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb1: !<grocc::gp_Pnt> [21.106292671953039, 3.8134133270577886, -1.5681121984140891]
+  n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb826: !<grocc::gp_Pnt> [21.116129971853955, 3.8343823084255333, -1.5651610084438139]
+  n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb334: !<grocc::gp_Pnt> [22.960383084185015, 7.7655534162891069, -1.0118850747444961]
+  n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb332: !<grocc::gp_Pnt> [22.978858578363834, 7.8049353907229095, -1.0063424264908498]
+  n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb331: !<grocc::gp_Pnt> [22.949820272102304, 7.8499999999999996, -1]
+  n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb333: !<grocc::gp_Pnt> [22.905968194100002, 7.8499999999999996, -1]
+  n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb816: !<grocc::gp_Pnt> [18, 7.8499999999999996, -1]
+  n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb933: !<grocc::gp_Dir> [1, 0, 0]
+  n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb759_https://dlr.de/sl/ontologies/geometry#hasRadius: !<double> 0.030541509968091192
+  n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb1266_https://dlr.de/sl/ontologies/geometry#hasRadius: !<double> 0.029999999999999999
+  n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb249: !<grocc::gp_Pnt> [27.140000000000001, 15.380000000000001, 0.040000000000000001]
+  n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb680: !<grocc::gp_Pnt> [27.18, 15.460000000000001, 0.040000000000000001]
+  n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb250: !<grocc::gp_Dir> [0.44721359549994999, 0.89442719099991985, 0]
+  n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb784_https://dlr.de/sl/ontologies/geometry#hasRadius: !<double> 0.030503008985286354
+  n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb93_https://dlr.de/sl/ontologies/geometry#hasRadius: !<double> 0.029999999999999999
+  n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb95: !<grocc::gp_Pnt> [26.5, 15.699999999999999, -0.085000000000000006]
+  https://example.com/geob422: !<grocc::gp_Pnt> [26.5, 15.699999999999999, -0.060000000000000019]
+  https://example.com/geob420: !<grocc::gp_Pnt> [26.5, 15.699999999999999, -0.0047715250169206788]
+  n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb451: !<grocc::gp_Pnt> [26.540044869357668, 15.679977565321167, 0.040000000000000001]
+  https://example.com/geob421: !<grocc::gp_Pnt> [26.589442719099992, 15.655278640450003, 0.040000000000000001]
+  n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb671: !<grocc::gp_Pnt> [27.244357781970923, 15.32782110901454, 0.040000000000000001]
+  n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb1332: !<grocc::gp_Pnt> [27.274757225530895, 15.312621387234554, 0.040000000000000001]
+  n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb542: !<grocc::gp_Pnt> [27.28653512698066, 15.275351801889595, 0.037232220546024208]
+  n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb423: !<grocc::gp_Pnt> [27.27031960962956, 15.245668396516333, 0.03389903086829827]
+  n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb226: !<grocc::gp_Pnt> [23.701499060741607, 8.7127441139686681, -0.6996918597364471]
+  n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb223: !<grocc::gp_Pnt> [23.700500371122789, 8.7109159571386616, -0.69989714593587105]
+  n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb224: !<grocc::gp_Pnt> [23.699596827966555, 8.7090404505604013, -0.70012901505070235]
+  n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb225: !<grocc::gp_Pnt> [23.698792137795476, 8.7071252879532377, -0.7003865159054472]
+  n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb258: !<grocc::gp_Pnt> [21.204861674095309, 2.7715707843468325, -1.4984442642895015]
+  n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb260: !<grocc::gp_Pnt> [21.201655778624925, 2.7639407531273208, -1.4994701508400241]
+  https://example.com/geob250: !<grocc::gp_Pnt> [21.199999999999999, 2.7556928108704657, -1.5]
+  https://example.com/geob251: !<grocc::gp_Pnt> [21.199999999999999, 2.7473532913763767, -1.5]
+  n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb687: !<grocc::gp_Pnt> [21.199999999999999, -2.7473532913763767, -1.5]
+  n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb688: !<grocc::gp_Pnt> [21.199999999999999, -2.7556928108704657, -1.5]
+  n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb545: !<grocc::gp_Pnt> [21.201655778624925, -2.7639407531273208, -1.4994701508400241]
+  n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb604: !<grocc::gp_Pnt> [21.204861674095309, -2.7715707843468325, -1.4984442642895015]
+  n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb477: !<grocc::gp_Pnt> [23.698792137795476, -8.7071252879532377, -0.7003865159054472]
+  n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb479: !<grocc::gp_Pnt> [23.699596827966555, -8.7090404505604013, -0.70012901505070235]
+  n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb375: !<grocc::gp_Pnt> [23.700500371122789, -8.7109159571386616, -0.69989714593587105]
+  n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb364: !<grocc::gp_Pnt> [23.701499060741607, -8.7127441139686681, -0.6996918597364471]
+  n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb101: !<grocc::gp_Pnt> [27.27031960962956, -15.245668396516333, 0.03389903086829827]
+  n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb104: !<grocc::gp_Pnt> [27.28653512698066, -15.275351801889595, 0.037232220546024208]
+  n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb103: !<grocc::gp_Pnt> [27.274757225530895, -15.312621387234554, 0.040000000000000001]
+  n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb102: !<grocc::gp_Pnt> [27.244357781970923, -15.32782110901454, 0.040000000000000001]
+  n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb634: !<grocc::gp_Pnt> [26.589442719099992, -15.655278640450003, 0.040000000000000001]
+  n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb921: !<grocc::gp_Pnt> [26.540044869357668, -15.679977565321167, 0.040000000000000001]
+  n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb459: !<grocc::gp_Pnt> [26.5, -15.699999999999999, -0.0047715250169206788]
+  n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb920: !<grocc::gp_Pnt> [26.5, -15.699999999999999, -0.060000000000000019]
+  https://example.com/geob668: !<grocc::gp_Pnt> [26.5, -15.699999999999999, -0.085000000000000006]
+  https://example.com/geob664: !<grocc::gp_Dir> [0, 0, 1]
+  https://example.com/geob663_https://dlr.de/sl/ontologies/geometry#hasRadius: !<double> 0.030764248062958459
+  n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb83_https://dlr.de/sl/ontologies/geometry#hasRadius: !<double> 0.029999999999999999
+  n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb42: !<grocc::gp_Pnt> [21.199999999999999, 0, -1.5]
+  n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb41: !<grocc::gp_Pnt> [20.800000000000001, 0, -1.6499999999999999]
+  n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb924: !<grocc::gp_Dir> [-0.93632917756904421, 0, -0.35112344158839265]
+  n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb923_https://dlr.de/sl/ontologies/geometry#hasRadius: !<double> 0.030357748500443663
+  n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb370_https://dlr.de/sl/ontologies/geometry#hasRadius: !<double> 0.029999999999999999
+  n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb913: !<grocc::gp_Pnt> [20.699999999999999, -1.5, -1.2]
+  https://dlr.de/sl/ontologies/geometry#xAxis: !<grocc::gp_Dir> [1, 0, 0]
+  https://example.com/geob1080_https://dlr.de/sl/ontologies/geometry#hasRadius: !<double> 0.10000000000000001
+  https://example.com/geob1080_https://dlr.de/sl/ontologies/geometry#hasHeight: !<double> 0.20000000000000001
+  n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb7: !<grocc::gp_Pnt> [19.699999999999999, 3.1000000000000001, -1.78]
+  https://example.com/geob1098_https://dlr.de/sl/ontologies/geometry#hasRadius: !<double> 0.10000000000000001
+  https://example.com/geob1098_https://dlr.de/sl/ontologies/geometry#hasHeight: !<double> 0.20000000000000001
+  n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb985: !<grocc::gp_Pnt> [19.699999999999999, -3.1000000000000001, -1.78]
+  https://example.com/geob1119_https://dlr.de/sl/ontologies/geometry#hasRadius: !<double> 0.10000000000000001
+  https://example.com/geob1119_https://dlr.de/sl/ontologies/geometry#hasHeight: !<double> 0.20000000000000001
+  n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb1178: !<grocc::gp_Pnt> [19.800000000000001, -3.7999999999999998, -1.6499999999999999]
+  https://example.com/geob1123_https://dlr.de/sl/ontologies/geometry#hasRadius: !<double> 0.10000000000000001
+  https://example.com/geob1123_https://dlr.de/sl/ontologies/geometry#hasHeight: !<double> 0.20000000000000001
+steps:
+  - !<grocc::gp_Ax2> [[https://example.com/geob1080-ax2], [n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb913, https://dlr.de/sl/ontologies/geometry#xAxis]]
+  - !<grocc::BRepPrimAPI_MakeCylinder> [[ApuPump], [https://example.com/geob1080-ax2, https://example.com/geob1080_https://dlr.de/sl/ontologies/geometry#hasRadius, https://example.com/geob1080_https://dlr.de/sl/ontologies/geometry#hasHeight, !<double> 6.2831853071795862]]
+  - !<grocc::gp_Ax2> [[n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb370-ax2], [n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb42, n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb924]]
+  - !<grocc::gp_Circ> [[n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb370circ], [n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb370-ax2, n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb370_https://dlr.de/sl/ontologies/geometry#hasRadius]]
+  - !<grocc::BRepBuilderAPI_MakeEdge> [[n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb370edge], [n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb370circ]]
+  - !<grocc::BRepBuilderAPI_MakeWire> [[n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb370], [n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb370edge]]
+  - !<grocc::BRepBuilderAPI_MakeFace> [[n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb368], [n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb370]]
+  - !<grocc::gp_Ax2> [[n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb923-ax2], [n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb42, n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb924]]
+  - !<grocc::gp_Circ> [[n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb923circ], [n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb923-ax2, n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb923_https://dlr.de/sl/ontologies/geometry#hasRadius]]
+  - !<grocc::BRepBuilderAPI_MakeEdge> [[n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb923edge], [n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb923circ]]
+  - !<grocc::BRepBuilderAPI_MakeWire> [[n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb923], [n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb923edge]]
+  - !<grocc::BRepBuilderAPI_MakeFace> [[https://example.com/geob660], [n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb923]]
+  - !<grocc::BRepBuilderAPI_MakeEdge> [[n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb40], [n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb42, n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb41]]
+  - !<script>
+    steps:
+      - !<grocc::BRepBuilderAPI_MakeWire> [[n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb740], ~]
+      - !<grocc::BRepBuilderAPI_MakeWire::Add> [~, [n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb740, n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb40]]
+    returns:
+      - n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb740
+  - !<grocc::BRepOffsetAPI_MakePipe> [[n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb369], [n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb740, n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb368]]
+  - !<grocc::BRepOffsetAPI_MakePipe> [[n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb739], [n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb740, https://example.com/geob660]]
+  - !<grocc::BRepAlgoAPI_Cut> [[Cross connection line], [n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb739, n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb369]]
+  - !<grocc::BRepBuilderAPI_MakeEdge> [[n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb601], [n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb920, https://example.com/geob668]]
+  - !<script>
+    steps:
+      - !<grocc::TColgp_Array1OfPnt> [[pole_array], [!<int> 1, !<int> 4]]
+      - !<grocc::TColgp_Array1OfPnt::SetValue> [~, [pole_array, !<int> 1, n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb634]]
+      - !<grocc::TColgp_Array1OfPnt::SetValue> [~, [pole_array, !<int> 2, n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb921]]
+      - !<grocc::TColgp_Array1OfPnt::SetValue> [~, [pole_array, !<int> 3, n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb459]]
+      - !<grocc::TColgp_Array1OfPnt::SetValue> [~, [pole_array, !<int> 4, n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb920]]
+      - !<grocc::Handle_Geom_BezierCurve> [[curve], [pole_array]]
+      - !<grocc::BRepBuilderAPI_MakeEdge> [[n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb599], [curve]]
+    returns:
+      - n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb599
+  - !<grocc::BRepBuilderAPI_MakeEdge> [[n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb597], [n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb102, n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb634]]
+  - !<script>
+    steps:
+      - !<grocc::TColgp_Array1OfPnt> [[pole_array], [!<int> 1, !<int> 4]]
+      - !<grocc::TColgp_Array1OfPnt::SetValue> [~, [pole_array, !<int> 1, n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb101]]
+      - !<grocc::TColgp_Array1OfPnt::SetValue> [~, [pole_array, !<int> 2, n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb104]]
+      - !<grocc::TColgp_Array1OfPnt::SetValue> [~, [pole_array, !<int> 3, n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb103]]
+      - !<grocc::TColgp_Array1OfPnt::SetValue> [~, [pole_array, !<int> 4, n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb102]]
+      - !<grocc::Handle_Geom_BezierCurve> [[curve], [pole_array]]
+      - !<grocc::BRepBuilderAPI_MakeEdge> [[n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb99], [curve]]
+    returns:
+      - n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb99
+  - !<grocc::BRepBuilderAPI_MakeEdge> [[n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb363], [n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb364, n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb101]]
+  - !<script>
+    steps:
+      - !<grocc::TColgp_Array1OfPnt> [[pole_array], [!<int> 1, !<int> 4]]
+      - !<grocc::TColgp_Array1OfPnt::SetValue> [~, [pole_array, !<int> 1, n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb477]]
+      - !<grocc::TColgp_Array1OfPnt::SetValue> [~, [pole_array, !<int> 2, n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb479]]
+      - !<grocc::TColgp_Array1OfPnt::SetValue> [~, [pole_array, !<int> 3, n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb375]]
+      - !<grocc::TColgp_Array1OfPnt::SetValue> [~, [pole_array, !<int> 4, n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb364]]
+      - !<grocc::Handle_Geom_BezierCurve> [[curve], [pole_array]]
+      - !<grocc::BRepBuilderAPI_MakeEdge> [[n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb593], [curve]]
+    returns:
+      - n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb593
+  - !<grocc::BRepBuilderAPI_MakeEdge> [[n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb591], [n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb604, n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb477]]
+  - !<script>
+    steps:
+      - !<grocc::TColgp_Array1OfPnt> [[pole_array], [!<int> 1, !<int> 4]]
+      - !<grocc::TColgp_Array1OfPnt::SetValue> [~, [pole_array, !<int> 1, n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb687]]
+      - !<grocc::TColgp_Array1OfPnt::SetValue> [~, [pole_array, !<int> 2, n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb688]]
+      - !<grocc::TColgp_Array1OfPnt::SetValue> [~, [pole_array, !<int> 3, n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb545]]
+      - !<grocc::TColgp_Array1OfPnt::SetValue> [~, [pole_array, !<int> 4, n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb604]]
+      - !<grocc::Handle_Geom_BezierCurve> [[curve], [pole_array]]
+      - !<grocc::BRepBuilderAPI_MakeEdge> [[n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb562], [curve]]
+    returns:
+      - n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb562
+  - !<grocc::BRepBuilderAPI_MakeEdge> [[n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb588], [https://example.com/geob251, n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb687]]
+  - !<script>
+    steps:
+      - !<grocc::TColgp_Array1OfPnt> [[pole_array], [!<int> 1, !<int> 4]]
+      - !<grocc::TColgp_Array1OfPnt::SetValue> [~, [pole_array, !<int> 1, n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb258]]
+      - !<grocc::TColgp_Array1OfPnt::SetValue> [~, [pole_array, !<int> 2, n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb260]]
+      - !<grocc::TColgp_Array1OfPnt::SetValue> [~, [pole_array, !<int> 3, https://example.com/geob250]]
+      - !<grocc::TColgp_Array1OfPnt::SetValue> [~, [pole_array, !<int> 4, https://example.com/geob251]]
+      - !<grocc::Handle_Geom_BezierCurve> [[curve], [pole_array]]
+      - !<grocc::BRepBuilderAPI_MakeEdge> [[n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb586], [curve]]
+    returns:
+      - n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb586
+  - !<grocc::BRepBuilderAPI_MakeEdge> [[n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb584], [n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb225, n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb258]]
+  - !<script>
+    steps:
+      - !<grocc::TColgp_Array1OfPnt> [[pole_array], [!<int> 1, !<int> 4]]
+      - !<grocc::TColgp_Array1OfPnt::SetValue> [~, [pole_array, !<int> 1, n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb226]]
+      - !<grocc::TColgp_Array1OfPnt::SetValue> [~, [pole_array, !<int> 2, n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb223]]
+      - !<grocc::TColgp_Array1OfPnt::SetValue> [~, [pole_array, !<int> 3, n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb224]]
+      - !<grocc::TColgp_Array1OfPnt::SetValue> [~, [pole_array, !<int> 4, n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb225]]
+      - !<grocc::Handle_Geom_BezierCurve> [[curve], [pole_array]]
+      - !<grocc::BRepBuilderAPI_MakeEdge> [[n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb221], [curve]]
+    returns:
+      - n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb221
+  - !<grocc::BRepBuilderAPI_MakeEdge> [[n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb581], [n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb423, n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb226]]
+  - !<script>
+    steps:
+      - !<grocc::TColgp_Array1OfPnt> [[pole_array], [!<int> 1, !<int> 4]]
+      - !<grocc::TColgp_Array1OfPnt::SetValue> [~, [pole_array, !<int> 1, n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb671]]
+      - !<grocc::TColgp_Array1OfPnt::SetValue> [~, [pole_array, !<int> 2, n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb1332]]
+      - !<grocc::TColgp_Array1OfPnt::SetValue> [~, [pole_array, !<int> 3, n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb542]]
+      - !<grocc::TColgp_Array1OfPnt::SetValue> [~, [pole_array, !<int> 4, n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb423]]
+      - !<grocc::Handle_Geom_BezierCurve> [[curve], [pole_array]]
+      - !<grocc::BRepBuilderAPI_MakeEdge> [[n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb28], [curve]]
+    returns:
+      - n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb28
+  - !<grocc::BRepBuilderAPI_MakeEdge> [[n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb578], [https://example.com/geob421, n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb671]]
+  - !<script>
+    steps:
+      - !<grocc::TColgp_Array1OfPnt> [[pole_array], [!<int> 1, !<int> 4]]
+      - !<grocc::TColgp_Array1OfPnt::SetValue> [~, [pole_array, !<int> 1, https://example.com/geob422]]
+      - !<grocc::TColgp_Array1OfPnt::SetValue> [~, [pole_array, !<int> 2, https://example.com/geob420]]
+      - !<grocc::TColgp_Array1OfPnt::SetValue> [~, [pole_array, !<int> 3, n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb451]]
+      - !<grocc::TColgp_Array1OfPnt::SetValue> [~, [pole_array, !<int> 4, https://example.com/geob421]]
+      - !<grocc::Handle_Geom_BezierCurve> [[curve], [pole_array]]
+      - !<grocc::BRepBuilderAPI_MakeEdge> [[n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb449], [curve]]
+    returns:
+      - n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb449
+  - !<grocc::gp_Ax2> [[n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb83-ax2], [n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb95, https://example.com/geob664]]
+  - !<grocc::gp_Circ> [[n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb83circ], [n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb83-ax2, n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb83_https://dlr.de/sl/ontologies/geometry#hasRadius]]
+  - !<grocc::BRepBuilderAPI_MakeEdge> [[n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb83edge], [n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb83circ]]
+  - !<grocc::BRepBuilderAPI_MakeWire> [[n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb83], [n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb83edge]]
+  - !<grocc::BRepBuilderAPI_MakeFace> [[n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb81], [n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb83]]
+  - !<grocc::gp_Ax2> [[https://example.com/geob663-ax2], [n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb95, https://example.com/geob664]]
+  - !<grocc::gp_Circ> [[https://example.com/geob663circ], [https://example.com/geob663-ax2, https://example.com/geob663_https://dlr.de/sl/ontologies/geometry#hasRadius]]
+  - !<grocc::BRepBuilderAPI_MakeEdge> [[https://example.com/geob663edge], [https://example.com/geob663circ]]
+  - !<grocc::BRepBuilderAPI_MakeWire> [[https://example.com/geob663], [https://example.com/geob663edge]]
+  - !<grocc::BRepBuilderAPI_MakeFace> [[https://example.com/geob665], [https://example.com/geob663]]
+  - !<grocc::BRepBuilderAPI_MakeEdge> [[n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb575], [n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb95, https://example.com/geob422]]
+  - !<script>
+    steps:
+      - !<grocc::BRepBuilderAPI_MakeWire> [[n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb602], ~]
+      - !<grocc::BRepBuilderAPI_MakeWire::Add> [~, [n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb602, n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb575]]
+      - !<grocc::BRepBuilderAPI_MakeWire::Add> [~, [n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb602, n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb449]]
+      - !<grocc::BRepBuilderAPI_MakeWire::Add> [~, [n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb602, n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb578]]
+      - !<grocc::BRepBuilderAPI_MakeWire::Add> [~, [n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb602, n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb28]]
+      - !<grocc::BRepBuilderAPI_MakeWire::Add> [~, [n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb602, n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb581]]
+      - !<grocc::BRepBuilderAPI_MakeWire::Add> [~, [n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb602, n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb221]]
+      - !<grocc::BRepBuilderAPI_MakeWire::Add> [~, [n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb602, n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb584]]
+      - !<grocc::BRepBuilderAPI_MakeWire::Add> [~, [n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb602, n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb586]]
+      - !<grocc::BRepBuilderAPI_MakeWire::Add> [~, [n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb602, n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb588]]
+      - !<grocc::BRepBuilderAPI_MakeWire::Add> [~, [n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb602, n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb562]]
+      - !<grocc::BRepBuilderAPI_MakeWire::Add> [~, [n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb602, n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb591]]
+      - !<grocc::BRepBuilderAPI_MakeWire::Add> [~, [n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb602, n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb593]]
+      - !<grocc::BRepBuilderAPI_MakeWire::Add> [~, [n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb602, n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb363]]
+      - !<grocc::BRepBuilderAPI_MakeWire::Add> [~, [n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb602, n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb99]]
+      - !<grocc::BRepBuilderAPI_MakeWire::Add> [~, [n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb602, n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb597]]
+      - !<grocc::BRepBuilderAPI_MakeWire::Add> [~, [n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb602, n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb599]]
+      - !<grocc::BRepBuilderAPI_MakeWire::Add> [~, [n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb602, n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb601]]
+    returns:
+      - n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb602
+  - !<grocc::BRepOffsetAPI_MakePipe> [[n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb82], [n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb602, n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb81]]
+  - !<grocc::BRepOffsetAPI_MakePipe> [[n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb1342], [n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb602, https://example.com/geob665]]
+  - !<grocc::BRepAlgoAPI_Cut> [[Refuel cross line], [n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb1342, n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb82]]
+  - !<grocc::gp_Ax2> [[n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb93-ax2], [n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb249, n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb250]]
+  - !<grocc::gp_Circ> [[n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb93circ], [n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb93-ax2, n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb93_https://dlr.de/sl/ontologies/geometry#hasRadius]]
+  - !<grocc::BRepBuilderAPI_MakeEdge> [[n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb93edge], [n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb93circ]]
+  - !<grocc::BRepBuilderAPI_MakeWire> [[n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb93], [n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb93edge]]
+  - !<grocc::BRepBuilderAPI_MakeFace> [[n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb91], [n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb93]]
+  - !<grocc::gp_Ax2> [[n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb784-ax2], [n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb249, n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb250]]
+  - !<grocc::gp_Circ> [[n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb784circ], [n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb784-ax2, n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb784_https://dlr.de/sl/ontologies/geometry#hasRadius]]
+  - !<grocc::BRepBuilderAPI_MakeEdge> [[n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb784edge], [n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb784circ]]
+  - !<grocc::BRepBuilderAPI_MakeWire> [[n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb784], [n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb784edge]]
+  - !<grocc::BRepBuilderAPI_MakeFace> [[n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb785], [n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb784]]
+  - !<grocc::BRepBuilderAPI_MakeEdge> [[n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb679], [n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb249, n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb680]]
+  - !<script>
+    steps:
+      - !<grocc::BRepBuilderAPI_MakeWire> [[n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb940], ~]
+      - !<grocc::BRepBuilderAPI_MakeWire::Add> [~, [n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb940, n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb679]]
+    returns:
+      - n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb940
+  - !<grocc::BRepOffsetAPI_MakePipe> [[n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb92], [n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb940, n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb91]]
+  - !<grocc::BRepOffsetAPI_MakePipe> [[n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb891], [n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb940, n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb785]]
+  - !<grocc::BRepAlgoAPI_Cut> [[right refuel connection line], [n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb891, n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb92]]
+  - !<grocc::BRepBuilderAPI_MakeEdge> [[n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb838], [n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb333, n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb816]]
+  - !<script>
+    steps:
+      - !<grocc::TColgp_Array1OfPnt> [[pole_array], [!<int> 1, !<int> 4]]
+      - !<grocc::TColgp_Array1OfPnt::SetValue> [~, [pole_array, !<int> 1, n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb334]]
+      - !<grocc::TColgp_Array1OfPnt::SetValue> [~, [pole_array, !<int> 2, n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb332]]
+      - !<grocc::TColgp_Array1OfPnt::SetValue> [~, [pole_array, !<int> 3, n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb331]]
+      - !<grocc::TColgp_Array1OfPnt::SetValue> [~, [pole_array, !<int> 4, n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb333]]
+      - !<grocc::Handle_Geom_BezierCurve> [[curve], [pole_array]]
+      - !<grocc::BRepBuilderAPI_MakeEdge> [[n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb329], [curve]]
+    returns:
+      - n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb329
+  - !<grocc::BRepBuilderAPI_MakeEdge> [[n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb136], [n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb826, n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb334]]
+  - !<script>
+    steps:
+      - !<grocc::TColgp_Array1OfPnt> [[pole_array], [!<int> 1, !<int> 4]]
+      - !<grocc::TColgp_Array1OfPnt::SetValue> [~, [pole_array, !<int> 1, n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb426]]
+      - !<grocc::TColgp_Array1OfPnt::SetValue> [~, [pole_array, !<int> 2, n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb823]]
+      - !<grocc::TColgp_Array1OfPnt::SetValue> [~, [pole_array, !<int> 3, n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb1]]
+      - !<grocc::TColgp_Array1OfPnt::SetValue> [~, [pole_array, !<int> 4, n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb826]]
+      - !<grocc::Handle_Geom_BezierCurve> [[curve], [pole_array]]
+      - !<grocc::BRepBuilderAPI_MakeEdge> [[n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb918], [curve]]
+    returns:
+      - n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb918
+  - !<grocc::gp_Ax2> [[n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb1266-ax2], [https://example.com/geob221, n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb933]]
+  - !<grocc::gp_Circ> [[n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb1266circ], [n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb1266-ax2, n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb1266_https://dlr.de/sl/ontologies/geometry#hasRadius]]
+  - !<grocc::BRepBuilderAPI_MakeEdge> [[n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb1266edge], [n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb1266circ]]
+  - !<grocc::BRepBuilderAPI_MakeWire> [[n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb1266], [n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb1266edge]]
+  - !<grocc::BRepBuilderAPI_MakeFace> [[n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb373], [n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb1266]]
+  - !<grocc::gp_Ax2> [[n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb759-ax2], [https://example.com/geob221, n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb933]]
+  - !<grocc::gp_Circ> [[n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb759circ], [n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb759-ax2, n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb759_https://dlr.de/sl/ontologies/geometry#hasRadius]]
+  - !<grocc::BRepBuilderAPI_MakeEdge> [[n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb759edge], [n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb759circ]]
+  - !<grocc::BRepBuilderAPI_MakeWire> [[n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb759], [n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb759edge]]
+  - !<grocc::BRepBuilderAPI_MakeFace> [[n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb757], [n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb759]]
+  - !<grocc::BRepBuilderAPI_MakeEdge> [[n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb425], [https://example.com/geob221, n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb426]]
+  - !<script>
+    steps:
+      - !<grocc::BRepBuilderAPI_MakeWire> [[n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb372], ~]
+      - !<grocc::BRepBuilderAPI_MakeWire::Add> [~, [n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb372, n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb425]]
+      - !<grocc::BRepBuilderAPI_MakeWire::Add> [~, [n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb372, n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb918]]
+      - !<grocc::BRepBuilderAPI_MakeWire::Add> [~, [n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb372, n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb136]]
+      - !<grocc::BRepBuilderAPI_MakeWire::Add> [~, [n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb372, n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb329]]
+      - !<grocc::BRepBuilderAPI_MakeWire::Add> [~, [n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb372, n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb838]]
+    returns:
+      - n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb372
+  - !<grocc::BRepOffsetAPI_MakePipe> [[n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb371], [n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb372, n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb373]]
+  - !<grocc::BRepOffsetAPI_MakePipe> [[n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb758], [n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb372, n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb757]]
+  - !<grocc::BRepAlgoAPI_Cut> [[Right engine feed line], [n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb758, n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb371]]
+  - !<grocc::BRepBuilderAPI_MakeEdge> [[n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb1008], [n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb1145, n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb185]]
+  - !<script>
+    steps:
+      - !<grocc::TColgp_Array1OfPnt> [[pole_array], [!<int> 1, !<int> 4]]
+      - !<grocc::TColgp_Array1OfPnt::SetValue> [~, [pole_array, !<int> 1, n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb1144]]
+      - !<grocc::TColgp_Array1OfPnt::SetValue> [~, [pole_array, !<int> 2, n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb1088]]
+      - !<grocc::TColgp_Array1OfPnt::SetValue> [~, [pole_array, !<int> 3, n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb1143]]
+      - !<grocc::TColgp_Array1OfPnt::SetValue> [~, [pole_array, !<int> 4, n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb1145]]
+      - !<grocc::Handle_Geom_BezierCurve> [[curve], [pole_array]]
+      - !<grocc::BRepBuilderAPI_MakeEdge> [[n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb1006], [curve]]
+    returns:
+      - n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb1006
+  - !<grocc::BRepBuilderAPI_MakeEdge> [[n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb1004], [n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb448, n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb1144]]
+  - !<script>
+    steps:
+      - !<grocc::TColgp_Array1OfPnt> [[pole_array], [!<int> 1, !<int> 4]]
+      - !<grocc::TColgp_Array1OfPnt::SetValue> [~, [pole_array, !<int> 1, n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb446]]
+      - !<grocc::TColgp_Array1OfPnt::SetValue> [~, [pole_array, !<int> 2, n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb414]]
+      - !<grocc::TColgp_Array1OfPnt::SetValue> [~, [pole_array, !<int> 3, n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb447]]
+      - !<grocc::TColgp_Array1OfPnt::SetValue> [~, [pole_array, !<int> 4, n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb448]]
+      - !<grocc::Handle_Geom_BezierCurve> [[curve], [pole_array]]
+      - !<grocc::BRepBuilderAPI_MakeEdge> [[n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb444], [curve]]
+    returns:
+      - n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb444
+  - !<grocc::gp_Ax2> [[n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb401-ax2], [n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb180, n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb1102]]
+  - !<grocc::gp_Circ> [[n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb401circ], [n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb401-ax2, n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb401_https://dlr.de/sl/ontologies/geometry#hasRadius]]
+  - !<grocc::BRepBuilderAPI_MakeEdge> [[n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb401edge], [n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb401circ]]
+  - !<grocc::BRepBuilderAPI_MakeWire> [[n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb401], [n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb401edge]]
+  - !<grocc::BRepBuilderAPI_MakeFace> [[n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb399], [n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb401]]
+  - !<grocc::gp_Ax2> [[n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb1146-ax2], [n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb180, n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb1102]]
+  - !<grocc::gp_Circ> [[n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb1146circ], [n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb1146-ax2, n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb1146_https://dlr.de/sl/ontologies/geometry#hasRadius]]
+  - !<grocc::BRepBuilderAPI_MakeEdge> [[n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb1146edge], [n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb1146circ]]
+  - !<grocc::BRepBuilderAPI_MakeWire> [[n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb1146], [n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb1146edge]]
+  - !<grocc::BRepBuilderAPI_MakeFace> [[n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb749], [n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb1146]]
+  - !<grocc::BRepBuilderAPI_MakeEdge> [[n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb560], [n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb180, n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb446]]
+  - !<script>
+    steps:
+      - !<grocc::BRepBuilderAPI_MakeWire> [[n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb748], ~]
+      - !<grocc::BRepBuilderAPI_MakeWire::Add> [~, [n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb748, n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb560]]
+      - !<grocc::BRepBuilderAPI_MakeWire::Add> [~, [n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb748, n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb444]]
+      - !<grocc::BRepBuilderAPI_MakeWire::Add> [~, [n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb748, n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb1004]]
+      - !<grocc::BRepBuilderAPI_MakeWire::Add> [~, [n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb748, n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb1006]]
+      - !<grocc::BRepBuilderAPI_MakeWire::Add> [~, [n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb748, n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb1008]]
+    returns:
+      - n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb748
+  - !<grocc::BRepOffsetAPI_MakePipe> [[n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb400], [n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb748, n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb399]]
+  - !<grocc::BRepOffsetAPI_MakePipe> [[https://example.com/geob669], [n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb748, n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb749]]
+  - !<grocc::BRepAlgoAPI_Cut> [[Left engine feed line], [https://example.com/geob669, n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb400]]
+  - !<grocc::gp_Ax2> [[n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb1152-ax2], [n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb1050, n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb844]]
+  - !<grocc::gp_Circ> [[n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb1152circ], [n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb1152-ax2, n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb1152_https://dlr.de/sl/ontologies/geometry#hasRadius]]
+  - !<grocc::BRepBuilderAPI_MakeEdge> [[n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb1152edge], [n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb1152circ]]
+  - !<grocc::BRepBuilderAPI_MakeWire> [[n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb1152], [n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb1152edge]]
+  - !<grocc::BRepBuilderAPI_MakeFace> [[n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb1153], [n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb1152]]
+  - !<grocc::gp_Ax2> [[n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb1080-ax2], [n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb1050, n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb844]]
+  - !<grocc::gp_Circ> [[n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb1080circ], [n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb1080-ax2, n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb1080_https://dlr.de/sl/ontologies/geometry#hasRadius]]
+  - !<grocc::BRepBuilderAPI_MakeEdge> [[n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb1080edge], [n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb1080circ]]
+  - !<grocc::BRepBuilderAPI_MakeWire> [[n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb1080], [n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb1080edge]]
+  - !<grocc::BRepBuilderAPI_MakeFace> [[n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb867], [n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb1080]]
+  - !<grocc::BRepBuilderAPI_MakeEdge> [[n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb240], [n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb1050, n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb1052]]
+  - !<script>
+    steps:
+      - !<grocc::BRepBuilderAPI_MakeWire> [[n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb241], ~]
+      - !<grocc::BRepBuilderAPI_MakeWire::Add> [~, [n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb241, n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb240]]
+    returns:
+      - n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb241
+  - !<grocc::BRepOffsetAPI_MakePipe> [[n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb1199], [n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb241, n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb1153]]
+  - !<grocc::BRepOffsetAPI_MakePipe> [[n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb866], [n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb241, n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb867]]
+  - !<grocc::BRepAlgoAPI_Cut> [[Left inner pump connection line], [n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb866, n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb1199]]
+  - !<grocc::BRepBuilderAPI_MakeEdge> [[n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb998], [n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb313, n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb768]]
+  - !<script>
+    steps:
+      - !<grocc::TColgp_Array1OfPnt> [[pole_array], [!<int> 1, !<int> 4]]
+      - !<grocc::TColgp_Array1OfPnt::SetValue> [~, [pole_array, !<int> 1, n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb392]]
+      - !<grocc::TColgp_Array1OfPnt::SetValue> [~, [pole_array, !<int> 2, n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb236]]
+      - !<grocc::TColgp_Array1OfPnt::SetValue> [~, [pole_array, !<int> 3, n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb395]]
+      - !<grocc::TColgp_Array1OfPnt::SetValue> [~, [pole_array, !<int> 4, n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb313]]
+      - !<grocc::Handle_Geom_BezierCurve> [[curve], [pole_array]]
+      - !<grocc::BRepBuilderAPI_MakeEdge> [[n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb996], [curve]]
+    returns:
+      - n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb996
+  - !<grocc::BRepBuilderAPI_MakeEdge> [[n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb512], [n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb238, n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb392]]
+  - !<script>
+    steps:
+      - !<grocc::TColgp_Array1OfPnt> [[pole_array], [!<int> 1, !<int> 4]]
+      - !<grocc::TColgp_Array1OfPnt::SetValue> [~, [pole_array, !<int> 1, https://example.com/geob229]]
+      - !<grocc::TColgp_Array1OfPnt::SetValue> [~, [pole_array, !<int> 2, n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb237]]
+      - !<grocc::TColgp_Array1OfPnt::SetValue> [~, [pole_array, !<int> 3, https://example.com/geob228]]
+      - !<grocc::TColgp_Array1OfPnt::SetValue> [~, [pole_array, !<int> 4, n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb238]]
+      - !<grocc::Handle_Geom_BezierCurve> [[curve], [pole_array]]
+      - !<grocc::BRepBuilderAPI_MakeEdge> [[n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb26], [curve]]
+    returns:
+      - n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb26
+  - !<grocc::gp_Ax2> [[n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb976-ax2], [n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb690, n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb977]]
+  - !<grocc::gp_Circ> [[n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb976circ], [n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb976-ax2, n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb976_https://dlr.de/sl/ontologies/geometry#hasRadius]]
+  - !<grocc::BRepBuilderAPI_MakeEdge> [[n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb976edge], [n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb976circ]]
+  - !<grocc::BRepBuilderAPI_MakeWire> [[n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb976], [n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb976edge]]
+  - !<grocc::BRepBuilderAPI_MakeFace> [[n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb978], [n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb976]]
+  - !<grocc::gp_Ax2> [[n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb1287-ax2], [n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb690, n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb977]]
+  - !<grocc::gp_Circ> [[n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb1287circ], [n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb1287-ax2, n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb1287_https://dlr.de/sl/ontologies/geometry#hasRadius]]
+  - !<grocc::BRepBuilderAPI_MakeEdge> [[n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb1287edge], [n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb1287circ]]
+  - !<grocc::BRepBuilderAPI_MakeWire> [[n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb1287], [n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb1287edge]]
+  - !<grocc::BRepBuilderAPI_MakeFace> [[n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb1286], [n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb1287]]
+  - !<grocc::BRepBuilderAPI_MakeEdge> [[n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb713], [n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb690, https://example.com/geob229]]
+  - !<script>
+    steps:
+      - !<grocc::BRepBuilderAPI_MakeWire> [[n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb999], ~]
+      - !<grocc::BRepBuilderAPI_MakeWire::Add> [~, [n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb999, n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb713]]
+      - !<grocc::BRepBuilderAPI_MakeWire::Add> [~, [n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb999, n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb26]]
+      - !<grocc::BRepBuilderAPI_MakeWire::Add> [~, [n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb999, n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb512]]
+      - !<grocc::BRepBuilderAPI_MakeWire::Add> [~, [n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb999, n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb996]]
+      - !<grocc::BRepBuilderAPI_MakeWire::Add> [~, [n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb999, n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb998]]
+    returns:
+      - n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb999
+  - !<grocc::BRepOffsetAPI_MakePipe> [[n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb836], [n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb999, n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb978]]
+  - !<grocc::BRepOffsetAPI_MakePipe> [[n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb1116], [n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb999, n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb1286]]
+  - !<grocc::BRepAlgoAPI_Cut> [[Cross feed line], [n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb1116, n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb836]]
+  - !<grocc::gp_Ax2> [[n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb1210-ax2], [n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb1100, n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb1260]]
+  - !<grocc::gp_Circ> [[n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb1210circ], [n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb1210-ax2, n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb1210_https://dlr.de/sl/ontologies/geometry#hasRadius]]
+  - !<grocc::BRepBuilderAPI_MakeEdge> [[n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb1210edge], [n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb1210circ]]
+  - !<grocc::BRepBuilderAPI_MakeWire> [[n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb1210], [n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb1210edge]]
+  - !<grocc::BRepBuilderAPI_MakeFace> [[n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb435], [n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb1210]]
+  - !<grocc::gp_Ax2> [[n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb854-ax2], [n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb1100, n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb1260]]
+  - !<grocc::gp_Circ> [[n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb854circ], [n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb854-ax2, n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb854_https://dlr.de/sl/ontologies/geometry#hasRadius]]
+  - !<grocc::BRepBuilderAPI_MakeEdge> [[n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb854edge], [n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb854circ]]
+  - !<grocc::BRepBuilderAPI_MakeWire> [[n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb854], [n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb854edge]]
+  - !<grocc::BRepBuilderAPI_MakeFace> [[https://example.com/geob259], [n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb854]]
+  - !<grocc::BRepBuilderAPI_MakeEdge> [[n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb1167], [n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb1100, n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb1099]]
+  - !<script>
+    steps:
+      - !<grocc::BRepBuilderAPI_MakeWire> [[https://example.com/geob257], ~]
+      - !<grocc::BRepBuilderAPI_MakeWire::Add> [~, [https://example.com/geob257, n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb1167]]
+    returns:
+      - https://example.com/geob257
+  - !<grocc::BRepOffsetAPI_MakePipe> [[n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb434], [https://example.com/geob257, n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb435]]
+  - !<grocc::BRepOffsetAPI_MakePipe> [[https://example.com/geob256], [https://example.com/geob257, https://example.com/geob259]]
+  - !<grocc::BRepAlgoAPI_Cut> [[left refuel connection line], [https://example.com/geob256, n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb434]]
+  - !<grocc::gp_Ax2> [[https://example.com/geob1123-ax2], [n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb1178, https://dlr.de/sl/ontologies/geometry#zAxis]]
+  - !<grocc::BRepPrimAPI_MakeCylinder> [[Left outer pump], [https://example.com/geob1123-ax2, https://example.com/geob1123_https://dlr.de/sl/ontologies/geometry#hasRadius, https://example.com/geob1123_https://dlr.de/sl/ontologies/geometry#hasHeight, !<double> 6.2831853071795862]]
+  - !<grocc::gp_Ax2> [[https://example.com/geob1119-ax2], [n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb985, https://dlr.de/sl/ontologies/geometry#zAxis]]
+  - !<grocc::BRepPrimAPI_MakeCylinder> [[Left inner pump], [https://example.com/geob1119-ax2, https://example.com/geob1119_https://dlr.de/sl/ontologies/geometry#hasRadius, https://example.com/geob1119_https://dlr.de/sl/ontologies/geometry#hasHeight, !<double> 6.2831853071795862]]
+  - !<grocc::gp_Ax2> [[https://example.com/geob1098-ax2], [n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb7, https://dlr.de/sl/ontologies/geometry#zAxis]]
+  - !<grocc::BRepPrimAPI_MakeCylinder> [[Right inner pump], [https://example.com/geob1098-ax2, https://example.com/geob1098_https://dlr.de/sl/ontologies/geometry#hasRadius, https://example.com/geob1098_https://dlr.de/sl/ontologies/geometry#hasHeight, !<double> 6.2831853071795862]]
+  - !<grocc::gp_Ax2> [[https://example.com/geob853-ax2], [n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb892, https://dlr.de/sl/ontologies/geometry#zAxis]]
+  - !<grocc::BRepPrimAPI_MakeCylinder> [[Right outer pump], [https://example.com/geob853-ax2, https://example.com/geob853_https://dlr.de/sl/ontologies/geometry#hasRadius, https://example.com/geob853_https://dlr.de/sl/ontologies/geometry#hasHeight, !<double> 6.2831853071795862]]
+  - !<grocc::BRepBuilderAPI_MakeEdge> [[n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb548], [n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb908, n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb986]]
+  - !<script>
+    steps:
+      - !<grocc::TColgp_Array1OfPnt> [[pole_array], [!<int> 1, !<int> 4]]
+      - !<grocc::TColgp_Array1OfPnt::SetValue> [~, [pole_array, !<int> 1, n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb902]]
+      - !<grocc::TColgp_Array1OfPnt::SetValue> [~, [pole_array, !<int> 2, n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb904]]
+      - !<grocc::TColgp_Array1OfPnt::SetValue> [~, [pole_array, !<int> 3, n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb906]]
+      - !<grocc::TColgp_Array1OfPnt::SetValue> [~, [pole_array, !<int> 4, n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb908]]
+      - !<grocc::Handle_Geom_BezierCurve> [[curve], [pole_array]]
+      - !<grocc::BRepBuilderAPI_MakeEdge> [[n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb498], [curve]]
+    returns:
+      - n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb498
+  - !<grocc::BRepBuilderAPI_MakeEdge> [[n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb547], [n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb218, n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb902]]
+  - !<script>
+    steps:
+      - !<grocc::TColgp_Array1OfPnt> [[pole_array], [!<int> 1, !<int> 4]]
+      - !<grocc::TColgp_Array1OfPnt::SetValue> [~, [pole_array, !<int> 1, n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb61]]
+      - !<grocc::TColgp_Array1OfPnt::SetValue> [~, [pole_array, !<int> 2, n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb219]]
+      - !<grocc::TColgp_Array1OfPnt::SetValue> [~, [pole_array, !<int> 3, n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb220]]
+      - !<grocc::TColgp_Array1OfPnt::SetValue> [~, [pole_array, !<int> 4, n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb218]]
+      - !<grocc::Handle_Geom_BezierCurve> [[curve], [pole_array]]
+      - !<grocc::BRepBuilderAPI_MakeEdge> [[n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb216], [curve]]
+    returns:
+      - n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb216
+  - !<grocc::gp_Ax2> [[n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb900-ax2], [n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb62, n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb436]]
+  - !<grocc::gp_Circ> [[n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb900circ], [n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb900-ax2, n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb900_https://dlr.de/sl/ontologies/geometry#hasRadius]]
+  - !<grocc::BRepBuilderAPI_MakeEdge> [[n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb900edge], [n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb900circ]]
+  - !<grocc::BRepBuilderAPI_MakeWire> [[n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb900], [n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb900edge]]
+  - !<grocc::BRepBuilderAPI_MakeFace> [[https://example.com/geob226], [n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb900]]
+  - !<grocc::gp_Ax2> [[n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb946-ax2], [n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb62, n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb436]]
+  - !<grocc::gp_Circ> [[n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb946circ], [n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb946-ax2, n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb946_https://dlr.de/sl/ontologies/geometry#hasRadius]]
+  - !<grocc::BRepBuilderAPI_MakeEdge> [[n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb946edge], [n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb946circ]]
+  - !<grocc::BRepBuilderAPI_MakeWire> [[n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb946], [n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb946edge]]
+  - !<grocc::BRepBuilderAPI_MakeFace> [[n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb945], [n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb946]]
+  - !<grocc::BRepBuilderAPI_MakeEdge> [[n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb60], [n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb62, n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb61]]
+  - !<script>
+    steps:
+      - !<grocc::BRepBuilderAPI_MakeWire> [[https://example.com/geob224], ~]
+      - !<grocc::BRepBuilderAPI_MakeWire::Add> [~, [https://example.com/geob224, n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb60]]
+      - !<grocc::BRepBuilderAPI_MakeWire::Add> [~, [https://example.com/geob224, n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb216]]
+      - !<grocc::BRepBuilderAPI_MakeWire::Add> [~, [https://example.com/geob224, n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb547]]
+      - !<grocc::BRepBuilderAPI_MakeWire::Add> [~, [https://example.com/geob224, n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb498]]
+      - !<grocc::BRepBuilderAPI_MakeWire::Add> [~, [https://example.com/geob224, n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb548]]
+    returns:
+      - https://example.com/geob224
+  - !<grocc::BRepOffsetAPI_MakePipe> [[https://example.com/geob223], [https://example.com/geob224, https://example.com/geob226]]
+  - !<grocc::BRepOffsetAPI_MakePipe> [[n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb781], [https://example.com/geob224, n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb945]]
+  - !<grocc::BRepAlgoAPI_Cut> [[Right refuel line], [n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb781, https://example.com/geob223]]
+  - !<grocc::BRepBuilderAPI_MakeEdge> [[n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb611], [n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb755, n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb782]]
+  - !<script>
+    steps:
+      - !<grocc::TColgp_Array1OfPnt> [[pole_array], [!<int> 1, !<int> 4]]
+      - !<grocc::TColgp_Array1OfPnt::SetValue> [~, [pole_array, !<int> 1, n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb761]]
+      - !<grocc::TColgp_Array1OfPnt::SetValue> [~, [pole_array, !<int> 2, n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb325]]
+      - !<grocc::TColgp_Array1OfPnt::SetValue> [~, [pole_array, !<int> 3, n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb762]]
+      - !<grocc::TColgp_Array1OfPnt::SetValue> [~, [pole_array, !<int> 4, n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb755]]
+      - !<grocc::Handle_Geom_BezierCurve> [[curve], [pole_array]]
+      - !<grocc::BRepBuilderAPI_MakeEdge> [[n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb608], [curve]]
+    returns:
+      - n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb608
+  - !<grocc::BRepBuilderAPI_MakeEdge> [[n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb610], [n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb119, n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb761]]
+  - !<script>
+    steps:
+      - !<grocc::TColgp_Array1OfPnt> [[pole_array], [!<int> 1, !<int> 4]]
+      - !<grocc::TColgp_Array1OfPnt::SetValue> [~, [pole_array, !<int> 1, n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb117]]
+      - !<grocc::TColgp_Array1OfPnt::SetValue> [~, [pole_array, !<int> 2, n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb118]]
+      - !<grocc::TColgp_Array1OfPnt::SetValue> [~, [pole_array, !<int> 3, n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb8]]
+      - !<grocc::TColgp_Array1OfPnt::SetValue> [~, [pole_array, !<int> 4, n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb119]]
+      - !<grocc::Handle_Geom_BezierCurve> [[curve], [pole_array]]
+      - !<grocc::BRepBuilderAPI_MakeEdge> [[n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb115], [curve]]
+    returns:
+      - n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb115
+  - !<grocc::gp_Ax2> [[n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb1131-ax2], [https://example.com/geob222, n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb509]]
+  - !<grocc::gp_Circ> [[n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb1131circ], [n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb1131-ax2, n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb1131_https://dlr.de/sl/ontologies/geometry#hasRadius]]
+  - !<grocc::BRepBuilderAPI_MakeEdge> [[n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb1131edge], [n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb1131circ]]
+  - !<grocc::BRepBuilderAPI_MakeWire> [[n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb1131], [n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb1131edge]]
+  - !<grocc::BRepBuilderAPI_MakeFace> [[n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb1132], [n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb1131]]
+  - !<grocc::gp_Ax2> [[n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb508-ax2], [https://example.com/geob222, n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb509]]
+  - !<grocc::gp_Circ> [[n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb508circ], [n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb508-ax2, n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb508_https://dlr.de/sl/ontologies/geometry#hasRadius]]
+  - !<grocc::BRepBuilderAPI_MakeEdge> [[n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb508edge], [n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb508circ]]
+  - !<grocc::BRepBuilderAPI_MakeWire> [[n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb508], [n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb508edge]]
+  - !<grocc::BRepBuilderAPI_MakeFace> [[n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb510], [n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb508]]
+  - !<grocc::BRepBuilderAPI_MakeEdge> [[n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb609], [https://example.com/geob222, n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb117]]
+  - !<script>
+    steps:
+      - !<grocc::BRepBuilderAPI_MakeWire> [[n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb539], ~]
+      - !<grocc::BRepBuilderAPI_MakeWire::Add> [~, [n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb539, n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb609]]
+      - !<grocc::BRepBuilderAPI_MakeWire::Add> [~, [n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb539, n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb115]]
+      - !<grocc::BRepBuilderAPI_MakeWire::Add> [~, [n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb539, n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb610]]
+      - !<grocc::BRepBuilderAPI_MakeWire::Add> [~, [n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb539, n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb608]]
+      - !<grocc::BRepBuilderAPI_MakeWire::Add> [~, [n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb539, n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb611]]
+    returns:
+      - n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb539
+  - !<grocc::BRepOffsetAPI_MakePipe> [[n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb721], [n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb539, n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb1132]]
+  - !<grocc::BRepOffsetAPI_MakePipe> [[n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb538], [n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb539, n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb510]]
+  - !<grocc::BRepAlgoAPI_Cut> [[left refuel line], [n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb538, n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb721]]
+  - !<grocc::BRepBuilderAPI_MakeEdge> [[n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb666], [n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb754, n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb1261]]
+  - !<script>
+    steps:
+      - !<grocc::TColgp_Array1OfPnt> [[pole_array], [!<int> 1, !<int> 4]]
+      - !<grocc::TColgp_Array1OfPnt::SetValue> [~, [pole_array, !<int> 1, n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb752]]
+      - !<grocc::TColgp_Array1OfPnt::SetValue> [~, [pole_array, !<int> 2, n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb753]]
+      - !<grocc::TColgp_Array1OfPnt::SetValue> [~, [pole_array, !<int> 3, n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb689]]
+      - !<grocc::TColgp_Array1OfPnt::SetValue> [~, [pole_array, !<int> 4, n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb754]]
+      - !<grocc::Handle_Geom_BezierCurve> [[curve], [pole_array]]
+      - !<grocc::BRepBuilderAPI_MakeEdge> [[n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb750], [curve]]
+    returns:
+      - n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb750
+  - !<grocc::BRepBuilderAPI_MakeEdge> [[n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb71], [n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb1039, n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb752]]
+  - !<script>
+    steps:
+      - !<grocc::TColgp_Array1OfPnt> [[pole_array], [!<int> 1, !<int> 4]]
+      - !<grocc::TColgp_Array1OfPnt::SetValue> [~, [pole_array, !<int> 1, n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb899]]
+      - !<grocc::TColgp_Array1OfPnt::SetValue> [~, [pole_array, !<int> 2, n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb1037]]
+      - !<grocc::TColgp_Array1OfPnt::SetValue> [~, [pole_array, !<int> 3, n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb1038]]
+      - !<grocc::TColgp_Array1OfPnt::SetValue> [~, [pole_array, !<int> 4, n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb1039]]
+      - !<grocc::Handle_Geom_BezierCurve> [[curve], [pole_array]]
+      - !<grocc::BRepBuilderAPI_MakeEdge> [[n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb1035], [curve]]
+    returns:
+      - n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb1035
+  - !<grocc::BRepBuilderAPI_MakeEdge> [[n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb855], [n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb1124, n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb899]]
+  - !<script>
+    steps:
+      - !<grocc::TColgp_Array1OfPnt> [[pole_array], [!<int> 1, !<int> 4]]
+      - !<grocc::TColgp_Array1OfPnt::SetValue> [~, [pole_array, !<int> 1, n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb1119]]
+      - !<grocc::TColgp_Array1OfPnt::SetValue> [~, [pole_array, !<int> 2, n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb947]]
+      - !<grocc::TColgp_Array1OfPnt::SetValue> [~, [pole_array, !<int> 3, n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb1122]]
+      - !<grocc::TColgp_Array1OfPnt::SetValue> [~, [pole_array, !<int> 4, n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb1124]]
+      - !<grocc::Handle_Geom_BezierCurve> [[curve], [pole_array]]
+      - !<grocc::BRepBuilderAPI_MakeEdge> [[n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb1184], [curve]]
+    returns:
+      - n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb1184
+  - !<grocc::BRepBuilderAPI_MakeEdge> [[n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb1140], [n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb632, n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb1119]]
+  - !<script>
+    steps:
+      - !<grocc::TColgp_Array1OfPnt> [[pole_array], [!<int> 1, !<int> 4]]
+      - !<grocc::TColgp_Array1OfPnt::SetValue> [~, [pole_array, !<int> 1, n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb178]]
+      - !<grocc::TColgp_Array1OfPnt::SetValue> [~, [pole_array, !<int> 2, n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb628]]
+      - !<grocc::TColgp_Array1OfPnt::SetValue> [~, [pole_array, !<int> 3, n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb630]]
+      - !<grocc::TColgp_Array1OfPnt::SetValue> [~, [pole_array, !<int> 4, n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb632]]
+      - !<grocc::Handle_Geom_BezierCurve> [[curve], [pole_array]]
+      - !<grocc::BRepBuilderAPI_MakeEdge> [[n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb1197], [curve]]
+    returns:
+      - n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb1197
+  - !<grocc::gp_Ax2> [[n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb1171-ax2], [n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb137, n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb366]]
+  - !<grocc::gp_Circ> [[n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb1171circ], [n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb1171-ax2, n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb1171_https://dlr.de/sl/ontologies/geometry#hasRadius]]
+  - !<grocc::BRepBuilderAPI_MakeEdge> [[n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb1171edge], [n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb1171circ]]
+  - !<grocc::BRepBuilderAPI_MakeWire> [[n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb1171], [n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb1171edge]]
+  - !<grocc::BRepBuilderAPI_MakeFace> [[n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb303], [n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb1171]]
+  - !<grocc::gp_Ax2> [[n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb365-ax2], [n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb137, n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb366]]
+  - !<grocc::gp_Circ> [[n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb365circ], [n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb365-ax2, n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb365_https://dlr.de/sl/ontologies/geometry#hasRadius]]
+  - !<grocc::BRepBuilderAPI_MakeEdge> [[n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb365edge], [n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb365circ]]
+  - !<grocc::BRepBuilderAPI_MakeWire> [[n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb365], [n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb365edge]]
+  - !<grocc::BRepBuilderAPI_MakeFace> [[n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb367], [n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb365]]
+  - !<grocc::BRepBuilderAPI_MakeEdge> [[n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb1196], [n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb137, n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb178]]
+  - !<script>
+    steps:
+      - !<grocc::BRepBuilderAPI_MakeWire> [[n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb302], ~]
+      - !<grocc::BRepBuilderAPI_MakeWire::Add> [~, [n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb302, n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb1196]]
+      - !<grocc::BRepBuilderAPI_MakeWire::Add> [~, [n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb302, n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb1197]]
+      - !<grocc::BRepBuilderAPI_MakeWire::Add> [~, [n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb302, n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb1140]]
+      - !<grocc::BRepBuilderAPI_MakeWire::Add> [~, [n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb302, n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb1184]]
+      - !<grocc::BRepBuilderAPI_MakeWire::Add> [~, [n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb302, n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb855]]
+      - !<grocc::BRepBuilderAPI_MakeWire::Add> [~, [n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb302, n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb1035]]
+      - !<grocc::BRepBuilderAPI_MakeWire::Add> [~, [n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb302, n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb71]]
+      - !<grocc::BRepBuilderAPI_MakeWire::Add> [~, [n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb302, n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb750]]
+      - !<grocc::BRepBuilderAPI_MakeWire::Add> [~, [n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb302, n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb666]]
+    returns:
+      - n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb302
+  - !<grocc::BRepOffsetAPI_MakePipe> [[n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb301], [n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb302, n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb303]]
+  - !<grocc::BRepOffsetAPI_MakePipe> [[n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb623], [n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb302, n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb367]]
+  - !<grocc::BRepAlgoAPI_Cut> [[Apu feed line], [n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb623, n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb301]]
+  - !<grocc::gp_Ax2> [[n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb724-ax2], [n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb134, n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb541]]
+  - !<grocc::gp_Circ> [[n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb724circ], [n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb724-ax2, n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb724_https://dlr.de/sl/ontologies/geometry#hasRadius]]
+  - !<grocc::BRepBuilderAPI_MakeEdge> [[n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb724edge], [n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb724circ]]
+  - !<grocc::BRepBuilderAPI_MakeWire> [[n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb724], [n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb724edge]]
+  - !<grocc::BRepBuilderAPI_MakeFace> [[https://example.com/geob220], [n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb724]]
+  - !<grocc::gp_Ax2> [[n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb540-ax2], [n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb134, n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb541]]
+  - !<grocc::gp_Circ> [[n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb540circ], [n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb540-ax2, n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb540_https://dlr.de/sl/ontologies/geometry#hasRadius]]
+  - !<grocc::BRepBuilderAPI_MakeEdge> [[n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb540edge], [n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb540circ]]
+  - !<grocc::BRepBuilderAPI_MakeWire> [[n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb540], [n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb540edge]]
+  - !<grocc::BRepBuilderAPI_MakeFace> [[n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb142], [n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb540]]
+  - !<grocc::BRepBuilderAPI_MakeEdge> [[n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb132], [n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb134, n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb133]]
+  - !<script>
+    steps:
+      - !<grocc::BRepBuilderAPI_MakeWire> [[n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb124], ~]
+      - !<grocc::BRepBuilderAPI_MakeWire::Add> [~, [n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb124, n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb132]]
+    returns:
+      - n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb124
+  - !<grocc::BRepOffsetAPI_MakePipe> [[n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb125], [n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb124, https://example.com/geob220]]
+  - !<grocc::BRepOffsetAPI_MakePipe> [[n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb126], [n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb124, n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb142]]
+  - !<grocc::BRepAlgoAPI_Cut> [[Right inner pump connection aline], [n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb126, n91dbdcd0fc5c4d68bdfaf9fdaeb17aecb125]]
+  - !<script>
+    steps:
+      - !<grocc::TopoDS_Compound> [[compound], ~]
+      - !<grocc::BRep_Builder> [[builder], ~]
+      - !<grocc::BRep_Builder::MakeCompound> [~, [builder, compound]]
+      - !<grocc::BRep_Builder::Add> [~, [builder, compound, Right inner pump connection aline]]
+      - !<grocc::BRep_Builder::Add> [~, [builder, compound, Apu feed line]]
+      - !<grocc::BRep_Builder::Add> [~, [builder, compound, left refuel line]]
+      - !<grocc::BRep_Builder::Add> [~, [builder, compound, Right refuel line]]
+      - !<grocc::BRep_Builder::Add> [~, [builder, compound, Right outer pump]]
+      - !<grocc::BRep_Builder::Add> [~, [builder, compound, left refuel connection line]]
+      - !<grocc::BRep_Builder::Add> [~, [builder, compound, Cross feed line]]
+      - !<grocc::BRep_Builder::Add> [~, [builder, compound, Left inner pump connection line]]
+      - !<grocc::BRep_Builder::Add> [~, [builder, compound, Left engine feed line]]
+      - !<grocc::BRep_Builder::Add> [~, [builder, compound, Right engine feed line]]
+      - !<grocc::BRep_Builder::Add> [~, [builder, compound, right refuel connection line]]
+      - !<grocc::BRep_Builder::Add> [~, [builder, compound, Refuel cross line]]
+      - !<grocc::BRep_Builder::Add> [~, [builder, compound, Cross connection line]]
+      - !<grocc::BRep_Builder::Add> [~, [builder, compound, ApuPump]]
+      - !<grocc::BRep_Builder::Add> [~, [builder, compound, Right inner pump]]
+      - !<grocc::BRep_Builder::Add> [~, [builder, compound, Left inner pump]]
+      - !<grocc::BRep_Builder::Add> [~, [builder, compound, Left outer pump]]
+    returns:
+      - compound

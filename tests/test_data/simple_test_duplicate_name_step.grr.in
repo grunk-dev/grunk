@@ -1,9 +1,0 @@
-uses:
-  grunk: @grunk_VERSION@
-  SimplePlugin: 1.2.3
-parameters:
-  a: !<SimplePlugin::MyDouble> 0.2
-  b: !<SimplePlugin::MyDouble> 0.1
-steps:
-  - !<SimplePlugin::add> [ [a], [a, b] ]
-  - !<SimplePlugin::add> [ [c], [b, a] ]

@@ -18,23 +18,13 @@ set(CMAKE_PREFIX_PATH ${CMAKE_BINARY_DIR} ${CMAKE_PREFIX_PATH})
 set(BUILD_SHARED_LIBS  ON)
 
 # find dependencies
-find_package(yaml-cpp REQUIRED)
-find_package(muparser REQUIRED)
-find_package(Boost REQUIRED COMPONENTS headers)
 find_package(parametric REQUIRED)
-find_package(reflect REQUIRED)
+find_package(sol2 REQUIRED)
 
 # Windows specific: export all symbols
 set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
 
 add_subdirectory(grunk)
-
-add_subdirectory(docs)
-
-if (GRUNK_PYTHON)
-        add_subdirectory(python)
-endif()
-
 
 if (GRUNK_TESTS)
         add_subdirectory(tests/cpp)
