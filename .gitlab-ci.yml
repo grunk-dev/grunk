@@ -78,13 +78,11 @@ build-ubuntu:
   - |
     cmake .. -DCMAKE_BUILD_TYPE=$BUILD_TYPE            \
              -DGRUNK_TESTS=ON                          \
-             -DGRUNK_BUILD_DOCS=ON                     \
              -DCMAKE_CXX_FLAGS="${ASAN_FLAGS}"         \
              -DCMAKE_EXE_LINKER_FLAGS="${ASAN_FLAGS}"  \
              -DCMAKE_TOOLCHAIN_FILE=/builds/paradigms/grunk/build/generators/conan_toolchain.cmake \
              -DCMAKE_POLICY_DEFAULT_CMP0091=NEW
   - cmake --build . --target runUnitTests -j
-  - cmake --build . --target Sphinx
   artifacts:
     paths:
     - $BUILD_DIR
@@ -108,26 +106,6 @@ test-ubuntu:
   - ./runUnitTests
   <<: *ubuntu_config
 
-
-test-ubuntu-python:
-  tags:
-  - ubuntu
-  - docker
-  image: python:3.9
-  stage: test
-  before_script: 
-  - apt-get -qq -y update && apt-get -qq -y install clang 
-  - python -m venv venv
-  - source venv/bin/activate
-  - python -m pip install --upgrade pip
-  - python -m pip install conan==1.64 cmake
-  - *configure_conan_ubuntu
-  - conan profile update settings.compiler.libcxx=libstdc++11 default
-  script:
-   - source venv/bin/activate
-   - python -m pip install .[test]
-   - grunk user auth ci_user -p ${CI_JOB_TOKEN}
-   - pytest -v
 
 build-windows:
   #note: variables BUILD_DIR, BUILD_TYPE and COMPILER will be populated thru yaml anchor "windows_config"
@@ -164,26 +142,6 @@ test-windows:
   - powershell.exe "$BUILD_TYPE\runUnitTests.exe"
   <<: *windows_config
 
-test-windows-python:
-  tags:
-  - windows
-  - docker
-  image: stabletec/build-core:windows-2019
-  stage: test
-  before_script:
-  - python -m venv venv
-  - ./venv/Scripts/Activate.ps1
-  - python -m pip install --upgrade pip
-  - python -m pip install conan==1.64 cmake
-  - conan profile new default --detect --force
-  - conan remote add grunkcenter https://gitlab.dlr.de/api/v4/projects/21487/packages/conan
-  - conan user ci_user -r grunkcenter -p ${CI_JOB_TOKEN}
-  script:
-   - ./venv/Scripts/Activate.ps1
-   - python -m pip install .[test]
-   - grunk user auth ci_user -p ${CI_JOB_TOKEN}
-   - pytest -s
-
 create-conan-package-ubuntu:
 # This job creates new release packages. It should only run on git tags
   stage: deploy
@@ -210,29 +168,3 @@ create-conan-package-windows:
     - if ( $CI_COMMIT_TAG ) { $env:CONAN_LOGIN_USERNAME="ci_user"; $env:CONAN_PASSWORD="${CI_JOB_TOKEN}"; conan upload -c grunk/$GRUNK_VERSION --all --remote=grunkcenter }
   <<: *windows_config
     
-docs:
-  stage: deploy
-  image: ubuntu:18.04
-  tags:
-    - docker
-    - ubuntu
-  script:
-    - mv  build-Release-gcc8/docs/html grunk-docs
-    - tar czf grunk-docs.tar.gz grunk-docs
-  artifacts:
-    paths:
-      - grunk-docs.tar.gz
-      
-pages:
-  only:
-    - main
-  stage: deploy
-  image: ubuntu:18.04
-  tags:
-    - docker
-    - ubuntu
-  script:
-    - mv build-Release-gcc8/docs/html public
-  artifacts:
-    paths:
-      - public
