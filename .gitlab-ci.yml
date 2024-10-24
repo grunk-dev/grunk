@@ -28,7 +28,7 @@
   parallel:
     matrix:
      - BUILD_TYPE: [Debug, Release]
-       COMPILER: ["2017", "2022"] # one old one new
+       COMPILER: ["2019", "2022"] # one old one new (sol2 needs at least Visual Studio 16 -> msvc-2017 is too old)
 
 .configure_conan_ubuntu: &configure_conan_ubuntu
 # setup and update conan profile. Specifically, for GCC and Clang set compiler.libcxx
