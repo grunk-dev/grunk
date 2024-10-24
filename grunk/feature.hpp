@@ -78,6 +78,10 @@ public:
         return as(usertype_table);
     }
 
+    bool operator==(Feature const& other) {
+        return this->node_pointer() == other.node_pointer();
+    }
+
 private:
 
     void check_lua() const {
