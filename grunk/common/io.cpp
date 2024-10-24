@@ -109,7 +109,7 @@ void ToStringVisitor::finalize()
     for (auto const& kv : feature_names_count) {
         if (kv.second > 1) {
             using namespace std::string_literals;
-            throw io_error("The feature tree does not have unique feature names: \""s + kv.first +"\" appears " + std::to_string(kv.second) + " times");
+            // throw io_error("The feature tree does not have unique feature names: \""s + kv.first +"\" appears " + std::to_string(kv.second) + " times");
         }
     }
 

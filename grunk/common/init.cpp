@@ -19,10 +19,23 @@ void init()
         [](YAML::Node const& y){ return y.as<bool>(); },
         "deserialize"
     );
+	
+	reflect::register_type<size_t>("size_t")
+	.add_constructor<>()
+	.add_constructor<size_t>()
+	.add_member_function(
+        [](size_t const& v){ return YAML::Node(v); }, 
+        "serialize"
+    )
+    .add_member_function(
+        [](YAML::Node const& y){ return y.as<size_t>(); },
+        "deserialize"
+    );
 
     reflect::register_type<int>("int")
     .add_constructor<>()
     .add_constructor<int>()
+	.add_conversion<size_t>()
     .add_conversion<double>()
     .add_conversion<bool>()
     .add_member_function(
