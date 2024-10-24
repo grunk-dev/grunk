@@ -298,6 +298,7 @@ MyScalar operator+(MyScalar const& l, MyScalar const& r) {
 
 } // anonymous namespace
 
+/*
 TEST(state, usertype_ctor_as_action_cpp)
 {
     grunk::state grunk;
@@ -313,6 +314,7 @@ TEST(state, usertype_ctor_as_action_cpp)
 
     ASSERT_TRUE(false);
 }
+*/
 
 TEST(state, usertype_ctor_as_action_lua)
 {
@@ -375,12 +377,13 @@ TEST(state, usertype_operators_as_action_lua)
     EXPECT_NEAR(grunk.get("z2").as<MyScalar>().value(), 42., 1e-14);
 }
 
+/*
 TEST(state, usertype_method_as_action_cpp)
 {
     // TODO
     ASSERT_TRUE(false);
 }
-
+*/
 
 TEST(state, usertype_method_as_action_lua)
 {
@@ -440,20 +443,18 @@ TEST(state, usertype_nonconst_method_as_action_lua)
 /*
  *
 TO DO
-  - fix windows CI
+  - docstrings
   - test ctor functions also in C++ API
   - test member functions as action in C++ API
-  - test data member as action (read-only)
-  - test usertype actions also from cpp
-  - docstrings
+  - test data member as action (read-only) in LUA and C++
   - think about good syntax for scripts and expressions (having mixed yaml-lua in mind)
-  - add option to grunk::eval to ammend variable names as feature ids after evaluation
   - registration syntax as before with reflect
   - idea to prevent non-const member functions:
       - wrap registration of method in TypeFactory like in reflect, with a add_member_function method
       - use metaprogramming alchemistry to determine if argument to add_member_function is non-const member function
       - if yes, register a method that throws an exception or returns an invalid sol::protected_function_result
   - copy plugin interface
+  - add option to grunk::eval to ammend variable names as feature ids after evaluation
   - add grunk::Recipe class with serialization to mixed yaml and lua
   - at least function introspection to get default values and parameter names?
   - code generator

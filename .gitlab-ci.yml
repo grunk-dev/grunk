@@ -46,7 +46,7 @@
 # 1. call vcvars64.bat, which is in a different location depending on the compiler version
 # 2. create the environment in CMD and store the environment in a temporary file
 # 3. recreate the environment in Powershell from the temporary file.
-  - if ($COMPILER -eq 2017) { cmd.exe /c "call `"C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\VC\Auxiliary\Build\vcvarsall.bat`" amd64 && set > %temp%\vcvars.txt" }
+  - if ($COMPILER -eq 2019) { cmd.exe /c "call `"C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Auxiliary\Build\vcvarsall.bat`" amd64 && set > %temp%\vcvars.txt" }
   - if ($COMPILER -eq 2022) { cmd.exe /c "call `"C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Auxiliary\Build\vcvarsall.bat`" amd64 && set > %temp%\vcvars.txt" }
   - Get-Content "$env:temp\vcvars.txt" | Foreach-Object { if ($_ -match "^(.*?)=(.*)$") { Set-Content "env:\$($matches[1])" $matches[2] } }
 # 4. Install conan
@@ -137,7 +137,6 @@ test-windows:
   - $env:Path = "$pwd\grunk\$BUILD_TYPE;$pwd\bin\$BUILD_TYPE;$pwd\tests\cpp\$BUILD_TYPE;$env:Path"
   - .\activate_run.ps1
   - cd tests\cpp
-  - Copy "$BUILD_TYPE\SimplePlugin.dll" ".\"
   # Powershell sucks so much....:
   - powershell.exe "$BUILD_TYPE\runUnitTests.exe"
   <<: *windows_config
