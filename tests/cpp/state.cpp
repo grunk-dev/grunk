@@ -442,22 +442,23 @@ TEST(state, usertype_nonconst_method_as_action_lua)
 TO DO
   - fix windows CI
   - test ctor functions also in C++ API
-  - test member functions as action
+  - test member functions as action in C++ API
   - test data member as action (read-only)
-  - support operators in C++ API also?
   - test usertype actions also from cpp
   - docstrings
-  - think about good syntax for scripts and expressions
+  - think about good syntax for scripts and expressions (having mixed yaml-lua in mind)
   - add option to grunk::eval to ammend variable names as feature ids after evaluation
-  - add grunk::Recipe class with serialization to mixed yaml and lua
   - registration syntax as before with reflect
   - idea to prevent non-const member functions:
       - wrap registration of method in TypeFactory like in reflect, with a add_member_function method
       - use metaprogramming alchemistry to determine if argument to add_member_function is non-const member function
       - if yes, register a method that throws an exception or returns an invalid sol::protected_function_result
   - copy plugin interface
+  - add grunk::Recipe class with serialization to mixed yaml and lua
   - at least function introspection to get default values and parameter names?
   - code generator
+  - check smart and custom pointer support
+  - check inheritence support
   - python bindings
   - static actions taking dynamic features
   - parallelization with option to disable
