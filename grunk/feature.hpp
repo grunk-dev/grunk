@@ -47,11 +47,45 @@ public:
         if constexpr (std::is_same_v<T, object>) {
             this->change_value() = t;
         } else {
+            check_lua();
             this->change_value() = sol::make_object(lua, t);
         }
     }
 
+    sol::table as(sol::table usertype) const
+    {
+        check_lua();
+        sol::state_view l(lua);
+        sol::table method_table = l.create_table();
+        sol::table mt = l.create_table();
+        mt.set_function("__index", [this, usertype](sol::table, std::string const& method) -> sol::object {
+            sol::protected_function func = usertype[method];
+            return sol::make_object(lua, sol::as_function(
+                [this, func](sol::variadic_args va){
+                    return func(*this, va);
+                }
+            ));
+        });
+        method_table[sol::metatable_key] = mt;
+        return method_table;
+    }
+
+    sol::table as(std::string const& usertype) const
+    {
+        check_lua();
+        sol::state_view l(lua);
+        sol::table usertype_table = l[usertype];
+        return as(usertype_table);
+    }
+
 private:
+
+    void check_lua() const {
+        if (!lua) {
+            throw std::runtime_error("DynamicFeature: lua state is uninitialized");
+        }
+    }
+
     lua_State* lua;
 };
 

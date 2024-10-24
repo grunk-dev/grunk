@@ -1,5 +1,6 @@
 #include <gtest/gtest.h>
 #include <state.hpp>
+#include <cmath>
 
 namespace {
 
@@ -107,7 +108,7 @@ TEST(state, free_function_lua)
     ASSERT_NEAR(zv, 6., 1e-14);
 }
 
-TEST(state, free_function_lua_feature_user_type)
+TEST(state, free_function_feature_id_lua)
 {
     grunk::state grunk;
 
@@ -141,7 +142,7 @@ TEST(state, free_function_lua_feature_user_type)
 
 }
 
-TEST(state, lua_operators_as_action_addition)
+TEST(state, operators_as_action_addition_lua)
 {
     grunk::state grunk;
 
@@ -157,7 +158,7 @@ TEST(state, lua_operators_as_action_addition)
     EXPECT_NEAR(grunk.get("z2").as<double>(), 4., 1e-14);
 }
 
-TEST(state, lua_operators_as_action_subtraction)
+TEST(state, operators_as_action_subtraction_lua)
 {
     grunk::state grunk;
 
@@ -173,7 +174,7 @@ TEST(state, lua_operators_as_action_subtraction)
     EXPECT_NEAR(grunk.get("z2").as<double>(),  0., 1e-14);
 }
 
-TEST(state, lua_operators_as_action_multiplication)
+TEST(state, operators_as_action_multiplication_lua)
 {
     grunk::state grunk;
 
@@ -189,7 +190,7 @@ TEST(state, lua_operators_as_action_multiplication)
     EXPECT_NEAR(grunk.get("z2").as<double>(), 4., 1e-14);
 }
 
-TEST(state, lua_operators_as_action_division)
+TEST(state, operators_as_action_division_lua)
 {
     grunk::state grunk;
 
@@ -205,7 +206,7 @@ TEST(state, lua_operators_as_action_division)
     EXPECT_NEAR(grunk.get("z2").as<double>(), 1. , 1e-14);
 }
 
-TEST(state, lua_operators_as_action_modulo)
+TEST(state, operators_as_action_modulo_lua)
 {
     grunk::state grunk;
 
@@ -221,7 +222,7 @@ TEST(state, lua_operators_as_action_modulo)
     EXPECT_EQ(grunk.get("z2").as<int>(),  9);
 }
 
-TEST(state, lua_operators_as_action_pow)
+TEST(state, operators_as_action_pow_lua)
 {
     grunk::state grunk;
 
@@ -237,7 +238,7 @@ TEST(state, lua_operators_as_action_pow)
     EXPECT_NEAR(grunk.get("z2").as<double>(), 27, 1e-14);
 }
 
-TEST(state, lua_operators_as_action_unm)
+TEST(state, operators_as_action_unm_lua)
 {
     grunk::state grunk;
 
@@ -252,7 +253,7 @@ TEST(state, lua_operators_as_action_unm)
     EXPECT_NEAR(grunk.get("z2").as<double>(), -3, 1e-14);
 }
 
-TEST(state, lua_operators_as_action_chaining)
+TEST(state, operators_as_action_chaining_lua)
 {
     grunk::state grunk;
 
@@ -279,6 +280,11 @@ public:
     {
         return m_value;
     }
+
+    MyScalar pow(double exponent) {
+        return ::pow(m_value, exponent);
+    }
+
     void set(double v) {
         m_value = v;
     }
@@ -292,7 +298,23 @@ MyScalar operator+(MyScalar const& l, MyScalar const& r) {
 
 } // anonymous namespace
 
-TEST(state, usertype_lua_ctor_as_action)
+TEST(state, usertype_ctor_as_action_cpp)
+{
+    grunk::state grunk;
+
+    grunk.register_type<MyScalar>("MyScalar",
+        sol::constructors<MyScalar(double)>()
+    );
+
+    //TODO:
+    // - 1. ctor as action with named feature arguments
+    // - 2. ctor as action with unnamed/constant feature arguments
+    // - 3. invoke ctor for creating independent input feature
+
+    ASSERT_TRUE(false);
+}
+
+TEST(state, usertype_ctor_as_action_lua)
 {
     grunk::state grunk;
 
@@ -324,7 +346,7 @@ TEST(state, usertype_lua_ctor_as_action)
     EXPECT_EQ(grunk.get_feature("x").value().as<MyScalar>().value(), 4.);
 }
 
-TEST(state, usertype_lua_operators_as_action)
+TEST(state, usertype_operators_as_action_lua)
 {
     grunk::state grunk;
 
@@ -353,7 +375,52 @@ TEST(state, usertype_lua_operators_as_action)
     EXPECT_NEAR(grunk.get("z2").as<MyScalar>().value(), 42., 1e-14);
 }
 
-TEST(state, usertype_lua_nonconst_memberfunction)
+TEST(state, usertype_method_as_action_cpp)
+{
+    // TODO
+    ASSERT_TRUE(false);
+}
+
+
+TEST(state, usertype_method_as_action_lua)
+{
+    grunk::state grunk;
+
+    grunk.register_type<MyScalar>("MyScalar",
+        sol::constructors<MyScalar(double)>(),
+        "pow", &MyScalar::pow,
+        "set", &MyScalar::set
+    );
+
+    grunk.eval(R"(
+        local x = MyScalar.new_feature(2)
+
+        -- test the "method as free function" syntax
+
+        local y = MyScalar.pow(x, 2)
+
+       y1 = y:value()
+       x:change_value():set(3)
+       y2 = y:value()
+
+        -- test the Feature:as syntax
+
+        local z = x:as(MyScalar).pow(3)
+
+        z1 = z:value()
+        x:change_value():set(2)
+        z2 = z:value()
+    )");
+
+    EXPECT_NEAR(grunk.get("y1").as<MyScalar>().value(), 4, 1e-14); // 2^2
+    EXPECT_NEAR(grunk.get("y2").as<MyScalar>().value(), 9, 1e-14); // 3^2
+
+    EXPECT_NEAR(grunk.get("z1").as<MyScalar>().value(),27, 1e-14); // 3^3
+    EXPECT_NEAR(grunk.get("z2").as<MyScalar>().value(), 8, 1e-14); // 2^3
+}
+
+/*TODO: this should ideally fail (non-const member function as action)
+TEST(state, usertype_nonconst_method_as_action_lua)
 {
     grunk::state grunk;
 
@@ -364,29 +431,43 @@ TEST(state, usertype_lua_nonconst_memberfunction)
 
     grunk.eval(R"(
         local x = MyScalar.new_feature(2.)
-        -- x:set(13) would be the cooler syntax. TODO: Make it possible!
-        MyScalar.set(x, grunk.feature(13.))
+        MyScalar.set(x, 13.)
+        x:as(MyScalar).set(13.)
     )");
 }
+*/
 
-//TO DO
-//  - enable easy syntax of calling methods on features containing class instances
-//  - test member functions as action
-//  - test data member as action
-//  - test usertype actions also from cpp
-//  - docstrings
-//  - decorate math functions?
-//  - move this to a branch of grunk with CI
-//  - add option to grunk::eval to ammend variable names as feature ids after evaluation
-//  - idea for code structure:
-//      - header-only core library (optionally with parallelization)
-//      - option for plugins (requires boost) and recipes
-//      - option for python bindings
-//  - add grunk::Recipe class with serialization to mixed yaml and lua
-//  - think about good syntax for scripts and expressions
-//  - registration syntax as before with reflect
-//  - copy plugin interface
-//  - python bindings
-//  - code generator
-//  - static actions taking dynamic features
-//  - parallelization with option to disable
+/*
+ *
+TO DO
+  - fix windows CI
+  - test ctor functions also in C++ API
+  - test member functions as action
+  - test data member as action (read-only)
+  - support operators in C++ API also?
+  - test usertype actions also from cpp
+  - docstrings
+  - think about good syntax for scripts and expressions
+  - add option to grunk::eval to ammend variable names as feature ids after evaluation
+  - add grunk::Recipe class with serialization to mixed yaml and lua
+  - registration syntax as before with reflect
+  - idea to prevent non-const member functions:
+      - wrap registration of method in TypeFactory like in reflect, with a add_member_function method
+      - use metaprogramming alchemistry to determine if argument to add_member_function is non-const member function
+      - if yes, register a method that throws an exception or returns an invalid sol::protected_function_result
+  - copy plugin interface
+  - at least function introspection to get default values and parameter names?
+  - code generator
+  - python bindings
+  - static actions taking dynamic features
+  - parallelization with option to disable
+  - decorate math functions?
+  - enable easy syntax of calling methods on features containing class instances
+      - e.g. `x:set(42)` instead of `MyScalar.set(x, 42)`
+      - e.g. `x:method(MyScalar.set)(39)
+  - idea for code structure:
+      - header-only core library (optionally with parallelization)
+      - option for plugins (requires boost) and recipes
+      - option for python bindings
+
+*/

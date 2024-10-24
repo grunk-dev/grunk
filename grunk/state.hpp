@@ -149,6 +149,7 @@ private:
             "is_valid", &DynamicFeature::is_valid,
             "value", &DynamicFeature::value,
             "compute_node", &DynamicFeature::compute_node,
+            "as", static_cast<sol::table(DynamicFeature::*)(sol::table) const>(&DynamicFeature::as),
             "__add", make_dynamic_action(lua, g["_dynamic_add"]),
             "__sub", make_dynamic_action(lua, g["_dynamic_sub"]),
             "__mul", make_dynamic_action(lua, g["_dynamic_mul"]),
