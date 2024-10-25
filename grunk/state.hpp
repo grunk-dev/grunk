@@ -135,8 +135,7 @@ public:
         return grunk::feature(sol::make_object(lua, value));
     }
 
-    template <>
-    DynamicFeature feature<sol::object>(sol::object const& value) const
+    DynamicFeature feature(sol::object const& value) const
     {
         return grunk::feature(value);
     }
