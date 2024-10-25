@@ -1,0 +1,11 @@
+uses:
+  grunk: 0.3.2
+  grocc: 0.1.4
+  tigl: 0.1.0
+  geo: 0.2.0
+parameters:
+  w: !<double> 1
+  h: !<double> 2
+  d: !<double> 3
+steps:
+  - !<grocc::BRepPrimAPI_MakeBox> [[box], [w, h, d]]
