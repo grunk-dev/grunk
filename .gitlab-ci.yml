@@ -168,7 +168,7 @@ test-windows-python:
   tags:
   - windows
   - docker
-  image: stabletec/build-core:windows-2019
+  image: stabletec/build-core:windows-ltsc2019-vs2019
   stage: test
   before_script:
   - python -m venv venv
