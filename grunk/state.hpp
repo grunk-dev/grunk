@@ -8,7 +8,7 @@
 
 namespace {
 
-sol::object make_dynamic_action(sol::state& lua, sol::protected_function const& func) 
+sol::object make_dynamic_action(sol::state const& lua, sol::protected_function const& func)
 {
     auto decorated_function = [func](sol::variadic_args va) -> grunk::DynamicFeature
     {
@@ -37,10 +37,43 @@ sol::object make_dynamic_action(sol::state& lua, sol::protected_function const& 
     return sol::make_object(lua, sol::as_function(decorated_function));
 }
 
+/**
+ *
+ * @brief Accesses a nested element in a sol::table by traversing keys separated by dots in the given string.
+ *
+ * @param table The sol::table to be traversed.
+ * @param str The dot-separated string representing the path of nested keys.
+ * @return sol::object The nested object in the table at the specified path, or sol::nil if the path is invalid.
+ *
+ * This function splits the string str at each dot (.), then uses each part as a key for accessing nested tables in table.
+ * For example, if str is "usertype.method", this function will return the result of table["usertype"]["method"].
+ *
+ * @note This function assumes the table contains only sol::table elements at each nested level except for the final key.
+ * If any key is invalid or does not exist, sol::nil is returned.
+ *
+ */
+sol::object lookup_nested(sol::table const& table, std::string const& str) {
+    sol::object current = table;
+    std::istringstream ss(str);
+    std::string key;
+
+    while (std::getline(ss, key, '.')) {
+        if (current.get_type() != sol::type::table) {
+            return sol::nil;
+        }
+        current = current.as<sol::table>()[key];
+    }
+    return current;
+}
+
 
 } // anonymous namespace 
 
 namespace grunk {
+
+// Tag to tell grunk::state::feature to default-construct a type
+struct default_construct_t {};
+constexpr const default_construct_t default_construct;
 
 class state
 {
@@ -77,7 +110,8 @@ public:
 
     }
 
-    void set_functions_are_actions(bool use_actions) {
+    void set_functions_are_actions(bool use_actions)
+    {
         if (use_actions) {
             active_env[sol::metatable_key]["__index"] = decorated_env;
         } else {
@@ -85,18 +119,69 @@ public:
         }
     }
 
+    sol::table get_type(std::string const& keys_nested) const
+    {
+        return lookup_nested(original_env, keys_nested);
+    }
+
+    sol::protected_function get_function(std::string const& keys_nested) const
+    {
+        return lookup_nested(original_env, keys_nested);
+    }
+
     template <typename T>
-    DynamicFeature feature(T const& value) {
+    DynamicFeature feature(T const& value) const
+    {
         return grunk::feature(sol::make_object(lua, value));
     }
 
+    template <>
+    DynamicFeature feature<sol::object>(sol::object const& value) const
+    {
+        return grunk::feature(value);
+    }
+
     template <typename... Args>
-    DynamicFeature action(std::string const& function, Args&&... args) {
-        sol::protected_function const f = original_env[function];
+    DynamicFeature feature(std::string const& type_name, Args&&... args) const
+    {
+        sol::table usertype = lookup_nested(original_env, type_name);
+        return feature(usertype, std::forward<Args>(args)...);
+    }
+
+    DynamicFeature feature(std::string const& type_name, default_construct_t)
+    {
+        sol::table usertype = lookup_nested(original_env, type_name);
+        return feature(usertype);
+    }
+
+    template <typename... Args>
+    DynamicFeature feature(sol::table usertype, Args&&... args) const
+    {
+        sol::protected_function const ctor = usertype["new"];
+        sol::protected_function_result ret = ctor(std::forward<Args>(args)...);
+        if (!ret.valid()) {
+            sol::error err = ret;
+            throw std::runtime_error(std::string("Construction error: ") + err.what());
+        }
+        sol::object obj = ret[0];
+        return feature(obj);
+    }
+
+    template <typename... Args>
+    DynamicFeature action(std::string const& function, Args&&... args) const
+    {
+        sol::protected_function const f = lookup_nested(original_env, function);
         return grunk::action(f, std::forward<Args>(args)...).output();
     }
 
-    inline sol::object get(std::string const& key) {
+    template <typename... Args>
+    DynamicFeature action(sol::protected_function const& function, Args&&... args) const
+    {
+        return grunk::action(function, std::forward<Args>(args)...).output();
+    }
+
+    inline sol::object operator[](std::string const& key)
+    {
         return active_env[key];
     }
 
@@ -111,6 +196,7 @@ public:
     }
 
 private:
+
 
     inline void init() {
 
@@ -206,7 +292,7 @@ private:
                         sol::protected_function_result ret = ctor(args);
                         if (!ret.valid()) {
                             sol::error err = ret;
-                            throw std::logic_error(std::string("Construction error: ") + err.what());
+                            throw std::runtime_error(std::string("Construction error: ") + err.what());
                         }
                         sol::object obj = ret[0];
                         return grunk::feature(obj);

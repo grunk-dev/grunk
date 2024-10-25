@@ -22,7 +22,7 @@ TEST(state, free_function_registration)
         z = add(x,y)
         )"
     );
-    double z = grunk.get("z").as<double>();
+    double z = grunk["z"].as<double>();
     ASSERT_NEAR(z, 42, 1e-14);
 }
 
@@ -134,11 +134,11 @@ TEST(state, free_function_feature_id_lua)
 
     EXPECT_EQ(grunk.get_feature("x").id(), "x");
     EXPECT_EQ(grunk.get_feature("y").id(), "y");
-    EXPECT_EQ(grunk.get("z_id1").as<std::string>(), "z");
-    EXPECT_EQ(grunk.get("z_id2").as<std::string>(), "horst");
+    EXPECT_EQ(grunk["z_id1"].as<std::string>(), "z");
+    EXPECT_EQ(grunk["z_id2"].as<std::string>(), "horst");
 
-    EXPECT_NEAR(grunk.get("z_value1").as<double>(), 3., 1e-14);
-    EXPECT_NEAR(grunk.get("z_value2").as<double>(), 43., 1e-14);
+    EXPECT_NEAR(grunk["z_value1"].as<double>(), 3., 1e-14);
+    EXPECT_NEAR(grunk["z_value2"].as<double>(), 43., 1e-14);
 
 }
 
@@ -154,8 +154,8 @@ TEST(state, operators_as_action_addition_lua)
         x:set_value(2.)
         z2 = z:value()
     )");
-    EXPECT_NEAR(grunk.get("z1").as<double>(), 3., 1e-14);
-    EXPECT_NEAR(grunk.get("z2").as<double>(), 4., 1e-14);
+    EXPECT_NEAR(grunk["z1"].as<double>(), 3., 1e-14);
+    EXPECT_NEAR(grunk["z2"].as<double>(), 4., 1e-14);
 }
 
 TEST(state, operators_as_action_subtraction_lua)
@@ -170,8 +170,8 @@ TEST(state, operators_as_action_subtraction_lua)
         x:set_value(2.)
         z2 = z:value()
     )");
-    EXPECT_NEAR(grunk.get("z1").as<double>(), -1., 1e-14);
-    EXPECT_NEAR(grunk.get("z2").as<double>(),  0., 1e-14);
+    EXPECT_NEAR(grunk["z1"].as<double>(), -1., 1e-14);
+    EXPECT_NEAR(grunk["z2"].as<double>(),  0., 1e-14);
 }
 
 TEST(state, operators_as_action_multiplication_lua)
@@ -186,8 +186,8 @@ TEST(state, operators_as_action_multiplication_lua)
         x:set_value(2.)
         z2 = z:value()
     )");
-    EXPECT_NEAR(grunk.get("z1").as<double>(), 2., 1e-14);
-    EXPECT_NEAR(grunk.get("z2").as<double>(), 4., 1e-14);
+    EXPECT_NEAR(grunk["z1"].as<double>(), 2., 1e-14);
+    EXPECT_NEAR(grunk["z2"].as<double>(), 4., 1e-14);
 }
 
 TEST(state, operators_as_action_division_lua)
@@ -202,8 +202,8 @@ TEST(state, operators_as_action_division_lua)
         x:set_value(2.)
         z2 = z:value()
     )");
-    EXPECT_NEAR(grunk.get("z1").as<double>(), 0.5, 1e-14);
-    EXPECT_NEAR(grunk.get("z2").as<double>(), 1. , 1e-14);
+    EXPECT_NEAR(grunk["z1"].as<double>(), 0.5, 1e-14);
+    EXPECT_NEAR(grunk["z2"].as<double>(), 1. , 1e-14);
 }
 
 TEST(state, operators_as_action_modulo_lua)
@@ -218,8 +218,8 @@ TEST(state, operators_as_action_modulo_lua)
         x:set_value(33)
         z2 = z:value()
     )");
-    EXPECT_EQ(grunk.get("z1").as<int>(), 17);
-    EXPECT_EQ(grunk.get("z2").as<int>(),  9);
+    EXPECT_EQ(grunk["z1"].as<int>(), 17);
+    EXPECT_EQ(grunk["z2"].as<int>(),  9);
 }
 
 TEST(state, operators_as_action_pow_lua)
@@ -234,8 +234,8 @@ TEST(state, operators_as_action_pow_lua)
         x:set_value(3.)
         z2 = z:value()
     )");
-    EXPECT_NEAR(grunk.get("z1").as<double>(),  8, 1e-14);
-    EXPECT_NEAR(grunk.get("z2").as<double>(), 27, 1e-14);
+    EXPECT_NEAR(grunk["z1"].as<double>(),  8, 1e-14);
+    EXPECT_NEAR(grunk["z2"].as<double>(), 27, 1e-14);
 }
 
 TEST(state, operators_as_action_unm_lua)
@@ -249,8 +249,8 @@ TEST(state, operators_as_action_unm_lua)
         x:set_value(3.)
         z2 = z:value()
     )");
-    EXPECT_NEAR(grunk.get("z1").as<double>(), -2, 1e-14);
-    EXPECT_NEAR(grunk.get("z2").as<double>(), -3, 1e-14);
+    EXPECT_NEAR(grunk["z1"].as<double>(), -2, 1e-14);
+    EXPECT_NEAR(grunk["z2"].as<double>(), -3, 1e-14);
 }
 
 TEST(state, operators_as_action_chaining_lua)
@@ -265,8 +265,8 @@ TEST(state, operators_as_action_chaining_lua)
         x:set_value(3.)
         z2 = z:value()
     )");
-    EXPECT_NEAR(grunk.get("z1").as<double>(), -7./25., 1e-14);
-    EXPECT_NEAR(grunk.get("z2").as<double>(), -6./18., 1e-14);
+    EXPECT_NEAR(grunk["z1"].as<double>(), -7./25., 1e-14);
+    EXPECT_NEAR(grunk["z2"].as<double>(), -6./18., 1e-14);
 }
 
 
@@ -296,10 +296,12 @@ MyScalar operator+(MyScalar const& l, MyScalar const& r) {
     return MyScalar(l.value() + r.value());
 }
 
+struct DefaultConstructible {};
+
 } // anonymous namespace
 
-/*
-TEST(state, usertype_ctor_as_action_cpp)
+
+TEST(state, usertype_ctor_cpp)
 {
     grunk::state grunk;
 
@@ -307,14 +309,71 @@ TEST(state, usertype_ctor_as_action_cpp)
         sol::constructors<MyScalar(double)>()
     );
 
-    //TODO:
-    // - 1. ctor as action with named feature arguments
-    // - 2. ctor as action with unnamed/constant feature arguments
-    // - 3. invoke ctor for creating independent input feature
+    grunk.register_type<DefaultConstructible>("DefaultConstructible");
 
-    ASSERT_TRUE(false);
+    {
+        // string overloads
+        auto a = grunk.feature(1.);
+        auto x = grunk.action("MyScalar.new", a);       // ctor as action: x depends on a
+        auto y = grunk.action("MyScalar.new", 2.);      // ctor as action with argument conversion from contant: y depends on Feature(2.)
+        auto z = grunk.feature("MyScalar", 3.);          // forwards ctor args to grunk::feature: z is independent feature
+
+        EXPECT_EQ(x.node_pointer()->get_parents().size(), 1);
+        EXPECT_EQ(y.node_pointer()->get_parents().size(), 1);
+        EXPECT_EQ(z.node_pointer()->get_parents().size(), 0);
+
+        EXPECT_EQ(x.value().as<MyScalar>().value(), 1.);
+        EXPECT_EQ(y.value().as<MyScalar>().value(), 2.);
+        EXPECT_EQ(z.value().as<MyScalar>().value(), 3.);
+
+        a.set_value(4.);
+        EXPECT_EQ(x.value().as<MyScalar>().value(), 4.);
+    }
+
+    {
+        // sol::function/sol::table overloads
+
+        // gets the original undecorated type and constructor function
+        sol::table MyScalarT = grunk.get_type("MyScalar");
+        sol::protected_function MyScalarCtor = grunk.get_function("MyScalar.new");
+
+        auto a = grunk.feature(1.);
+        auto x = grunk.action(MyScalarCtor, a);       // ctor as action: x depends on a
+        auto y = grunk.action(MyScalarCtor, 2.);      // ctor as action with argument conversion from contant: y depends on Feature(2.)
+        auto z = grunk.feature(MyScalarT, 3.);        // forwards ctor args to grunk::feature: z is independent feature
+
+        EXPECT_EQ(x.node_pointer()->get_parents().size(), 1);
+        EXPECT_EQ(y.node_pointer()->get_parents().size(), 1);
+        EXPECT_EQ(z.node_pointer()->get_parents().size(), 0);
+
+        EXPECT_EQ(x.value().as<MyScalar>().value(), 1.);
+        EXPECT_EQ(y.value().as<MyScalar>().value(), 2.);
+        EXPECT_EQ(z.value().as<MyScalar>().value(), 3.);
+
+        a.set_value(4.);
+        EXPECT_EQ(x.value().as<MyScalar>().value(), 4.);
+    }
+
+
+    {
+        // make sure grunk.feature can accept both strings as values, as well as default constructible types represented by string
+
+        // this is a Feature containing a string
+        auto z1 = grunk.feature("DefaultConstructible");
+        EXPECT_TRUE(z1.value().is<std::string>());
+
+        // method 1: this is a Feature containing a DefaultConstructible instance
+        sol::table DefaultConstructibleT = grunk.get_type("DefaultConstructible");
+        auto z2 = grunk.feature(DefaultConstructibleT);
+        EXPECT_TRUE(z2.value().is<DefaultConstructible>());
+
+        // method 3: this is also a feature containing a DefaultConstructile instance
+        auto z3 = grunk.feature("DefaultConstructible", grunk::default_construct);
+        EXPECT_TRUE(z2.value().is<DefaultConstructible>());
+    }
+
 }
-*/
+
 
 TEST(state, usertype_ctor_as_action_lua)
 {
@@ -343,8 +402,8 @@ TEST(state, usertype_ctor_as_action_lua)
     EXPECT_EQ(grunk.get_feature("y").value().as<MyScalar>().value(), 2.);
     EXPECT_EQ(grunk.get_feature("z").value().as<MyScalar>().value(), 3.);
 
-    EXPECT_EQ(grunk.get("x1").as<MyScalar>().value(), 1.);
-    EXPECT_EQ(grunk.get("x2").as<MyScalar>().value(), 4.);
+    EXPECT_EQ(grunk["x1"].as<MyScalar>().value(), 1.);
+    EXPECT_EQ(grunk["x2"].as<MyScalar>().value(), 4.);
     EXPECT_EQ(grunk.get_feature("x").value().as<MyScalar>().value(), 4.);
 }
 
@@ -373,8 +432,8 @@ TEST(state, usertype_operators_as_action_lua)
         z2 = z:value()
     )");
 
-    EXPECT_NEAR(grunk.get("z1").as<MyScalar>().value(), 5., 1e-14);
-    EXPECT_NEAR(grunk.get("z2").as<MyScalar>().value(), 42., 1e-14);
+    EXPECT_NEAR(grunk["z1"].as<MyScalar>().value(), 5., 1e-14);
+    EXPECT_NEAR(grunk["z2"].as<MyScalar>().value(), 42., 1e-14);
 }
 
 /*
@@ -415,11 +474,11 @@ TEST(state, usertype_method_as_action_lua)
         z2 = z:value()
     )");
 
-    EXPECT_NEAR(grunk.get("y1").as<MyScalar>().value(), 4, 1e-14); // 2^2
-    EXPECT_NEAR(grunk.get("y2").as<MyScalar>().value(), 9, 1e-14); // 3^2
+    EXPECT_NEAR(grunk["y1"].as<MyScalar>().value(), 4, 1e-14); // 2^2
+    EXPECT_NEAR(grunk["y2"].as<MyScalar>().value(), 9, 1e-14); // 3^2
 
-    EXPECT_NEAR(grunk.get("z1").as<MyScalar>().value(),27, 1e-14); // 3^3
-    EXPECT_NEAR(grunk.get("z2").as<MyScalar>().value(), 8, 1e-14); // 2^3
+    EXPECT_NEAR(grunk["z1"].as<MyScalar>().value(),27, 1e-14); // 3^3
+    EXPECT_NEAR(grunk["z2"].as<MyScalar>().value(), 8, 1e-14); // 2^3
 }
 
 /*TODO: this should ideally fail (non-const member function as action)
@@ -441,13 +500,12 @@ TEST(state, usertype_nonconst_method_as_action_lua)
 */
 
 /*
- *
+
 TO DO
-  - docstrings
-  - test ctor functions also in C++ API
   - test member functions as action in C++ API
   - test data member as action (read-only) in LUA and C++
   - think about good syntax for scripts and expressions (having mixed yaml-lua in mind)
+  - docstrings + documentation
   - registration syntax as before with reflect
   - idea to prevent non-const member functions:
       - wrap registration of method in TypeFactory like in reflect, with a add_member_function method
