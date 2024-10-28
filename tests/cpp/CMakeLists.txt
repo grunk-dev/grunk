@@ -14,6 +14,7 @@ include(AddGoogleTest)
 set(TESTSOURCES
   testmain.cpp
   state.cpp
+  operators
 )
 
 

@@ -95,6 +95,8 @@ private:
 
 using DynamicFeature = Feature<object>;
 
+
+//TODO: deprecate this? Whats the point?
 template <typename T>
 Feature<T> feature(T const& v)
 {
@@ -130,5 +132,13 @@ namespace details {
     };
 
 } // namespace details
+
+
+// define operators
+
+template <typename L, typename R>
+Feature<decltype(std::declval<L>() + std::declval<R>())> operator+(Feature<L> const& l, Feature<R> const& r) {
+    return grunk::action([](L const& lhs, R const& rhs){ return lhs+rhs; }, l, r).output();
+}
 
 } // namespace grunk
