@@ -400,8 +400,8 @@ TO DO
       - e.g. `x:set(42)` instead of `MyScalar.set(x, 42)`
       - e.g. `x:method(MyScalar.set)(39)
   - idea for code structure:
-      - header-only core library (optionally with parallelization)
-      - option for plugins (requires boost) and recipes
-      - option for python bindings
+      - header-only core library (optionally with parallelization. Then requires some threadpool lib)
+      - option for plugins (requires boost) and recipes (requires yaml-cpp)
+      - option for python bindings (requires pybind11)
 
 */

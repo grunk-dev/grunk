@@ -3,12 +3,13 @@
 #include "object.hpp"
 #include "feature.hpp"
 #include "action.hpp"
+
 #include <sol/sol.hpp>
 #include <stdexcept>
 
 namespace {
 
-sol::object make_dynamic_action(sol::state const& lua, sol::protected_function const& func)
+grunk::object make_dynamic_action(sol::state const& lua, sol::protected_function const& func)
 {
     auto decorated_function = [func](sol::variadic_args va) -> grunk::DynamicFeature
     {
@@ -20,7 +21,7 @@ sol::object make_dynamic_action(sol::state const& lua, sol::protected_function c
         std::transform(
             va.begin(), va.end(), 
             std::back_inserter(args), 
-            [](sol::object const& obj) {
+            [](grunk::object const& obj) {
                 if (obj.is<grunk::DynamicFeature>()) {
                     return obj.as<grunk::DynamicFeature>();
                 } else {
@@ -29,9 +30,6 @@ sol::object make_dynamic_action(sol::state const& lua, sol::protected_function c
             }
         );
 
-        //TODO: For testing only two arguments.
-        //Add a dynamic action version, that accepts a vector of DynamicFeatures and 
-        //passes them to a sol::protected_function/the eval_and_unwrap lambda?
         return grunk::action(func, args).output();
     };
     return sol::make_object(lua, sol::as_function(decorated_function));
@@ -132,10 +130,10 @@ public:
     template <typename T>
     DynamicFeature feature(T const& value) const
     {
-        return grunk::feature(sol::make_object(lua, value));
+        return grunk::feature(object(sol::make_object(lua, value)));
     }
 
-    DynamicFeature feature(sol::object const& value) const
+    DynamicFeature feature(object const& value) const
     {
         return grunk::feature(value);
     }
@@ -202,7 +200,7 @@ private:
         auto g = lua.create_named_table("grunk");
 
         g.set_function("feature", [](sol::object obj) -> DynamicFeature {
-            return grunk::feature(obj);
+            return grunk::feature(object(obj));
         });
 
         // define some operators dynamically
@@ -235,8 +233,7 @@ private:
             "value", &DynamicFeature::value,
             "compute_node", &DynamicFeature::compute_node,
             "as", static_cast<sol::table(DynamicFeature::*)(sol::table) const>(&DynamicFeature::as),
-            "__add", &operator+<DynamicFeature const&, DynamicFeature const&>,
-            // "__add", make_dynamic_action(lua, g["_dynamic_add"]),
+            "__add", make_dynamic_action(lua, g["_dynamic_add"]), //TODO: Why can't I use &grunk::operator+<DynamicFeature const&, DynamicFeature const&>
             "__sub", make_dynamic_action(lua, g["_dynamic_sub"]),
             "__mul", make_dynamic_action(lua, g["_dynamic_mul"]),
             "__div", make_dynamic_action(lua, g["_dynamic_div"]),
@@ -294,7 +291,7 @@ private:
                             sol::error err = ret;
                             throw std::runtime_error(std::string("Construction error: ") + err.what());
                         }
-                        sol::object obj = ret[0];
+                        object obj = ret[0];
                         return grunk::feature(obj);
                     };
                 }

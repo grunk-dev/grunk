@@ -60,3 +60,5 @@ inline ResultHolder<ActionDynamic> action(sol::protected_function const& functio
 }
 
 } // namespace grunk
+
+#include "math.hpp"

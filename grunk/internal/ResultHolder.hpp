@@ -49,9 +49,9 @@ public:
     template <int i=0>
     decltype(auto) output() const {
         if constexpr ( details::is_tuple_v<result_type> ) {
-            return std::get<i>(result);
+            return Feature(std::get<i>(result));
         } else {
-            return result;
+            return Feature(result);
         }
     }
 

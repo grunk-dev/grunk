@@ -12,9 +12,15 @@ public:
     FeatureBase(T const& v)
     : parametric::param<T>(v, "") {}
 
+    explicit FeatureBase(parametric::param<T> const& p) : parametric::param<T>(p) {}
+
     Derived& with_id(std::string const& id) {
         this->set_id(id);
         return static_cast<Derived&>(*this);
+    }
+
+    bool operator==(Derived const& other) {
+        return this->node_pointer() == other.node_pointer();
     }
 };
 
@@ -25,9 +31,12 @@ struct Feature : public FeatureBase<Feature<T>, T>
     : FeatureBase<Feature<T>, T>(v)
     {}
 
+    explicit Feature(parametric::param<T> const& p) : FeatureBase<Feature<T>,T>(p) {}
+
     void set_value(T const& t) {
         this->change_value() = t;
     }
+
 };
 
 template <>
@@ -40,6 +49,11 @@ public:
     Feature(object const& v)
      : Base(v)
      , lua(v.lua_state())
+    {}
+
+    explicit Feature(parametric::param<object> const& p)
+     : FeatureBase<Feature<object>,object>(p)
+     , lua(nullptr) //TODO: This might be a problem. But we can't extract the lua state from the object without evaluating
     {}
 
     template <typename T>
@@ -76,10 +90,6 @@ public:
         sol::state_view l(lua);
         sol::table usertype_table = l[usertype];
         return as(usertype_table);
-    }
-
-    bool operator==(Feature const& other) {
-        return this->node_pointer() == other.node_pointer();
     }
 
 private:
@@ -127,18 +137,11 @@ namespace details {
         if constexpr (details::is_feature_v<T>){
             return arg;
         } else {
-            return grunk::feature<T>(arg); //TODO: Until we properly support unnamed features, this will be an empty string
+            return grunk::feature<T>(arg);
         }
     };
 
 } // namespace details
 
-
-// define operators
-
-template <typename L, typename R>
-Feature<decltype(std::declval<L>() + std::declval<R>())> operator+(Feature<L> const& l, Feature<R> const& r) {
-    return grunk::action([](L const& lhs, R const& rhs){ return lhs+rhs; }, l, r).output();
-}
 
 } // namespace grunk
