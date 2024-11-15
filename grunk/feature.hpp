@@ -61,7 +61,10 @@ public:
         if constexpr (std::is_same_v<T, object>) {
             this->change_value() = t;
         } else {
-            check_lua();
+            if (lua == nullptr) {
+                // need to evalatue
+                lua = value().lua_state();
+            }
             this->change_value() = sol::make_object(lua, t);
         }
     }
@@ -88,7 +91,7 @@ public:
     {
         check_lua();
         sol::state_view l(lua);
-        sol::table usertype_table = l[usertype];
+        sol::table usertype_table = l["environments"]["active"][usertype];
         return as(usertype_table);
     }
 

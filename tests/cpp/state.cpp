@@ -309,13 +309,44 @@ TEST(state, usertype_operators_as_action_lua)
     EXPECT_NEAR(grunk["z2"].as<MyScalar>().value(), 42., 1e-14);
 }
 
-/*
 TEST(state, usertype_method_as_action_cpp)
 {
-    // TODO
-    ASSERT_TRUE(false);
+    grunk::state grunk;
+
+    grunk.register_type<MyScalar>("MyScalar",
+        sol::constructors<MyScalar(double)>(),
+        "pow", &MyScalar::pow,
+        "set", &MyScalar::set
+    );
+
+    auto x = grunk.action("MyScalar.new", 2.);
+
+    // test the "method as free function" syntax
+    {
+        // colon-syntax
+        auto y = grunk.action("MyScalar:pow", x, 3);
+        EXPECT_NEAR(y.value().as<MyScalar>().value(), 8, 1e-14);
+        x.set_value(MyScalar(3));
+        EXPECT_NEAR(y.value().as<MyScalar>().value(), 27, 1e-14);
+    }
+    {
+        // dot-syntax
+        auto y = grunk.action("MyScalar.pow", x, 3);
+        EXPECT_NEAR(y.value().as<MyScalar>().value(), 27, 1e-14);
+        x.set_value(MyScalar(2));
+        EXPECT_NEAR(y.value().as<MyScalar>().value(), 8, 1e-14);
+    }
+
+    // test the Feature::as syntax
+    grunk::object z = x.as("MyScalar")["pow"](3);
+    ASSERT_TRUE(z.valid());
+    ASSERT_TRUE(z.is<grunk::DynamicFeature>());
+    auto zf = z.as<grunk::DynamicFeature>();
+    EXPECT_NEAR(zf.value().as<MyScalar>().value(), 8, 1e-14);
+    x.set_value(MyScalar(3));
+    EXPECT_NEAR(zf.value().as<MyScalar>().value(), 27, 1e-14);
+
 }
-*/
 
 TEST(state, usertype_method_as_action_lua)
 {
@@ -375,15 +406,16 @@ TEST(state, usertype_nonconst_method_as_action_lua)
 /*
 
 TO DO
-  - test member functions as action in C++ API
-  - test data member as action (read-only) in LUA and C++
-  - think about good syntax for scripts and expressions (having mixed yaml-lua in mind)
-  - docstrings + documentation
+  - Allow constants in expressions involving grunk::objects and grunk::Features
   - registration syntax as before with reflect
   - idea to prevent non-const member functions:
       - wrap registration of method in TypeFactory like in reflect, with a add_member_function method
       - use metaprogramming alchemistry to determine if argument to add_member_function is non-const member function
       - if yes, register a method that throws an exception or returns an invalid sol::protected_function_result
+  - test data member as action (read-only) in LUA and C++
+  - test (nested) enums
+  - think about good syntax for scripts and expressions (having mixed yaml-lua in mind)
+  - docstrings + documentation
   - copy plugin interface
   - conan test_package and plugin tests in gtest
   - add option to grunk::eval to ammend variable names as feature ids after evaluation
@@ -395,7 +427,6 @@ TO DO
   - python bindings
   - static actions taking dynamic features
   - parallelization with option to disable
-  - decorate math functions?
   - enable easy syntax of calling methods on features containing class instances
       - e.g. `x:set(42)` instead of `MyScalar.set(x, 42)`
       - e.g. `x:method(MyScalar.set)(39)

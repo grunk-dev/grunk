@@ -6,6 +6,7 @@
 
 #include <sol/sol.hpp>
 #include <stdexcept>
+#include <regex>
 
 namespace {
 
@@ -36,34 +37,42 @@ grunk::object make_dynamic_action(sol::state const& lua, sol::protected_function
 }
 
 /**
- *
- * @brief Accesses a nested element in a sol::table by traversing keys separated by dots in the given string.
+ * @brief Accesses a nested element in a sol::table by traversing keys separated by dots (.) or colons (:).
  *
  * @param table The sol::table to be traversed.
- * @param str The dot-separated string representing the path of nested keys.
- * @return sol::object The nested object in the table at the specified path, or sol::nil if the path is invalid.
+ * @param str The string representing the path of nested keys, separated by dots (.) or colons (:).
+ * @return sol::object The nested object in the table at the specified path.
  *
- * This function splits the string str at each dot (.), then uses each part as a key for accessing nested tables in table.
- * For example, if str is "usertype.method", this function will return the result of table["usertype"]["method"].
+ * This function splits the string `str` at each dot (.) or colon (:), then uses each part as a key for accessing
+ * nested tables in `table`. If any key is invalid or does not exist, an exception is thrown.
  *
  * @note This function assumes the table contains only sol::table elements at each nested level except for the final key.
- * If any key is invalid or does not exist, sol::nil is returned.
- *
+ * If any key is invalid or does not exist, an exception is thrown.
  */
 sol::object lookup_nested(sol::table const& table, std::string const& str) {
     sol::object current = table;
-    std::istringstream ss(str);
-    std::string key;
 
-    while (std::getline(ss, key, '.')) {
+    // Use regex to split by both '.' and ':'
+    std::regex delimiter_regex(R"([.:])");
+    std::sregex_token_iterator iter(str.begin(), str.end(), delimiter_regex, -1);
+    std::sregex_token_iterator end;
+
+    for (; iter != end; ++iter) {
+        std::string key = *iter;
+
+        // Ensure current object is a table before accessing the next key
         if (current.get_type() != sol::type::table) {
-            return sol::nil;
+            std::string error = std::string("Could not resolve \"") + key +
+                                "\" in identifier \"" + str +
+                                "\". Are all types properly registered in the grunk state?";
+            throw std::runtime_error(error);
         }
+
         current = current.as<sol::table>()[key];
     }
+
     return current;
 }
-
 
 } // anonymous namespace 
 
@@ -95,6 +104,11 @@ public:
         sol::table active_env_meta = lua.create_table();
         active_env_meta["__index"] = decorated_env;
         active_env[sol::metatable_key] = active_env_meta;
+
+        lua["environments"] = lua.create_table();
+        lua["environments"]["original"] = original_env;
+        lua["environments"]["decorated"] = decorated_env;
+        lua["environments"]["active"] = active_env;
     }
 
     template <typename T, typename... Args>
