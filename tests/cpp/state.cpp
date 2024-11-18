@@ -406,7 +406,6 @@ TEST(state, usertype_nonconst_method_as_action_lua)
 /*
 
 TO DO
-  - Allow constants in expressions involving grunk::objects and grunk::Features
   - registration syntax as before with reflect
   - idea to prevent non-const member functions:
       - wrap registration of method in TypeFactory like in reflect, with a add_member_function method
@@ -414,8 +413,8 @@ TO DO
       - if yes, register a method that throws an exception or returns an invalid sol::protected_function_result
   - test data member as action (read-only) in LUA and C++
   - test (nested) enums
-  - think about good syntax for scripts and expressions (having mixed yaml-lua in mind)
   - docstrings + documentation
+  - think about good syntax for scripts and expressions (having mixed yaml-lua in mind)
   - copy plugin interface
   - conan test_package and plugin tests in gtest
   - add option to grunk::eval to ammend variable names as feature ids after evaluation
