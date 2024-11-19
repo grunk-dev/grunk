@@ -15,10 +15,34 @@ namespace grunk {
 struct default_construct_t {};
 constexpr const default_construct_t default_construct;
 
+/**
+ * @brief The state class is responsible for grunk's dynamic scripting capabilities and
+ * LUA interface. **Important:** A grunk instance must outlive any dynamic feature created
+ * from it!
+ *
+ * Use this class to register types and functions at runtime for use in a grunk recipe, instantiate
+ * dynamic features and actions and running LUA scripts.
+ *
+ * The state holds the LUA state as well as three environments, the original environment,
+ * the decorated environment and the active environment. The active environment is where variables
+ * are created when executing dynamic scripts. When running code in the active environment, symbols
+ * are looked up either in the decorated environment (default) or the original environment.
+ *
+ * The original environment is where registered types and functions are stored. The decorated environment
+ * has access to all symbols in the original environment, but every function and method is decorated as an
+ * action. Therefore, any code executed in the decorated environment will have dependency tracking, lazy
+ * evaluation and automatic invalidation enabled. Code run in the original environment simply uses the original
+ * undecorated symbols.
+ *
+ */
 class state
 {
 public:
 
+    /**
+     * @brief Creates a grunk::state and initializes the environments. It also registers some
+     * grunk symbols which can be used in a LUA script
+     */
     inline state()
      : original_env(lua, sol::create)
      , decorated_env(lua, sol::create)
@@ -26,7 +50,7 @@ public:
     {
         lua.open_libraries(sol::lib::base);
 
-        // register some basic funcitonality in dynamic type system
+        // register grunk symbols in dynamic type system
         init();
 
         // manipulates the decorated_env to look up missing symbols in the 
@@ -44,6 +68,17 @@ public:
         lua["environments"]["active"] = active_env;
     }
 
+    /**
+     * @brief register_type registers a type in the dynamic type system.
+     *
+     * This type is stored as a symbol in the original environment by default. Optionally,
+     * a sol::table can be specified. If it is specified, the type will be registered inside the
+     * sol::table. Note that only symbols stored in the original environment can be decorated.
+     *
+     * @param name Name of the type
+     * @param table optional table as a "namespace", where the type shall be registered.
+     * @returns a usertype_proxy<T> to allow method chaining
+     */
     template <typename T>
     auto register_type(std::string const& name, std::optional<sol::table> table = std::nullopt)
     {
@@ -53,6 +88,18 @@ public:
         return usertype_proxy<T>{table->new_usertype<T>(name)};
     }
 
+    /**
+     * @brief register_function registers a function in the dynamic type system.
+     *
+     * This function is stored as a symbol in the original environment by default. Optionally,
+     * a sol::table can be specified. It it is specified, the type will be registered inside the
+     * sol::table. Note that only symobls stored in the original environment can be decorated.
+     *
+     * @param name Name of the function
+     * @param fun The function to be registered. This can be a function pointer, a functor or a
+     *            lambda expression
+     * @param table optional table as a "namespace", where the type shall be registered.
+     */
     template <typename Func>
     void register_function(std::string const& name, Func&& fun, std::optional<sol::table> table = std::nullopt)
     {
@@ -62,6 +109,15 @@ public:
         table->set_function(name, std::forward<Func>(fun));
     }
 
+    /**
+     * @brief set_functions_are_actions allow you to specify if symbols are to be looked up in
+     * the original environment (functions are evaluated as is) or in the decorated environment
+     * (functions and methods are decorated with an action). By default, symbols are looked up
+     * in the decorated environment.
+     *
+     * @param use_actions set to true, if symbols should be looked up in the decorated environment,
+     *        false otherwise
+     */
     void set_functions_are_actions(bool use_actions)
     {
         if (use_actions) {
@@ -71,40 +127,92 @@ public:
         }
     }
 
+    /**
+     * @brief get_type returns a type based on a nested string of keys. The key is assumed to be seperated
+     * using either dots (.) or colons (:). get_type("foo.bar.baz") would look up original_env["foo"]["bar"]["baz"].
+     * @param keys_nested A string of nested keys
+     * @return A sol::table representing the type
+     */
     sol::table get_type(std::string const& keys_nested) const
     {
         return lookup_nested(original_env, keys_nested);
     }
 
+    /**
+     * @brief get_function returns a function based on a nested string of keys. The key is assumed to be
+     * seperated using either dots (.) or colons (:). get_function("foo.bar:baz") would lookup
+     * original_env["foo"]["bar"]["baz"].
+     * @param keys_nested A string of nested keys
+     * @return A sol::protected_function
+     */
     sol::protected_function get_function(std::string const& keys_nested) const
     {
         return lookup_nested(original_env, keys_nested);
     }
 
+    /**
+     * @brief feature Creates a new dynamic feature wrapping a value
+     * @param value The value to be wrapped
+     * @return  a DynamicFeature instance
+     */
     template <typename T>
     DynamicFeature feature(T const& value) const
     {
         return grunk::feature(object(sol::make_object(lua, value)));
     }
 
+    /**
+     * @brief feature Creates a new dynamic feature wrapping an existing
+     * grunk::object
+     * @param value The grunk::object
+     * @return a DynamicFeature instance
+     */
     DynamicFeature feature(object const& value) const
     {
         return grunk::feature(value);
     }
 
+    /**
+     * @brief feature Creates a new dynamic feature by invoking the registered
+     * constructor/new-method with the provided constructor arguments
+     * @param type_name The name of the type
+     * @param args The constructor arguments
+     * @return a DynamicFeature instance
+     */
     template <typename... Args>
     DynamicFeature feature(std::string const& type_name, Args&&... args) const
     {
-        sol::table usertype = lookup_nested(original_env, type_name);
+        sol::table usertype = get_type(type_name);
         return feature(usertype, std::forward<Args>(args)...);
     }
 
-    DynamicFeature feature(std::string const& type_name, default_construct_t)
+    /**
+     * @brief feature Creates a new dynamic feature by invoking the default
+     * constructor of the type, if it exists.
+     *
+     * This function uses a tag-dispatch method to avoid ambiguity with the templated
+     * grunk::feature method that constructs a DynamicFeature wrapping a string.
+     *
+     * Use it like this: auto x = grunk.feature("foo", grunk::default_construct);
+     *
+     * @param type_name The name of the type
+     * @param default_construct The default_construct tag.
+     * @return A DynamicFeature instance
+     */
+    DynamicFeature feature(std::string const& type_name, default_construct_t default_construct)
     {
-        sol::table usertype = lookup_nested(original_env, type_name);
+        sol::table usertype = get_type(type_name);
         return feature(usertype);
     }
 
+    /**
+     * @brief feature Creates a new dynamic feature by invoking the registered
+     * constructor/new-method with the provided constructor arguments
+     * @param usertype A sol::table representing the type
+     * @param args The constructor arguments
+     * @return a DynamicFeature instance
+     * @return
+     */
     template <typename... Args>
     DynamicFeature feature(sol::table usertype, Args&&... args) const
     {
@@ -118,6 +226,18 @@ public:
         return feature(obj);
     }
 
+    /**
+     * @brief action Creates an action representing the function evaluation given
+     * the passed arguments. This will internally register this computation in the
+     * underlying dependency graph.
+     *
+     * If one of the arguments is not yet a Feature instance, an anonymous Feature
+     * (i.e. a constant) will be created on the fly.
+     *
+     * @param function The name of the function to be evaluated
+     * @param args The arguments passed to the function.
+     * @return a DynamicFeature instance representing the calculation result
+     */
     template <typename... Args>
     DynamicFeature action(std::string const& function, Args&&... args) const
     {
@@ -125,23 +245,53 @@ public:
         return grunk::action(f, std::forward<Args>(args)...).output();
     }
 
+    /**
+     * @brief action Creates an action representing the function evaluation given
+     * the passed arguments. This will internally register this computation in the
+     * underlying dependency graph.
+     *
+     * If one of the arguments is not yet a Feature instance, an anonymous Feature
+     * (i.e. a constant) will be created on the fly.
+     * @param function  The function to be evaluated
+     * @param args The arguments passed to the function.
+     * @return a DynamicFeature instance representing the calculation result
+     */
     template <typename... Args>
     DynamicFeature action(sol::protected_function const& function, Args&&... args) const
     {
         return grunk::action(function, std::forward<Args>(args)...).output();
     }
 
+    /**
+     * @brief returns a variable stored in the active environment
+     * @param key The name of the variable
+     * @return The queried variable
+     */
     inline sol::object operator[](std::string const& key)
     {
         return active_env[key];
     }
 
+    /**
+     * @brief get_feature returns a Feature stored in the active environment
+     *
+     * This is syntactic sugar for static_cast<DynamicFeature>(grunk["foo"]),
+     * i.e. retrieval of the variable as a grunk::object and then casting it
+     * to DynamicFeature
+     *
+     * @param key The name of the Feature
+     * @return The queried feature
+     */
     inline DynamicFeature get_feature(std::string const& key)
     {
         DynamicFeature ret = active_env[key];
         return ret;
     }
 
+    /**
+     * @brief eval evaluates a LUA script in the active environment
+     * @param lua_script The lua script to be evaluated
+     */
     inline auto eval(std::string const& lua_script) {
         return lua.script(lua_script, active_env);
     }
@@ -149,6 +299,10 @@ public:
 private:
 
 
+    /**
+     * @brief init registers some important grunk functionality in the dynamic type system,
+     * specifically functionality around grunk::DynamicFeature
+     */
     inline void init() {
 
         auto g = lua.create_named_table("grunk");
@@ -203,6 +357,13 @@ private:
 
     }
 
+    /**
+     * @brief create_decorated_environment sets up the lookup mechanism as well as the lazy decoration of the decorated environment.
+     *
+     * Whenever a symbol is looked up in the decorated environment and not found, the key will be searched in the original environment.
+     * If it is found and is a method, it will be decorated as an action, stored in the decorated environment and returned. If it is not
+     * a function, the symbol will be stored as is in the decorated environment.
+     */
     inline void create_decorated_environment() {
     // Create a metatable to intercept function and usertype method lookups
         sol::table mt = lua.create_table();
