@@ -178,9 +178,8 @@ TEST(state, usertype_ctor_cpp)
 {
     grunk::state grunk;
 
-    grunk.register_type<MyScalar>("MyScalar",
-        sol::constructors<MyScalar(double)>()
-    );
+    grunk.register_type<MyScalar>("MyScalar")
+    .add_constructors<MyScalar(double)>();
 
     grunk.register_type<DefaultConstructible>("DefaultConstructible");
 
@@ -252,9 +251,8 @@ TEST(state, usertype_ctor_as_action_lua)
 {
     grunk::state grunk;
 
-    grunk.register_type<MyScalar>("MyScalar",
-        sol::constructors<MyScalar(double)>()
-    );
+    grunk.register_type<MyScalar>("MyScalar")
+    .add_constructors<MyScalar(double)>();
 
     grunk.eval(R"(
         local a = grunk.feature(1.)
@@ -284,14 +282,13 @@ TEST(state, usertype_operators_as_action_lua)
 {
     grunk::state grunk;
 
-    grunk.register_type<MyScalar>("MyScalar",
-        sol::constructors<MyScalar(double)>(),
-        "__add", [](MyScalar const& l, MyScalar const&r){
+    grunk.register_type<MyScalar>("MyScalar")
+    .add_constructors<MyScalar(double)>()
+    .add_member_function("__add", [](MyScalar const& l, MyScalar const&r){
             return l + r;
-        },
-        "value", &MyScalar::value,
-        "set", &MyScalar::set
-    );
+    })
+    .add_member_function("set", &MyScalar::set)
+    .add_data_member("value", &MyScalar::value);
 
     grunk.eval(R"(
         local x = MyScalar.new_feature(2.)
@@ -313,11 +310,10 @@ TEST(state, usertype_method_as_action_cpp)
 {
     grunk::state grunk;
 
-    grunk.register_type<MyScalar>("MyScalar",
-        sol::constructors<MyScalar(double)>(),
-        "pow", &MyScalar::pow,
-        "set", &MyScalar::set
-    );
+    grunk.register_type<MyScalar>("MyScalar")
+    .add_constructors<MyScalar(double)>()
+    .add_member_function("set", &MyScalar::set)
+    .add_member_function("pow", &MyScalar::pow);
 
     auto x = grunk.action("MyScalar.new", 2.);
 
@@ -352,11 +348,10 @@ TEST(state, usertype_method_as_action_lua)
 {
     grunk::state grunk;
 
-    grunk.register_type<MyScalar>("MyScalar",
-        sol::constructors<MyScalar(double)>(),
-        "pow", &MyScalar::pow,
-        "set", &MyScalar::set
-    );
+    grunk.register_type<MyScalar>("MyScalar")
+    .add_constructors<MyScalar(double)>()
+    .add_member_function("set", &MyScalar::set)
+    .add_member_function("pow", &MyScalar::pow);
 
     grunk.eval(R"(
         local x = MyScalar.new_feature(2)

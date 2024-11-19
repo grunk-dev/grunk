@@ -628,14 +628,13 @@ TEST(operators, usertype_addition_lua)
 {
     grunk::state grunk;
 
-    grunk.register_type<MyScalar>("MyScalar",
-        sol::constructors<MyScalar(double)>(),
-        "__add", [](MyScalar const& l, MyScalar const&r){
-            return l + r;
-        },
-        "value", &MyScalar::value,
-        "set", &MyScalar::set
-        );
+    grunk.register_type<MyScalar>("MyScalar")
+    .add_constructors<MyScalar(double)>()
+    .add_member_function("__add", [](MyScalar const& l, MyScalar const&r){
+        return l + r;
+    })
+    .add_member_function("set", &MyScalar::set)
+    .add_member_function("value", &MyScalar::value);
 
     grunk.eval(R"(
         local x = MyScalar.new_feature(2.)

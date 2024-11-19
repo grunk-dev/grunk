@@ -78,6 +78,37 @@ sol::object lookup_nested(sol::table const& table, std::string const& str) {
 
 namespace grunk {
 
+template <typename T>
+struct usertype_proxy {
+
+    template <typename... Ctors>
+    usertype_proxy& add_constructors() {
+        ut["new"] = sol::constructors<Ctors...>();
+        return *this;
+    }
+
+    template <typename... Ctors>
+    usertype_proxy& add_bases() {
+        ut[sol::base_classes] = sol::bases<Ctors...>();
+        return *this;
+    }
+
+    template <typename F>
+    usertype_proxy& add_member_function(std::string const& memfun_name, F&& fun) {
+        ut[memfun_name] = fun;
+        return *this;
+    }
+
+    template <typename F>
+    usertype_proxy& add_data_member(std::string const& memfun_name, F&& fun) {
+        //TODO: via sol::property? Differentiate readonly types?
+        ut[memfun_name] = fun;
+        return *this;
+    }
+
+    sol::usertype<T> ut; //TODO: Reference so it compiles, but now I get a bunch of exceptions
+};
+
 // Tag to tell grunk::state::feature to default-construct a type
 struct default_construct_t {};
 constexpr const default_construct_t default_construct;
@@ -111,15 +142,22 @@ public:
         lua["environments"]["active"] = active_env;
     }
 
-    template <typename T, typename... Args>
-    void register_type(std::string const& name, Args&&... args) {
-        original_env.new_usertype<T>(name, std::forward<Args>(args)...);
+    template <typename T>
+    auto register_type(std::string const& name, std::optional<sol::table> table = std::nullopt)
+    {
+        if (!table) {
+            table = original_env;
+        }
+        return usertype_proxy<T>{table->new_usertype<T>(name)};
     }
 
     template <typename Func>
-    void register_function(std::string const& name, Func&& fun) {
-        original_env.set_function(name, std::forward<Func>(fun));
-
+    void register_function(std::string const& name, Func&& fun, std::optional<sol::table> table = std::nullopt)
+    {
+        if (!table) {
+            table = original_env;
+        }
+        table->set_function(name, std::forward<Func>(fun));
     }
 
     void set_functions_are_actions(bool use_actions)
@@ -213,9 +251,13 @@ private:
 
         auto g = lua.create_named_table("grunk");
 
-        g.set_function("feature", [](sol::object obj) -> DynamicFeature {
-            return grunk::feature(object(obj));
-        });
+        register_function(
+            "feature",
+            [](sol::object obj) -> DynamicFeature {
+                return grunk::feature(object(obj));
+            },
+            g
+        );
 
         // define some operators dynamically
         lua.script("function grunk._dynamic_add(l, r) return l + r end");
@@ -227,12 +269,13 @@ private:
         lua.script("function grunk._dynamic_unm(v) return -v end");
 
         // register DynamicFeature as a usertype
-        g.new_usertype<DynamicFeature>(
-            "Feature",
-            sol::constructors<DynamicFeature(sol::object)>(),
-            "set_value", &DynamicFeature::set_value<sol::object>,
-            "change_value", &DynamicFeature::change_value,
-            "with_id", [](DynamicFeature& self, std::string const& v) -> DynamicFeature {
+        register_type<DynamicFeature>("Feature", g)
+        .add_constructors<DynamicFeature(sol::object)>()
+        .add_member_function("set_value", &DynamicFeature::set_value<sol::object>)
+        .add_member_function("change_value", &DynamicFeature::change_value)
+        .add_member_function(
+            "with_id",
+            [](DynamicFeature& self, std::string const& v) -> DynamicFeature {
                 // need to copy here to allow method chaining at construction in LUA. Example:
                 //
                 // x = Feature:new(2.):with_id("foo")
@@ -240,21 +283,22 @@ private:
                 // first creates a temoprary at construction, passes it to with_id which returns a reference.
                 // sol is written in such a way, that it doesn't take ownership of references.
                 return self.with_id(v);
-            },
-            "id", &DynamicFeature::id,
-            "set_id", &DynamicFeature::set_id,
-            "is_valid", &DynamicFeature::is_valid,
-            "value", &DynamicFeature::value,
-            "compute_node", &DynamicFeature::compute_node,
-            "as", static_cast<sol::table(DynamicFeature::*)(sol::table) const>(&DynamicFeature::as),
-            "__add", make_dynamic_action(lua, g["_dynamic_add"]), //TODO: Why can't I use &grunk::operator+<DynamicFeature const&, DynamicFeature const&>
-            "__sub", make_dynamic_action(lua, g["_dynamic_sub"]),
-            "__mul", make_dynamic_action(lua, g["_dynamic_mul"]),
-            "__div", make_dynamic_action(lua, g["_dynamic_div"]),
-            "__mod", make_dynamic_action(lua, g["_dynamic_mod"]),
-            "__pow", make_dynamic_action(lua, g["_dynamic_pow"]),
-            "__unm", make_dynamic_action(lua, g["_dynamic_unm"])
-        );
+            }
+        )
+        .add_member_function("id", &DynamicFeature::id)
+        .add_member_function("set_id", &DynamicFeature::set_id)
+        .add_member_function("is_valid", &DynamicFeature::is_valid)
+        .add_member_function("value", &DynamicFeature::value)
+        .add_member_function("compute_node", &DynamicFeature::compute_node)
+        .add_member_function("as", static_cast<sol::table(DynamicFeature::*)(sol::table) const>(&DynamicFeature::as))
+        .add_member_function("__add", make_dynamic_action(lua, g["_dynamic_add"])) //TODO: Why can't I use &grunk::operator+<DynamicFeature const&, DynamicFeature const&>
+        .add_member_function("__sub", make_dynamic_action(lua, g["_dynamic_sub"]))
+        .add_member_function("__mul", make_dynamic_action(lua, g["_dynamic_mul"]))
+        .add_member_function("__div", make_dynamic_action(lua, g["_dynamic_div"]))
+        .add_member_function("__mod", make_dynamic_action(lua, g["_dynamic_mod"]))
+        .add_member_function("__pow", make_dynamic_action(lua, g["_dynamic_pow"]))
+        .add_member_function("__unm", make_dynamic_action(lua, g["_dynamic_unm"]));
+
     }
 
     inline void create_decorated_environment() {
