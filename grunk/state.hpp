@@ -2,112 +2,14 @@
 
 #include "object.hpp"
 #include "feature.hpp"
+#include "internal/common.hpp"
+#include "internal/usertype_proxy.hpp"
 #include "action.hpp"
 
 #include <sol/sol.hpp>
 #include <stdexcept>
-#include <regex>
-
-namespace {
-
-grunk::object make_dynamic_action(sol::state const& lua, sol::protected_function const& func)
-{
-    auto decorated_function = [func](sol::variadic_args va) -> grunk::DynamicFeature
-    {
-
-        std::vector<grunk::DynamicFeature> args;
-        args.reserve(va.size());
-
-        // Use std::transform to convert variadic_args to std::vector<DynamicFeature>
-        std::transform(
-            va.begin(), va.end(), 
-            std::back_inserter(args), 
-            [](grunk::object const& obj) {
-                if (obj.is<grunk::DynamicFeature>()) {
-                    return obj.as<grunk::DynamicFeature>();
-                } else {
-                    return grunk::feature(obj);
-                }
-            }
-        );
-
-        return grunk::action(func, args).output();
-    };
-    return sol::make_object(lua, sol::as_function(decorated_function));
-}
-
-/**
- * @brief Accesses a nested element in a sol::table by traversing keys separated by dots (.) or colons (:).
- *
- * @param table The sol::table to be traversed.
- * @param str The string representing the path of nested keys, separated by dots (.) or colons (:).
- * @return sol::object The nested object in the table at the specified path.
- *
- * This function splits the string `str` at each dot (.) or colon (:), then uses each part as a key for accessing
- * nested tables in `table`. If any key is invalid or does not exist, an exception is thrown.
- *
- * @note This function assumes the table contains only sol::table elements at each nested level except for the final key.
- * If any key is invalid or does not exist, an exception is thrown.
- */
-sol::object lookup_nested(sol::table const& table, std::string const& str) {
-    sol::object current = table;
-
-    // Use regex to split by both '.' and ':'
-    std::regex delimiter_regex(R"([.:])");
-    std::sregex_token_iterator iter(str.begin(), str.end(), delimiter_regex, -1);
-    std::sregex_token_iterator end;
-
-    for (; iter != end; ++iter) {
-        std::string key = *iter;
-
-        // Ensure current object is a table before accessing the next key
-        if (current.get_type() != sol::type::table) {
-            std::string error = std::string("Could not resolve \"") + key +
-                                "\" in identifier \"" + str +
-                                "\". Are all types properly registered in the grunk state?";
-            throw std::runtime_error(error);
-        }
-
-        current = current.as<sol::table>()[key];
-    }
-
-    return current;
-}
-
-} // anonymous namespace 
 
 namespace grunk {
-
-template <typename T>
-struct usertype_proxy {
-
-    template <typename... Ctors>
-    usertype_proxy& add_constructors() {
-        ut["new"] = sol::constructors<Ctors...>();
-        return *this;
-    }
-
-    template <typename... Ctors>
-    usertype_proxy& add_bases() {
-        ut[sol::base_classes] = sol::bases<Ctors...>();
-        return *this;
-    }
-
-    template <typename F>
-    usertype_proxy& add_member_function(std::string const& memfun_name, F&& fun) {
-        ut[memfun_name] = fun;
-        return *this;
-    }
-
-    template <typename F>
-    usertype_proxy& add_data_member(std::string const& memfun_name, F&& fun) {
-        //TODO: via sol::property? Differentiate readonly types?
-        ut[memfun_name] = fun;
-        return *this;
-    }
-
-    sol::usertype<T> ut; //TODO: Reference so it compiles, but now I get a bunch of exceptions
-};
 
 // Tag to tell grunk::state::feature to default-construct a type
 struct default_construct_t {};
@@ -291,13 +193,13 @@ private:
         .add_member_function("value", &DynamicFeature::value)
         .add_member_function("compute_node", &DynamicFeature::compute_node)
         .add_member_function("as", static_cast<sol::table(DynamicFeature::*)(sol::table) const>(&DynamicFeature::as))
-        .add_member_function("__add", make_dynamic_action(lua, g["_dynamic_add"])) //TODO: Why can't I use &grunk::operator+<DynamicFeature const&, DynamicFeature const&>
-        .add_member_function("__sub", make_dynamic_action(lua, g["_dynamic_sub"]))
-        .add_member_function("__mul", make_dynamic_action(lua, g["_dynamic_mul"]))
-        .add_member_function("__div", make_dynamic_action(lua, g["_dynamic_div"]))
-        .add_member_function("__mod", make_dynamic_action(lua, g["_dynamic_mod"]))
-        .add_member_function("__pow", make_dynamic_action(lua, g["_dynamic_pow"]))
-        .add_member_function("__unm", make_dynamic_action(lua, g["_dynamic_unm"]));
+        .add_member_function("__add", details::make_dynamic_action(lua, g["_dynamic_add"])) //TODO: Why can't I use &grunk::operator+<DynamicFeature const&, DynamicFeature const&>
+        .add_member_function("__sub", details::make_dynamic_action(lua, g["_dynamic_sub"]))
+        .add_member_function("__mul", details::make_dynamic_action(lua, g["_dynamic_mul"]))
+        .add_member_function("__div", details::make_dynamic_action(lua, g["_dynamic_div"]))
+        .add_member_function("__mod", details::make_dynamic_action(lua, g["_dynamic_mod"]))
+        .add_member_function("__pow", details::make_dynamic_action(lua, g["_dynamic_pow"]))
+        .add_member_function("__unm", details::make_dynamic_action(lua, g["_dynamic_unm"]));
 
     }
 
@@ -317,7 +219,7 @@ private:
             if (result.is<sol::protected_function>()) {
                 // Decorate if it's a function
                 sol::protected_function func = result.as<sol::protected_function>();
-                decorated_env[key] =  make_dynamic_action(lua, func);
+                decorated_env[key] =  details::make_dynamic_action(lua, func);
                 return decorated_env[key];
             } else if (result.is<sol::table>()) {
                 // If it's a usertype (stored as a table), intercept its metatable
@@ -333,7 +235,7 @@ private:
                     if (method.is<sol::protected_function>()) {
                         // Decorate methods
                         sol::protected_function func = method.as<sol::protected_function>();
-                        return make_dynamic_action(lua, func);
+                        return details::make_dynamic_action(lua, func);
                     }
 
                     return method;  // Return non-function elements as-is

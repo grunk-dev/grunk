@@ -1,7 +1,7 @@
-#pragma once 
+#pragma once
 
-#include "../feature.hpp"
-#include "FunctionTraits.hpp"
+#include "feature.hpp"
+#include "function_traits.hpp"
 #include <parametric/core.hpp>
 #include <tuple>
 #include <memory>
