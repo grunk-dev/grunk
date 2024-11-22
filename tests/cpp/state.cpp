@@ -154,7 +154,7 @@ public:
         return m_value;
     }
 
-    MyScalar pow(double exponent) {
+    MyScalar pow(double exponent) const {
         return ::pow(m_value, exponent);
     }
 
@@ -295,7 +295,7 @@ TEST(state, usertype_operators_as_action_lua)
         local y = MyScalar.new_feature(3.)
         local z = x + y
 
-        z1 = z:value()
+         z1 = z:value()
 
         x:change_value():set(39.)
 
@@ -380,15 +380,14 @@ TEST(state, usertype_method_as_action_lua)
     EXPECT_NEAR(grunk["z2"].as<MyScalar>().value(), 8, 1e-14); // 2^3
 }
 
-/*TODO: this should ideally fail (non-const member function as action)
+
 TEST(state, usertype_nonconst_method_as_action_lua)
 {
     grunk::state grunk;
 
-    grunk.register_type<MyScalar>("MyScalar",
-        sol::constructors<MyScalar(double)>(),
-        "set", &MyScalar::set
-    );
+    grunk.register_type<MyScalar>("MyScalar")
+        .add_constructors<MyScalar(double)>()
+        .add_member_function("set", &MyScalar::set);
 
     grunk.eval(R"(
         local x = MyScalar.new_feature(2.)
@@ -396,7 +395,7 @@ TEST(state, usertype_nonconst_method_as_action_lua)
         x:as(MyScalar).set(13.)
     )");
 }
-*/
+
 
 /*
 

@@ -2,7 +2,7 @@
 
 #include "object.hpp"
 #include "feature.hpp"
-#include "internal/common.hpp"
+#include "internal/sol_helpers.hpp"
 #include "internal/usertype_proxy.hpp"
 #include "action.hpp"
 
@@ -10,6 +10,42 @@
 #include <stdexcept>
 
 namespace grunk {
+
+namespace details {
+
+/**
+ * @brief make_dynamic_action takes a sol::protected_function and decorates it using grunk::action
+ * @param lua a view of the sol::state
+ * @param func the function to be wrapped as an action
+ */
+inline auto make_dynamic_action(sol::state_view& lua, sol::protected_function const& func)
+{
+
+    auto decorated_function = [func](sol::variadic_args va) -> grunk::DynamicFeature
+    {
+
+        std::vector<grunk::DynamicFeature> args;
+        args.reserve(va.size());
+
+        // Use std::transform to convert variadic_args to std::vector<DynamicFeature>
+        std::transform(
+            va.begin(), va.end(),
+            std::back_inserter(args),
+            [](grunk::object const& obj) {
+                if (obj.is<grunk::DynamicFeature>()) {
+                    return obj.as<grunk::DynamicFeature>();
+                } else {
+                    return grunk::feature(obj);
+                }
+            }
+            );
+
+        return grunk::action(func, args).output();
+    };
+    return decorated_function;
+}
+
+} // namespace details
 
 // Tag to tell grunk::state::feature to default-construct a type
 struct default_construct_t {};
@@ -106,7 +142,7 @@ public:
         if (!table) {
             table = original_env;
         }
-        table->set_function(name, std::forward<Func>(fun));
+        set_function(*table, name, std::forward<Func>(fun));
     }
 
     /**
@@ -389,14 +425,14 @@ private:
 
                 sol::table decorated_table = lua.create_table();
                 sol::table decorated_table_meta = lua.create_table();
-                decorated_table_meta.set_function("__index", [this, usertype_table](sol::table ts, std::string const& key) -> sol::object {
+                decorated_table_meta.set_function("__index", [this, usertype_table](sol::table ts, std::string const& key) {
 
                     sol::object method = usertype_table[key];  // Lookup method in original metatable
 
                     if (method.is<sol::protected_function>()) {
                         // Decorate methods
                         sol::protected_function func = method.as<sol::protected_function>();
-                        return details::make_dynamic_action(lua, func);
+                        return sol::make_object(lua, details::make_dynamic_action(lua, func));
                     }
 
                     return method;  // Return non-function elements as-is

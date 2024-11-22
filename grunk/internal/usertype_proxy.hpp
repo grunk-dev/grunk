@@ -1,5 +1,6 @@
 #pragma once
 
+#include "sol_helpers.hpp"
 #include <sol/sol.hpp>
 
 namespace grunk {
@@ -21,7 +22,7 @@ struct usertype_proxy {
 
     template <typename F>
     usertype_proxy& add_member_function(std::string const& memfun_name, F&& fun) {
-        ut[memfun_name] = fun;
+        set_function(ut, memfun_name, std::forward<F>(fun));
         return *this;
     }
 
