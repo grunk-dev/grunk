@@ -27,18 +27,22 @@ object get_metadata(sol::state_view& lua, U& obj, std::string const& key)
     return lua["_tmp"][key];;
 }
 
+
+//TODO: Move this to grunk state
 template <typename U, typename F>
 inline void set_function(U& obj, std::string const& key, F&& fun)
 {
-    obj.set_function(key, std::forward<F>(fun));
-    auto funobj = obj[key];
-    if (!funobj[sol::metatable_key].valid()) {
-        sol::state_view lua(obj.lua_state());
-        sol::table func_meta = lua.create_table();
-        funobj[sol::metatable_key] = func_meta;
-    }
-    funobj[sol::metatable_key]["name"] = key;
-    funobj[sol::metatable_key]["is_pure"] = details::function_traits<F>::is_pure;
+    sol::state_view lua(obj.lua_state());
+    auto func_table = lua.create_table();
+    // func_table.set_function("fun", fun);
+    auto func_table_mt = lua.create_table();
+    func_table_mt.set_function("__call", std::forward<F>(fun));
+    func_table[sol::metatable_key] = func_table_mt;
+
+    // obj.set_function(key, std::forward<F>(fun));
+    obj[key] = func_table;
+    func_table_mt["name"] = key;
+    func_table_mt["is_pure"] = details::function_traits<F>::is_pure;
 }
 
 /**

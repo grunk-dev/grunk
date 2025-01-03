@@ -3,7 +3,7 @@
 
 namespace {
 
-void fun(){};
+void fun(int){};
 
 struct Foo
 {
@@ -22,6 +22,10 @@ TEST(metadata, free_function)
     sol::state_view lua(f.lua_state());
     EXPECT_EQ(grunk::get_metadata(lua, f, "name").as<std::string>(), "fun");
     EXPECT_TRUE(grunk::get_metadata(lua, f, "is_pure").as<bool>());
+
+    // can the function be called?
+    grunk.set_functions_are_actions(false);
+    grunk.eval("fun(5)");
 }
 
 TEST(metadata, member_function)

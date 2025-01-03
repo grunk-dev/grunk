@@ -323,7 +323,8 @@ public:
         DynamicFeature ret = active_env[key];
         return ret;
     }
-
+    
+    //TODO: Rename this to script
     /**
      * @brief eval evaluates a LUA script in the active environment
      * @param lua_script The lua script to be evaluated

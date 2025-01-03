@@ -122,7 +122,7 @@ public:
         sol::protected_function_result res = function(sol::as_args(inputs_vec));
         if (!res.valid()) {
             sol::error err = res;
-            throw std::logic_error(std::string("Error evauationg dynamic action: ") + err.what());
+            throw std::logic_error(std::string("Error evaluating dynamic action: ") + err.what());
         }
 
         // transform to output
