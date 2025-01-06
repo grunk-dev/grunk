@@ -6,6 +6,8 @@ if __name__ == '__main__':
     
     
     recipe = grunk.read("wing_body.grr.yml")
-    nose = recipe["nose"].value()
-    grunk.reflect.invoke("grocc::BRepTools::Write", nose, "nose_face.brep")
-    grunk.reflect.invoke("grocc::export_to_step", nose, "nose_face.stp")
+
+    for key in ["nose", "central_fuselage"]:
+        shape = recipe[key].value()
+        grunk.reflect.invoke("grocc::BRepTools::Write", shape, f"{key}_face.brep")
+        grunk.reflect.invoke("grocc::export_to_step", shape, f"{key}_face.stp")

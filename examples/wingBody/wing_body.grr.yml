@@ -11,14 +11,33 @@ parameters:
   x_difference_tail_column_1_2: !<double> 1500.
   x_difference_tail_column_2_3: !<double> 1500.
 steps:
-  - !<recipes::nose> [{nose: nose_face}, {fuselage_radius: fuselage_radius, x_column_1: x_position_of_nose_tip, x_column_5: x_position_of_middle_fuselage_front_profile}]
+- !<expr> [profile_shape_parameter, 4*(sqrt(2)-1)*fuselage_radius/3] # needed to create a circular bezier curve
+- !<expr> [profile_shape_parameter_neg, -profile_shape_parameter]
+# fuselage profile points
+- !<expr> [radius_neg, -fuselage_radius]
+- !<grocc::gp_Pnt> [[P_1], [!<double> 0., !<double> 0., fuselage_radius]]
+- !<grocc::gp_Pnt> [[P_2], [!<double> 0., profile_shape_parameter, fuselage_radius]]
+- !<grocc::gp_Pnt> [[P_3], [!<double> 0., fuselage_radius, profile_shape_parameter]]
+- !<grocc::gp_Pnt> [[P_4], [!<double> 0., fuselage_radius, !<double> 0.]]
+- !<grocc::gp_Pnt> [[P_5], [!<double> 0., fuselage_radius, profile_shape_parameter_neg]]
+- !<grocc::gp_Pnt> [[P_6], [!<double> 0., profile_shape_parameter, radius_neg]]
+- !<grocc::gp_Pnt> [[P_7], [!<double> 0., !<double> 0., radius_neg]]
+- !<recipes::nose> [{nose: nose_face}, {x_column_1: x_position_of_nose_tip, x_column_5: x_position_of_middle_fuselage_front_profile, P_1: P_1, P_2: P_2, P_3: P_3, P_4: P_4, P_5: P_5, P_6: P_6, P_7: P_7}]
+- !<recipes::central_fuselage> [{central_fuselage: central_fuselage_face}, {P_1: P_1, P_2: P_2, P_3: P_3, P_4: P_4, P_5: P_5, P_6: P_6, P_7: P_7, x_column_1: x_position_of_middle_fuselage_front_profile, x_column_2: x_position_of_middle_fuselage_back_profile}]
 recipes:
   nose:
     uses:
       grunk: 0.3.1
       grocc: 0.1.4
     parameters:
-      fuselage_radius: !<double> 1950.
+    # fuselage profile points
+      P_1: !<grocc::gp_Pnt> [0., 0., 1.]
+      P_2: !<grocc::gp_Pnt> [0., 0.5522847, 1.]
+      P_3: !<grocc::gp_Pnt> [0., 1., 0.5522847]
+      P_4: !<grocc::gp_Pnt> [0., 1., 0.]
+      P_5: !<grocc::gp_Pnt> [0., 1., -0.5522847]
+      P_6: !<grocc::gp_Pnt> [0., 0.5522847, -1.]
+      P_7: !<grocc::gp_Pnt> [0., 0., -1.]
     # design parameters
       x_column_1: !<double> -11800.
       x_column_5: !<double> -4600.
@@ -29,17 +48,6 @@ recipes:
       z_scale_column_3: !<double> 0.923077 # absolute radius 1800.
     steps:
     - !<expr> [nose_length, x_column_5 - x_column_1]
-    - !<expr> [fuselage_profile_shape_parameter, 4*(sqrt(2)-1)*fuselage_radius/3] # needed to create a circular bezier curve
-    - !<expr> [fuselage_profile_shape_parameter_neg, -fuselage_profile_shape_parameter]
-    # fuselage profile points
-    - !<expr> [fuselage_radius_neg, -fuselage_radius]
-    - !<grocc::gp_Pnt> [[P_1], [!<double> 0., !<double> 0., fuselage_radius]]
-    - !<grocc::gp_Pnt> [[P_2], [!<double> 0., fuselage_profile_shape_parameter, fuselage_radius]]
-    - !<grocc::gp_Pnt> [[P_3], [!<double> 0., fuselage_radius, fuselage_profile_shape_parameter]]
-    - !<grocc::gp_Pnt> [[P_4], [!<double> 0., fuselage_radius, !<double> 0.]]
-    - !<grocc::gp_Pnt> [[P_5], [!<double> 0., fuselage_radius, fuselage_profile_shape_parameter_neg]]
-    - !<grocc::gp_Pnt> [[P_6], [!<double> 0., fuselage_profile_shape_parameter, fuselage_radius_neg]]
-    - !<grocc::gp_Pnt> [[P_7], [!<double> 0., !<double> 0., fuselage_radius_neg]]
     # column_1 fuselage profile point 
     - !<grocc::gp_Pnt> [[nose], [x_column_1, !<double> 0., !<double> 0.]]
     # column_2 fuselage profile points
@@ -153,3 +161,76 @@ recipes:
           - nose_surface_control_points
     - !<grocc::Handle_Geom_BezierSurface> [[nose_surface], [nose_surface_control_points]]
     - !<grocc::BRepBuilderAPI_MakeFace> [[nose_face], [nose_surface, !<double> 1.e-6]]
+  central_fuselage:
+    uses:
+      grunk: 0.3.1
+      grocc: 0.1.4
+    parameters:
+    # fuselage profile points
+      P_1: !<grocc::gp_Pnt> [0., 0., 1.]
+      P_2: !<grocc::gp_Pnt> [0., 0.5522847, 1.]
+      P_3: !<grocc::gp_Pnt> [0., 1., 0.5522847]
+      P_4: !<grocc::gp_Pnt> [0., 1., 0.]
+      P_5: !<grocc::gp_Pnt> [0., 1., -0.5522847]
+      P_6: !<grocc::gp_Pnt> [0., 0.5522847, -1.]
+      P_7: !<grocc::gp_Pnt> [0., 0., -1.]
+    # design parameters
+      x_column_1: !<double> -4600.
+      x_column_2: !<double> 12500.
+    steps:
+    # column_1 fuselage profile points
+    - !<grocc::gp_Vec> [[translation_column_1], [x_column_1, !<double> 0., !<double> 0.]]
+    - !<script>
+        steps:
+          - !<grocc::gp_Trsf> [[column_1_trsf], ~]
+          - !<grocc::gp_Trsf::SetTranslation> [[""], [column_1_trsf, translation_column_1]]
+        returns:
+          - column_1_trsf
+    - !<grocc::gp_Pnt::Transformed> [[P_1_column_1], [P_1, column_1_trsf]]
+    - !<grocc::gp_Pnt::Transformed> [[P_2_column_1], [P_2, column_1_trsf]]
+    - !<grocc::gp_Pnt::Transformed> [[P_3_column_1], [P_3, column_1_trsf]]
+    - !<grocc::gp_Pnt::Transformed> [[P_4_column_1], [P_4, column_1_trsf]]
+    - !<grocc::gp_Pnt::Transformed> [[P_5_column_1], [P_5, column_1_trsf]]
+    - !<grocc::gp_Pnt::Transformed> [[P_6_column_1], [P_6, column_1_trsf]]
+    - !<grocc::gp_Pnt::Transformed> [[P_7_column_1], [P_7, column_1_trsf]]
+    # column_2 fuselage profile points
+    - !<grocc::gp_Vec> [[translation_column_2], [x_column_2, !<double> 0., !<double> 0.]]
+    - !<script>
+        steps:
+          - !<grocc::gp_Trsf> [[column_2_trsf], ~]
+          - !<grocc::gp_Trsf::SetTranslation> [[""], [column_2_trsf, translation_column_2]]
+        returns:
+          - column_2_trsf
+    - !<grocc::gp_Pnt::Transformed> [[P_1_column_2], [P_1, column_2_trsf]]
+    - !<grocc::gp_Pnt::Transformed> [[P_2_column_2], [P_2, column_2_trsf]]
+    - !<grocc::gp_Pnt::Transformed> [[P_3_column_2], [P_3, column_2_trsf]]
+    - !<grocc::gp_Pnt::Transformed> [[P_4_column_2], [P_4, column_2_trsf]]
+    - !<grocc::gp_Pnt::Transformed> [[P_5_column_2], [P_5, column_2_trsf]]
+    - !<grocc::gp_Pnt::Transformed> [[P_6_column_2], [P_6, column_2_trsf]]
+    - !<grocc::gp_Pnt::Transformed> [[P_7_column_2], [P_7, column_2_trsf]]
+    # create fuselage nose surface as a bezier surface
+    - !<int> [[row_start], [!<int> 1]]
+    - !<int> [[row_end], [!<int> 7]]
+    - !<int> [[col_start], [!<int> 1]]
+    - !<int> [[col_end], [!<int> 2]]
+    - !<script>
+        steps:
+          - !<grocc::TColgp_Array2OfPnt> [[surface_control_points ], [row_start, row_end, col_start, col_end]]
+          - !<grocc::TColgp_Array2OfPnt::SetValue> [[""], [surface_control_points, !<int> 1, !<int> 1, P_1_column_1]]
+          - !<grocc::TColgp_Array2OfPnt::SetValue> [[""], [surface_control_points, !<int> 2, !<int> 1, P_2_column_1]]
+          - !<grocc::TColgp_Array2OfPnt::SetValue> [[""], [surface_control_points, !<int> 3, !<int> 1, P_3_column_1]]
+          - !<grocc::TColgp_Array2OfPnt::SetValue> [[""], [surface_control_points, !<int> 4, !<int> 1, P_4_column_1]]
+          - !<grocc::TColgp_Array2OfPnt::SetValue> [[""], [surface_control_points, !<int> 5, !<int> 1, P_5_column_1]]
+          - !<grocc::TColgp_Array2OfPnt::SetValue> [[""], [surface_control_points, !<int> 6, !<int> 1, P_6_column_1]]
+          - !<grocc::TColgp_Array2OfPnt::SetValue> [[""], [surface_control_points, !<int> 7, !<int> 1, P_7_column_1]]
+          - !<grocc::TColgp_Array2OfPnt::SetValue> [[""], [surface_control_points, !<int> 1, !<int> 2, P_1_column_2]]
+          - !<grocc::TColgp_Array2OfPnt::SetValue> [[""], [surface_control_points, !<int> 2, !<int> 2, P_2_column_2]]
+          - !<grocc::TColgp_Array2OfPnt::SetValue> [[""], [surface_control_points, !<int> 3, !<int> 2, P_3_column_2]]
+          - !<grocc::TColgp_Array2OfPnt::SetValue> [[""], [surface_control_points, !<int> 4, !<int> 2, P_4_column_2]]
+          - !<grocc::TColgp_Array2OfPnt::SetValue> [[""], [surface_control_points, !<int> 5, !<int> 2, P_5_column_2]]
+          - !<grocc::TColgp_Array2OfPnt::SetValue> [[""], [surface_control_points, !<int> 6, !<int> 2, P_6_column_2]]
+          - !<grocc::TColgp_Array2OfPnt::SetValue> [[""], [surface_control_points, !<int> 7, !<int> 2, P_7_column_2]]
+        returns:
+          - surface_control_points
+    - !<grocc::Handle_Geom_BezierSurface> [[central_fuselage_surface], [surface_control_points]]
+    - !<grocc::BRepBuilderAPI_MakeFace> [[central_fuselage_face], [central_fuselage_surface, !<double> 1.e-6]]
