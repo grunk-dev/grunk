@@ -5,7 +5,6 @@ parameters:
   fuselage_radius: !<double> 1950.
   x_position_of_nose_tip: !<double> -11800.
   x_position_of_middle_fuselage_front_profile: !<double> -4600.
-
   x_position_of_middle_fuselage_back_profile: !<double> 12500.
   x_position_of_tail_back_profile: !<double> 25716.
   x_difference_tail_column_1_2: !<double> 1500.
@@ -24,6 +23,19 @@ steps:
 - !<grocc::gp_Pnt> [[P_7], [!<double> 0., !<double> 0., radius_neg]]
 - !<recipes::nose> [{nose: nose_face}, {x_column_1: x_position_of_nose_tip, x_column_5: x_position_of_middle_fuselage_front_profile, P_1: P_1, P_2: P_2, P_3: P_3, P_4: P_4, P_5: P_5, P_6: P_6, P_7: P_7}]
 - !<recipes::central_fuselage> [{central_fuselage: central_fuselage_face}, {P_1: P_1, P_2: P_2, P_3: P_3, P_4: P_4, P_5: P_5, P_6: P_6, P_7: P_7, x_column_1: x_position_of_middle_fuselage_front_profile, x_column_2: x_position_of_middle_fuselage_back_profile}]
+- !<recipes::tail> [{tail_mantle: tail_mantle, tail_back: tail_back}, {P_1: P_1, P_2: P_2, P_3: P_3, P_4: P_4, P_5: P_5, P_6: P_6, P_7: P_7, x_column_1: x_position_of_middle_fuselage_back_profile, x_column_4: x_position_of_tail_back_profile, x_difference_tail_column_1_2: x_difference_tail_column_1_2, x_difference_tail_column_2_3: x_difference_tail_column_2_3}]
+- !<script>
+  steps:
+    - !<grocc::BRepBuilderAPI_Sewing> [[sewing], ~]
+    - !<grocc::BRepBuilderAPI_Sewing::Add> [[""], [sewing, nose]]
+    - !<grocc::BRepBuilderAPI_Sewing::Add> [[""], [sewing, central_fuselage]]
+    - !<grocc::BRepBuilderAPI_Sewing::Add> [[""], [sewing, tail_mantle]]
+    - !<grocc::BRepBuilderAPI_Sewing::Add> [[""], [sewing, tail_back]]
+    - !<grocc::BRepBuilderAPI_Sewing::Perform> [[""], [sewing]]
+    - !<grocc::BRepBuilderAPI_Sewing::SewedShape> [[shape_ref], [sewing]]
+    - !<grocc::BRepBuilderAPI_Copy> [[fuselage_face], [shape_ref]] # need to copy here to avoid dangling reference
+  returns:
+    - fuselage_face
 recipes:
   nose:
     uses:
@@ -234,3 +246,150 @@ recipes:
           - surface_control_points
     - !<grocc::Handle_Geom_BezierSurface> [[central_fuselage_surface], [surface_control_points]]
     - !<grocc::BRepBuilderAPI_MakeFace> [[central_fuselage_face], [central_fuselage_surface, !<double> 1.e-6]]
+  tail:
+    uses:
+      grunk: 0.3.1
+      grocc: 0.1.4
+    parameters:
+    # fuselage profile points
+      P_1: !<grocc::gp_Pnt> [0., 0., 1.]
+      P_2: !<grocc::gp_Pnt> [0., 0.5522847, 1.]
+      P_3: !<grocc::gp_Pnt> [0., 1., 0.5522847]
+      P_4: !<grocc::gp_Pnt> [0., 1., 0.]
+      P_5: !<grocc::gp_Pnt> [0., 1., -0.5522847]
+      P_6: !<grocc::gp_Pnt> [0., 0.5522847, -1.]
+      P_7: !<grocc::gp_Pnt> [0., 0., -1.]
+    # design parameters
+      x_column_1: !<double> 12500.
+      x_column_4: !<double> 25716.
+    # x positions and scale for inner control point rows
+      x_difference_tail_column_1_2: !<double> 1500.
+      x_difference_tail_column_2_3: !<double> 1500.
+      z_scale_column_4: !<double> 0.1923 # absolute: (1950 - 1200)/(2*1950), fuselage_radius = 1950
+    steps:
+    # column_1 fuselage profile points
+    - !<grocc::gp_Vec> [[translation_column_1], [x_column_1, !<double> 0., !<double> 0.]]
+    - !<script>
+        steps:
+          - !<grocc::gp_Trsf> [[column_1_trsf], ~]
+          - !<grocc::gp_Trsf::SetTranslation> [[""], [column_1_trsf, translation_column_1]]
+        returns:
+          - column_1_trsf
+    - !<grocc::gp_Pnt::Transformed> [[P_1_column_1], [P_1, column_1_trsf]]
+    - !<grocc::gp_Pnt::Transformed> [[P_2_column_1], [P_2, column_1_trsf]]
+    - !<grocc::gp_Pnt::Transformed> [[P_3_column_1], [P_3, column_1_trsf]]
+    - !<grocc::gp_Pnt::Transformed> [[P_4_column_1], [P_4, column_1_trsf]]
+    - !<grocc::gp_Pnt::Transformed> [[P_5_column_1], [P_5, column_1_trsf]]
+    - !<grocc::gp_Pnt::Transformed> [[P_6_column_1], [P_6, column_1_trsf]]
+    - !<grocc::gp_Pnt::Transformed> [[P_7_column_1], [P_7, column_1_trsf]]
+    # column_2 fuselage profile points
+    - !<expr> [x_column_2, x_column_1 + x_difference_tail_column_1_2]
+    - !<grocc::gp_Vec> [[translation_column_2], [x_column_2, !<double> 0., !<double> 0.]]
+    - !<script>
+        steps:
+          - !<grocc::gp_Trsf> [[column_2_trsf], ~]
+          - !<grocc::gp_Trsf::SetTranslation> [[""], [column_2_trsf, translation_column_2]]
+        returns:
+          - column_2_trsf
+    - !<grocc::gp_Pnt::Transformed> [[P_1_column_2], [P_1, column_2_trsf]]
+    - !<grocc::gp_Pnt::Transformed> [[P_2_column_2], [P_2, column_2_trsf]]
+    - !<grocc::gp_Pnt::Transformed> [[P_3_column_2], [P_3, column_2_trsf]]
+    - !<grocc::gp_Pnt::Transformed> [[P_4_column_2], [P_4, column_2_trsf]]
+    - !<grocc::gp_Pnt::Transformed> [[P_5_column_2], [P_5, column_2_trsf]]
+    - !<grocc::gp_Pnt::Transformed> [[P_6_column_2], [P_6, column_2_trsf]]
+    - !<grocc::gp_Pnt::Transformed> [[P_7_column_2], [P_7, column_2_trsf]]
+    # column_3 fuselage profile points
+    - !<expr> [x_column_3, x_column_2 + x_difference_tail_column_2_3]
+    - !<grocc::gp_Vec> [[translation_column_3], [x_column_3, !<double> 0., !<double> 0.]]
+    - !<script>
+        steps:
+          - !<grocc::gp_Trsf> [[column_3_trsf], ~]
+          - !<grocc::gp_Trsf::SetTranslation> [[""], [column_3_trsf, translation_column_3]]
+        returns:
+          - column_3_trsf
+    - !<grocc::gp_Pnt::Transformed> [[P_1_column_3], [P_1, column_3_trsf]]
+    - !<grocc::gp_Pnt::Transformed> [[P_2_column_3], [P_2, column_3_trsf]]
+    - !<grocc::gp_Pnt::Transformed> [[P_3_column_3], [P_3, column_3_trsf]]
+    - !<grocc::gp_Pnt::Transformed> [[P_4_column_3], [P_4, column_3_trsf]]
+    - !<grocc::gp_Pnt::Transformed> [[P_5_column_3], [P_5, column_3_trsf]]
+    - !<grocc::gp_Pnt::Transformed> [[P_6_column_3], [P_6, column_3_trsf]]
+    - !<grocc::gp_Pnt::Transformed> [[P_7_column_3], [P_7, column_3_trsf]]
+    # column_4 fuselage profile points
+    - !<grocc::gp_Pnt::Z> [[fuselage_radius], [P_1]]
+    - !<expr> [z_column_4, (1-z_scale_column_4)*fuselage_radius]
+    - !<grocc::gp_Vec> [[translation_column_4], [x_column_4, !<double> 0., z_column_4]]
+    - !<script>
+        steps:
+          - !<grocc::gp_Trsf> [[column_4_trsf], ~]
+          - !<grocc::gp_Trsf::SetTranslation> [[""], [column_4_trsf, translation_column_4]]
+          - !<grocc::gp_Trsf::SetScaleFactor> [[""], [column_4_trsf, z_scale_column_4]]
+        returns:
+          - column_4_trsf
+    - !<grocc::gp_Pnt::Transformed> [[P_1_column_4], [P_1, column_4_trsf]]
+    - !<grocc::gp_Pnt::Transformed> [[P_2_column_4], [P_2, column_4_trsf]]
+    - !<grocc::gp_Pnt::Transformed> [[P_3_column_4], [P_3, column_4_trsf]]
+    - !<grocc::gp_Pnt::Transformed> [[P_4_column_4], [P_4, column_4_trsf]]
+    - !<grocc::gp_Pnt::Transformed> [[P_5_column_4], [P_5, column_4_trsf]]
+    - !<grocc::gp_Pnt::Transformed> [[P_6_column_4], [P_6, column_4_trsf]]
+    - !<grocc::gp_Pnt::Transformed> [[P_7_column_4], [P_7, column_4_trsf]]
+    # create fuselage tail surface as a bezier surface
+    - !<int> [[row_start], [!<int> 1]]
+    - !<int> [[row_end], [!<int> 7]]
+    - !<int> [[col_start], [!<int> 1]]
+    - !<int> [[col_end], [!<int> 4]]
+    - !<script>
+        steps:
+          - !<grocc::TColgp_Array2OfPnt> [[surface_control_points ], [row_start, row_end, col_start, col_end]]
+          - !<grocc::TColgp_Array2OfPnt::SetValue> [[""], [surface_control_points, !<int> 1, !<int> 1, P_1_column_1]]
+          - !<grocc::TColgp_Array2OfPnt::SetValue> [[""], [surface_control_points, !<int> 2, !<int> 1, P_2_column_1]]
+          - !<grocc::TColgp_Array2OfPnt::SetValue> [[""], [surface_control_points, !<int> 3, !<int> 1, P_3_column_1]]
+          - !<grocc::TColgp_Array2OfPnt::SetValue> [[""], [surface_control_points, !<int> 4, !<int> 1, P_4_column_1]]
+          - !<grocc::TColgp_Array2OfPnt::SetValue> [[""], [surface_control_points, !<int> 5, !<int> 1, P_5_column_1]]
+          - !<grocc::TColgp_Array2OfPnt::SetValue> [[""], [surface_control_points, !<int> 6, !<int> 1, P_6_column_1]]
+          - !<grocc::TColgp_Array2OfPnt::SetValue> [[""], [surface_control_points, !<int> 7, !<int> 1, P_7_column_1]]
+          - !<grocc::TColgp_Array2OfPnt::SetValue> [[""], [surface_control_points, !<int> 1, !<int> 2, P_1_column_2]]
+          - !<grocc::TColgp_Array2OfPnt::SetValue> [[""], [surface_control_points, !<int> 2, !<int> 2, P_2_column_2]]
+          - !<grocc::TColgp_Array2OfPnt::SetValue> [[""], [surface_control_points, !<int> 3, !<int> 2, P_3_column_2]]
+          - !<grocc::TColgp_Array2OfPnt::SetValue> [[""], [surface_control_points, !<int> 4, !<int> 2, P_4_column_2]]
+          - !<grocc::TColgp_Array2OfPnt::SetValue> [[""], [surface_control_points, !<int> 5, !<int> 2, P_5_column_2]]
+          - !<grocc::TColgp_Array2OfPnt::SetValue> [[""], [surface_control_points, !<int> 6, !<int> 2, P_6_column_2]]
+          - !<grocc::TColgp_Array2OfPnt::SetValue> [[""], [surface_control_points, !<int> 7, !<int> 2, P_7_column_2]]
+          - !<grocc::TColgp_Array2OfPnt::SetValue> [[""], [surface_control_points, !<int> 1, !<int> 3, P_1_column_3]]
+          - !<grocc::TColgp_Array2OfPnt::SetValue> [[""], [surface_control_points, !<int> 2, !<int> 3, P_2_column_3]]
+          - !<grocc::TColgp_Array2OfPnt::SetValue> [[""], [surface_control_points, !<int> 3, !<int> 3, P_3_column_3]]
+          - !<grocc::TColgp_Array2OfPnt::SetValue> [[""], [surface_control_points, !<int> 4, !<int> 3, P_4_column_3]]
+          - !<grocc::TColgp_Array2OfPnt::SetValue> [[""], [surface_control_points, !<int> 5, !<int> 3, P_5_column_3]]
+          - !<grocc::TColgp_Array2OfPnt::SetValue> [[""], [surface_control_points, !<int> 6, !<int> 3, P_6_column_3]]
+          - !<grocc::TColgp_Array2OfPnt::SetValue> [[""], [surface_control_points, !<int> 7, !<int> 3, P_7_column_3]]
+          - !<grocc::TColgp_Array2OfPnt::SetValue> [[""], [surface_control_points, !<int> 1, !<int> 4, P_1_column_4]]
+          - !<grocc::TColgp_Array2OfPnt::SetValue> [[""], [surface_control_points, !<int> 2, !<int> 4, P_2_column_4]]
+          - !<grocc::TColgp_Array2OfPnt::SetValue> [[""], [surface_control_points, !<int> 3, !<int> 4, P_3_column_4]]
+          - !<grocc::TColgp_Array2OfPnt::SetValue> [[""], [surface_control_points, !<int> 4, !<int> 4, P_4_column_4]]
+          - !<grocc::TColgp_Array2OfPnt::SetValue> [[""], [surface_control_points, !<int> 5, !<int> 4, P_5_column_4]]
+          - !<grocc::TColgp_Array2OfPnt::SetValue> [[""], [surface_control_points, !<int> 6, !<int> 4, P_6_column_4]]
+          - !<grocc::TColgp_Array2OfPnt::SetValue> [[""], [surface_control_points, !<int> 7, !<int> 4, P_7_column_4]]
+        returns:
+          - surface_control_points
+    - !<grocc::Handle_Geom_BezierSurface> [[tail_surface], [surface_control_points]]
+    - !<grocc::BRepBuilderAPI_MakeFace> [[tail_mantle], [tail_surface, !<double> 1.e-6]]
+  # close tail
+    - !<int> [[tail_row_start], [!<int> 1]]
+    - !<int> [[tail_row_end], [!<int> 7]]
+    - !<script>
+        steps:
+          - !<grocc::TColgp_Array1OfPnt> [[closed_tail_curve_1_control_points], [tail_row_start, tail_row_end]]
+          - !<grocc::TColgp_Array1OfPnt::SetValue> [[""], [closed_tail_curve_1_control_points, !<int> 1, P_1_column_4]]
+          - !<grocc::TColgp_Array1OfPnt::SetValue> [[""], [closed_tail_curve_1_control_points, !<int> 2, P_2_column_4]]
+          - !<grocc::TColgp_Array1OfPnt::SetValue> [[""], [closed_tail_curve_1_control_points, !<int> 3, P_3_column_4]]
+          - !<grocc::TColgp_Array1OfPnt::SetValue> [[""], [closed_tail_curve_1_control_points, !<int> 4, P_4_column_4]]
+          - !<grocc::TColgp_Array1OfPnt::SetValue> [[""], [closed_tail_curve_1_control_points, !<int> 5, P_5_column_4]]
+          - !<grocc::TColgp_Array1OfPnt::SetValue> [[""], [closed_tail_curve_1_control_points, !<int> 6, P_6_column_4]]
+          - !<grocc::TColgp_Array1OfPnt::SetValue> [[""], [closed_tail_curve_1_control_points, !<int> 7, P_7_column_4]]
+        returns:
+          - closed_tail_curve_1_control_points
+    - !<grocc::Handle_Geom_BezierCurve> [[closed_tail_curve_1], [closed_tail_curve_1_control_points]]
+    - !<grocc::BRepBuilderAPI_MakeEdge> [[closed_tail_edge_1], [closed_tail_curve_1]]
+    - !<grocc::BRepBuilderAPI_MakeEdge> [[closed_tail_edge_2], [P_7_column_4, P_1_column_4]]
+    - !<grocc::BRepBuilderAPI_MakeWire> [[closed_tail_wire], [closed_tail_edge_1, closed_tail_edge_2]]
+    - !<grocc::BRepBuilderAPI_MakeFace> [[tail_back], [closed_tail_wire]]
+
