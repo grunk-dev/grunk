@@ -1,10 +1,26 @@
 uses:
   grunk: 0.3.1
-  grocc: 0.1.4
+  geo: 0.2.0
 parameters:
 steps:
-  - !<recipes::fuselage> [{fuselage: fuselage_shell}]
-  - !<recipes::wing> [{wing: wing_shell}]
+  - !<recipes::fuselage> [{fuselage_shell_occt: fuselage_shell}]
+  - !<recipes::wing> [{wing_solid_occt: wing_solid, wing_tip_cap: wing_tip_cap}]
+  - !<geo::Shape> [[fuselage_shell], [fuselage_shell_occt]]
+  - !<geo::Shape> [[wing_solid], [wing_solid_occt]]
+  - !<geo::boolean_subtract> [[fuselage_shell_cut], [fuselage_shell, wing_solid]]
+  - !<geo::internal::SplitShape> [[wing_solid_split_occt], [wing_solid, fuselage_shell]] # TODO: Needs to be a geo::Operation
+  - !<geo::Shape> [[wing_solid_split], [wing_solid_split_occt]]
+  # exterior_wing = wing_solid_split.select_subshapes(is_shell && has_subshape(wing_tip_cap))
+  # - !<script>
+  #   steps:
+  #    - !<geo::is_shell> [[is_shell], []]
+  #    - !<geo::has_subshape> [[has_wing_tip], [wing_tip_cap]]
+  #    - !<geo::AND> [[is_shell_and_has_wing_tip], [is_shell, has_wing_tip]]
+  #    - !<geo::Shape::select_subshapes> [[exterior_wing], [wing_solid_split, is_shell_and_has_wing_tip]]
+  #   returns:
+  #    - exterior_wing_shell
+  # exterior_wing_faces = exterior_wing.select_subshapes(is_face && !is_descendent_of(fuselage_shell))
+  # sew fuselage_shell_cut with exterior_wing_faces -- we could consider making this an Operation as well, allowing for compound inputs, so that I don't have to use control flow here
 recipes:
   wing:
     uses:
@@ -68,23 +84,36 @@ recipes:
         - !<grocc::BRepOffsetAPI_ThruSections::Build> [[""], [wing_face]]
       returns:
         - wing_face
-    # create wing cap
+    # create wing tip cap
     - !<script>
       steps:
         - !<grocc::BRepBuilderAPI_Transform::Shape> [[wing_tip_shape], [wing_tip_section]]
         - !<grocc::TopoDS::Wire> [[wing_tip_wire], [wing_tip_shape]]
-        - !<grocc::BRepBuilderAPI_MakeFace> [[wing_cap], [wing_tip_wire]]
+        - !<grocc::BRepBuilderAPI_MakeFace> [[wing_tip_cap], [wing_tip_wire]]
       returns:
-        - wing_cap
+        - wing_tip_cap
+    # create wing root cap
+    - !<script>
+      steps:
+        - !<grocc::BRepBuilderAPI_Transform::Shape> [[wing_root_shape], [wing_root_section]]
+        - !<grocc::TopoDS::Wire> [[wing_root_wire], [wing_root_shape]]
+        - !<grocc::BRepBuilderAPI_MakeFace> [[wing_root_cap], [wing_root_wire]]
+      returns:
+        - wing_root_cap
+    # create wing solid
     - !<script>
       steps:
         - !<grocc::BRepBuilderAPI_Sewing> [[sewing], ~]
+        - !<grocc::BRepBuilderAPI_Sewing::Add> [[""], [sewing, wing_root_cap]]
         - !<grocc::BRepBuilderAPI_Sewing::Add> [[""], [sewing, wing_face]]
-        - !<grocc::BRepBuilderAPI_Sewing::Add> [[""], [sewing, wing_cap]]
+        - !<grocc::BRepBuilderAPI_Sewing::Add> [[""], [sewing, wing_tip_cap]]
         - !<grocc::BRepBuilderAPI_Sewing::Perform> [[""], [sewing]]
         - !<grocc::BRepBuilderAPI_Sewing::SewedShape> [[shape_ref], [sewing]]
-        - !<grocc::BRepBuilderAPI_Copy> [[wing_shell], [shape_ref]] # need to copy here to avoid dangling reference
+        - !<grocc::TopoDS_Shape::Reversed> [[wing_shell_shape], [shape_ref]]
+        - !<grocc::TopoDS::Shell> [[wing_shell], [wing_shell_shape]]
+        - !<grocc::BRepBuilderAPI_MakeSolid> [[wing_solid], [wing_shell]]
       returns:
+        - wing_solid
         - wing_shell
     recipes:
       CST_profile:
