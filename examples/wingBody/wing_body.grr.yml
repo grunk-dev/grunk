@@ -1,26 +1,12 @@
 uses:
   grunk: 0.3.1
-  geo: 0.2.0
+  tigl: 0.1.0
+  grocc: 0.1.4
 parameters:
 steps:
-  - !<recipes::fuselage> [{fuselage_shell_occt: fuselage_shell}]
-  - !<recipes::wing> [{wing_solid_occt: wing_solid, wing_tip_cap: wing_tip_cap}]
-  - !<geo::Shape> [[fuselage_shell], [fuselage_shell_occt]]
-  - !<geo::Shape> [[wing_solid], [wing_solid_occt]]
-  - !<geo::boolean_subtract> [[fuselage_shell_cut], [fuselage_shell, wing_solid]]
-  - !<geo::internal::SplitShape> [[wing_solid_split_occt], [wing_solid, fuselage_shell]] # TODO: Needs to be a geo::Operation
-  - !<geo::Shape> [[wing_solid_split], [wing_solid_split_occt]]
-  # exterior_wing = wing_solid_split.select_subshapes(is_shell && has_subshape(wing_tip_cap))
-  # - !<script>
-  #   steps:
-  #    - !<geo::is_shell> [[is_shell], []]
-  #    - !<geo::has_subshape> [[has_wing_tip], [wing_tip_cap]]
-  #    - !<geo::AND> [[is_shell_and_has_wing_tip], [is_shell, has_wing_tip]]
-  #    - !<geo::Shape::select_subshapes> [[exterior_wing], [wing_solid_split, is_shell_and_has_wing_tip]]
-  #   returns:
-  #    - exterior_wing_shell
-  # exterior_wing_faces = exterior_wing.select_subshapes(is_face && !is_descendent_of(fuselage_shell))
-  # sew fuselage_shell_cut with exterior_wing_faces -- we could consider making this an Operation as well, allowing for compound inputs, so that I don't have to use control flow here
+  - !<recipes::fuselage> [{fuselage: fuselage_solid}]
+  - !<recipes::wing> [{wing: wing_solid}]
+  - !<grocc::BRepAlgoAPI_Fuse> [[wingbodyref], [fuselage, wing]]
 recipes:
   wing:
     uses:
@@ -185,20 +171,28 @@ recipes:
     - !<grocc::gp_Pnt> [[P_5], [!<double> 0., fuselage_radius, profile_shape_parameter_neg]]
     - !<grocc::gp_Pnt> [[P_6], [!<double> 0., profile_shape_parameter, radius_neg]]
     - !<grocc::gp_Pnt> [[P_7], [!<double> 0., !<double> 0., radius_neg]]
-    - !<recipes::nose> [{nose: nose_face}, {x_column_1: x_position_of_nose_tip, x_column_5: x_position_of_middle_fuselage_front_profile, P_1: P_1, P_2: P_2, P_3: P_3, P_4: P_4, P_5: P_5, P_6: P_6, P_7: P_7}]
-    - !<recipes::central_fuselage> [{central_fuselage: central_fuselage_face}, {P_1: P_1, P_2: P_2, P_3: P_3, P_4: P_4, P_5: P_5, P_6: P_6, P_7: P_7, x_column_1: x_position_of_middle_fuselage_front_profile, x_column_2: x_position_of_middle_fuselage_back_profile}]
-    - !<recipes::tail> [{tail_mantle: tail_mantle, tail_back: tail_back}, {P_1: P_1, P_2: P_2, P_3: P_3, P_4: P_4, P_5: P_5, P_6: P_6, P_7: P_7, x_column_1: x_position_of_middle_fuselage_back_profile, x_column_4: x_position_of_tail_back_profile, x_difference_tail_column_1_2: x_difference_tail_column_1_2, x_difference_tail_column_2_3: x_difference_tail_column_2_3}]
+    # get fuselage segment shells
+    - !<recipes::nose> [{nose_mantle: nose_mantle_face, nose_sym: nose_symmetry_face}, {x_column_1: x_position_of_nose_tip, x_column_5: x_position_of_middle_fuselage_front_profile, P_1: P_1, P_2: P_2, P_3: P_3, P_4: P_4, P_5: P_5, P_6: P_6, P_7: P_7}]
+    - !<recipes::central_fuselage> [{central_fuselage_mantle: central_fuselage_face, central_fuselage_sym: central_fuselage_symmetry_face}, {P_1: P_1, P_2: P_2, P_3: P_3, P_4: P_4, P_5: P_5, P_6: P_6, P_7: P_7, x_column_1: x_position_of_middle_fuselage_front_profile, x_column_2: x_position_of_middle_fuselage_back_profile}]
+    - !<recipes::tail> [{tail_mantle: tail_mantle, tail_back: tail_back, tail_sym: tail_symmetry_face}, {P_1: P_1, P_2: P_2, P_3: P_3, P_4: P_4, P_5: P_5, P_6: P_6, P_7: P_7, x_column_1: x_position_of_middle_fuselage_back_profile, x_column_4: x_position_of_tail_back_profile, x_difference_tail_column_1_2: x_difference_tail_column_1_2, x_difference_tail_column_2_3: x_difference_tail_column_2_3}]
+    # sew shells and create a solid
     - !<script>
       steps:
         - !<grocc::BRepBuilderAPI_Sewing> [[sewing], ~]
-        - !<grocc::BRepBuilderAPI_Sewing::Add> [[""], [sewing, nose]]
-        - !<grocc::BRepBuilderAPI_Sewing::Add> [[""], [sewing, central_fuselage]]
+        - !<grocc::BRepBuilderAPI_Sewing::Add> [[""], [sewing, nose_mantle]]
+        - !<grocc::BRepBuilderAPI_Sewing::Add> [[""], [sewing, nose_sym]]
+        - !<grocc::BRepBuilderAPI_Sewing::Add> [[""], [sewing, central_fuselage_mantle]]
+        - !<grocc::BRepBuilderAPI_Sewing::Add> [[""], [sewing, central_fuselage_sym]]
         - !<grocc::BRepBuilderAPI_Sewing::Add> [[""], [sewing, tail_mantle]]
         - !<grocc::BRepBuilderAPI_Sewing::Add> [[""], [sewing, tail_back]]
+        - !<grocc::BRepBuilderAPI_Sewing::Add> [[""], [sewing, tail_sym]]
         - !<grocc::BRepBuilderAPI_Sewing::Perform> [[""], [sewing]]
         - !<grocc::BRepBuilderAPI_Sewing::SewedShape> [[shape_ref], [sewing]]
-        - !<grocc::BRepBuilderAPI_Copy> [[fuselage_shell], [shape_ref]] # need to copy here to avoid dangling reference
+        - !<grocc::TopoDS_Shape::Reversed> [[fuselage_shell_shape], [shape_ref]]
+        - !<grocc::TopoDS::Shell> [[fuselage_shell], [fuselage_shell_shape]]
+        - !<grocc::BRepBuilderAPI_MakeSolid> [[fuselage_solid], [fuselage_shell]]
       returns:
+        - fuselage_solid
         - fuselage_shell
     recipes:
       nose:
@@ -336,7 +330,35 @@ recipes:
             returns:
               - nose_surface_control_points
         - !<grocc::Handle_Geom_BezierSurface> [[nose_surface], [nose_surface_control_points]]
-        - !<grocc::BRepBuilderAPI_MakeFace> [[nose_face], [nose_surface, !<double> 1.e-6]]
+        - !<grocc::BRepBuilderAPI_MakeFace> [[nose_mantle_face], [nose_surface, !<double> 1.e-6]]
+        # create planar face at symmetry plane
+        - !<script>
+          steps:
+           - !<grocc::TColgp_Array1OfPnt> [[nose_symmetry_face_curve1_cps], [col_start, col_end]]
+           - !<grocc::TColgp_Array1OfPnt::SetValue> [[""], [nose_symmetry_face_curve1_cps, !<int> 1, nose]]
+           - !<grocc::TColgp_Array1OfPnt::SetValue> [[""], [nose_symmetry_face_curve1_cps, !<int> 2, P_1_column_2]]
+           - !<grocc::TColgp_Array1OfPnt::SetValue> [[""], [nose_symmetry_face_curve1_cps, !<int> 3, P_1_column_3]]
+           - !<grocc::TColgp_Array1OfPnt::SetValue> [[""], [nose_symmetry_face_curve1_cps, !<int> 4, P_1_column_4]]
+           - !<grocc::TColgp_Array1OfPnt::SetValue> [[""], [nose_symmetry_face_curve1_cps, !<int> 5, P_1_column_5]]
+          returns:
+           -  nose_symmetry_face_curve1_cps
+        - !<grocc::Handle_Geom_BezierCurve> [[nose_symmetry_face_curve_1], [nose_symmetry_face_curve1_cps]]
+        - !<grocc::BRepBuilderAPI_MakeEdge> [[nose_symmetry_face_edge1], [nose_symmetry_face_curve_1]]
+        - !<script>
+          steps:
+           - !<grocc::TColgp_Array1OfPnt> [[nose_symmetry_face_curve2_cps], [col_start, col_end]]
+           - !<grocc::TColgp_Array1OfPnt::SetValue> [[""], [nose_symmetry_face_curve2_cps, !<int> 1, nose]]
+           - !<grocc::TColgp_Array1OfPnt::SetValue> [[""], [nose_symmetry_face_curve2_cps, !<int> 2, P_7_column_2]]
+           - !<grocc::TColgp_Array1OfPnt::SetValue> [[""], [nose_symmetry_face_curve2_cps, !<int> 3, P_7_column_3]]
+           - !<grocc::TColgp_Array1OfPnt::SetValue> [[""], [nose_symmetry_face_curve2_cps, !<int> 4, P_7_column_4]]
+           - !<grocc::TColgp_Array1OfPnt::SetValue> [[""], [nose_symmetry_face_curve2_cps, !<int> 5, P_7_column_5]]
+          returns:
+           -  nose_symmetry_face_curve2_cps
+        - !<grocc::Handle_Geom_BezierCurve> [[nose_symmetry_face_curve_2], [nose_symmetry_face_curve2_cps]]
+        - !<grocc::BRepBuilderAPI_MakeEdge> [[nose_symmetry_face_edge2], [nose_symmetry_face_curve_2]]
+        - !<grocc::BRepBuilderAPI_MakeEdge> [[nose_symmetry_face_edge3], [P_1_column_5, P_7_column_5]]
+        - !<grocc::BRepBuilderAPI_MakeWire> [[nose_symmetry_face_wire], [nose_symmetry_face_edge1, nose_symmetry_face_edge3, nose_symmetry_face_edge2]]
+        - !<grocc::BRepBuilderAPI_MakeFace> [[nose_symmetry_face], [nose_symmetry_face_wire]]
       central_fuselage:
         uses:
           grunk: 0.3.1
@@ -410,6 +432,13 @@ recipes:
               - surface_control_points
         - !<grocc::Handle_Geom_BezierSurface> [[central_fuselage_surface], [surface_control_points]]
         - !<grocc::BRepBuilderAPI_MakeFace> [[central_fuselage_face], [central_fuselage_surface, !<double> 1.e-6]]
+        # create central fuselage face at symmetry plane
+        - !<grocc::BRepBuilderAPI_MakeEdge> [[central_fuselage_symmetry_edge1], [P_1_column_1, P_1_column_2]]
+        - !<grocc::BRepBuilderAPI_MakeEdge> [[central_fuselage_symmetry_edge2], [P_1_column_2, P_7_column_2]]
+        - !<grocc::BRepBuilderAPI_MakeEdge> [[central_fuselage_symmetry_edge3], [P_7_column_2, P_7_column_1]]
+        - !<grocc::BRepBuilderAPI_MakeEdge> [[central_fuselage_symmetry_edge4], [P_7_column_1, P_1_column_1]]
+        - !<grocc::BRepBuilderAPI_MakeWire> [[central_fuselage_symmetry_wire], [central_fuselage_symmetry_edge1, central_fuselage_symmetry_edge2, central_fuselage_symmetry_edge3, central_fuselage_symmetry_edge4]]
+        - !<grocc::BRepBuilderAPI_MakeFace> [[central_fuselage_symmetry_face], [central_fuselage_symmetry_wire]]
       tail:
         uses:
           grunk: 0.3.1
@@ -537,11 +566,9 @@ recipes:
         - !<grocc::Handle_Geom_BezierSurface> [[tail_surface], [surface_control_points]]
         - !<grocc::BRepBuilderAPI_MakeFace> [[tail_mantle], [tail_surface, !<double> 1.e-6]]
       # close tail
-        - !<int> [[tail_row_start], [!<int> 1]]
-        - !<int> [[tail_row_end], [!<int> 7]]
         - !<script>
             steps:
-              - !<grocc::TColgp_Array1OfPnt> [[closed_tail_curve_1_control_points], [tail_row_start, tail_row_end]]
+              - !<grocc::TColgp_Array1OfPnt> [[closed_tail_curve_1_control_points], [row_start, row_end]]
               - !<grocc::TColgp_Array1OfPnt::SetValue> [[""], [closed_tail_curve_1_control_points, !<int> 1, P_1_column_4]]
               - !<grocc::TColgp_Array1OfPnt::SetValue> [[""], [closed_tail_curve_1_control_points, !<int> 2, P_2_column_4]]
               - !<grocc::TColgp_Array1OfPnt::SetValue> [[""], [closed_tail_curve_1_control_points, !<int> 3, P_3_column_4]]
@@ -556,4 +583,32 @@ recipes:
         - !<grocc::BRepBuilderAPI_MakeEdge> [[closed_tail_edge_2], [P_7_column_4, P_1_column_4]]
         - !<grocc::BRepBuilderAPI_MakeWire> [[closed_tail_wire], [closed_tail_edge_1, closed_tail_edge_2]]
         - !<grocc::BRepBuilderAPI_MakeFace> [[tail_back], [closed_tail_wire]]
+        # create tail face at symmetry plane
+        - !<script>
+            steps:
+              - !<grocc::TColgp_Array1OfPnt> [[tail_symmetry_curve1_cps], [col_start, col_end]]
+              - !<grocc::TColgp_Array1OfPnt::SetValue> [[""], [tail_symmetry_curve1_cps, !<int> 1, P_1_column_1]]
+              - !<grocc::TColgp_Array1OfPnt::SetValue> [[""], [tail_symmetry_curve1_cps, !<int> 2, P_1_column_2]]
+              - !<grocc::TColgp_Array1OfPnt::SetValue> [[""], [tail_symmetry_curve1_cps, !<int> 3, P_1_column_3]]
+              - !<grocc::TColgp_Array1OfPnt::SetValue> [[""], [tail_symmetry_curve1_cps, !<int> 4, P_1_column_4]]
+            returns:
+              -  tail_symmetry_curve1_cps
+        - !<grocc::Handle_Geom_BezierCurve> [[tail_symmetry_curve_1], [tail_symmetry_curve1_cps]]
+        - !<grocc::BRepBuilderAPI_MakeEdge> [[tail_symmetry_edge1], [tail_symmetry_curve_1]]
+        - !<script>
+            steps:
+              - !<grocc::TColgp_Array1OfPnt> [[tail_symmetry_curve2_cps], [col_start, col_end]]
+              - !<grocc::TColgp_Array1OfPnt::SetValue> [[""], [tail_symmetry_curve2_cps, !<int> 1, P_7_column_1]]
+              - !<grocc::TColgp_Array1OfPnt::SetValue> [[""], [tail_symmetry_curve2_cps, !<int> 2, P_7_column_2]]
+              - !<grocc::TColgp_Array1OfPnt::SetValue> [[""], [tail_symmetry_curve2_cps, !<int> 3, P_7_column_3]]
+              - !<grocc::TColgp_Array1OfPnt::SetValue> [[""], [tail_symmetry_curve2_cps, !<int> 4, P_7_column_4]]
+            returns:
+              -  tail_symmetry_curve2_cps
+        - !<grocc::Handle_Geom_BezierCurve> [[tail_symmetry_curve_2], [tail_symmetry_curve2_cps]]
+        - !<grocc::BRepBuilderAPI_MakeEdge> [[tail_symmetry_edge2], [tail_symmetry_curve_2]]
+        - !<grocc::BRepBuilderAPI_MakeEdge> [[tail_symmetry_edge3], [P_1_column_4, P_7_column_4]]
+        - !<grocc::BRepBuilderAPI_MakeEdge> [[tail_symmetry_edge4], [P_1_column_1, P_7_column_1]]
+        - !<grocc::BRepBuilderAPI_MakeWire> [[tail_symmetry_wire], [tail_symmetry_edge1, tail_symmetry_edge3, tail_symmetry_edge2, tail_symmetry_edge4]]
+        - !<grocc::BRepBuilderAPI_MakeFace> [[tail_symmetry_face], [tail_symmetry_wire]]
+
 
