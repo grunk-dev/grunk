@@ -1,6 +1,6 @@
 uses:
-  grunk: 0.3.1
-  tigl: 0.1.0
+  grunk: 0.3.2
+  tigl: 0.2.0
   grocc: 0.1.4
 parameters:
 steps:
@@ -10,8 +10,8 @@ steps:
 recipes:
   wing:
     uses:
-      grunk: 0.3.1
-      tigl: 0.1.0
+      grunk: 0.3.2
+      tigl: 0.2.0
       grocc: 0.1.4
     parameters:
       CST_N1: !<double> 0.5
@@ -104,8 +104,8 @@ recipes:
     recipes:
       CST_profile:
         uses:
-          grunk: 0.3.1
-          tigl: 0.1.0
+          grunk: 0.3.2
+          tigl: 0.2.0
           grocc: 0.1.4
         parameters:
           CST_N1: !<double> 0.5
@@ -124,7 +124,7 @@ recipes:
         - !<expr> [relate_te_thickness_half, CST_relative_te_thickness/2]
         - !<script>
           steps:
-            - !<tigl::CCSTCurveBuilder> [[upper_cst], [CST_N1, CST_N2, CST_upper_b, relate_te_thickness_half]]
+            - !<tigl::CCSTCurveBuilderSmooth> [[upper_cst], [CST_N1, CST_N2, CST_upper_b, relate_te_thickness_half]]
             - !<tigl::CCSTCurveBuilder::Curve> [[upper_cst_curve], [upper_cst]]
             - !<grocc::BRepBuilderAPI_MakeEdge> [[wing_upper_profile], [upper_cst_curve]]
           returns:
@@ -133,7 +133,7 @@ recipes:
         - !<expr> [neg_relate_te_thickness_half, -CST_relative_te_thickness/2]
         - !<script>
           steps:
-            - !<tigl::CCSTCurveBuilder> [[lower_cst], [CST_N1, CST_N2, CST_lower_b, neg_relate_te_thickness_half]]
+            - !<tigl::CCSTCurveBuilderSmooth> [[lower_cst], [CST_N1, CST_N2, CST_lower_b, neg_relate_te_thickness_half]]
             - !<tigl::CCSTCurveBuilder::Curve> [[lower_cst_curve], [lower_cst]]
             - !<grocc::BRepBuilderAPI_MakeEdge> [[wing_lower_profile], [lower_cst_curve]]
           returns:
@@ -149,7 +149,7 @@ recipes:
         - !<grocc::BRepBuilderAPI_MakeWire> [[wing_profile], [wing_upper_profile, wing_te_edge, wing_lower_profile]]
   fuselage:
     uses:
-      grunk: 0.3.1
+      grunk: 0.3.2
       grocc: 0.1.4
     parameters:
       fuselage_radius: !<double> 1950.
@@ -197,7 +197,7 @@ recipes:
     recipes:
       nose:
         uses:
-          grunk: 0.3.1
+          grunk: 0.3.2
           grocc: 0.1.4
         parameters:
         # fuselage profile points
@@ -361,7 +361,7 @@ recipes:
         - !<grocc::BRepBuilderAPI_MakeFace> [[nose_symmetry_face], [nose_symmetry_face_wire]]
       central_fuselage:
         uses:
-          grunk: 0.3.1
+          grunk: 0.3.2
           grocc: 0.1.4
         parameters:
         # fuselage profile points
@@ -441,7 +441,7 @@ recipes:
         - !<grocc::BRepBuilderAPI_MakeFace> [[central_fuselage_symmetry_face], [central_fuselage_symmetry_wire]]
       tail:
         uses:
-          grunk: 0.3.1
+          grunk: 0.3.2
           grocc: 0.1.4
         parameters:
         # fuselage profile points
