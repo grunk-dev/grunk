@@ -1,6 +1,6 @@
 uses:
   grunk: 0.3.2
-  geo: 0.2.0
+  geo: 0.2.1
   grocc: 0.1.4
 parameters:
   n_supports: !<int> 3
@@ -40,7 +40,7 @@ recipes:
   armrest:
     uses:
       grunk: 0.3.2
-      geo: 0.2.0
+      geo: 0.2.1
       grocc: 0.1.4
     parameters:
       l_cushion: !<double> 0.45000000000000001
@@ -79,7 +79,7 @@ recipes:
   support:
     uses:
       grunk: 0.3.2
-      geo: 0.2.0
+      geo: 0.2.1
       grocc: 0.1.4
     parameters:
       l_cushion: !<double> 0.45000000000000001
@@ -95,7 +95,7 @@ recipes:
   seat:
     uses:
       grunk: 0.3.2
-      geo: 0.2.0
+      geo: 0.2.1
       grocc: 0.1.4
     parameters:
       w_armrest: !<double> 0.050000000000000003
@@ -116,7 +116,7 @@ recipes:
       seat_cushion:
         uses:
           grunk: 0.3.2
-          geo: 0.2.0
+          geo: 0.2.1
           grocc: 0.1.4
         parameters:
           h_cushion: !<double> 0.12
@@ -164,7 +164,7 @@ recipes:
       backrest:
         uses:
           grunk: 0.3.2
-          geo: 0.2.0
+          geo: 0.2.1
           grocc: 0.1.4
         parameters:
           w_sitting_surface: !<double> 0.45000000000000001
