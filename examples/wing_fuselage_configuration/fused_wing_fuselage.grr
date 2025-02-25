@@ -1,0 +1,647 @@
+uses:
+  grunk: 0.2.2
+  grocc: 0.1.1
+  geo: 0.2.0
+parameters:
+  i_u_pc_1: !<grocc::gp_Pnt> [12743.744000000001, -1875.046, -1242.3]
+  i_u_pc_3: !<grocc::gp_Pnt> [12744.906999999999, -1875.046, -1192.336]
+  i_u_pc_4: !<grocc::gp_Pnt> [12780.960999999999, -1875.046, -1085.249]
+  i_u_pc_5: !<grocc::gp_Pnt> [12922.120999999999, -1875.046, -981.97299999999996]
+  i_u_pc_6: !<grocc::gp_Pnt> [13134.59, -1875.046, -914.36599999999999]
+  i_u_pc_7: !<grocc::gp_Pnt> [13412.355, -1875.046, -882.80799999999999]
+  i_u_pc_8: !<grocc::gp_Pnt> [13751.543, -1875.046, -872.33799999999997]
+  i_u_pc_9: !<grocc::gp_Pnt> [14145.044, -1875.046, -881.42999999999995]
+  i_u_pc_10: !<grocc::gp_Pnt> [14582.641, -1875.046, -908.64099999999996]
+  i_u_pc_11: !<grocc::gp_Pnt> [15052.873, -1875.046, -946.11300000000006]
+  i_u_pc_12: !<grocc::gp_Pnt> [15543.057000000001, -1875.046, -990.98199999999997]
+  i_u_pc_13: !<grocc::gp_Pnt> [16039.909, -1875.046, -1040.433]
+  i_u_pc_14: !<grocc::gp_Pnt> [16529.884999999998, -1875.046, -1093.018]
+  i_u_pc_15: !<grocc::gp_Pnt> [16999.602999999999, -1875.046, -1148.1579999999999]
+  i_u_pc_16: !<grocc::gp_Pnt> [17436.043000000001, -1875.046, -1206.5619999999999]
+  i_u_pc_17: !<grocc::gp_Pnt> [17827.393, -1875.046, -1266.624]
+  i_u_pc_18: !<grocc::gp_Pnt> [18162.458999999999, -1875.046, -1324.558]
+  i_u_pc_19: !<grocc::gp_Pnt> [18433.526999999998, -1875.046, -1376.1600000000001]
+  i_u_pc_20: !<grocc::gp_Pnt> [18666.664000000001, -1875.046, -1423.2339999999999]
+  i_u_pc_22: !<grocc::gp_Pnt> [18815.762999999999, -1875.046, -1454.3399999999999]
+  move_vec_i_wing: !<grocc::gp_Vec> [0, 1, 0]
+  move_factor_i_wing: !<double> 1500
+  m_u_pc_1: !<grocc::gp_Pnt> [15081.173000000001, -6340.3299999999999, -933.02499999999998]
+  m_u_pc_3: !<grocc::gp_Pnt> [15081.892, -6340.3299999999999, -902.11800000000005]
+  m_u_pc_4: !<grocc::gp_Pnt> [15104.195, -6340.3299999999999, -835.87300000000005]
+  m_u_pc_5: !<grocc::gp_Pnt> [15191.517, -6340.3299999999999, -771.98699999999997]
+  m_u_pc_6: !<grocc::gp_Pnt> [15322.950000000001, -6340.3299999999999, -730.16499999999996]
+  m_u_pc_7: !<grocc::gp_Pnt> [15494.776, -6340.3299999999999, -710.64300000000003]
+  m_u_pc_8: !<grocc::gp_Pnt> [15704.597, -6340.3299999999999, -704.16600000000005]
+  m_u_pc_9: !<grocc::gp_Pnt> [15948.017, -6340.3299999999999, -709.79100000000005]
+  m_u_pc_10: !<grocc::gp_Pnt> [16218.715, -6340.3299999999999, -726.62400000000002]
+  m_u_pc_11: !<grocc::gp_Pnt> [16509.599999999999, -6340.3299999999999, -749.80399999999997]
+  m_u_pc_12: !<grocc::gp_Pnt> [16812.828000000001, -6340.3299999999999, -777.55999999999995]
+  m_u_pc_13: !<grocc::gp_Pnt> [17120.18, -6340.3299999999999, -808.14999999999998]
+  m_u_pc_14: !<grocc::gp_Pnt> [17423.279999999999, -6340.3299999999999, -840.67899999999997]
+  m_u_pc_15: !<grocc::gp_Pnt> [17713.847000000002, -6340.3299999999999, -874.78899999999999]
+  m_u_pc_16: !<grocc::gp_Pnt> [17983.829000000002, -6340.3299999999999, -910.91700000000003]
+  m_u_pc_17: !<grocc::gp_Pnt> [18225.918000000001, -6340.3299999999999, -948.072]
+  m_u_pc_18: !<grocc::gp_Pnt> [18433.189999999999, -6340.3299999999999, -983.90999999999997]
+  m_u_pc_19: !<grocc::gp_Pnt> [18600.873, -6340.3299999999999, -1015.831]
+  m_u_pc_20: !<grocc::gp_Pnt> [18745.091, -6340.3299999999999, -1044.951]
+  m_u_pc_22: !<grocc::gp_Pnt> [18837.323, -6340.3299999999999, -1064.193]
+  o_u_pc_1: !<grocc::gp_Pnt> [20642.041000000001, -16963.478999999999, -197.24299999999999]
+  o_u_pc_3: !<grocc::gp_Pnt> [20642.328000000001, -16963.478999999999, -184.94200000000001]
+  o_u_pc_4: !<grocc::gp_Pnt> [20651.204000000002, -16963.478999999999, -158.577]
+  o_u_pc_5: !<grocc::gp_Pnt> [20685.957999999999, -16963.478999999999, -133.15100000000001]
+  o_u_pc_6: !<grocc::gp_Pnt> [20738.268, -16963.478999999999, -116.506]
+  o_u_pc_7: !<grocc::gp_Pnt> [20806.652999999998, -16963.478999999999, -108.736]
+  o_u_pc_8: !<grocc::gp_Pnt> [20890.161, -16963.478999999999, -106.158]
+  o_u_pc_9: !<grocc::gp_Pnt> [20987.041000000001, -16963.478999999999, -108.39700000000001]
+  o_u_pc_10: !<grocc::gp_Pnt> [21094.777999999998, -16963.478999999999, -115.096]
+  o_u_pc_11: !<grocc::gp_Pnt> [21210.548999999999, -16963.478999999999, -124.322]
+  o_u_pc_12: !<grocc::gp_Pnt> [21331.232, -16963.478999999999, -135.369]
+  o_u_pc_13: !<grocc::gp_Pnt> [21453.557000000001, -16963.478999999999, -147.54300000000001]
+  o_u_pc_14: !<grocc::gp_Pnt> [21574.188999999998, -16963.478999999999, -160.49000000000001]
+  o_u_pc_15: !<grocc::gp_Pnt> [21689.833999999999, -16963.478999999999, -174.065]
+  o_u_pc_16: !<grocc::gp_Pnt> [21797.285, -16963.478999999999, -188.44399999999999]
+  o_u_pc_17: !<grocc::gp_Pnt> [21893.635999999999, -16963.478999999999, -203.232]
+  o_u_pc_18: !<grocc::gp_Pnt> [21976.129000000001, -16963.478999999999, -217.495]
+  o_u_pc_19: !<grocc::gp_Pnt> [22042.866000000002, -16963.478999999999, -230.19999999999999]
+  o_u_pc_20: !<grocc::gp_Pnt> [22100.263999999999, -16963.478999999999, -241.78899999999999]
+  o_u_pc_22: !<grocc::gp_Pnt> [22136.972000000002, -16963.478999999999, -249.447]
+  move_vec_o_wing: !<grocc::gp_Vec> [0, 1, 0]
+  move_factor_o_wing: !<double> -1500
+  n_0: !<int> 0
+  n_10: !<int> 19
+  upper_wing_surface_tol: !<double> 1
+  face_wing_tol: !<double> 1
+  i_l_pc_1: !<grocc::gp_Pnt> [12743.744000000001, -1875.046, -1242.3]
+  i_l_pc_2: !<grocc::gp_Pnt> [12742.968000000001, -1875.046, -1289.0640000000001]
+  i_l_pc_3: !<grocc::gp_Pnt> [12772.556, -1875.046, -1381.7739999999999]
+  i_l_pc_4: !<grocc::gp_Pnt> [12909.179, -1875.046, -1489.2650000000001]
+  i_l_pc_5: !<grocc::gp_Pnt> [13108.737999999999, -1875.046, -1602.3130000000001]
+  i_l_pc_6: !<grocc::gp_Pnt> [13383.023999999999, -1875.046, -1682.6949999999999]
+  i_l_pc_7: !<grocc::gp_Pnt> [13719.716, -1875.046, -1750.54]
+  i_l_pc_8: !<grocc::gp_Pnt> [14112.210999999999, -1875.046, -1801.944]
+  i_l_pc_9: !<grocc::gp_Pnt> [14549.965, -1875.046, -1835.5899999999999]
+  i_l_pc_10: !<grocc::gp_Pnt> [15021.478999999999, -1875.046, -1849.277]
+  i_l_pc_11: !<grocc::gp_Pnt> [15513.977999999999, -1875.046, -1841.509]
+  i_l_pc_12: !<grocc::gp_Pnt> [16014.058000000001, -1875.046, -1809.7280000000001]
+  i_l_pc_13: !<grocc::gp_Pnt> [16507.719000000001, -1875.046, -1754.2909999999999]
+  i_l_pc_14: !<grocc::gp_Pnt> [16981.161, -1875.046, -1683.479]
+  i_l_pc_15: !<grocc::gp_Pnt> [17421.420999999998, -1875.046, -1611.3530000000001]
+  i_l_pc_16: !<grocc::gp_Pnt> [17816.544999999998, -1875.046, -1547.528]
+  i_l_pc_17: !<grocc::gp_Pnt> [18155.329000000002, -1875.046, -1503.77]
+  i_l_pc_18: !<grocc::gp_Pnt> [18429.553, -1875.046, -1477.3579999999999]
+  i_l_pc_19: !<grocc::gp_Pnt> [18665.042000000001, -1875.046, -1461.521]
+  i_l_pc_20: !<grocc::gp_Pnt> [18790.359, -1875.046, -1455.6400000000001]
+  i_l_pc_21: !<grocc::gp_Pnt> [18815.762999999999, -1875.046, -1454.3399999999999]
+  m_l_pc_1: !<grocc::gp_Pnt> [15081.173000000001, -6340.3299999999999, -933.02499999999998]
+  m_l_pc_2: !<grocc::gp_Pnt> [15080.692999999999, -6340.3299999999999, -961.95299999999997]
+  m_l_pc_3: !<grocc::gp_Pnt> [15098.995999999999, -6340.3299999999999, -1019.304]
+  m_l_pc_4: !<grocc::gp_Pnt> [15183.511, -6340.3299999999999, -1085.797]
+  m_l_pc_5: !<grocc::gp_Pnt> [15306.958000000001, -6340.3299999999999, -1155.729]
+  m_l_pc_6: !<grocc::gp_Pnt> [15476.630999999999, -6340.3299999999999, -1205.453]
+  m_l_pc_7: !<grocc::gp_Pnt> [15684.909, -6340.3299999999999, -1247.422]
+  m_l_pc_8: !<grocc::gp_Pnt> [15927.706, -6340.3299999999999, -1279.221]
+  m_l_pc_9: !<grocc::gp_Pnt> [16198.501, -6340.3299999999999, -1300.0340000000001]
+  m_l_pc_10: !<grocc::gp_Pnt> [16490.18, -6340.3299999999999, -1308.501]
+  m_l_pc_11: !<grocc::gp_Pnt> [16794.84, -6340.3299999999999, -1303.6949999999999]
+  m_l_pc_12: !<grocc::gp_Pnt> [17104.188999999998, -6340.3299999999999, -1284.0360000000001]
+  m_l_pc_13: !<grocc::gp_Pnt> [17409.567999999999, -6340.3299999999999, -1249.742]
+  m_l_pc_14: !<grocc::gp_Pnt> [17702.438999999998, -6340.3299999999999, -1205.9380000000001]
+  m_l_pc_15: !<grocc::gp_Pnt> [17974.784, -6340.3299999999999, -1161.3209999999999]
+  m_l_pc_16: !<grocc::gp_Pnt> [18219.206999999999, -6340.3299999999999, -1121.8389999999999]
+  m_l_pc_17: !<grocc::gp_Pnt> [18428.778999999999, -6340.3299999999999, -1094.77]
+  m_l_pc_18: !<grocc::gp_Pnt> [18598.415000000001, -6340.3299999999999, -1078.432]
+  m_l_pc_19: !<grocc::gp_Pnt> [18744.088, -6340.3299999999999, -1068.635]
+  m_l_pc_20: !<grocc::gp_Pnt> [18821.609, -6340.3299999999999, -1064.9970000000001]
+  m_l_pc_21: !<grocc::gp_Pnt> [18837.323, -6340.3299999999999, -1064.193]
+  o_l_pc_1: !<grocc::gp_Pnt> [20642.041000000001, -16963.478999999999, -197.24299999999999]
+  o_l_pc_2: !<grocc::gp_Pnt> [20641.849999999999, -16963.478999999999, -208.756]
+  o_l_pc_3: !<grocc::gp_Pnt> [20649.134999999998, -16963.478999999999, -231.58199999999999]
+  o_l_pc_4: !<grocc::gp_Pnt> [20682.771000000001, -16963.478999999999, -258.04599999999999]
+  o_l_pc_5: !<grocc::gp_Pnt> [20731.902999999998, -16963.478999999999, -285.87799999999999]
+  o_l_pc_6: !<grocc::gp_Pnt> [20799.432000000001, -16963.478999999999, -305.66800000000001]
+  o_l_pc_7: !<grocc::gp_Pnt> [20882.326000000001, -16963.478999999999, -322.37200000000001]
+  o_l_pc_8: !<grocc::gp_Pnt> [20978.957999999999, -16963.478999999999, -335.02800000000002]
+  o_l_pc_9: !<grocc::gp_Pnt> [21086.733, -16963.478999999999, -343.31099999999998]
+  o_l_pc_10: !<grocc::gp_Pnt> [21202.82, -16963.478999999999, -346.68099999999998]
+  o_l_pc_11: !<grocc::gp_Pnt> [21324.073, -16963.478999999999, -344.76799999999997]
+  o_l_pc_12: !<grocc::gp_Pnt> [21447.192999999999, -16963.478999999999, -336.94400000000002]
+  o_l_pc_13: !<grocc::gp_Pnt> [21568.732, -16963.478999999999, -323.29500000000002]
+  o_l_pc_14: !<grocc::gp_Pnt> [21685.293000000001, -16963.478999999999, -305.86099999999999]
+  o_l_pc_15: !<grocc::gp_Pnt> [21793.686000000002, -16963.478999999999, -288.10399999999998]
+  o_l_pc_16: !<grocc::gp_Pnt> [21890.965, -16963.478999999999, -272.38999999999999]
+  o_l_pc_17: !<grocc::gp_Pnt> [21974.373, -16963.478999999999, -261.61700000000002]
+  o_l_pc_18: !<grocc::gp_Pnt> [22041.887999999999, -16963.478999999999, -255.114]
+  o_l_pc_19: !<grocc::gp_Pnt> [22099.865000000002, -16963.478999999999, -251.215]
+  o_l_pc_20: !<grocc::gp_Pnt> [22130.718000000001, -16963.478999999999, -249.767]
+  o_l_pc_21: !<grocc::gp_Pnt> [22136.972000000002, -16963.478999999999, -249.447]
+  list_of_profiles_lower_wing_tol: !<double> 1
+  profile_points_cylinder_arg_1: !<int> 1
+  profile_points_cylinder_arg_2: !<int> 2
+  n_1: !<int> 1
+  start_point_profile: !<grocc::gp_Pnt> [7000, 0, 2000]
+  n_2: !<int> 2
+  end_point_profile: !<grocc::gp_Pnt> [23000, 0, 2000]
+  weights_profile_arg_1: !<int> 1
+  weights_profile_arg_2: !<int> 2
+  weights_profile_weight_1: !<double> 1
+  weights_profile_weight_2: !<double> 1
+  knots_profile_arg_1: !<int> 1
+  knots_profile_arg_2: !<int> 2
+  knots_profile_val_1: !<double> 0
+  knots_profile_val_2: !<double> 1
+  mults_profile_arg_1: !<int> 1
+  mults_profile_arg_2: !<int> 2
+  mults_profile_val_1: !<int> 2
+  mults_profile_val_2: !<int> 2
+  degree_profile: !<int> 1
+  rot_axis_Pnt: !<grocc::gp_Pnt> [0, 0, 0]
+  rot_axis_Dir: !<grocc::gp_Dir> [1, 0, 0]
+  face_fuselage_tol: !<double> 1
+  cp_column_second_arg: !<int> 1
+  cp_column_third_arg: !<int> 2
+  move_vec: !<grocc::gp_Vec> [1, 0, 0]
+  move_factor_1: !<double> 2500
+  move_factor_2: !<double> 3000
+  moved_cp_points_3_arg_1: !<int> 1
+  moved_cp_points_3_arg_2: !<int> 6
+  sl_pt_1: !<grocc::gp_Pnt> [31500, 0, 1992]
+  sl_pt_2: !<grocc::gp_Pnt> [31500, -3464, 1992]
+  n_3: !<int> 3
+  sl_pt_3: !<grocc::gp_Pnt> [31500, -1732, -679]
+  n_4: !<int> 4
+  sl_pt_4: !<grocc::gp_Pnt> [31500, 0, -3350]
+  n_5: !<int> 5
+  sl_pt_5: !<grocc::gp_Pnt> [31500, 1732, -679]
+  n_6: !<int> 6
+  sl_pt_6: !<grocc::gp_Pnt> [31500, 3464, 1992]
+  moved_cp_points_4_arg_1: !<int> 1
+  moved_cp_points_4_arg_2: !<int> 6
+  l_pt_1: !<grocc::gp_Pnt> [37500, 0, 1337]
+  l_pt_2: !<grocc::gp_Pnt> [37500, -631, 1337]
+  l_pt_3: !<grocc::gp_Pnt> [37500, -316, 795]
+  l_pt_4: !<grocc::gp_Pnt> [37500, 0, 254]
+  l_pt_5: !<grocc::gp_Pnt> [37500, 316, 795]
+  l_pt_6: !<grocc::gp_Pnt> [37500, 631, 1337]
+  rear_srf_cp_net_second_arg: !<int> 2
+  rear_srf_weight_net_arg_1: !<int> 1
+  rear_srf_weight_net_arg_3: !<int> 1
+  rear_srf_weight_net_val_1_1: !<double> 1
+  rear_srf_weight_net_val_2_1: !<double> 0.5
+  rear_srf_weight_net_val_3_1: !<double> 1
+  rear_srf_weight_net_val_4_1: !<double> 0.5
+  rear_srf_weight_net_val_5_1: !<double> 1
+  rear_srf_weight_net_val_6_1: !<double> 0.5
+  rear_srf_weight_net_val_1_2: !<double> 1
+  rear_srf_weight_net_val_2_2: !<double> 0.5
+  rear_srf_weight_net_val_3_2: !<double> 1
+  rear_srf_weight_net_val_4_2: !<double> 0.5
+  rear_srf_weight_net_val_5_2: !<double> 1
+  rear_srf_weight_net_val_6_2: !<double> 0.5
+  rear_srf_weight_net_val_1_3: !<double> 1
+  rear_srf_weight_net_val_2_3: !<double> 0.5
+  rear_srf_weight_net_val_3_3: !<double> 1
+  rear_srf_weight_net_val_4_3: !<double> 0.5
+  rear_srf_weight_net_val_5_3: !<double> 1
+  rear_srf_weight_net_val_6_3: !<double> 0.5
+  rear_srf_weight_net_val_1_4: !<double> 1
+  rear_srf_weight_net_val_2_4: !<double> 0.5
+  rear_srf_weight_net_val_3_4: !<double> 1
+  rear_srf_weight_net_val_4_4: !<double> 0.5
+  rear_srf_weight_net_val_5_4: !<double> 1
+  rear_srf_weight_net_val_6_4: !<double> 0.5
+  rear_srf_weight_net_val_1_5: !<double> 1
+  rear_srf_weight_net_val_2_5: !<double> 0.5
+  rear_srf_weight_net_val_3_5: !<double> 1
+  rear_srf_weight_net_val_4_5: !<double> 0.5
+  rear_srf_weight_net_val_5_5: !<double> 1
+  rear_srf_weight_net_val_6_5: !<double> 0.5
+  knots_U_arg_1: !<int> 1
+  knots_U_arg_2: !<int> 4
+  knots_U_val_1: !<double> 0
+  knots_U_val_2: !<double> 1
+  knots_U_val_3: !<double> 2
+  knots_U_val_4: !<double> 3
+  knots_V_arg_1: !<int> 1
+  knots_V_arg_2: !<int> 2
+  knots_V_val_1: !<double> 0
+  knots_V_val_2: !<double> 1
+  mults_U_arg_1: !<int> 1
+  mults_U_arg_2: !<int> 4
+  mults_U_val_1: !<double> 2
+  mults_U_val_2: !<double> 2
+  mults_U_val_3: !<double> 2
+  mults_U_val_4: !<double> 2
+  mults_V_arg_1: !<int> 1
+  mults_V_arg_2: !<int> 2
+  mults_V_val_1: !<int> 5
+  mults_V_val_2: !<int> 5
+  degree_U: !<int> 2
+  degree_V: !<int> 4
+  periodic_U: !<bool> true
+  profile_points_cap_arg_1: !<int> 1
+  profile_points_cap_arg_2: !<int> 4
+  end_point_arc: !<grocc::gp_Pnt> [2000, 0, 1000]
+  cp_cap_2_third_arg: !<double> 0.040000000000000001
+  end_point_arc_cap: !<grocc::gp_Pnt> [1000, 0, 0]
+  cp_cap_3_second_arg: !<grocc::gp_Vec> [0, 0, 1]
+  cp_cap_3_third_arg: !<double> 550
+  weights_profile_cap_arg_1: !<int> 1
+  weights_profile_cap_arg_2: !<int> 4
+  weights_profile_cap_val_1: !<double> 1
+  weights_profile_cap_val_2: !<double> 1
+  weights_profile_cap_val_3: !<double> 1
+  weights_profile_cap_val_4: !<double> 1
+  knots_profile_cap_arg_1: !<int> 1
+  knots_profile_cap_arg_2: !<int> 2
+  knots_profile_cap_val_1: !<double> 0
+  knots_profile_cap_val_2: !<double> 1
+  mults_profile_cap_arg_1: !<int> 1
+  mults_profile_cap_arg_2: !<int> 2
+  mults_profile_cap_val_1: !<int> 4
+  mults_profile_cap_val_2: !<int> 4
+  degree_profile_cap: !<int> 3
+  ovl_cp_points_arg_1: !<int> 1
+  ovl_cp_points_arg_2: !<int> 6
+  rear_srf_cap_weight_net_arg_1: !<int> 1
+  rear_srf_cap_weight_net_arg_3: !<int> 1
+  rear_srf_cap_weight_net_1_1: !<double> 1
+  rear_srf_cap_weight_net_2_1: !<double> 0.5
+  rear_srf_cap_weight_net_3_1: !<double> 1
+  rear_srf_cap_weight_net_4_1: !<double> 0.5
+  rear_srf_cap_weight_net_5_1: !<double> 1
+  rear_srf_cap_weight_net_6_1: !<double> 0.5
+  rear_srf_cap_weight_net_1_2: !<double> 1
+  rear_srf_cap_weight_net_2_2: !<double> 0.5
+  rear_srf_cap_weight_net_3_2: !<double> 1
+  rear_srf_cap_weight_net_4_2: !<double> 0.5
+  rear_srf_cap_weight_net_5_2: !<double> 1
+  rear_srf_cap_weight_net_6_2: !<double> 0.5
+  cap_knots_V_arg_1: !<int> 1
+  cap_knots_V_arg_2: !<int> 2
+  cap_knots_V_val_1: !<double> 0
+  cap_knots_V_val_2: !<double> 1
+  cap_mults_V_arg_1: !<int> 1
+  cap_mults_V_arg_2: !<int> 2
+  cap_mults_V_val_1: !<int> 2
+  cap_mults_V_val_2: !<int> 2
+  cap_degree_V: !<int> 1
+steps:
+  - !<geo::move> [[cp_cap_3], [end_point_arc_cap, cp_cap_3_second_arg, cp_cap_3_third_arg]]
+  - !<grocc::gp_Ax1> [[rot_axis], [rot_axis_Pnt, rot_axis_Dir]]
+  - !<script>
+    steps:
+      - !<grocc::TColStd_Array1OfInteger> [[mults_profile_cap], [mults_profile_cap_arg_1, mults_profile_cap_arg_2]]
+      - !<grocc::TColStd_Array1OfInteger::SetValue> [~, [mults_profile_cap, n_1, mults_profile_cap_val_1]]
+      - !<grocc::TColStd_Array1OfInteger::SetValue> [~, [mults_profile_cap, n_2, mults_profile_cap_val_2]]
+    returns:
+      - mults_profile_cap
+  - !<script>
+    steps:
+      - !<grocc::TColStd_Array1OfReal> [[knots_profile_cap], [knots_profile_cap_arg_1, knots_profile_cap_arg_2]]
+      - !<grocc::TColStd_Array1OfReal::SetValue> [~, [knots_profile_cap, n_1, knots_profile_cap_val_1]]
+      - !<grocc::TColStd_Array1OfReal::SetValue> [~, [knots_profile_cap, n_2, knots_profile_cap_val_2]]
+    returns:
+      - knots_profile_cap
+  - !<script>
+    steps:
+      - !<grocc::TColStd_Array1OfReal> [[weights_profile_cap], [weights_profile_cap_arg_1, weights_profile_cap_arg_2]]
+      - !<grocc::TColStd_Array1OfReal::SetValue> [~, [weights_profile_cap, n_1, weights_profile_cap_val_1]]
+      - !<grocc::TColStd_Array1OfReal::SetValue> [~, [weights_profile_cap, n_2, weights_profile_cap_val_2]]
+      - !<grocc::TColStd_Array1OfReal::SetValue> [~, [weights_profile_cap, n_3, weights_profile_cap_val_3]]
+      - !<grocc::TColStd_Array1OfReal::SetValue> [~, [weights_profile_cap, n_4, weights_profile_cap_val_4]]
+    returns:
+      - weights_profile_cap
+  - !<script>
+    steps:
+      - !<grocc::TColStd_Array1OfInteger> [[cap_mults_V], [cap_mults_V_arg_1, cap_mults_V_arg_2]]
+      - !<grocc::TColStd_Array1OfInteger::SetValue> [~, [cap_mults_V, n_1, cap_mults_V_val_1]]
+      - !<grocc::TColStd_Array1OfInteger::SetValue> [~, [cap_mults_V, n_2, cap_mults_V_val_2]]
+    returns:
+      - cap_mults_V
+  - !<script>
+    steps:
+      - !<grocc::TColStd_Array1OfReal> [[cap_knots_V], [cap_knots_V_arg_1, cap_knots_V_arg_2]]
+      - !<grocc::TColStd_Array1OfReal::SetValue> [~, [cap_knots_V, n_1, cap_knots_V_val_1]]
+      - !<grocc::TColStd_Array1OfReal::SetValue> [~, [cap_knots_V, n_2, cap_knots_V_val_2]]
+    returns:
+      - cap_knots_V
+  - !<script>
+    steps:
+      - !<grocc::TColStd_Array1OfInteger> [[mults_V], [mults_V_arg_1, mults_V_arg_2]]
+      - !<grocc::TColStd_Array1OfInteger::SetValue> [~, [mults_V, n_1, mults_V_val_1]]
+      - !<grocc::TColStd_Array1OfInteger::SetValue> [~, [mults_V, n_2, mults_V_val_2]]
+    returns:
+      - mults_V
+  - !<script>
+    steps:
+      - !<grocc::TColStd_Array1OfInteger> [[mults_U], [mults_U_arg_1, mults_U_arg_2]]
+      - !<grocc::TColStd_Array1OfInteger::SetValue> [~, [mults_U, n_1, mults_U_val_1]]
+      - !<grocc::TColStd_Array1OfInteger::SetValue> [~, [mults_U, n_2, mults_U_val_2]]
+      - !<grocc::TColStd_Array1OfInteger::SetValue> [~, [mults_U, n_3, mults_U_val_3]]
+      - !<grocc::TColStd_Array1OfInteger::SetValue> [~, [mults_U, n_4, mults_U_val_4]]
+    returns:
+      - mults_U
+  - !<script>
+    steps:
+      - !<grocc::TColStd_Array1OfReal> [[knots_V], [knots_V_arg_1, knots_V_arg_2]]
+      - !<grocc::TColStd_Array1OfReal::SetValue> [~, [knots_V, n_1, knots_V_val_1]]
+      - !<grocc::TColStd_Array1OfReal::SetValue> [~, [knots_V, n_2, knots_V_val_2]]
+    returns:
+      - knots_V
+  - !<script>
+    steps:
+      - !<grocc::TColStd_Array1OfReal> [[knots_U], [knots_U_arg_1, knots_U_arg_2]]
+      - !<grocc::TColStd_Array1OfReal::SetValue> [~, [knots_U, n_1, knots_U_val_1]]
+      - !<grocc::TColStd_Array1OfReal::SetValue> [~, [knots_U, n_2, knots_U_val_2]]
+      - !<grocc::TColStd_Array1OfReal::SetValue> [~, [knots_U, n_3, knots_U_val_3]]
+      - !<grocc::TColStd_Array1OfReal::SetValue> [~, [knots_U, n_4, knots_U_val_4]]
+    returns:
+      - knots_U
+  - !<script>
+    steps:
+      - !<grocc::TColgp_Array1OfPnt> [[moved_cp_points_4], [moved_cp_points_4_arg_1, moved_cp_points_4_arg_2]]
+      - !<grocc::TColgp_Array1OfPnt::SetValue> [~, [moved_cp_points_4, n_1, l_pt_1]]
+      - !<grocc::TColgp_Array1OfPnt::SetValue> [~, [moved_cp_points_4, n_2, l_pt_2]]
+      - !<grocc::TColgp_Array1OfPnt::SetValue> [~, [moved_cp_points_4, n_3, l_pt_3]]
+      - !<grocc::TColgp_Array1OfPnt::SetValue> [~, [moved_cp_points_4, n_4, l_pt_4]]
+      - !<grocc::TColgp_Array1OfPnt::SetValue> [~, [moved_cp_points_4, n_5, l_pt_5]]
+      - !<grocc::TColgp_Array1OfPnt::SetValue> [~, [moved_cp_points_4, n_6, l_pt_6]]
+    returns:
+      - moved_cp_points_4
+  - !<grocc::TColgp_Array1OfPnt::Value> [[ovl_pt_arg_1_val_3], [moved_cp_points_4, n_5]]
+  - !<grocc::gp_Pnt::Z> [[ovl_pt_arg_val_3_z], [ovl_pt_arg_1_val_3]]
+  - !<grocc::gp_Pnt::Y> [[ovl_pt_arg_val_3_y], [ovl_pt_arg_1_val_3]]
+  - !<grocc::gp_Pnt::X> [[ovl_pt_arg_val_3_x], [ovl_pt_arg_1_val_3]]
+  - !<grocc::TColgp_Array1OfPnt::Value> [[ovl_pt_arg_1_val_2], [moved_cp_points_4, n_3]]
+  - !<grocc::gp_Pnt::Z> [[ovl_pt_arg_val_2_z], [ovl_pt_arg_1_val_2]]
+  - !<grocc::gp_Pnt::Y> [[ovl_pt_arg_val_2_y], [ovl_pt_arg_1_val_2]]
+  - !<grocc::gp_Pnt::X> [[ovl_pt_arg_val_2_x], [ovl_pt_arg_1_val_2]]
+  - !<grocc::TColgp_Array1OfPnt::Value> [[ovl_pt_arg_1_val_1], [moved_cp_points_4, n_1]]
+  - !<grocc::gp_Pnt::Z> [[ovl_pt_arg_val_1_z], [ovl_pt_arg_1_val_1]]
+  - !<expr> [ovl_pt_expr_z, (ovl_pt_arg_val_1_z + ovl_pt_arg_val_2_z + ovl_pt_arg_val_3_z)/3]
+  - !<grocc::gp_Pnt::Y> [[ovl_pt_arg_val_1_y], [ovl_pt_arg_1_val_1]]
+  - !<expr> [ovl_pt_expr_y, (ovl_pt_arg_val_1_y + ovl_pt_arg_val_2_y + ovl_pt_arg_val_3_y)/3]
+  - !<grocc::gp_Pnt::X> [[ovl_pt_arg_val_1_x], [ovl_pt_arg_1_val_1]]
+  - !<expr> [ovl_pt_expr_x, (ovl_pt_arg_val_1_x + ovl_pt_arg_val_2_x + ovl_pt_arg_val_3_x)/3]
+  - !<grocc::gp_Pnt> [[ovl_pt], [ovl_pt_expr_x, ovl_pt_expr_y, ovl_pt_expr_z]]
+  - !<script>
+    steps:
+      - !<grocc::TColgp_Array1OfPnt> [[ovl_cp_points], [ovl_cp_points_arg_1, ovl_cp_points_arg_2]]
+      - !<grocc::TColgp_Array1OfPnt::SetValue> [~, [ovl_cp_points, n_1, ovl_pt]]
+      - !<grocc::TColgp_Array1OfPnt::SetValue> [~, [ovl_cp_points, n_2, ovl_pt]]
+      - !<grocc::TColgp_Array1OfPnt::SetValue> [~, [ovl_cp_points, n_3, ovl_pt]]
+      - !<grocc::TColgp_Array1OfPnt::SetValue> [~, [ovl_cp_points, n_4, ovl_pt]]
+      - !<grocc::TColgp_Array1OfPnt::SetValue> [~, [ovl_cp_points, n_5, ovl_pt]]
+      - !<grocc::TColgp_Array1OfPnt::SetValue> [~, [ovl_cp_points, n_6, ovl_pt]]
+    returns:
+      - ovl_cp_points
+  - !<vec> [[my_point_lists_rear_cap], [moved_cp_points_4, ovl_cp_points]]
+  - !<geo::create_point_net_from_arrays> [[rear_srf_cap_cp_net], [my_point_lists_rear_cap, n_2]]
+  - !<grocc::TColgp_Array2OfPnt::RowLength> [[rear_srf_cap_weight_net_arg_4], [rear_srf_cap_cp_net]]
+  - !<grocc::TColgp_Array2OfPnt::ColLength> [[rear_srf_cap_weight_net_arg_2], [rear_srf_cap_cp_net]]
+  - !<script>
+    steps:
+      - !<grocc::TColStd_Array2OfReal> [[rear_srf_cap_weight_net], [rear_srf_cap_weight_net_arg_1, rear_srf_cap_weight_net_arg_2, rear_srf_cap_weight_net_arg_3, rear_srf_cap_weight_net_arg_4]]
+      - !<grocc::TColStd_Array2OfReal::SetValue> [~, [rear_srf_cap_weight_net, n_1, n_1, rear_srf_cap_weight_net_1_1]]
+      - !<grocc::TColStd_Array2OfReal::SetValue> [~, [rear_srf_cap_weight_net, n_2, n_1, rear_srf_cap_weight_net_2_1]]
+      - !<grocc::TColStd_Array2OfReal::SetValue> [~, [rear_srf_cap_weight_net, n_3, n_1, rear_srf_cap_weight_net_3_1]]
+      - !<grocc::TColStd_Array2OfReal::SetValue> [~, [rear_srf_cap_weight_net, n_4, n_1, rear_srf_cap_weight_net_4_1]]
+      - !<grocc::TColStd_Array2OfReal::SetValue> [~, [rear_srf_cap_weight_net, n_5, n_1, rear_srf_cap_weight_net_5_1]]
+      - !<grocc::TColStd_Array2OfReal::SetValue> [~, [rear_srf_cap_weight_net, n_6, n_1, rear_srf_cap_weight_net_6_1]]
+      - !<grocc::TColStd_Array2OfReal::SetValue> [~, [rear_srf_cap_weight_net, n_1, n_2, rear_srf_cap_weight_net_1_2]]
+      - !<grocc::TColStd_Array2OfReal::SetValue> [~, [rear_srf_cap_weight_net, n_2, n_2, rear_srf_cap_weight_net_2_2]]
+      - !<grocc::TColStd_Array2OfReal::SetValue> [~, [rear_srf_cap_weight_net, n_3, n_2, rear_srf_cap_weight_net_3_2]]
+      - !<grocc::TColStd_Array2OfReal::SetValue> [~, [rear_srf_cap_weight_net, n_4, n_2, rear_srf_cap_weight_net_4_2]]
+      - !<grocc::TColStd_Array2OfReal::SetValue> [~, [rear_srf_cap_weight_net, n_5, n_2, rear_srf_cap_weight_net_5_2]]
+      - !<grocc::TColStd_Array2OfReal::SetValue> [~, [rear_srf_cap_weight_net, n_6, n_2, rear_srf_cap_weight_net_6_2]]
+    returns:
+      - rear_srf_cap_weight_net
+  - !<geo::b_spline_surface> [[rear_surface_cap], [rear_srf_cap_cp_net, rear_srf_cap_weight_net, knots_U, cap_knots_V, mults_U, cap_mults_V, degree_U, cap_degree_V, periodic_U]]
+  - !<geo::convert_to_geom_surface> [[rear_surface_cap_geom], [rear_surface_cap]]
+  - !<grocc::BRepBuilderAPI_MakeFace> [[face_rear_cap_fuselage], [rear_surface_cap_geom, face_fuselage_tol]]
+  - !<script>
+    steps:
+      - !<grocc::TColgp_Array1OfPnt> [[moved_cp_points_3], [moved_cp_points_3_arg_1, moved_cp_points_3_arg_2]]
+      - !<grocc::TColgp_Array1OfPnt::SetValue> [~, [moved_cp_points_3, n_1, sl_pt_1]]
+      - !<grocc::TColgp_Array1OfPnt::SetValue> [~, [moved_cp_points_3, n_2, sl_pt_2]]
+      - !<grocc::TColgp_Array1OfPnt::SetValue> [~, [moved_cp_points_3, n_3, sl_pt_3]]
+      - !<grocc::TColgp_Array1OfPnt::SetValue> [~, [moved_cp_points_3, n_4, sl_pt_4]]
+      - !<grocc::TColgp_Array1OfPnt::SetValue> [~, [moved_cp_points_3, n_5, sl_pt_5]]
+      - !<grocc::TColgp_Array1OfPnt::SetValue> [~, [moved_cp_points_3, n_6, sl_pt_6]]
+    returns:
+      - moved_cp_points_3
+  - !<script>
+    steps:
+      - !<grocc::TColStd_Array1OfInteger> [[mults_profile], [mults_profile_arg_1, mults_profile_arg_2]]
+      - !<grocc::TColStd_Array1OfInteger::SetValue> [~, [mults_profile, n_1, mults_profile_val_1]]
+      - !<grocc::TColStd_Array1OfInteger::SetValue> [~, [mults_profile, n_2, mults_profile_val_2]]
+    returns:
+      - mults_profile
+  - !<script>
+    steps:
+      - !<grocc::TColStd_Array1OfReal> [[knots_profile], [knots_profile_arg_1, knots_profile_arg_2]]
+      - !<grocc::TColStd_Array1OfReal::SetValue> [~, [knots_profile, n_1, knots_profile_val_1]]
+      - !<grocc::TColStd_Array1OfReal::SetValue> [~, [knots_profile, n_2, knots_profile_val_2]]
+    returns:
+      - knots_profile
+  - !<script>
+    steps:
+      - !<grocc::TColStd_Array1OfReal> [[weights_profile], [weights_profile_arg_1, weights_profile_arg_2]]
+      - !<grocc::TColStd_Array1OfReal::SetValue> [~, [weights_profile, n_1, weights_profile_weight_1]]
+      - !<grocc::TColStd_Array1OfReal::SetValue> [~, [weights_profile, n_2, weights_profile_weight_2]]
+    returns:
+      - weights_profile
+  - !<script>
+    steps:
+      - !<grocc::TColgp_Array1OfPnt> [[profile_points_cylinder], [profile_points_cylinder_arg_1, profile_points_cylinder_arg_2]]
+      - !<grocc::TColgp_Array1OfPnt::SetValue> [~, [profile_points_cylinder, n_1, start_point_profile]]
+      - !<grocc::TColgp_Array1OfPnt::SetValue> [~, [profile_points_cylinder, n_2, end_point_profile]]
+    returns:
+      - profile_points_cylinder
+  - !<geo::b_spline_curve> [[profile_curve_cylinder], [profile_points_cylinder, weights_profile, knots_profile, mults_profile, degree_profile]]
+  - !<grocc::Geom_Curve::FirstParameter> [[start_param], [profile_curve_cylinder]]
+  - !<script>
+    steps:
+      - !<grocc::gp_Pnt> [[start_point_arc], ~]
+      - !<grocc::gp_Vec> [[tangent_vector], ~]
+      - !<grocc::Geom_BSplineCurve::D1> [~, [profile_curve_cylinder, start_param, start_point_arc, tangent_vector]]
+      - !<grocc::gp_Vec::Reverse> [~, [tangent_vector]]
+    returns:
+      - start_point_arc
+      - tangent_vector
+  - !<grocc::GC_MakeArcOfCircle> [[arc_maker], [start_point_arc, tangent_vector, end_point_arc]]
+  - !<grocc::GC_MakeArcOfCircle::Value> [[circular_arc], [arc_maker]]
+  - !<geo::geom_convert_from_trimmed_curve> [[arc_b_spline_curve], [circular_arc]]
+  - !<grocc::Geom_Curve::LastParameter> [[start_param_cap], [arc_b_spline_curve]]
+  - !<script>
+    steps:
+      - !<grocc::gp_Pnt> [[start_point_arc_cap], ~]
+      - !<grocc::gp_Vec> [[tangent_vector_cap], ~]
+      - !<grocc::Geom_BSplineCurve::D1> [~, [arc_b_spline_curve, start_param_cap, start_point_arc_cap, tangent_vector_cap]]
+    returns:
+      - start_point_arc_cap
+      - tangent_vector_cap
+  - !<geo::move> [[cp_cap_2], [start_point_arc_cap, tangent_vector_cap, cp_cap_2_third_arg]]
+  - !<script>
+    steps:
+      - !<grocc::TColgp_Array1OfPnt> [[profile_points_cap], [profile_points_cap_arg_1, profile_points_cap_arg_2]]
+      - !<grocc::TColgp_Array1OfPnt::SetValue> [~, [profile_points_cap, n_1, start_point_arc_cap]]
+      - !<grocc::TColgp_Array1OfPnt::SetValue> [~, [profile_points_cap, n_2, cp_cap_2]]
+      - !<grocc::TColgp_Array1OfPnt::SetValue> [~, [profile_points_cap, n_3, cp_cap_3]]
+      - !<grocc::TColgp_Array1OfPnt::SetValue> [~, [profile_points_cap, n_4, end_point_arc_cap]]
+    returns:
+      - profile_points_cap
+  - !<geo::b_spline_curve> [[profile_curve_cap], [profile_points_cap, weights_profile_cap, knots_profile_cap, mults_profile_cap, degree_profile_cap]]
+  - !<script>
+    steps:
+      - !<geo::revolving_surface> [[nose_ogive_cap_srf], [profile_curve_cap, rot_axis]]
+      - !<grocc::Geom_BSplineSurface::ExchangeUV> [~, [nose_ogive_cap_srf]]
+    returns:
+      - nose_ogive_cap_srf
+  - !<geo::convert_to_geom_surface> [[nose_ogive_cap_srf_geom], [nose_ogive_cap_srf]]
+  - !<grocc::BRepBuilderAPI_MakeFace> [[face_nose_cap_fuselage], [nose_ogive_cap_srf_geom, face_fuselage_tol]]
+  - !<script>
+    steps:
+      - !<geo::revolving_surface> [[nose_ogive_srf], [arc_b_spline_curve, rot_axis]]
+      - !<grocc::Geom_BSplineSurface::ExchangeUV> [~, [nose_ogive_srf]]
+    returns:
+      - nose_ogive_srf
+  - !<geo::convert_to_geom_surface> [[nose_ogive_srf_geom], [nose_ogive_srf]]
+  - !<grocc::BRepBuilderAPI_MakeFace> [[face_nose_fuselage], [nose_ogive_srf_geom, face_fuselage_tol]]
+  - !<geo::revolving_surface> [[fuselage_cylinder], [profile_curve_cylinder, rot_axis]]
+  - !<geo::extract_control_point_column_row> [[cp_column], [fuselage_cylinder, cp_column_second_arg, cp_column_third_arg]]
+  - !<geo::move> [[moved_cp_points_1], [cp_column, move_vec, move_factor_1]]
+  - !<geo::move> [[moved_cp_points_2], [moved_cp_points_1, move_vec, move_factor_2]]
+  - !<vec> [[my_point_lists], [cp_column, moved_cp_points_1, moved_cp_points_2, moved_cp_points_3, moved_cp_points_4]]
+  - !<geo::create_point_net_from_arrays> [[rear_srf_cp_net], [my_point_lists, rear_srf_cp_net_second_arg]]
+  - !<grocc::TColgp_Array2OfPnt::RowLength> [[rear_srf_weight_net_arg_4], [rear_srf_cp_net]]
+  - !<grocc::TColgp_Array2OfPnt::ColLength> [[rear_srf_weight_net_arg_2], [rear_srf_cp_net]]
+  - !<script>
+    steps:
+      - !<grocc::TColStd_Array2OfReal> [[rear_srf_weight_net], [rear_srf_weight_net_arg_1, rear_srf_weight_net_arg_2, rear_srf_weight_net_arg_3, rear_srf_weight_net_arg_4]]
+      - !<grocc::TColStd_Array2OfReal::SetValue> [~, [rear_srf_weight_net, n_1, n_1, rear_srf_weight_net_val_1_1]]
+      - !<grocc::TColStd_Array2OfReal::SetValue> [~, [rear_srf_weight_net, n_2, n_1, rear_srf_weight_net_val_2_1]]
+      - !<grocc::TColStd_Array2OfReal::SetValue> [~, [rear_srf_weight_net, n_3, n_1, rear_srf_weight_net_val_3_1]]
+      - !<grocc::TColStd_Array2OfReal::SetValue> [~, [rear_srf_weight_net, n_4, n_1, rear_srf_weight_net_val_4_1]]
+      - !<grocc::TColStd_Array2OfReal::SetValue> [~, [rear_srf_weight_net, n_5, n_1, rear_srf_weight_net_val_5_1]]
+      - !<grocc::TColStd_Array2OfReal::SetValue> [~, [rear_srf_weight_net, n_6, n_1, rear_srf_weight_net_val_6_1]]
+      - !<grocc::TColStd_Array2OfReal::SetValue> [~, [rear_srf_weight_net, n_1, n_2, rear_srf_weight_net_val_1_2]]
+      - !<grocc::TColStd_Array2OfReal::SetValue> [~, [rear_srf_weight_net, n_2, n_2, rear_srf_weight_net_val_2_2]]
+      - !<grocc::TColStd_Array2OfReal::SetValue> [~, [rear_srf_weight_net, n_3, n_2, rear_srf_weight_net_val_3_2]]
+      - !<grocc::TColStd_Array2OfReal::SetValue> [~, [rear_srf_weight_net, n_4, n_2, rear_srf_weight_net_val_4_2]]
+      - !<grocc::TColStd_Array2OfReal::SetValue> [~, [rear_srf_weight_net, n_5, n_2, rear_srf_weight_net_val_5_2]]
+      - !<grocc::TColStd_Array2OfReal::SetValue> [~, [rear_srf_weight_net, n_6, n_2, rear_srf_weight_net_val_6_2]]
+      - !<grocc::TColStd_Array2OfReal::SetValue> [~, [rear_srf_weight_net, n_1, n_3, rear_srf_weight_net_val_1_3]]
+      - !<grocc::TColStd_Array2OfReal::SetValue> [~, [rear_srf_weight_net, n_2, n_3, rear_srf_weight_net_val_2_3]]
+      - !<grocc::TColStd_Array2OfReal::SetValue> [~, [rear_srf_weight_net, n_3, n_3, rear_srf_weight_net_val_3_3]]
+      - !<grocc::TColStd_Array2OfReal::SetValue> [~, [rear_srf_weight_net, n_4, n_3, rear_srf_weight_net_val_4_3]]
+      - !<grocc::TColStd_Array2OfReal::SetValue> [~, [rear_srf_weight_net, n_5, n_3, rear_srf_weight_net_val_5_3]]
+      - !<grocc::TColStd_Array2OfReal::SetValue> [~, [rear_srf_weight_net, n_6, n_3, rear_srf_weight_net_val_6_3]]
+      - !<grocc::TColStd_Array2OfReal::SetValue> [~, [rear_srf_weight_net, n_1, n_4, rear_srf_weight_net_val_1_4]]
+      - !<grocc::TColStd_Array2OfReal::SetValue> [~, [rear_srf_weight_net, n_2, n_4, rear_srf_weight_net_val_2_4]]
+      - !<grocc::TColStd_Array2OfReal::SetValue> [~, [rear_srf_weight_net, n_3, n_4, rear_srf_weight_net_val_3_4]]
+      - !<grocc::TColStd_Array2OfReal::SetValue> [~, [rear_srf_weight_net, n_4, n_4, rear_srf_weight_net_val_4_4]]
+      - !<grocc::TColStd_Array2OfReal::SetValue> [~, [rear_srf_weight_net, n_5, n_4, rear_srf_weight_net_val_5_4]]
+      - !<grocc::TColStd_Array2OfReal::SetValue> [~, [rear_srf_weight_net, n_6, n_4, rear_srf_weight_net_val_6_4]]
+      - !<grocc::TColStd_Array2OfReal::SetValue> [~, [rear_srf_weight_net, n_1, n_5, rear_srf_weight_net_val_1_5]]
+      - !<grocc::TColStd_Array2OfReal::SetValue> [~, [rear_srf_weight_net, n_2, n_5, rear_srf_weight_net_val_2_5]]
+      - !<grocc::TColStd_Array2OfReal::SetValue> [~, [rear_srf_weight_net, n_3, n_5, rear_srf_weight_net_val_3_5]]
+      - !<grocc::TColStd_Array2OfReal::SetValue> [~, [rear_srf_weight_net, n_4, n_5, rear_srf_weight_net_val_4_5]]
+      - !<grocc::TColStd_Array2OfReal::SetValue> [~, [rear_srf_weight_net, n_5, n_5, rear_srf_weight_net_val_5_5]]
+      - !<grocc::TColStd_Array2OfReal::SetValue> [~, [rear_srf_weight_net, n_6, n_5, rear_srf_weight_net_val_6_5]]
+    returns:
+      - rear_srf_weight_net
+  - !<geo::b_spline_surface> [[rear_surface], [rear_srf_cp_net, rear_srf_weight_net, knots_U, knots_V, mults_U, mults_V, degree_U, degree_V, periodic_U]]
+  - !<geo::convert_to_geom_surface> [[rear_surface_geom], [rear_surface]]
+  - !<grocc::BRepBuilderAPI_MakeFace> [[face_rear_fuselage], [rear_surface_geom, face_fuselage_tol]]
+  - !<geo::convert_to_geom_surface> [[fuselage_cylinder_geom], [fuselage_cylinder]]
+  - !<grocc::BRepBuilderAPI_MakeFace> [[face_cylinder_fuselage], [fuselage_cylinder_geom, face_fuselage_tol]]
+  - !<script>
+    steps:
+      - !<grocc::BRep_Builder> [[builder_fuselage], ~]
+      - !<grocc::TopoDS_Shell> [[shell_fuselage], ~]
+      - !<grocc::BRep_Builder::MakeShell> [~, [builder_fuselage, shell_fuselage]]
+      - !<grocc::BRep_Builder::Add> [~, [builder_fuselage, shell_fuselage, face_cylinder_fuselage]]
+      - !<grocc::BRep_Builder::Add> [~, [builder_fuselage, shell_fuselage, face_rear_fuselage]]
+      - !<grocc::BRep_Builder::Add> [~, [builder_fuselage, shell_fuselage, face_nose_cap_fuselage]]
+      - !<grocc::BRep_Builder::Add> [~, [builder_fuselage, shell_fuselage, face_nose_fuselage]]
+      - !<grocc::BRep_Builder::Add> [~, [builder_fuselage, shell_fuselage, face_rear_cap_fuselage]]
+      - !<grocc::TopoDS_Solid> [[solid_fuselage], ~]
+      - !<grocc::BRep_Builder::MakeSolid> [~, [builder_fuselage, solid_fuselage]]
+      - !<grocc::BRep_Builder::Add> [~, [builder_fuselage, solid_fuselage, shell_fuselage]]
+    returns:
+      - solid_fuselage
+  - !<geo::writeGeomEntityToStepFile> [[solid_fuselage_out], [solid_fuselage, solid_fuselage_name_stp]]
+  - !<vec> [[o_l_profile_curve_points_initial], [o_l_pc_1, o_l_pc_2, o_l_pc_3, o_l_pc_4, o_l_pc_5, o_l_pc_6, o_l_pc_7, o_l_pc_8, o_l_pc_9, o_l_pc_10, o_l_pc_11, o_l_pc_12, o_l_pc_13, o_l_pc_14, o_l_pc_15, o_l_pc_16, o_l_pc_17, o_l_pc_18, o_l_pc_19, o_l_pc_20, o_l_pc_21]]
+  - !<vec> [[m_l_profile_curve_points], [m_l_pc_1, m_l_pc_2, m_l_pc_3, m_l_pc_4, m_l_pc_5, m_l_pc_6, m_l_pc_7, m_l_pc_8, m_l_pc_9, m_l_pc_10, m_l_pc_11, m_l_pc_12, m_l_pc_13, m_l_pc_14, m_l_pc_15, m_l_pc_16, m_l_pc_17, m_l_pc_18, m_l_pc_19, m_l_pc_20, m_l_pc_21]]
+  - !<geo::interpolate_points_to_b_spline_curve> [[m_l_profile_curve], [m_l_profile_curve_points]]
+  - !<vec> [[i_l_profile_curve_points_initial], [i_l_pc_1, i_l_pc_2, i_l_pc_3, i_l_pc_4, i_l_pc_5, i_l_pc_6, i_l_pc_7, i_l_pc_8, i_l_pc_9, i_l_pc_10, i_l_pc_11, i_l_pc_12, i_l_pc_13, i_l_pc_14, i_l_pc_15, i_l_pc_16, i_l_pc_17, i_l_pc_18, i_l_pc_19, i_l_pc_20, i_l_pc_21]]
+  - !<geo::move> [[o_l_profile_curve_points], [o_l_profile_curve_points_initial, move_vec_o_wing, move_factor_o_wing]]
+  - !<geo::interpolate_points_to_b_spline_curve> [[o_l_profile_curve], [o_l_profile_curve_points]]
+  - !<vec> [[o_u_profile_curve_points_initial], [o_u_pc_1, o_u_pc_3, o_u_pc_4, o_u_pc_5, o_u_pc_6, o_u_pc_7, o_u_pc_8, o_u_pc_9, o_u_pc_10, o_u_pc_11, o_u_pc_12, o_u_pc_13, o_u_pc_14, o_u_pc_15, o_u_pc_16, o_u_pc_17, o_u_pc_18, o_u_pc_19, o_u_pc_20, o_u_pc_22]]
+  - !<geo::move> [[o_u_profile_curve_points], [o_u_profile_curve_points_initial, move_vec_o_wing, move_factor_o_wing]]
+  - !<geo::vector_of_points_at_index> [[trailing_curve_points_arg_3], [o_u_profile_curve_points, n_10]]
+  - !<geo::vector_of_points_at_index> [[leading_curve_points_arg_3], [o_u_profile_curve_points, n_0]]
+  - !<geo::interpolate_points_to_b_spline_curve> [[o_u_profile_curve], [o_u_profile_curve_points]]
+  - !<vec> [[edges_of_outer_wing_cap_bspline], [o_u_profile_curve, o_l_profile_curve]]
+  - !<geo::vector_b_spline_to_geom_curve_converter> [[edges_of_outer_wing_cap], [edges_of_outer_wing_cap_bspline]]
+  - !<script>
+    steps:
+      - !<geo::interpolate_curves> [[outer_wing_cap_surface], [edges_of_outer_wing_cap]]
+      - !<grocc::Geom_BSplineSurface::ExchangeUV> [~, [outer_wing_cap_surface]]
+    returns:
+      - outer_wing_cap_surface
+  - !<geo::convert_to_geom_surface> [[outer_wing_cap_surface_geom], [outer_wing_cap_surface]]
+  - !<grocc::BRepBuilderAPI_MakeFace> [[face_outer_cap], [outer_wing_cap_surface_geom, face_wing_tol]]
+  - !<vec> [[m_u_profile_curve_points], [m_u_pc_1, m_u_pc_3, m_u_pc_4, m_u_pc_5, m_u_pc_6, m_u_pc_7, m_u_pc_8, m_u_pc_9, m_u_pc_10, m_u_pc_11, m_u_pc_12, m_u_pc_13, m_u_pc_14, m_u_pc_15, m_u_pc_16, m_u_pc_17, m_u_pc_18, m_u_pc_19, m_u_pc_20, m_u_pc_22]]
+  - !<geo::interpolate_points_to_b_spline_curve> [[m_u_profile_curve], [m_u_profile_curve_points]]
+  - !<geo::move> [[i_l_profile_curve_points], [i_l_profile_curve_points_initial, move_vec_i_wing, move_factor_i_wing]]
+  - !<geo::interpolate_points_to_b_spline_curve> [[i_l_profile_curve], [i_l_profile_curve_points]]
+  - !<vec> [[list_of_profiles_lower_wing_bspline], [i_l_profile_curve, m_l_profile_curve, o_l_profile_curve]]
+  - !<geo::vector_b_spline_to_geom_curve_converter> [[list_of_profiles_lower_wing], [list_of_profiles_lower_wing_bspline]]
+  - !<vec> [[i_u_profile_curve_points_initial], [i_u_pc_1, i_u_pc_3, i_u_pc_4, i_u_pc_5, i_u_pc_6, i_u_pc_7, i_u_pc_8, i_u_pc_9, i_u_pc_10, i_u_pc_11, i_u_pc_12, i_u_pc_13, i_u_pc_14, i_u_pc_15, i_u_pc_16, i_u_pc_17, i_u_pc_18, i_u_pc_19, i_u_pc_20, i_u_pc_22]]
+  - !<geo::move> [[i_u_profile_curve_points], [i_u_profile_curve_points_initial, move_vec_i_wing, move_factor_i_wing]]
+  - !<geo::vector_of_points_at_index> [[trailing_curve_points_arg_1], [i_u_profile_curve_points, n_10]]
+  - !<vec> [[trailing_curve_points], [trailing_curve_points_arg_1, m_u_pc_22, trailing_curve_points_arg_3]]
+  - !<geo::interpolate_points_to_b_spline_curve> [[trailing_curve], [trailing_curve_points]]
+  - !<geo::vector_of_points_at_index> [[leading_curve_points_arg_1], [i_u_profile_curve_points, n_0]]
+  - !<vec> [[leading_curve_points], [leading_curve_points_arg_1, m_u_pc_1, leading_curve_points_arg_3]]
+  - !<geo::interpolate_points_to_b_spline_curve> [[leading_curve], [leading_curve_points]]
+  - !<vec> [[list_of_guides_upper_wing_bspline], [leading_curve, trailing_curve]]
+  - !<geo::vector_b_spline_to_geom_curve_converter> [[list_of_guides_upper_wing], [list_of_guides_upper_wing_bspline]]
+  - !<geo::interpolate_curve_network> [[lower_wing_surface], [list_of_profiles_lower_wing, list_of_guides_upper_wing, list_of_profiles_lower_wing_tol]]
+  - !<geo::convert_to_geom_surface> [[lower_wing_surface_geom], [lower_wing_surface]]
+  - !<grocc::BRepBuilderAPI_MakeFace> [[face_lower_wing], [lower_wing_surface_geom, face_wing_tol]]
+  - !<geo::interpolate_points_to_b_spline_curve> [[i_u_profile_curve], [i_u_profile_curve_points]]
+  - !<vec> [[edges_of_inner_wing_cap_bspline], [i_u_profile_curve, i_l_profile_curve]]
+  - !<geo::vector_b_spline_to_geom_curve_converter> [[edges_of_inner_wing_cap], [edges_of_inner_wing_cap_bspline]]
+  - !<geo::interpolate_curves> [[inner_wing_cap_surface], [edges_of_inner_wing_cap]]
+  - !<geo::convert_to_geom_surface> [[inner_wing_cap_surface_geom], [inner_wing_cap_surface]]
+  - !<grocc::BRepBuilderAPI_MakeFace> [[face_inner_cap], [inner_wing_cap_surface_geom, face_wing_tol]]
+  - !<geo::make_face> [[inner_wing_cap_surface_shape], [inner_wing_cap_surface]]
+  - !<vec> [[list_of_profiles_upper_wing_bspline], [i_u_profile_curve, m_u_profile_curve, o_u_profile_curve]]
+  - !<geo::vector_b_spline_to_geom_curve_converter> [[list_of_profiles_upper_wing], [list_of_profiles_upper_wing_bspline]]
+  - !<script>
+    steps:
+      - !<geo::interpolate_curve_network> [[upper_wing_surface], [list_of_profiles_upper_wing, list_of_guides_upper_wing, upper_wing_surface_tol]]
+      - !<grocc::Geom_BSplineSurface::ExchangeUV> [~, [upper_wing_surface]]
+    returns:
+      - upper_wing_surface
+  - !<geo::convert_to_geom_surface> [[upper_wing_surface_geom], [upper_wing_surface]]
+  - !<grocc::BRepBuilderAPI_MakeFace> [[face_upper_wing], [upper_wing_surface_geom, face_wing_tol]]
+  - !<script>
+    steps:
+      - !<grocc::BRep_Builder> [[builder_wing], ~]
+      - !<grocc::TopoDS_Shell> [[shell_wing], ~]
+      - !<grocc::BRep_Builder::MakeShell> [~, [builder_wing, shell_wing]]
+      - !<grocc::BRep_Builder::Add> [~, [builder_wing, shell_wing, face_upper_wing]]
+      - !<grocc::BRep_Builder::Add> [~, [builder_wing, shell_wing, face_lower_wing]]
+      - !<grocc::BRep_Builder::Add> [~, [builder_wing, shell_wing, face_inner_cap]]
+      - !<grocc::BRep_Builder::Add> [~, [builder_wing, shell_wing, face_outer_cap]]
+      - !<grocc::TopoDS_Solid> [[solid_wing], ~]
+      - !<grocc::BRep_Builder::MakeSolid> [~, [builder_wing, solid_wing]]
+      - !<grocc::BRep_Builder::Add> [~, [builder_wing, solid_wing, shell_wing]]
+    returns:
+      - solid_wing
+  - !<geo::writeGeomEntityToStepFile> [[solid_wing_out], [solid_wing, solid_wing_name_stp]]
+  - !<geo::fuse_two_solids> [[fused_wing_fuselage], [solid_wing, solid_fuselage]]
