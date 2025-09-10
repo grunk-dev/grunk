@@ -27,10 +27,23 @@ cpacs_models = {
         "ribs_def_tip_idx": 38,
         "rib_tip_idx": 1
     },
+    "D239L": {
+        "cpacs_file": "D239L_wingStructureAdapted_fuelSystem_0623.xml", 
+        "cpacs_config": "D239L",
+        "wing_idx": 3,
+        "cs_idx": 1,
+        "spar_le_idx": 1,
+        "spar_te_idx": 2,
+        "ribs_def_root_idx": 1,
+        "rib_root_idx": 1,
+        "ribs_def_tip_idx": 4,
+        "rib_tip_idx": 1
+    }
 }
 fuel_system_recipes = {
     "D150" : "fuel_D150.grr",
-    "codex_example": "fuelsystem.grr.yml"
+    "codex_example": "fuelsystem.grr.yml",
+    "D239L": "fuelsystem.grr.yml"
 }
 
 if __name__ == '__main__':
@@ -47,8 +60,9 @@ if __name__ == '__main__':
     # Select configuration #
     ########################
 
-    config = "D150"
+    # config = "D150"
     # config = "codex_example"
+    config = "D239L"
 
     #######################################################
     # Read recipe for wingbox creation and set parameters #
@@ -66,14 +80,16 @@ if __name__ == '__main__':
 
     # export some result features as breps
     for id in [
-        "fused_shape",
         "wing_shape", 
         "spar_le_shape", 
         "spar_te_shape", 
         "rib_root_shape", 
         "rib_tip_shape", 
-        "split4",
-        "wing_le_tool"
+        "rib_tip_tool",
+        "split1",
+        "split2", 
+        "split3",
+        "wingbox",
         ]:
         feature = wingbox_recipe[id]
         grunk.reflect.invoke("grocc::BRepTools::Write", feature.value(), id + ".brep")
