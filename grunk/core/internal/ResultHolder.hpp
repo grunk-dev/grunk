@@ -1,6 +1,6 @@
 #pragma once
 
-#include "core/feature.hpp"
+#include "grunk/core/feature.hpp"
 #include "function_traits.hpp"
 #include <parametric/core.hpp>
 #include <tuple>

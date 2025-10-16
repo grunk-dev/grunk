@@ -15,6 +15,7 @@ set(TESTSOURCES
   testmain.cpp
   core_state.cpp
   core_operators.cpp
+  recipe_io.cpp
 )
 
 

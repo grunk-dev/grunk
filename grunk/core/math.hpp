@@ -1,6 +1,6 @@
 #pragma once
-#include "core/feature.hpp"
-#include "core/action.hpp"
+#include "feature.hpp"
+#include "action.hpp"
 #include <cmath>
 
 namespace grunk {

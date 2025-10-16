@@ -1,7 +1,7 @@
 #pragma once
 
-#include "core/object.hpp"
-#include "core/action.hpp"
+#include "grunk/core/object.hpp"
+#include "grunk/core/action.hpp"
 
 #include <regex>
 
