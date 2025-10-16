@@ -10,17 +10,17 @@ namespace grunk {
  ************/
 
 template <typename L, typename R>
-Feature<decltype(std::declval<L>() + std::declval<R>())> operator+(Feature<L> const& l, Feature<R> const& r) {
+decltype(auto) operator+(Feature<L> const& l, Feature<R> const& r) {
     return grunk::action([](L const& lhs, R const& rhs){ return lhs+rhs; }, l, r).output();
 }
 
 template <typename L, typename R>
-Feature<decltype(std::declval<L>() + std::declval<R>())> operator+(Feature<L> const& l, R const& r) {
+decltype(auto) operator+(Feature<L> const& l, R const& r) {
     return l + details::to_feature(r);
 }
 
 template <typename L, typename R>
-Feature<decltype(std::declval<L>() + std::declval<R>())> operator+(L const& l, Feature<R> const& r) {
+decltype(auto) operator+(L const& l, Feature<R> const& r) {
     return details::to_feature(l) + r;
 }
 
@@ -29,17 +29,17 @@ Feature<decltype(std::declval<L>() + std::declval<R>())> operator+(L const& l, F
  ***************/
 
 template <typename L, typename R>
-Feature<decltype(std::declval<L>() - std::declval<R>())> operator-(Feature<L> const& l, Feature<R> const& r) {
+decltype(auto) operator-(Feature<L> const& l, Feature<R> const& r) {
     return grunk::action([](L const& lhs, R const& rhs){ return lhs-rhs; }, l, r).output();
 }
 
 template <typename L, typename R>
-Feature<decltype(std::declval<L>() - std::declval<R>())> operator-(Feature<L> const& l, R const& r) {
+decltype(auto) operator-(Feature<L> const& l, R const& r) {
     return l - details::to_feature(r);
 }
 
 template <typename L, typename R>
-Feature<decltype(std::declval<L>() - std::declval<R>())> operator-(L const& l, Feature<R> const& r) {
+decltype(auto) operator-(L const& l, Feature<R> const& r) {
     return details::to_feature(l) - r;
 }
 
@@ -48,17 +48,17 @@ Feature<decltype(std::declval<L>() - std::declval<R>())> operator-(L const& l, F
  ******************/
 
 template <typename L, typename R>
-Feature<decltype(std::declval<L>() * std::declval<R>())> operator*(Feature<L> const& l, Feature<R> const& r) {
+decltype(auto) operator*(Feature<L> const& l, Feature<R> const& r) {
     return grunk::action([](L const& lhs, R const& rhs){ return lhs*rhs; }, l, r).output();
 }
 
 template <typename L, typename R>
-Feature<decltype(std::declval<L>() * std::declval<R>())> operator*(Feature<L> const& l, R const& r) {
+decltype(auto) operator*(Feature<L> const& l, R const& r) {
     return l * details::to_feature(r);
 }
 
 template <typename L, typename R>
-Feature<decltype(std::declval<L>() * std::declval<R>())> operator*(L const& l, Feature<R> const& r) {
+decltype(auto) operator*(L const& l, Feature<R> const& r) {
     return details::to_feature(l) * r;
 }
 
@@ -67,17 +67,17 @@ Feature<decltype(std::declval<L>() * std::declval<R>())> operator*(L const& l, F
  ************/
 
 template <typename L, typename R>
-Feature<decltype(std::declval<L>() / std::declval<R>())> operator/(Feature<L> const& l, Feature<R> const& r) {
+decltype(auto) operator/(Feature<L> const& l, Feature<R> const& r) {
     return grunk::action([](L const& lhs, R const& rhs){ return lhs/rhs; }, l, r).output();
 }
 
 template <typename L, typename R>
-Feature<decltype(std::declval<L>() / std::declval<R>())> operator/(Feature<L> const& l, R const& r) {
+decltype(auto) operator/(Feature<L> const& l, R const& r) {
     return l / details::to_feature(r);
 }
 
 template <typename L, typename R>
-Feature<decltype(std::declval<L>() / std::declval<R>())> operator/(L const& l, Feature<R> const& r) {
+decltype(auto) operator/(L const& l, Feature<R> const& r) {
     return details::to_feature(l) / r;
 }
 
@@ -91,17 +91,17 @@ template <typename L, typename R>
 using pow_result_t = std::invoke_result_t<decltype(&pow<L const&, R const&>), L, R>;
 
 template <typename L, typename R>
-auto pow(Feature<L> const& l, Feature<R> const& r) {
+decltype(auto) pow(Feature<L> const& l, Feature<R> const& r) {
     return grunk::action([](L const& lhs, R const& rhs){ return pow(lhs, rhs); }, l, r).output();
 }
 
 template <typename L, typename R>
-auto pow(Feature<L> const& l, R const& r) {
+decltype(auto) pow(Feature<L> const& l, R const& r) {
     return pow(l, details::to_feature(r));
 }
 
 template <typename L, typename R>
-auto pow(L const& l, Feature<R> const& r) {
+decltype(auto) pow(L const& l, Feature<R> const& r) {
     return pow(details::to_feature(l), r);
 }
 
@@ -110,17 +110,17 @@ auto pow(L const& l, Feature<R> const& r) {
  **********/
 
 template <typename L, typename R>
-Feature<decltype(std::declval<L>() % std::declval<R>())> operator%(Feature<L> const& l, Feature<R> const& r) {
+decltype(auto) operator%(Feature<L> const& l, Feature<R> const& r) {
     return grunk::action([](L const& lhs, R const& rhs){ return lhs%rhs; }, l, r).output();
 }
 
 template <typename L, typename R>
-Feature<decltype(std::declval<L>() % std::declval<R>())> operator%(Feature<L> const& l, R const& r) {
+decltype(auto) operator%(Feature<L> const& l, R const& r) {
     return l % details::to_feature(r);
 }
 
 template <typename L, typename R>
-Feature<decltype(std::declval<L>() % std::declval<R>())> operator%(L const& l, Feature<R> const& r) {
+decltype(auto) operator%(L const& l, Feature<R> const& r) {
     return details::to_feature(l) % r;
 }
 

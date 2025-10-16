@@ -7,8 +7,7 @@ endif()
 add_library(grunk INTERFACE)
 
 target_compile_features(grunk INTERFACE cxx_std_17)
-target_link_libraries(grunk INTERFACE parametric::parametric
-                                   sol2::sol2)
+target_link_libraries(grunk INTERFACE parametric sol2::sol2 ${LUA_LIBRARIES})
 target_include_directories(grunk INTERFACE
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
   $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>

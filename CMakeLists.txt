@@ -20,6 +20,7 @@ set(BUILD_SHARED_LIBS  ON)
 # find dependencies
 find_package(parametric REQUIRED)
 find_package(sol2 REQUIRED)
+find_package(Lua REQUIRED)
 
 # Windows specific: export all symbols
 set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
