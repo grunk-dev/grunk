@@ -14,13 +14,11 @@ include(AddGoogleTest)
 set(TESTSOURCES
   testmain.cpp
   state.cpp
-  operators.cpp
-  metadata.cpp
+  operators
 )
 
 
-add_executable(runUnitTests ${TESTSOURCES}
-    metadata.cpp)
+add_executable(runUnitTests ${TESTSOURCES})
 target_link_libraries(runUnitTests PRIVATE grunk gtest_main)
 
 # add_custom_command(

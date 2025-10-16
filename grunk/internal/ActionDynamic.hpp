@@ -50,23 +50,7 @@ private:
      */
     ActionDynamic(sol::protected_function const& fun)
      : function(fun)
-    {
-        // first check if the function is pure in the sense, that it is invokable on
-        // const references. This is possible for sol::protected_functions registered from
-        // C++, because the registration uses function_traits to store the is_pure flag as
-        // metadata
-        sol::state_view lua(function.lua_state());
-        auto is_pure = get_metadata(lua, function, "is_pure");
-        if (is_pure.valid() && !is_pure.as<bool>()) {
-            std::string name = "";
-            auto func_name = get_metadata(lua, function, "name");
-            if (func_name.valid() && func_name.is<std::string>()) {
-                name = func_name.as<std::string>();
-            }
-            auto err = std::string("The function \"") + name + "\" is not invokable on const arguments and can therefore not be used as an action.";
-            throw std::runtime_error(err);
-        }
-    }
+    {}
 
     inline decltype(auto) result() const {
         return this->template res<object>(0);

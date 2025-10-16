@@ -86,11 +86,6 @@ namespace grunk {
 			*/
 			static constexpr std::size_t arity = sizeof...(Args);
 
-            /**
-             * @brief is_pure returns true, if the function is invokable on const arguments
-             */
-            static constexpr bool is_pure = std::is_invocable_v<R(* const)(Args...), std::remove_const_t<std::remove_reference_t<Args>> const&...>;
-
 			/**
 			* @brief represents the ith argument of the function
 			* 
@@ -186,11 +181,6 @@ namespace grunk {
 				* @brief the number of input arguments
 				*/
 				static constexpr std::size_t arity = call_type::arity - 1;
-
-                /**
-                 * @brief is_pure returns true, if the function is invokable on const arguments
-                 */
-                static constexpr bool is_pure = call_type::is_pure;
 
 				/**
 				* @brief represents the type of the Nth argument

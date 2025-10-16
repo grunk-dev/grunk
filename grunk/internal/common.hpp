@@ -1,45 +1,41 @@
 #pragma once
 
-#include "function_traits.hpp"
 #include "object.hpp"
+#include "action.hpp"
 
 #include <regex>
 
 namespace grunk {
 
+namespace details {
 
-/**
- * @brief get_metadata retrieves a value stored in the metatable of a LUA object
- * @param obj the LUA object
- * @param key The key in the metatable
- */
-template <typename U>
-object get_metadata(sol::state_view& lua, U& obj, std::string const& key)
+inline grunk::object make_dynamic_action(sol::state const& lua, sol::protected_function const& func)
 {
-    //TODO: This seems like an inconvenient way to get the metatable. But
-    // unfortunately I haven't found a sol2 API function to retrieve the metatable of a
-    // function
-    lua["_tmp"] = std::forward<U>(obj);
-    lua.script(R"(
-        _tmp = getmetatable(_tmp)
-    )");
+    auto decorated_function = [func](sol::variadic_args va) -> grunk::DynamicFeature
+    {
 
-    return lua["_tmp"][key];;
+        std::vector<grunk::DynamicFeature> args;
+        args.reserve(va.size());
+
+        // Use std::transform to convert variadic_args to std::vector<DynamicFeature>
+        std::transform(
+            va.begin(), va.end(),
+            std::back_inserter(args),
+            [](grunk::object const& obj) {
+                if (obj.is<grunk::DynamicFeature>()) {
+                    return obj.as<grunk::DynamicFeature>();
+                } else {
+                    return grunk::feature(obj);
+                }
+            }
+            );
+
+        return grunk::action(func, args).output();
+    };
+    return sol::make_object(lua, sol::as_function(decorated_function));
 }
 
-template <typename U, typename F>
-inline void set_function(U& obj, std::string const& key, F&& fun)
-{
-    obj.set_function(key, std::forward<F>(fun));
-    auto funobj = obj[key];
-    if (!funobj[sol::metatable_key].valid()) {
-        sol::state_view lua(obj.lua_state());
-        sol::table func_meta = lua.create_table();
-        funobj[sol::metatable_key] = func_meta;
-    }
-    funobj[sol::metatable_key]["name"] = key;
-    funobj[sol::metatable_key]["is_pure"] = details::function_traits<F>::is_pure;
-}
+} // namespace details
 
 /**
  * @brief Accesses a nested element in a sol::table by traversing keys separated by dots (.) or colons (:).
@@ -78,6 +74,5 @@ inline sol::object lookup_nested(sol::table const& table, std::string const& str
 
     return current;
 }
-
 
 } // namespace grunk
