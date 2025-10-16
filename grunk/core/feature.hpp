@@ -1,7 +1,7 @@
 #pragma once 
 
 #include "parametric/core.hpp"
-#include <object.hpp>
+#include <core/object.hpp>
 
 namespace grunk {
 

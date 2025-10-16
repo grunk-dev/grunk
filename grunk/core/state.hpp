@@ -1,10 +1,10 @@
 #pragma once
 
 #include "object.hpp"
-#include "feature.hpp"
+#include "core/feature.hpp"
 #include "internal/common.hpp"
 #include "internal/usertype_proxy.hpp"
-#include "action.hpp"
+#include "core/action.hpp"
 
 #include <sol/sol.hpp>
 #include <stdexcept>

@@ -1,5 +1,5 @@
 #include <gtest/gtest.h>
-#include <state.hpp>
+#include <core/state.hpp>
 #include <cmath>
 
 namespace {

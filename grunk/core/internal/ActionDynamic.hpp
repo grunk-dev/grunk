@@ -1,6 +1,6 @@
 #pragma once 
 
-#include "feature.hpp"
+#include "core/feature.hpp"
 #include "ResultHolder.hpp"
 #include "parametric/core.hpp"
 #include "sol/sol.hpp"
