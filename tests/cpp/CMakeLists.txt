@@ -13,8 +13,8 @@ include(AddGoogleTest)
 
 set(TESTSOURCES
   testmain.cpp
-  state.cpp
-  operators.cpp
+  core_state.cpp
+  core_operators.cpp
 )
 
 
