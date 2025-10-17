@@ -2,7 +2,6 @@
 
 #include "grunk/core/feature.hpp"
 #include "function_traits.hpp"
-#include <parametric/core.hpp>
 #include <tuple>
 #include <memory>
 

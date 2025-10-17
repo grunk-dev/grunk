@@ -10,10 +10,11 @@ configure_file(
 
 add_library(grunk INTERFACE)
 
+option(GRUNK_BUILD_RECIPE_LIB "Builds the grunk::recipe library, for exporting and importing recipes from/to yaml format" ON)
+
 add_subdirectory(core)
 target_link_libraries(grunk INTERFACE grunk::core)
 
-option(GRUNK_BUILD_RECIPE_LIB "Builds the grunk::recipe library, for exporting and importing recipes from/to yaml format" ON)
 if (GRUNK_BUILD_RECIPE_LIB)
     add_subdirectory(recipe)
     target_link_libraries(grunk INTERFACE grunk::recipe)
