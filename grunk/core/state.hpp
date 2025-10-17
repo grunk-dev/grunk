@@ -4,6 +4,7 @@
 #include "feature.hpp"
 #include "internal/common.hpp"
 #include "internal/usertype_proxy.hpp"
+#include "function_metadata.hpp"
 #include "action.hpp"
 
 #include <sol/sol.hpp>
@@ -101,12 +102,18 @@ public:
      * @param table optional table as a "namespace", where the type shall be registered.
      */
     template <typename Func>
-    void register_function(std::string const& name, Func&& fun, std::optional<sol::table> table = std::nullopt)
+    void register_function(std::string const& name, Func&& fun, std::vector<Parameter> params = {}, std::optional<sol::table> table = std::nullopt)
     {
         if (!table) {
             table = original_env;
         }
         table->set_function(name, std::forward<Func>(fun));
+
+        function_metadata metadata = function_metadata{name, params};
+        sol::protected_function f = (*table)["name"];
+        lua["grunk"]["registry"][name] = metadata;
+        lua["grunk"]["registry"][f] = metadata;
+
     }
 
     /**
@@ -305,13 +312,16 @@ private:
      */
     inline void init() {
 
+        // create internal table used by grunk itself.
         auto g = lua.create_named_table("grunk");
+        auto registry = g.create_named("registry");
 
         register_function(
             "feature",
             [](sol::object obj) -> DynamicFeature {
                 return grunk::feature(object(obj));
             },
+            {},
             g
         );
 
