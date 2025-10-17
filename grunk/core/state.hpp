@@ -104,15 +104,25 @@ public:
     template <typename Func>
     void register_function(std::string const& name, Func&& fun, std::vector<Parameter> params = {}, std::optional<sol::table> table = std::nullopt)
     {
+        // set function
+
         if (!table) {
             table = original_env;
         }
         table->set_function(name, std::forward<Func>(fun));
 
+        // add metadata to function registry
+
+        sol::table entry = lua.create_table_with(
+            "name", name,
+            "params", sol::as_table(params)
+        );
+
         function_metadata metadata = function_metadata{name, params};
         sol::protected_function f = (*table)["name"];
-        lua["grunk"]["registry"][name] = metadata;
-        lua["grunk"]["registry"][f] = metadata;
+        sol::table registry = lua["grunk"]["registry"];
+        registry.set(name, entry);
+        // registry.set(f, entry); //TODO: THIS IS THE LOOKUP THAT I ACTUALLY NEED
 
     }
 
