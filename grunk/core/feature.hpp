@@ -1,10 +1,6 @@
 #pragma once 
 
-#ifdef _BUILD_RECIPE_LIB
-    #include "grunk/recipe/parametric_core.hpp"
-#else
-    #include "parametric/core.hpp"
-#endif
+#include "grunk/core/internal/parametric_core.hpp"
 #include <object.hpp>
 
 namespace grunk {

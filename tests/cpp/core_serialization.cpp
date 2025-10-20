@@ -10,7 +10,7 @@ TEST(io, primitives)
         auto ret = d.node_pointer()->serialize();
         ASSERT_EQ(ret, "2.234");
 
-        auto o = grunk::deserialize(grunk, ret);
+        auto o = grunk.deserialize(ret);
         EXPECT_TRUE(o.is<double>());
         EXPECT_EQ(o, d.value()); // not testing for floating point eq. Exact round-tripping would be ideal
         EXPECT_EQ(o.as<double>(), d.value().as<double>());
@@ -21,7 +21,7 @@ TEST(io, primitives)
         auto ret = i.node_pointer()->serialize();
         ASSERT_EQ(ret, "2");
 
-        auto o = grunk::deserialize(grunk, ret);
+        auto o = grunk.deserialize(ret);
         EXPECT_TRUE(o.is<int>());
         EXPECT_EQ(o, i.value());
         EXPECT_EQ(o.as<int>(), i.value().as<int>());
@@ -32,7 +32,7 @@ TEST(io, primitives)
         auto ret = s.node_pointer()->serialize();
         ASSERT_EQ(ret, "\"Hello World\"");
 
-        auto o = grunk::deserialize(grunk, ret);
+        auto o = grunk.deserialize(ret);
         EXPECT_TRUE(o.is<std::string>());
         EXPECT_EQ(o, s.value());
         EXPECT_EQ(o.as<std::string>(), s.value().as<std::string>());
@@ -43,7 +43,7 @@ TEST(io, primitives)
         auto ret = b.node_pointer()->serialize();
         EXPECT_EQ(ret, "true");
 
-        auto o = grunk::deserialize(grunk, ret);
+        auto o = grunk.deserialize(ret);
         EXPECT_TRUE(o.is<bool>());
         EXPECT_EQ(o, b.value());
         EXPECT_EQ(o.as<bool>(), b.value().as<bool>());
@@ -52,7 +52,7 @@ TEST(io, primitives)
         ret = b.node_pointer()->serialize();
         EXPECT_EQ(ret, "false");
 
-        o = grunk::deserialize(grunk, ret);
+        o = grunk.deserialize(ret);
         EXPECT_TRUE(o.is<bool>());
         EXPECT_EQ(o, b.value());
         EXPECT_EQ(o.as<bool>(), b.value().as<bool>());
@@ -63,7 +63,7 @@ TEST(io, primitives)
         auto ret = n.node_pointer()->serialize();
         EXPECT_EQ(ret, "nil");
 
-        auto o = grunk::deserialize(grunk, ret);
+        auto o = grunk.deserialize(ret);
         EXPECT_TRUE(o.is<sol::nil_t>());
         EXPECT_EQ(o, n.value());
     }
@@ -102,7 +102,7 @@ TEST(io, userdata)
     ASSERT_EQ(ret, "Foo.new(15, \"bazinga\")");
 
 
-    auto o = grunk::deserialize(grunk, ret);
+    auto o = grunk.deserialize(ret);
     EXPECT_TRUE(o.is<Foo>());
     // EXPECT_EQ(o, foo.value());  // This does not seem to be a given for usertype
 

@@ -123,6 +123,15 @@ public:
     }
 
     /**
+     * @brief get_registry returns the function registry table
+     * @return A sol::table representing the function registry
+     */
+    inline sol::table get_registry() const
+    {
+        return lua["grunk"]["registry"];
+    }
+
+    /**
      * @brief set_functions_are_actions allow you to specify if symbols are to be looked up in
      * the original environment (functions are evaluated as is) or in the decorated environment
      * (functions and methods are decorated with an action). By default, symbols are looked up
@@ -283,6 +292,22 @@ public:
     inline sol::object operator[](std::string const& key)
     {
         return active_env[key];
+    }
+
+    /**
+     * @brief deserializes a string back to a grunk::object
+     *
+     * This assumes thtat the object has been previously serialized
+     * with grunk::serialize
+     */
+    inline grunk::object deserialize(std::string const& v)
+    {
+        auto ret = lua.script("return " + v, active_env);
+        if (ret.valid()) {
+            return ret;
+        } else {
+            throw io_error("Error deserializing \"" + v + "\".");
+        }
     }
 
     /**

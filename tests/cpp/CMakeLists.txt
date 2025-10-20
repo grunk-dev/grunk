@@ -13,9 +13,10 @@ include(AddGoogleTest)
 
 set(TESTSOURCES
   testmain.cpp
-  core_state.cpp
   core_operators.cpp
-  recipe_io.cpp
+  core_registry.cpp
+  core_serialization.cpp
+  core_state.cpp
 )
 
 

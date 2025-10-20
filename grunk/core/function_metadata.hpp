@@ -14,8 +14,8 @@ struct Parameter
 
 struct function_metadata
 {
-    std::string m_name;
-    std::vector<Parameter> m_params;
+    std::string name;
+    std::vector<Parameter> params;
 };
 
 } // namespace grunk

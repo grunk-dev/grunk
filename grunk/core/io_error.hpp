@@ -18,21 +18,30 @@ public:
      * 
      * @param msg 
      */
-    io_error(std::string const& msg);
+    inline io_error(std::string const& msg)
+    : mMessage("grunk IO error: "s + msg)
+    {}
 
     /**
      * @brief print the error message with the prefix "grunk IO error"
      * 
      * @return const char* the error message
      */
-    const char *what() const noexcept override;
+    inline const char *what() const noexcept override
+    {
+        return mMessage.c_str();
+    }
 
     /**
      * @brief Get the error message without the prefix "grunk IO error"
      * 
      * @return std::string the error message
      */
-    std::string get_message() const;
+    std::string get_message() const
+    {
+        return mMessage;
+    }
+
 private:
     std::string mMessage;
 };
