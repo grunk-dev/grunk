@@ -13,10 +13,10 @@ include(AddGoogleTest)
 
 set(TESTSOURCES
   testmain.cpp
-  core_operators.cpp
-  core_registry.cpp
-  core_serialization.cpp
-  core_state.cpp
+  dynamic_operators.cpp
+  dynamic_registry.cpp
+  dynamic_serialization.cpp
+  dynamic_state.cpp
 )
 
 

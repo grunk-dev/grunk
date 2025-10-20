@@ -1,6 +1,6 @@
 #pragma once 
 
-#include "grunk/core/internal/parametric_core.hpp"
+#include "grunk/dynamic/internal/parametric_core.hpp"
 #include <object.hpp>
 
 namespace grunk {

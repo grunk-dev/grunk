@@ -1,6 +1,6 @@
 #pragma once
 
-#include "grunk/core/feature.hpp"
+#include "grunk/dynamic/feature.hpp"
 #include "function_traits.hpp"
 #include <tuple>
 #include <memory>

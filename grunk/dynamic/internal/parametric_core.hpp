@@ -1,7 +1,7 @@
 #pragma once
 
-#include "grunk/core/object.hpp"
-#include "grunk/core/io_error.hpp"
+#include "grunk/dynamic/object.hpp"
+#include "grunk/dynamic/io_error.hpp"
 
 #include <charconv>
 #include <system_error>

@@ -1,7 +1,7 @@
 #pragma once
 
-#include "grunk/core/object.hpp"
-#include "grunk/core/action.hpp"
+#include "grunk/dynamic/object.hpp"
+#include "grunk/dynamic/action.hpp"
 
 #include <regex>
 

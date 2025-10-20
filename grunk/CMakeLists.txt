@@ -10,18 +10,17 @@ configure_file(
 
 add_library(grunk INTERFACE)
 
+add_subdirectory(dynamic)
+target_link_libraries(grunk INTERFACE grunk::dynamic)
+
 option(GRUNK_BUILD_RECIPE_LIB "Builds the grunk::recipe library, for exporting and importing recipes from/to yaml format" ON)
-
-add_subdirectory(core)
-target_link_libraries(grunk INTERFACE grunk::core)
-
 if (GRUNK_BUILD_RECIPE_LIB)
     add_subdirectory(recipe)
     target_link_libraries(grunk INTERFACE grunk::recipe)
 endif()
 
 # install grunk
-install(TARGETS grunk_core
+install(TARGETS grunk
         RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
         LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
         ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}

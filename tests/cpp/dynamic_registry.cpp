@@ -1,5 +1,5 @@
 #include <gtest/gtest.h>
-#include <grunk/core/state.hpp>
+#include <grunk/dynamic/state.hpp>
 
 namespace {
 
