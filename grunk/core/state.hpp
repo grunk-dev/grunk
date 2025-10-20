@@ -113,16 +113,12 @@ public:
 
         // add metadata to function registry
 
-        sol::table entry = lua.create_table_with(
-            "name", name,
-            "params", sol::as_table(params)
-        );
-
         function_metadata metadata = function_metadata{name, params};
-        sol::protected_function f = (*table)["name"];
+        sol::protected_function f = (*table)[name];
+
         sol::table registry = lua["grunk"]["registry"];
-        registry.set(name, entry);
-        // registry.set(f, entry); //TODO: THIS IS THE LOOKUP THAT I ACTUALLY NEED
+        registry.set(name, metadata);
+        registry.set(f, metadata);
 
     }
 

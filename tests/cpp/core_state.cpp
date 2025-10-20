@@ -14,6 +14,8 @@ TEST(state, free_function_registration)
 {
     grunk::state grunk;
     grunk.register_function("add", &add);
+    sol::protected_function f = grunk.get_function("add"); // just to see that it exists
+    ASSERT_TRUE(f.valid());
     grunk.set_functions_are_actions(false);
     grunk.eval(
         R"(
