@@ -95,6 +95,10 @@ public:
         return as(usertype_table);
     }
 
+    lua_State* lua_state() const {
+        return lua;
+    }
+
 private:
 
     void check_lua() const {

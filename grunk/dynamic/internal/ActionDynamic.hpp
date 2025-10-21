@@ -124,11 +124,14 @@ public:
     {
 
         std::string ret;
+        bool is_anonymous = false;
 
         // output
         if(auto const& output = result(); output) {
             if (!output->id().empty()) {
             ret += output->id() + " = ";
+            } else {
+                is_anonymous = true;
             }
         } else {
             return "";
@@ -139,7 +142,37 @@ public:
         sol::object meta = lua["grunk"]["registry"][function];
         assert(meta.is<function_metadata>());
         std::string func_name = meta.as<function_metadata>().name;
-        ret += func_name;
+
+        bool is_operator = (func_name.rfind("grunk._dynamic_", 0) == 0);
+        std::string argument_seperator = "";
+        if (!is_operator) {
+            // regular function call syntax
+            ret += func_name + "(";
+            argument_seperator = ", ";
+        } else {
+
+            if (is_anonymous) {
+                ret += "(";
+            }
+
+            if (func_name == "grunk._dynamic_add") {
+                argument_seperator = " + ";
+            } else if (func_name == "grunk._dynamic_sub") {
+                argument_seperator = " - ";
+            } else if (func_name == "grunk._dynamic_mul") {
+                argument_seperator = " * ";
+            } else if (func_name == "grunk._dynamic_div") {
+                argument_seperator = " / ";
+            } else if (func_name == "grunk._dynamic_pow") {
+                argument_seperator = " ^ ";
+            } else if (func_name == "grunk._dynamic_mod") {
+                argument_seperator = " % ";
+            } else if (func_name == "grunk._dynamic_unm") {
+                ret += "-";
+            } else {
+                throw std::logic_error("Unknown operator function in DynamicAction serialization.");
+            }
+        }
 
         // inputs
         auto serialize_arg = [](parametric::DAGNode const& node) -> std::string
@@ -160,14 +193,15 @@ public:
         bool first_arg = true;
         for (auto const& input : this->get_parents()){
             if (first_arg) {
-                ret += "(";
                 first_arg = false;
             } else {
-                ret += ", ";
+                ret += argument_seperator;
             }
             ret += serialize_arg(*input);
         }
-        ret += ")";
+        if (!is_operator || is_anonymous) {
+            ret += ")";
+        }
 
         return ret;
     }

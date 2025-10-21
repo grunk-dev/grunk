@@ -119,58 +119,150 @@ TEST(serialization, free_function_action)
         return l + r;
     });
 
-    { // named features
-        auto x = grunk.feature(2.).with_id("x");
-        auto y = grunk.feature(3.).with_id("y");
-        auto z = grunk.action("add", x, y).with_id("z");
+    auto x = grunk.feature(2.).with_id("x");
+    auto y = grunk.feature(3.).with_id("y");
+    auto z = grunk.action("add", x, y).with_id("z");
 
-        auto ret = z.node_pointer()->compute_node()->serialize();
-        EXPECT_EQ(ret, "z = add(x, y)");
-    }
+    auto ret = z.node_pointer()->compute_node()->serialize();
+    EXPECT_EQ(ret, "z = add(x, y)");
+}
 
-    { // anonymous x
-        auto x = grunk.feature(2.);
-        auto y = grunk.feature(3.).with_id("y");
-        auto z = grunk.action("add", x, y).with_id("z");
+TEST(serialization, free_function_action_anonymous1)
+{ 
+    grunk::state grunk;
+    grunk.register_function("add", [](double l, double r) {
+        return l + r;
+    });
 
-        auto ret = z.node_pointer()->compute_node()->serialize();
-        EXPECT_EQ(ret, "z = add(2, y)");
-    }
+    // anonymous x
+    auto x = grunk.feature(2.);
+    auto y = grunk.feature(3.).with_id("y");
+    auto z = grunk.action("add", x, y).with_id("z");
 
-    { // anonymous y
-        auto x = grunk.feature(2.).with_id("x");
-        auto y = grunk.feature(3.);
-        auto z = grunk.action("add", x, y).with_id("z");
+    auto ret = z.node_pointer()->compute_node()->serialize();
+    EXPECT_EQ(ret, "z = add(2, y)");
+}
 
-        auto ret = z.node_pointer()->compute_node()->serialize();
-        EXPECT_EQ(ret, "z = add(x, 3)");
-    }
+TEST(serialization, free_function_action_anonymous2)
+{ 
+    grunk::state grunk;
+    grunk.register_function("add", [](double l, double r) {
+        return l + r;
+    });
 
-    { // anonymous x and y
-        auto x = grunk.feature(2.);
-        auto y = grunk.feature(3.);
-        auto z = grunk.action("add", x, y).with_id("z");
+    // anonymous y
+    auto x = grunk.feature(2.).with_id("x");
+    auto y = grunk.feature(3.);
+    auto z = grunk.action("add", x, y).with_id("z");
 
-        auto ret = z.node_pointer()->compute_node()->serialize();
-        EXPECT_EQ(ret, "z = add(2, 3)");
-    }
+    auto ret = z.node_pointer()->compute_node()->serialize();
+    EXPECT_EQ(ret, "z = add(x, 3)");
+}
 
-    { // anonymous z
-        auto x = grunk.feature(2.);
-        auto y = grunk.feature(3.);
-        auto z = grunk.action("add", x, y);
+TEST(serialization, free_function_action_anonymous3)
+{ 
+    grunk::state grunk;
+    grunk.register_function("add", [](double l, double r) {
+        return l + r;
+    });
 
-        auto ret = z.node_pointer()->compute_node()->serialize();
-        EXPECT_EQ(ret, "add(2, 3)");
-    }
+    // anonymous x and y
+    auto x = grunk.feature(2.);
+    auto y = grunk.feature(3.);
+    auto z = grunk.action("add", x, y).with_id("z");
 
-    { // nested anonymous features
-        auto x = grunk.feature(2.).with_id("x");
-        auto y = grunk.feature(3.);
-        auto z = grunk.action("add", x, y);
-        auto w = grunk.action("add", z, 5).with_id("w");
+    auto ret = z.node_pointer()->compute_node()->serialize();
+    EXPECT_EQ(ret, "z = add(2, 3)");
+}
 
-        auto ret = w.node_pointer()->compute_node()->serialize();
-        EXPECT_EQ(ret, "w = add(add(x, 3), 5)");
-    }
+TEST(serialization, free_function_action_anonymous4)
+{ 
+    grunk::state grunk;
+    grunk.register_function("add", [](double l, double r) {
+        return l + r;
+    });
+    
+    // anonymous z
+    auto x = grunk.feature(2.);
+    auto y = grunk.feature(3.);
+    auto z = grunk.action("add", x, y);
+
+    auto ret = z.node_pointer()->compute_node()->serialize();
+    EXPECT_EQ(ret, "add(2, 3)");
+}
+
+TEST(serialization, free_function_action_anonymous_nested)
+{ 
+    grunk::state grunk;
+    grunk.register_function("add", [](double l, double r) {
+        return l + r;
+    });
+
+    // nested anonymous features
+    auto x = grunk.feature(2.).with_id("x");
+    auto y = grunk.feature(3.);
+    auto z = grunk.action("add", x, y);
+    auto w = grunk.action("add", z, 5).with_id("w");
+
+    auto ret = w.node_pointer()->compute_node()->serialize();
+    EXPECT_EQ(ret, "w = add(add(x, 3), 5)");
+}
+
+TEST(serialization, operator_action_lua_addition)
+{
+    grunk::state grunk;
+
+    grunk.eval(R"(
+        x = grunk.feature(2.):with_id("x")
+        y = grunk.feature(3.):with_id("y")
+        z = x + y  -- addition operator as action
+    )");
+    auto z = grunk.get_feature("z");
+
+    z.set_id("z");
+    auto ret = z.node_pointer()->compute_node()->serialize();
+    EXPECT_EQ(ret, "z = x + y");
+}
+
+TEST(serialization, operator_action_cpp_addition)
+{
+    grunk::state grunk;
+    auto x = grunk.feature(2.).with_id("x");
+    auto y = grunk.feature(3.).with_id("y");
+    auto z = x + y;
+    z.set_id("z");
+    auto ret = z.node_pointer()->compute_node()->serialize();
+    EXPECT_EQ(ret, "z = x + y");
+}
+
+TEST(serialization, operator_action_cpp_addition_anonymous1)
+{
+    grunk::state grunk;
+    auto x = grunk.feature(2.).with_id("x");
+    auto y = grunk.feature(3.).with_id("y");
+    auto z = x + y;
+    auto ret = z.node_pointer()->compute_node()->serialize();
+    EXPECT_EQ(ret, "(x + y)");
+}
+
+TEST(serialization, operator_action_cpp_addition_anonymous2)
+{
+    grunk::state grunk;
+    auto x = grunk.feature(2.);
+    auto y = grunk.feature(3.).with_id("y");
+    auto z = x + y;
+    auto ret = z.node_pointer()->compute_node()->serialize();
+    EXPECT_EQ(ret, "(2 + y)");
+}
+
+TEST(serialization, operator_action_cpp_addition_anonymous_nested)
+{
+    grunk::state grunk;
+    auto x = grunk.feature(2.);
+    auto y = grunk.feature(3.).with_id("y");
+    auto z = x + y;
+    auto w = z + 5;
+    w.set_id("w");
+    auto ret = w.node_pointer()->compute_node()->serialize();
+    EXPECT_EQ(ret, "w = (2 + y) + 5");
 }
