@@ -93,6 +93,31 @@ inline std::string serialize(grunk::object const& v)
     return grunk::serialize(v);
 }
 
+template <>
+inline std::string serialize(int const& v)
+{
+    return std::to_string(v);
+}
+
+template <>
+inline std::string serialize(double const& v)
+{
+    return grunk::details::to_string(v);
+}
+
+template <>
+inline std::string serialize(std::string const& v)
+{
+    return v;
+}
+
+template <>
+inline std::string serialize(bool const& v)
+{
+    return v ? "true" : "false";
+}
+
+
 } // namespace parametric
 
 #include <parametric/core.hpp>

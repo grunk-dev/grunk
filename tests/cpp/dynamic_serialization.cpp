@@ -1,7 +1,7 @@
 #include <gtest/gtest.h>
 #include <grunk/dynamic/state.hpp>
 
-TEST(io, primitives)
+TEST(serialization, primitives)
 {
     grunk::state grunk;
 
@@ -84,7 +84,7 @@ struct Foo {
 
 } // anonymous namespace
 
-TEST(io, userdata)
+TEST(serialization, userdata)
 {
     grunk::state grunk;
     grunk.set_functions_are_actions(false);
@@ -110,4 +110,67 @@ TEST(io, userdata)
     Foo rhs = o.as<Foo>();
     EXPECT_EQ(lhs.bar, rhs.bar);
     EXPECT_EQ(lhs.baz, rhs.baz);
+}
+
+TEST(serialization, free_function_action)
+{
+    grunk::state grunk;
+    grunk.register_function("add", [](double l, double r) {
+        return l + r;
+    });
+
+    { // named features
+        auto x = grunk.feature(2.).with_id("x");
+        auto y = grunk.feature(3.).with_id("y");
+        auto z = grunk.action("add", x, y).with_id("z");
+
+        auto ret = z.node_pointer()->compute_node()->serialize();
+        EXPECT_EQ(ret, "z = add(x, y)");
+    }
+
+    { // anonymous x
+        auto x = grunk.feature(2.);
+        auto y = grunk.feature(3.).with_id("y");
+        auto z = grunk.action("add", x, y).with_id("z");
+
+        auto ret = z.node_pointer()->compute_node()->serialize();
+        EXPECT_EQ(ret, "z = add(2, y)");
+    }
+
+    { // anonymous y
+        auto x = grunk.feature(2.).with_id("x");
+        auto y = grunk.feature(3.);
+        auto z = grunk.action("add", x, y).with_id("z");
+
+        auto ret = z.node_pointer()->compute_node()->serialize();
+        EXPECT_EQ(ret, "z = add(x, 3)");
+    }
+
+    { // anonymous x and y
+        auto x = grunk.feature(2.);
+        auto y = grunk.feature(3.);
+        auto z = grunk.action("add", x, y).with_id("z");
+
+        auto ret = z.node_pointer()->compute_node()->serialize();
+        EXPECT_EQ(ret, "z = add(2, 3)");
+    }
+
+    { // anonymous z
+        auto x = grunk.feature(2.);
+        auto y = grunk.feature(3.);
+        auto z = grunk.action("add", x, y);
+
+        auto ret = z.node_pointer()->compute_node()->serialize();
+        EXPECT_EQ(ret, "add(2, 3)");
+    }
+
+    { // nested anonymous features
+        auto x = grunk.feature(2.).with_id("x");
+        auto y = grunk.feature(3.);
+        auto z = grunk.action("add", x, y);
+        auto w = grunk.action("add", z, 5).with_id("w");
+
+        auto ret = w.node_pointer()->compute_node()->serialize();
+        EXPECT_EQ(ret, "w = add(add(x, 3), 5)");
+    }
 }

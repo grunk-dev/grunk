@@ -1,6 +1,7 @@
 #pragma once 
 
 #include "grunk/dynamic/feature.hpp"
+#include "grunk/dynamic/function_metadata.hpp"
 #include "ResultHolder.hpp"
 #include "sol/sol.hpp"
 
@@ -113,6 +114,64 @@ public:
             output->set_value(res[0]);
         }
     }
+
+    /**
+     * @brief serialize a DynamicAction to string
+     *
+     * @return std::string the serialized DynamicAction
+     */
+    std::string serialize() const override final
+    {
+
+        std::string ret;
+
+        // output
+        if(auto const& output = result(); output) {
+            if (!output->id().empty()) {
+            ret += output->id() + " = ";
+            }
+        } else {
+            return "";
+        }
+
+        //function name
+        sol::state_view lua(function.lua_state());
+        sol::object meta = lua["grunk"]["registry"][function];
+        assert(meta.is<function_metadata>());
+        std::string func_name = meta.as<function_metadata>().name;
+        ret += func_name;
+
+        // inputs
+        auto serialize_arg = [](parametric::DAGNode const& node) -> std::string
+        {
+            bool is_anonymous = (node.id() == "");
+            bool is_constant = (node.num_parents() == 0 && is_anonymous);
+            if (is_constant) {
+                return node.serialize();
+            } else if (is_anonymous) {
+                // nested function call
+                return node.get_parents()[0]->serialize();
+            } else {
+                // a named feature
+                return node.id();
+            }
+        };
+
+        bool first_arg = true;
+        for (auto const& input : this->get_parents()){
+            if (first_arg) {
+                ret += "(";
+                first_arg = false;
+            } else {
+                ret += ", ";
+            }
+            ret += serialize_arg(*input);
+        }
+        ret += ")";
+
+        return ret;
+    }
+
 
 private:
 

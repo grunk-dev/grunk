@@ -9,7 +9,7 @@ namespace {
 
 } // anonymous namespace
 
-TEST(function_registry, free_function)
+TEST(function_registry, free_function_lookup)
 {
     grunk::state grunk;
     grunk.register_function("add", &add, {{"l"}, {"r"}});
