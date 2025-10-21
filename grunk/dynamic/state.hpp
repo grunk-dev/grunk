@@ -415,7 +415,7 @@ private:
         sol::protected_function _unm = lua["grunk"]["_dynamic_unm"];
         function_metadata unm_metadata = function_metadata{
             "grunk._dynamic_unm",
-            {Parameter{"v", }}
+            {Parameter{"v"}}
         };
         registry.set("_dynamic_unm", unm_metadata);
         registry.set(_unm, unm_metadata);
