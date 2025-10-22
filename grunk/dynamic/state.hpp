@@ -113,7 +113,7 @@ public:
 
         // add metadata to function registry
         sol::protected_function f = (*table)[name];
-        register_metadata(lua, f, name, params);
+        register_metadata(f, name, params);
     }
 
     /**
@@ -353,31 +353,31 @@ private:
         // define some operators dynamically
         lua.script("function grunk._dynamic_add(l, r) return l + r end");
         sol::protected_function _add = lua["grunk"]["_dynamic_add"];
-        register_metadata(lua, _add, "grunk._dynamic_add", {Parameter{"lhs", }, Parameter{"rhs",}});
+        register_metadata(_add, "grunk._dynamic_add", {Parameter{"lhs", }, Parameter{"rhs",}});
         
         lua.script("function grunk._dynamic_sub(l, r) return l - r end");
         sol::protected_function _sub = lua["grunk"]["_dynamic_sub"];
-        register_metadata(lua, _sub, "grunk._dynamic_sub", {Parameter{"lhs", }, Parameter{"rhs",}});
+        register_metadata(_sub, "grunk._dynamic_sub", {Parameter{"lhs", }, Parameter{"rhs",}});
 
         lua.script("function grunk._dynamic_mul(l, r) return l * r end");
         sol::protected_function _mul = lua["grunk"]["_dynamic_mul"];
-        register_metadata(lua, _mul, "grunk._dynamic_mul", {Parameter{"lhs", }, Parameter{"rhs",}});
+        register_metadata(_mul, "grunk._dynamic_mul", {Parameter{"lhs", }, Parameter{"rhs",}});
 
         lua.script("function grunk._dynamic_div(l, r) return l / r end");
         sol::protected_function _div = lua["grunk"]["_dynamic_div"];
-        register_metadata(lua, _div, "grunk._dynamic_div", {Parameter{"lhs", }, Parameter{"rhs",}});
+        register_metadata(_div, "grunk._dynamic_div", {Parameter{"lhs", }, Parameter{"rhs",}});
 
         lua.script("function grunk._dynamic_mod(l, r) return l % r end");
         sol::protected_function _mod = lua["grunk"]["_dynamic_mod"];
-        register_metadata(lua, _mod, "grunk._dynamic_mod", {Parameter{"lhs", }, Parameter{"rhs",}});
+        register_metadata(_mod, "grunk._dynamic_mod", {Parameter{"lhs", }, Parameter{"rhs",}});
 
         lua.script("function grunk._dynamic_pow(l, r) return l ^ r end");
         sol::protected_function _pow = lua["grunk"]["_dynamic_pow"];
-        register_metadata(lua, _pow, "grunk._dynamic_pow", {Parameter{"base", }, Parameter{"exponent",}});
+        register_metadata(_pow, "grunk._dynamic_pow", {Parameter{"base", }, Parameter{"exponent",}});
 
         lua.script("function grunk._dynamic_unm(v) return -v end");
         sol::protected_function _unm = lua["grunk"]["_dynamic_unm"];
-        register_metadata(lua, _unm, "grunk._dynamic_unm", {Parameter{"value", }});
+        register_metadata(_unm, "grunk._dynamic_unm", {Parameter{"value", }});
 
         // register DynamicFeature as a usertype
         register_type<DynamicFeature>("Feature", g)

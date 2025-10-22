@@ -19,7 +19,6 @@ struct function_metadata
 };
 
 inline void register_metadata(
-    sol::state_view lua,
     sol::protected_function const& f,
     std::string const& name,
     std::vector<Parameter> const& params)
@@ -28,6 +27,7 @@ inline void register_metadata(
         name,
         params
     };
+    sol::state_view lua(f.lua_state());
     sol::table registry = lua["grunk"]["registry"];
     registry.set(name, metadata);
     registry.set(f, metadata);

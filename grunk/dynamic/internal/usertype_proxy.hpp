@@ -30,7 +30,7 @@ struct usertype_proxy {
 
     template <typename Key, typename F>
     usertype_proxy& add_member_function(Key&& key, F&& fun, std::vector<Parameter> params = {}) {
-        ut.set(std::forward<Key>(key), std::forward<F>(fun));
+        ut.set_function(std::forward<Key>(key), std::forward<F>(fun));
 
         std::string fun_name;
         if constexpr (std::is_convertible_v<Key, std::string>) {
@@ -42,7 +42,7 @@ struct usertype_proxy {
         fun_name = name + "." + fun_name;
         sol::state_view lua = ut.lua_state();
         sol::protected_function f = ut[std::forward<Key>(key)];
-        register_metadata(lua, f, fun_name, params);
+        register_metadata(f, fun_name, params);
 
         return *this;
     }
