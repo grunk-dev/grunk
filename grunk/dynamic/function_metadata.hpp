@@ -19,7 +19,7 @@ struct function_metadata
 };
 
 inline void register_metadata(
-    sol::protected_function const& f,
+    sol::reference const& f,
     std::string const& name,
     std::vector<Parameter> const& params)
 {
@@ -40,7 +40,7 @@ inline void register_metadata(
 }
 
 inline std::optional<function_metadata> get_metadata(
-    sol::protected_function const& f
+    sol::reference const& f
 )
 {
     sol::state_view lua(f.lua_state());

@@ -41,7 +41,7 @@ struct usertype_proxy {
 
         fun_name = name + "." + fun_name;
         sol::state_view lua = ut.lua_state();
-        sol::protected_function f = ut[std::forward<Key>(key)];
+        sol::reference const& f = ut[std::forward<Key>(key)];
         register_metadata(f, fun_name, params);
 
         return *this;

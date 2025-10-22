@@ -450,8 +450,7 @@ private:
 
                     if (method.is<sol::protected_function>()) {
                         // Decorate methods
-                        sol::protected_function func = method.as<sol::protected_function>();
-                        return sol::make_object(lua, details::make_dynamic_action(lua, func));
+                        return sol::make_object(lua, details::make_dynamic_action(lua, method));
                     }
 
                     return method;  // Return non-function elements as-is
