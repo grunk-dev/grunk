@@ -40,7 +40,7 @@ struct usertype_proxy {
         }
 
         function_metadata metadata = function_metadata{
-            fun_name,
+            name + "." + fun_name,
             params
         };
         sol::protected_function f = ut[std::forward<Key>(key)];

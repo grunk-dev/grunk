@@ -152,13 +152,13 @@ TEST(function_registry, member_function_lookup_by_name)
     ASSERT_TRUE(entry_obj.is<grunk::function_metadata>());
 
     auto entry = entry_obj.as<grunk::function_metadata>();
-    EXPECT_EQ(entry.name, "value");
+    EXPECT_EQ(entry.name, "MyScalar.value");
     ASSERT_EQ(entry.params.size(), 0);
 
     entry_obj = registry["MyScalar"]["set"];
     ASSERT_TRUE(entry_obj.is<grunk::function_metadata>());
     entry = entry_obj.as<grunk::function_metadata>();
-    EXPECT_EQ(entry.name, "set");
+    EXPECT_EQ(entry.name, "MyScalar.set");
     ASSERT_EQ(entry.params.size(), 1);
     EXPECT_EQ(entry.params[0].name.value(), "v");
 }

@@ -123,7 +123,7 @@ TEST(serialization, free_function_action)
     auto y = grunk.feature(3.).with_id("y");
     auto z = grunk.action("add", x, y).with_id("z");
 
-    auto ret = z.node_pointer()->compute_node()->serialize();
+    auto ret = z.compute_node()->serialize();
     EXPECT_EQ(ret, "z = add(x, y)");
 }
 
@@ -139,7 +139,7 @@ TEST(serialization, free_function_action_anonymous1)
     auto y = grunk.feature(3.).with_id("y");
     auto z = grunk.action("add", x, y).with_id("z");
 
-    auto ret = z.node_pointer()->compute_node()->serialize();
+    auto ret = z.compute_node()->serialize();
     EXPECT_EQ(ret, "z = add(2, y)");
 }
 
@@ -155,7 +155,7 @@ TEST(serialization, free_function_action_anonymous2)
     auto y = grunk.feature(3.);
     auto z = grunk.action("add", x, y).with_id("z");
 
-    auto ret = z.node_pointer()->compute_node()->serialize();
+    auto ret = z.compute_node()->serialize();
     EXPECT_EQ(ret, "z = add(x, 3)");
 }
 
@@ -171,7 +171,7 @@ TEST(serialization, free_function_action_anonymous3)
     auto y = grunk.feature(3.);
     auto z = grunk.action("add", x, y).with_id("z");
 
-    auto ret = z.node_pointer()->compute_node()->serialize();
+    auto ret = z.compute_node()->serialize();
     EXPECT_EQ(ret, "z = add(2, 3)");
 }
 
@@ -187,7 +187,7 @@ TEST(serialization, free_function_action_anonymous4)
     auto y = grunk.feature(3.);
     auto z = grunk.action("add", x, y);
 
-    auto ret = z.node_pointer()->compute_node()->serialize();
+    auto ret = z.compute_node()->serialize();
     EXPECT_EQ(ret, "add(2, 3)");
 }
 
@@ -204,7 +204,7 @@ TEST(serialization, free_function_action_anonymous_nested)
     auto z = grunk.action("add", x, y);
     auto w = grunk.action("add", z, 5).with_id("w");
 
-    auto ret = w.node_pointer()->compute_node()->serialize();
+    auto ret = w.compute_node()->serialize();
     EXPECT_EQ(ret, "w = add(add(x, 3), 5)");
 }
 
@@ -220,7 +220,7 @@ TEST(serialization, operator_action_lua_add)
     auto z = grunk.get_feature("z");
 
     z.set_id("z");
-    auto ret = z.node_pointer()->compute_node()->serialize();
+    auto ret = z.compute_node()->serialize();
     EXPECT_EQ(ret, "z = x + y");
 }
 
@@ -231,7 +231,7 @@ TEST(serialization, operator_action_cpp_add)
     auto y = grunk.feature(3.).with_id("y");
     auto z = x + y;
     z.set_id("z");
-    auto ret = z.node_pointer()->compute_node()->serialize();
+    auto ret = z.compute_node()->serialize();
     EXPECT_EQ(ret, "z = x + y");
 }
 
@@ -241,7 +241,7 @@ TEST(serialization, operator_action_cpp_add_anonymous1)
     auto x = grunk.feature(2.).with_id("x");
     auto y = grunk.feature(3.).with_id("y");
     auto z = x + y;
-    auto ret = z.node_pointer()->compute_node()->serialize();
+    auto ret = z.compute_node()->serialize();
     EXPECT_EQ(ret, "(x + y)");
 }
 
@@ -251,7 +251,7 @@ TEST(serialization, operator_action_cpp_add_anonymous2)
     auto x = grunk.feature(2.);
     auto y = grunk.feature(3.).with_id("y");
     auto z = x + y;
-    auto ret = z.node_pointer()->compute_node()->serialize();
+    auto ret = z.compute_node()->serialize();
     EXPECT_EQ(ret, "(2 + y)");
 }
 
@@ -263,7 +263,7 @@ TEST(serialization, operator_action_cpp_add_anonymous_nested)
     auto z = x + y;
     auto w = z + 5;
     w.set_id("w");
-    auto ret = w.node_pointer()->compute_node()->serialize();
+    auto ret = w.compute_node()->serialize();
     EXPECT_EQ(ret, "w = (2 + y) + 5");
 }
 
@@ -279,7 +279,7 @@ TEST(serialization, operator_action_lua_sub)
     auto z = grunk.get_feature("z");
 
     z.set_id("z");
-    auto ret = z.node_pointer()->compute_node()->serialize();
+    auto ret = z.compute_node()->serialize();
     EXPECT_EQ(ret, "z = x - y");
 }
 
@@ -290,7 +290,7 @@ TEST(serialization, operator_action_cpp_sub)
     auto y = grunk.feature(3.).with_id("y");
     auto z = x - y;
     z.set_id("z");
-    auto ret = z.node_pointer()->compute_node()->serialize();
+    auto ret = z.compute_node()->serialize();
     EXPECT_EQ(ret, "z = x - y");
 }
 
@@ -306,7 +306,7 @@ TEST(serialization, operator_action_lua_mul)
     auto z = grunk.get_feature("z");
 
     z.set_id("z");
-    auto ret = z.node_pointer()->compute_node()->serialize();
+    auto ret = z.compute_node()->serialize();
     EXPECT_EQ(ret, "z = x * y");
 }
 
@@ -317,7 +317,7 @@ TEST(serialization, operator_action_cpp_mul)
     auto y = grunk.feature(3.).with_id("y");
     auto z = x * y;
     z.set_id("z");
-    auto ret = z.node_pointer()->compute_node()->serialize();
+    auto ret = z.compute_node()->serialize();
     EXPECT_EQ(ret, "z = x * y");
 }
 
@@ -333,7 +333,7 @@ TEST(serialization, operator_action_lua_div)
     auto z = grunk.get_feature("z");
 
     z.set_id("z");
-    auto ret = z.node_pointer()->compute_node()->serialize();
+    auto ret = z.compute_node()->serialize();
     EXPECT_EQ(ret, "z = x / y");
 }
 
@@ -344,7 +344,7 @@ TEST(serialization, operator_action_cpp_div)
     auto y = grunk.feature(3.).with_id("y");
     auto z = x / y;
     z.set_id("z");
-    auto ret = z.node_pointer()->compute_node()->serialize();
+    auto ret = z.compute_node()->serialize();
     EXPECT_EQ(ret, "z = x / y");
 }
 
@@ -360,7 +360,7 @@ TEST(serialization, operator_action_lua_pow)
     auto z = grunk.get_feature("z");
 
     z.set_id("z");
-    auto ret = z.node_pointer()->compute_node()->serialize();
+    auto ret = z.compute_node()->serialize();
     EXPECT_EQ(ret, "z = x ^ y");
 }
 
@@ -371,7 +371,7 @@ TEST(serialization, operator_action_cpp_pow)
     auto y = grunk.feature(3.).with_id("y");
     auto z = grunk::pow(x,y);
     z.set_id("z");
-    auto ret = z.node_pointer()->compute_node()->serialize();
+    auto ret = z.compute_node()->serialize();
     EXPECT_EQ(ret, "z = x ^ y");
 }
 
@@ -387,7 +387,7 @@ TEST(serialization, operator_action_lua_mod)
     auto z = grunk.get_feature("z");
 
     z.set_id("z");
-    auto ret = z.node_pointer()->compute_node()->serialize();
+    auto ret = z.compute_node()->serialize();
     EXPECT_EQ(ret, "z = x % y");
 }
 
@@ -398,7 +398,7 @@ TEST(serialization, operator_action_cpp_mod)
     auto y = grunk.feature(3).with_id("y");
     auto z = x % y;
     z.set_id("z");
-    auto ret = z.node_pointer()->compute_node()->serialize();
+    auto ret = z.compute_node()->serialize();
     EXPECT_EQ(ret, "z = x % y");
 }
 
@@ -413,8 +413,8 @@ TEST(serialization, operator_action_lua_unm)
     auto z = grunk.get_feature("z");
 
     z.set_id("z");
-    EXPECT_EQ(z.node_pointer()->compute_node()->get_parents().size(), 1);
-    auto ret = z.node_pointer()->compute_node()->serialize();
+    EXPECT_EQ(z.compute_node()->get_parents().size(), 1);
+    auto ret = z.compute_node()->serialize();
     EXPECT_EQ(ret, "z = -x");
 }
 
@@ -424,6 +424,6 @@ TEST(serialization, operator_action_cpp_unm)
     auto x = grunk.feature(2).with_id("x");
     auto z = -x;
     z.set_id("z");
-    auto ret = z.node_pointer()->compute_node()->serialize();
+    auto ret = z.compute_node()->serialize();
     EXPECT_EQ(ret, "z = -x");
 }
