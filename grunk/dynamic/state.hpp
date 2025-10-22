@@ -346,7 +346,7 @@ private:
             [](sol::object obj) -> DynamicFeature {
                 return grunk::feature(object(obj));
             },
-            {},
+            {Parameter{"object", }},
             g
         );
 

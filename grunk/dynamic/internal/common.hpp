@@ -86,19 +86,4 @@ inline sol::object lookup_nested(sol::table const& table, std::string const& str
     return current;
 }
 
-inline void register_metadata(
-    sol::state_view lua,
-    sol::protected_function const& f,
-    std::string const& name,
-    std::vector<Parameter> const& params)
-{
-    function_metadata metadata{
-        name,
-        params
-    };
-    sol::table registry = lua["grunk"]["registry"];
-    registry.set(name, metadata);
-    registry.set(f, metadata);
-}
-
 } // namespace grunk

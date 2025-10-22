@@ -138,13 +138,8 @@ public:
         }
 
         //function name
-        sol::state_view lua(function.lua_state());
-        sol::object meta = lua["grunk"]["registry"][function];
-        if (!meta.is<function_metadata>()) {
-            throw io_error("Cannot serialize grunk::action: Function metadata not found in registry.");
-            
-        }
-        std::string func_name = meta.as<function_metadata>().name;
+        function_metadata meta = get_metadata(function);
+        std::string func_name = meta.name;
 
         bool is_operator = (func_name.rfind("grunk._dynamic_", 0) == 0);
         std::string argument_seperator = "";
