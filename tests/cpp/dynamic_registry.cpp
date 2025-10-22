@@ -52,24 +52,24 @@ TEST(function_registry, operators_lookup_by_name)
     grunk::state grunk;
     auto registry = grunk.get_registry();
     std::vector<std::string> operator_names = {
-        "_dynamic_add",
-        "_dynamic_sub",
-        "_dynamic_mul",
-        "_dynamic_div",
-        "_dynamic_mod",
-        "_dynamic_pow",
-        "_dynamic_unm"
+        "grunk._dynamic_add",
+        "grunk._dynamic_sub",
+        "grunk._dynamic_mul",
+        "grunk._dynamic_div",
+        "grunk._dynamic_mod",
+        "grunk._dynamic_pow",
+        "grunk._dynamic_unm"
     };
     for (auto const& name : operator_names) {
         sol::object entry_obj = registry[name];
         ASSERT_TRUE(entry_obj.is<grunk::function_metadata>());
 
         auto entry = entry_obj.as<grunk::function_metadata>();
-        EXPECT_EQ(entry.name, "grunk." + name);
-        if (name == "_dynamic_unm") {
+        EXPECT_EQ(entry.name, name);
+        if (name == "grunk._dynamic_unm") {
             EXPECT_EQ(entry.params.size(), 1);
             EXPECT_EQ(entry.params[0].name.value(), "value");
-        } else if (name == "_dynamic_pow") {
+        } else if (name == "grunk._dynamic_pow") {
             EXPECT_EQ(entry.params.size(), 2);
             EXPECT_EQ(entry.params[0].name.value(), "base");
             EXPECT_EQ(entry.params[1].name.value(), "exponent");
@@ -148,14 +148,14 @@ TEST(function_registry, member_function_lookup_by_name)
 
     auto registry = grunk.get_registry();
 
-    sol::object entry_obj = registry["MyScalar"]["value"];
+    sol::object entry_obj = registry["MyScalar.value"];
     ASSERT_TRUE(entry_obj.is<grunk::function_metadata>());
 
     auto entry = entry_obj.as<grunk::function_metadata>();
     EXPECT_EQ(entry.name, "MyScalar.value");
     ASSERT_EQ(entry.params.size(), 0);
 
-    entry_obj = registry["MyScalar"]["set"];
+    entry_obj = registry["MyScalar.set"];
     ASSERT_TRUE(entry_obj.is<grunk::function_metadata>());
     entry = entry_obj.as<grunk::function_metadata>();
     EXPECT_EQ(entry.name, "MyScalar.set");

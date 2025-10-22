@@ -39,16 +39,10 @@ struct usertype_proxy {
             fun_name = sol::to_string(std::forward<Key>(key));
         }
 
-        function_metadata metadata = function_metadata{
-            name + "." + fun_name,
-            params
-        };
-        sol::protected_function f = ut[std::forward<Key>(key)];
+        fun_name = name + "." + fun_name;
         sol::state_view lua = ut.lua_state();
-        sol::table registry = lua["grunk"]["registry"];
-        sol::table ut_registry = registry[name];
-        ut_registry.set(fun_name, metadata);
-        ut_registry.set(f, metadata);
+        sol::protected_function f = ut[std::forward<Key>(key)];
+        register_metadata(lua, f, fun_name, params);
 
         return *this;
     }

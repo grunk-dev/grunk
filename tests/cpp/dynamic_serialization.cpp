@@ -427,3 +427,35 @@ TEST(serialization, operator_action_cpp_unm)
     auto ret = z.compute_node()->serialize();
     EXPECT_EQ(ret, "z = -x");
 }
+
+namespace {
+
+    struct Dummy {
+
+        void set_value(double v) {
+            m_value = v;
+        }
+        double value() const {
+            return m_value;
+        }
+
+        double m_value{0.0};
+    };
+} // anonymous namespace
+
+TEST(serialization, member_function_action_cpp)
+{
+    grunk::state grunk;
+    grunk.register_type<Dummy>("Dummy")
+    .add_constructors<Dummy()>()
+    .add_member_function("set_value", &Dummy::set_value)
+    .add_member_function("value", &Dummy::value);
+
+    auto a = grunk.feature(Dummy()).with_id("a");
+    auto x = grunk.action("Dummy.set_value", a, 4.).with_id("x");
+    // auto y = grunk.action("Dummy.value", a).with_id("y");   
+    auto ret_x = x.compute_node()->serialize();
+    // auto ret_y = y.compute_node()->serialize();
+    EXPECT_EQ(ret_x, "x = Dummy.set_value(a, 4)");
+    // EXPECT_EQ(ret_y, "y = Dummy.value(a)");
+}

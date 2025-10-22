@@ -112,14 +112,8 @@ public:
         table->set_function(name, std::forward<Func>(fun));
 
         // add metadata to function registry
-
-        function_metadata metadata = function_metadata{name, params};
         sol::protected_function f = (*table)[name];
-
-        sol::table registry = lua["grunk"]["registry"];
-        registry.set(name, metadata);
-        registry.set(f, metadata);
-
+        register_metadata(lua, f, name, params);
     }
 
     /**
@@ -359,66 +353,31 @@ private:
         // define some operators dynamically
         lua.script("function grunk._dynamic_add(l, r) return l + r end");
         sol::protected_function _add = lua["grunk"]["_dynamic_add"];
-        function_metadata add_metadata = function_metadata{
-            "grunk._dynamic_add",
-            {Parameter{"lhs", }, Parameter{"rhs",}}
-        };
-        registry.set("_dynamic_add", add_metadata);
-        registry.set(_add, add_metadata);
+        register_metadata(lua, _add, "grunk._dynamic_add", {Parameter{"lhs", }, Parameter{"rhs",}});
         
         lua.script("function grunk._dynamic_sub(l, r) return l - r end");
         sol::protected_function _sub = lua["grunk"]["_dynamic_sub"];
-        function_metadata sub_metadata = function_metadata{
-            "grunk._dynamic_sub",
-            {Parameter{"lhs", }, Parameter{"rhs",}}
-        };
-        registry.set("_dynamic_sub", sub_metadata);
-        registry.set(_sub, sub_metadata);
+        register_metadata(lua, _sub, "grunk._dynamic_sub", {Parameter{"lhs", }, Parameter{"rhs",}});
 
         lua.script("function grunk._dynamic_mul(l, r) return l * r end");
         sol::protected_function _mul = lua["grunk"]["_dynamic_mul"];
-        function_metadata mul_metadata = function_metadata{
-            "grunk._dynamic_mul",
-            {Parameter{"lhs", }, Parameter{"rhs",}}
-        };
-        registry.set("_dynamic_mul", mul_metadata);
-        registry.set(_mul, mul_metadata);
+        register_metadata(lua, _mul, "grunk._dynamic_mul", {Parameter{"lhs", }, Parameter{"rhs",}});
 
         lua.script("function grunk._dynamic_div(l, r) return l / r end");
         sol::protected_function _div = lua["grunk"]["_dynamic_div"];
-        function_metadata div_metadata = function_metadata{
-            "grunk._dynamic_div",
-            {Parameter{"lhs", }, Parameter{"rhs",}}
-        };
-        registry.set("_dynamic_div", div_metadata);
-        registry.set(_div, div_metadata);
+        register_metadata(lua, _div, "grunk._dynamic_div", {Parameter{"lhs", }, Parameter{"rhs",}});
 
         lua.script("function grunk._dynamic_mod(l, r) return l % r end");
         sol::protected_function _mod = lua["grunk"]["_dynamic_mod"];
-        function_metadata mod_metadata = function_metadata{
-            "grunk._dynamic_mod",
-            {Parameter{"lhs", }, Parameter{"rhs",}}
-        };
-        registry.set("_dynamic_mod", mod_metadata);
-        registry.set(_mod, mod_metadata);
+        register_metadata(lua, _mod, "grunk._dynamic_mod", {Parameter{"lhs", }, Parameter{"rhs",}});
 
         lua.script("function grunk._dynamic_pow(l, r) return l ^ r end");
         sol::protected_function _pow = lua["grunk"]["_dynamic_pow"];
-        function_metadata pow_metadata = function_metadata{
-            "grunk._dynamic_pow",
-            {Parameter{"base", }, Parameter{"exponent",}}
-        };
-        registry.set("_dynamic_pow", pow_metadata);
-        registry.set(_pow, pow_metadata);
+        register_metadata(lua, _pow, "grunk._dynamic_pow", {Parameter{"base", }, Parameter{"exponent",}});
 
         lua.script("function grunk._dynamic_unm(v) return -v end");
         sol::protected_function _unm = lua["grunk"]["_dynamic_unm"];
-        function_metadata unm_metadata = function_metadata{
-            "grunk._dynamic_unm",
-            {Parameter{"value", }}
-        };
-        registry.set("_dynamic_unm", unm_metadata);
-        registry.set(_unm, unm_metadata);
+        register_metadata(lua, _unm, "grunk._dynamic_unm", {Parameter{"value", }});
 
         // register DynamicFeature as a usertype
         register_type<DynamicFeature>("Feature", g)
