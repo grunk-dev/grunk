@@ -413,6 +413,7 @@ TEST(serialization, operator_action_lua_unm)
     auto z = grunk.get_feature("z");
 
     z.set_id("z");
+    EXPECT_EQ(z.node_pointer()->compute_node()->get_parents().size(), 1);
     auto ret = z.node_pointer()->compute_node()->serialize();
     EXPECT_EQ(ret, "z = -x");
 }

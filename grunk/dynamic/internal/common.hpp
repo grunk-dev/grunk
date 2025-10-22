@@ -9,17 +9,28 @@ namespace grunk {
 
 namespace details {
 
-inline grunk::object make_dynamic_action(sol::state const& lua, sol::protected_function const& func)
+inline auto make_dynamic_action(sol::state const& lua, sol::protected_function const& func)
 {
-    auto decorated_function = [func](sol::variadic_args va) -> grunk::DynamicFeature
+    auto decorated_function = [func, &lua](sol::variadic_args va) -> grunk::DynamicFeature
     {
+        auto raw_args = std::vector<sol::object>(va.begin(), va.end());
+
+        // We need special treatment to remove the self argument, that gets added superfluously by sol sometimes
+        // Currently, we do this by checking the function metadata stored in the registry
+        sol::object metadata = lua["grunk"]["registry"][func];
+        if (metadata.valid()) {
+            if (raw_args.size() == metadata.as<function_metadata>().params.size() + 1) {
+                // Assume first argument is self and skip it
+                raw_args.erase(raw_args.begin());
+            }
+        }
 
         std::vector<grunk::DynamicFeature> args;
-        args.reserve(va.size());
+        args.reserve(raw_args.size());
 
         // Use std::transform to convert variadic_args to std::vector<DynamicFeature>
         std::transform(
-            va.begin(), va.end(),
+            raw_args.begin(), raw_args.end(),
             std::back_inserter(args),
             [](grunk::object const& obj) {
                 if (obj.is<grunk::DynamicFeature>()) {
@@ -32,7 +43,7 @@ inline grunk::object make_dynamic_action(sol::state const& lua, sol::protected_f
 
         return grunk::action(func, args).output();
     };
-    return sol::make_object(lua, sol::as_function(decorated_function));
+    return decorated_function;
 }
 
 } // namespace details

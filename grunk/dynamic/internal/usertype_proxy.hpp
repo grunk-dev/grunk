@@ -19,16 +19,16 @@ struct usertype_proxy {
         return *this;
     }
 
-    template <typename F>
-    usertype_proxy& add_member_function(std::string const& memfun_name, F&& fun) {
-        ut[memfun_name] = fun;
+    template <typename Key, typename F>
+    usertype_proxy& add_member_function(Key&& key, F&& fun) {
+        ut.set(std::forward<Key>(key), std::forward<F>(fun));
         return *this;
     }
 
     template <typename F>
     usertype_proxy& add_data_member(std::string const& memfun_name, F&& fun) {
         //TODO: via sol::property? Differentiate readonly types?
-        ut[memfun_name] = fun;
+        ut[memfun_name] = std::forward<F>(fun);
         return *this;
     }
 

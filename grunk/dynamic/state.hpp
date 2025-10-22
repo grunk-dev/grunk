@@ -415,7 +415,7 @@ private:
         sol::protected_function _unm = lua["grunk"]["_dynamic_unm"];
         function_metadata unm_metadata = function_metadata{
             "grunk._dynamic_unm",
-            {Parameter{"v"}}
+            {Parameter{"value", }}
         };
         registry.set("_dynamic_unm", unm_metadata);
         registry.set(_unm, unm_metadata);
@@ -443,13 +443,13 @@ private:
         .add_member_function("value", &DynamicFeature::value)
         .add_member_function("compute_node", &DynamicFeature::compute_node)
         .add_member_function("as", static_cast<sol::table(DynamicFeature::*)(sol::table) const>(&DynamicFeature::as))
-        .add_member_function("__add", details::make_dynamic_action(lua, g["_dynamic_add"])) //TODO: Why can't I use &grunk::operator+<DynamicFeature const&, DynamicFeature const&>
-        .add_member_function("__sub", details::make_dynamic_action(lua, g["_dynamic_sub"]))
-        .add_member_function("__mul", details::make_dynamic_action(lua, g["_dynamic_mul"]))
-        .add_member_function("__div", details::make_dynamic_action(lua, g["_dynamic_div"]))
-        .add_member_function("__mod", details::make_dynamic_action(lua, g["_dynamic_mod"]))
-        .add_member_function("__pow", details::make_dynamic_action(lua, g["_dynamic_pow"]))
-        .add_member_function("__unm", details::make_dynamic_action(lua, g["_dynamic_unm"]));
+        .add_member_function(sol::meta_function::addition, details::make_dynamic_action(lua, _add))
+        .add_member_function(sol::meta_function::subtraction, details::make_dynamic_action(lua, _sub))
+        .add_member_function(sol::meta_function::multiplication, details::make_dynamic_action(lua, _mul))
+        .add_member_function(sol::meta_function::division, details::make_dynamic_action(lua, _div))
+        .add_member_function(sol::meta_function::modulus, details::make_dynamic_action(lua, _mod))
+        .add_member_function(sol::meta_function::power_of, details::make_dynamic_action(lua, _pow))
+        .add_member_function(sol::meta_function::unary_minus, details::make_dynamic_action(lua, _unm));
 
     }
 
@@ -476,7 +476,7 @@ private:
             if (result.is<sol::protected_function>()) {
                 // Decorate if it's a function
                 sol::protected_function func = result.as<sol::protected_function>();
-                decorated_env[key] =  details::make_dynamic_action(lua, func);
+                decorated_env.set_function(key, details::make_dynamic_action(lua, func));
                 return decorated_env[key];
             } else if (result.is<sol::table>()) {
                 // If it's a usertype (stored as a table), intercept its metatable
@@ -492,7 +492,7 @@ private:
                     if (method.is<sol::protected_function>()) {
                         // Decorate methods
                         sol::protected_function func = method.as<sol::protected_function>();
-                        return details::make_dynamic_action(lua, func);
+                        return sol::make_object(lua, details::make_dynamic_action(lua, func));
                     }
 
                     return method;  // Return non-function elements as-is
