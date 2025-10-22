@@ -7,6 +7,15 @@ namespace grunk {
 template <typename T>
 struct usertype_proxy {
 
+    usertype_proxy(std::string const& name_, sol::usertype<T> const& ut_)
+     : name(name_)
+     , ut(ut_)
+    {
+        sol::state_view lua = ut.lua_state();
+        sol::table registry = lua["grunk"]["registry"];
+        registry[name] = lua.create_table();
+    }
+
     template <typename... Ctors>
     usertype_proxy& add_constructors() {
         ut["new"] = sol::constructors<Ctors...>();
@@ -20,8 +29,27 @@ struct usertype_proxy {
     }
 
     template <typename Key, typename F>
-    usertype_proxy& add_member_function(Key&& key, F&& fun) {
+    usertype_proxy& add_member_function(Key&& key, F&& fun, std::vector<Parameter> params = {}) {
         ut.set(std::forward<Key>(key), std::forward<F>(fun));
+
+        std::string fun_name;
+        if constexpr (std::is_convertible_v<Key, std::string>) {
+            fun_name = std::forward<Key>(key);
+        } else {
+            fun_name = sol::to_string(std::forward<Key>(key));
+        }
+
+        function_metadata metadata = function_metadata{
+            fun_name,
+            params
+        };
+        sol::protected_function f = ut[std::forward<Key>(key)];
+        sol::state_view lua = ut.lua_state();
+        sol::table registry = lua["grunk"]["registry"];
+        sol::table ut_registry = registry[name];
+        ut_registry.set(fun_name, metadata);
+        ut_registry.set(f, metadata);
+
         return *this;
     }
 
@@ -32,6 +60,7 @@ struct usertype_proxy {
         return *this;
     }
 
+    std::string name;
     sol::usertype<T> ut;
 };
 

@@ -118,3 +118,47 @@ TEST(function_registry, operators_lookup_by_function)
         }
     }
 }
+
+namespace {
+
+class MyScalar
+{
+public:
+    MyScalar(double v) : m_value(v) {}
+    double value() const
+    {
+        return m_value;
+    }
+    void set(double v) {
+        m_value = v;
+    }
+private:
+    double m_value;
+};
+
+} // anonymous namespace
+
+TEST(function_registry, member_function_lookup_by_name)
+{
+    grunk::state grunk;
+    grunk.register_type<MyScalar>("MyScalar")
+    .add_constructors<MyScalar(double)>()
+    .add_member_function("value", &MyScalar::value)
+    .add_member_function("set", &MyScalar::set, {{"v"}});
+
+    auto registry = grunk.get_registry();
+
+    sol::object entry_obj = registry["MyScalar"]["value"];
+    ASSERT_TRUE(entry_obj.is<grunk::function_metadata>());
+
+    auto entry = entry_obj.as<grunk::function_metadata>();
+    EXPECT_EQ(entry.name, "value");
+    ASSERT_EQ(entry.params.size(), 0);
+
+    entry_obj = registry["MyScalar"]["set"];
+    ASSERT_TRUE(entry_obj.is<grunk::function_metadata>());
+    entry = entry_obj.as<grunk::function_metadata>();
+    EXPECT_EQ(entry.name, "set");
+    ASSERT_EQ(entry.params.size(), 1);
+    EXPECT_EQ(entry.params[0].name.value(), "v");
+}

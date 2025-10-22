@@ -86,7 +86,7 @@ public:
         if (!table) {
             table = original_env;
         }
-        return usertype_proxy<T>{table->new_usertype<T>(name)};
+        return usertype_proxy<T>{name, table->new_usertype<T>(name)};
     }
 
     /**
