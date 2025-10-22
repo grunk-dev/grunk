@@ -23,9 +23,9 @@ TEST(function_registry, free_function_lookup_by_name)
 
     auto entry = entry_obj.as<grunk::function_metadata>();
     EXPECT_EQ(entry.name, "add");
-    ASSERT_EQ(entry.params.size(), 2);
-    EXPECT_EQ(entry.params[0].name.value(), "l");
-    EXPECT_EQ(entry.params[1].name.value(), "r");
+    ASSERT_EQ(entry.params->size(), 2);
+    EXPECT_EQ(entry.params.value()[0].name.value(), "l");
+    EXPECT_EQ(entry.params.value()[1].name.value(), "r");
 }
 
 TEST(function_registry, free_function_lookup_by_function)
@@ -36,10 +36,11 @@ TEST(function_registry, free_function_lookup_by_function)
     ASSERT_TRUE(f.valid());
 
     auto entry = grunk::get_metadata(f);
-    EXPECT_EQ(entry.name, "add");
-    ASSERT_EQ(entry.params.size(), 2);
-    EXPECT_EQ(entry.params[0].name.value(), "l");
-    EXPECT_EQ(entry.params[1].name.value(), "r");
+    ASSERT_TRUE(entry);
+    EXPECT_EQ(entry->name, "add");
+    ASSERT_EQ(entry->params->size(), 2);
+    EXPECT_EQ(entry->params.value()[0].name.value(), "l");
+    EXPECT_EQ(entry->params.value()[1].name.value(), "r");
 }
 
 TEST(function_registry, operators_lookup_by_name)
@@ -62,16 +63,16 @@ TEST(function_registry, operators_lookup_by_name)
         auto entry = entry_obj.as<grunk::function_metadata>();
         EXPECT_EQ(entry.name, name);
         if (name == "grunk._dynamic_unm") {
-            EXPECT_EQ(entry.params.size(), 1);
-            EXPECT_EQ(entry.params[0].name.value(), "value");
+            EXPECT_EQ(entry.params->size(), 1);
+            EXPECT_EQ(entry.params.value()[0].name.value(), "value");
         } else if (name == "grunk._dynamic_pow") {
-            EXPECT_EQ(entry.params.size(), 2);
-            EXPECT_EQ(entry.params[0].name.value(), "base");
-            EXPECT_EQ(entry.params[1].name.value(), "exponent");
+            EXPECT_EQ(entry.params->size(), 2);
+            EXPECT_EQ(entry.params.value()[0].name.value(), "base");
+            EXPECT_EQ(entry.params.value()[1].name.value(), "exponent");
         } else {
-            EXPECT_EQ(entry.params.size(), 2);
-            EXPECT_EQ(entry.params[0].name.value(), "lhs");
-            EXPECT_EQ(entry.params[1].name.value(), "rhs");
+            EXPECT_EQ(entry.params->size(), 2);
+            EXPECT_EQ(entry.params.value()[0].name.value(), "lhs");
+            EXPECT_EQ(entry.params.value()[1].name.value(), "rhs");
         }
     }
 }
@@ -95,18 +96,20 @@ TEST(function_registry, operators_lookup_by_function)
         ASSERT_TRUE(f.valid());
 
         auto entry = grunk::get_metadata(f);
-        EXPECT_EQ(entry.name, "grunk." + name);
+        ASSERT_TRUE(entry);
+        EXPECT_EQ(entry->name, "grunk." + name);
         if (name == "_dynamic_unm") {
-            EXPECT_EQ(entry.params.size(), 1);
-            EXPECT_EQ(entry.params[0].name.value(), "value");
+            EXPECT_EQ(entry->params->size(), 1);
+            EXPECT_EQ(entry->params.value()[0].name.value(), "value");
         } else if (name == "_dynamic_pow") {
-            EXPECT_EQ(entry.params.size(), 2);
-            EXPECT_EQ(entry.params[0].name.value(), "base");
-            EXPECT_EQ(entry.params[1].name.value(), "exponent");
+            EXPECT_EQ(entry->params->size(), 2);
+            EXPECT_EQ(entry->params.value()[0].name.value(), "base");
+            EXPECT_EQ(entry->params.value()[1].name.value(), "exponent");
         } else {
-            EXPECT_EQ(entry.params.size(), 2);
-            EXPECT_EQ(entry.params[0].name.value(), "lhs");
-            EXPECT_EQ(entry.params[1].name.value(), "rhs");
+            EXPECT_EQ(entry->params->size(), 2);
+            ASSERT_TRUE(entry->params);
+            EXPECT_EQ(entry->params.value()[0].name.value(), "lhs");
+            EXPECT_EQ(entry->params.value()[1].name.value(), "rhs");
         }
     }
 }
@@ -145,12 +148,15 @@ TEST(function_registry, member_function_lookup_by_name)
 
     auto entry = entry_obj.as<grunk::function_metadata>();
     EXPECT_EQ(entry.name, "MyScalar.value");
-    ASSERT_EQ(entry.params.size(), 0);
+    ASSERT_TRUE(entry.params);
+    ASSERT_EQ(entry.params->size(), 0);
 
     entry_obj = registry["MyScalar.set"];
     ASSERT_TRUE(entry_obj.is<grunk::function_metadata>());
     entry = entry_obj.as<grunk::function_metadata>();
     EXPECT_EQ(entry.name, "MyScalar.set");
-    ASSERT_EQ(entry.params.size(), 1);
-    EXPECT_EQ(entry.params[0].name.value(), "v");
+    ASSERT_TRUE(entry.params);
+    ASSERT_EQ(entry.params->size(), 1);
+    ASSERT_TRUE(entry.params.value()[0].name);
+    EXPECT_EQ(entry.params.value()[0].name.value(), "v");
 }

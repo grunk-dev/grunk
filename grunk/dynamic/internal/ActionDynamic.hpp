@@ -138,8 +138,11 @@ public:
         }
 
         //function name
-        function_metadata meta = get_metadata(function);
-        std::string func_name = meta.name;
+        auto meta = get_metadata(function);
+        if (!meta) {
+            throw io_error("Function metadata not found in DynamicAction serialization.");
+        }
+        std::string func_name = meta->name;
 
         bool is_operator = (func_name.rfind("grunk._dynamic_", 0) == 0);
         std::string argument_seperator = "";

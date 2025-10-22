@@ -17,9 +17,9 @@ inline auto make_dynamic_action(sol::state const& lua, sol::protected_function c
 
         // We need special treatment to remove the self argument, that gets added superfluously by sol sometimes
         // Currently, we do this by checking the function metadata stored in the registry
-        sol::object metadata = lua["grunk"]["registry"][func];
-        if (metadata.valid()) {
-            if (raw_args.size() == metadata.as<function_metadata>().params.size() + 1) {
+        auto meta = get_metadata(func);
+        if (meta && meta->params) {
+            if (raw_args.size() == meta->params->size() + 1) {
                 // Assume first argument is self and skip it
                 raw_args.erase(raw_args.begin());
             }
