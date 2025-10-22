@@ -46,3 +46,75 @@ TEST(function_registry, free_function_lookup_by_function)
     EXPECT_EQ(entry.params[0].name.value(), "l");
     EXPECT_EQ(entry.params[1].name.value(), "r");
 }
+
+TEST(function_registry, operators_lookup_by_name)
+{
+    grunk::state grunk;
+    auto registry = grunk.get_registry();
+    std::vector<std::string> operator_names = {
+        "_dynamic_add",
+        "_dynamic_sub",
+        "_dynamic_mul",
+        "_dynamic_div",
+        "_dynamic_mod",
+        "_dynamic_pow",
+        "_dynamic_unm"
+    };
+    for (auto const& name : operator_names) {
+        sol::object entry_obj = registry[name];
+        ASSERT_TRUE(entry_obj.is<grunk::function_metadata>());
+
+        auto entry = entry_obj.as<grunk::function_metadata>();
+        EXPECT_EQ(entry.name, "grunk." + name);
+        if (name == "_dynamic_unm") {
+            EXPECT_EQ(entry.params.size(), 1);
+            EXPECT_EQ(entry.params[0].name.value(), "value");
+        } else if (name == "_dynamic_pow") {
+            EXPECT_EQ(entry.params.size(), 2);
+            EXPECT_EQ(entry.params[0].name.value(), "base");
+            EXPECT_EQ(entry.params[1].name.value(), "exponent");
+        } else {
+            EXPECT_EQ(entry.params.size(), 2);
+            EXPECT_EQ(entry.params[0].name.value(), "lhs");
+            EXPECT_EQ(entry.params[1].name.value(), "rhs");
+        }
+    }
+}
+
+TEST(function_registry, operators_lookup_by_function)
+{
+    grunk::state grunk;
+    auto registry = grunk.get_registry();
+    std::vector<std::string> operator_names = {
+        "_dynamic_add",
+        "_dynamic_sub",
+        "_dynamic_mul",
+        "_dynamic_div",
+        "_dynamic_mod",
+        "_dynamic_pow",
+        "_dynamic_unm"
+    };
+    for (auto const& name : operator_names) {
+        sol::table g = grunk["grunk"];
+        sol::protected_function f = g[name];
+        ASSERT_TRUE(f.valid());
+
+        sol::object entry_obj = registry[f];
+        ASSERT_TRUE(entry_obj.is<grunk::function_metadata>());
+
+        auto entry = entry_obj.as<grunk::function_metadata>();
+        EXPECT_EQ(entry.name, "grunk." + name);
+        if (name == "_dynamic_unm") {
+            EXPECT_EQ(entry.params.size(), 1);
+            EXPECT_EQ(entry.params[0].name.value(), "value");
+        } else if (name == "_dynamic_pow") {
+            EXPECT_EQ(entry.params.size(), 2);
+            EXPECT_EQ(entry.params[0].name.value(), "base");
+            EXPECT_EQ(entry.params[1].name.value(), "exponent");
+        } else {
+            EXPECT_EQ(entry.params.size(), 2);
+            EXPECT_EQ(entry.params[0].name.value(), "lhs");
+            EXPECT_EQ(entry.params[1].name.value(), "rhs");
+        }
+    }
+}
