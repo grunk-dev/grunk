@@ -1,5 +1,6 @@
 #include <gtest/gtest.h>
 #include <grunk/dynamic/state.hpp>
+#include <grunk/dynamic/internal/ToStringVisitor.hpp>
 
 TEST(serialization, primitives)
 {
@@ -533,3 +534,64 @@ TEST(serialization, ctor_action_lua)
     auto ret_x = x.compute_node()->serialize();
     EXPECT_EQ(ret_x, "x = Dummy.new(2)");
 }
+
+TEST(serialization, ToStringVisitor_cpp)
+{
+    grunk::state grunk;
+
+    auto a = grunk.feature(2.).with_id("a");
+    auto b = grunk.feature(3.).with_id("b");
+    auto c = a + b;
+    c.set_id("c");
+    auto d = grunk::pow(c, 2);
+    d.set_id("d");
+
+    auto visitor = grunk::ToStringVisitor();
+    auto const& node = *d.node_pointer();
+    visitor.set_start_node(node);
+    node.accept(visitor, 0, parametric::DAGNode::Direction::up);
+
+    
+    auto steps = visitor.get_steps();
+    ASSERT_EQ(steps.size(), 2);
+    EXPECT_EQ(steps[0], "c = a + b");
+    EXPECT_EQ(steps[1], "d = c ^ 2");
+    
+    auto parameters = visitor.get_parameters();
+    ASSERT_EQ(parameters.size(), 2);
+    EXPECT_EQ(parameters.at("a"), "2");
+    EXPECT_EQ(parameters.at("b"), "3");
+    
+    auto script = visitor.get_string(true);
+    EXPECT_EQ("\n" + script, R"(
+a = grunk.feature(2)
+b = grunk.feature(3)
+c = a + b
+d = c ^ 2
+)");
+
+    ASSERT_NO_THROW(grunk.eval(script));
+    EXPECT_NEAR(grunk.get_feature("d").value().as<double>(), 25, 1e-10);
+}
+
+//TODO:
+// 1. Test serialization of LUA script back to LUA
+// 2. proper handling of anonymous steps (e.g. d = (a + b) ^ 2). Also test this
+// 3. make sure that in the LUA script every feature knows its id
+//
+//   x = grunk.feature(2):with_id("x")
+//   y = grunk.feature(3):with_id("y")
+//   d = ( (a + b) ^ 2 ):with_id("d")
+// 
+//   OR
+//
+//   x = grunk.feature(2)
+//   y = grunk.feature(3)
+//   d = (a + b) ^ 2
+//
+//   x.set_id("x")
+//   y.set_id("y")
+//   z.set_id("z")
+//
+//  We might want to add a function grunk.tag_features that iterates over all named features
+//  in the current env and applies the id
