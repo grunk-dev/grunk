@@ -36,7 +36,7 @@ decltype(auto) operator+(Feature<L> const& l, Feature<R> const& r) {
             lua_state = details::get_state(r);
         }
         sol::state_view lua(lua_state);
-        sol::protected_function fun = lua["grunk"]["_dynamic_add"];
+        function_meta fun = lua["grunk"]["_dynamic_add"];
         return grunk::action(fun, l, r).output();
     } else {
         // static action
@@ -70,7 +70,7 @@ decltype(auto) operator-(Feature<L> const& l, Feature<R> const& r) {
             lua_state = details::get_state(r);
         }
         sol::state_view lua(lua_state);
-        sol::protected_function fun = lua["grunk"]["_dynamic_sub"];
+        function_meta fun = lua["grunk"]["_dynamic_sub"];
         return grunk::action(fun, l, r).output();
     } else {
         // static action
@@ -104,7 +104,7 @@ decltype(auto) operator*(Feature<L> const& l, Feature<R> const& r) {
             lua_state = details::get_state(r);
         }
         sol::state_view lua(lua_state);
-        sol::protected_function fun = lua["grunk"]["_dynamic_mul"];
+        function_meta fun = lua["grunk"]["_dynamic_mul"];
         return grunk::action(fun, l, r).output();
     } else {
         // static action
@@ -138,7 +138,7 @@ decltype(auto) operator/(Feature<L> const& l, Feature<R> const& r) {
             lua_state = details::get_state(r);
         }
         sol::state_view lua(lua_state);
-        sol::protected_function fun = lua["grunk"]["_dynamic_div"];
+        function_meta fun = lua["grunk"]["_dynamic_div"];
         return grunk::action(fun, l, r).output();
     } else {
         // static action
@@ -174,7 +174,7 @@ decltype(auto) pow(Feature<L> const& l, Feature<R> const& r) {
             lua_state = details::get_state(r);
         }
         sol::state_view lua(lua_state);
-        sol::protected_function fun = lua["grunk"]["_dynamic_pow"];
+        function_meta fun = lua["grunk"]["_dynamic_pow"];
         return grunk::action(fun, l, r).output();
     } else {
         // static action
@@ -208,7 +208,7 @@ decltype(auto) operator%(Feature<L> const& l, Feature<R> const& r) {
             lua_state = details::get_state(r);
         }
         sol::state_view lua(lua_state);
-        sol::protected_function fun = lua["grunk"]["_dynamic_mod"];
+        function_meta fun = lua["grunk"]["_dynamic_mod"];
         return grunk::action(fun, l, r).output();
     } else {
         // static action
@@ -237,7 +237,7 @@ Feature<L> operator-(Feature<L> const& l) {
     if constexpr (std::is_same_v<L, grunk::object>) {
         lua_State* lua_state = details::get_state(l);
         sol::state_view lua(lua_state);
-        sol::protected_function fun = lua["grunk"]["_dynamic_unm"];
+        function_meta fun = lua["grunk"]["_dynamic_unm"];
         return grunk::action(fun, l).output();
     } else {
         // static action
