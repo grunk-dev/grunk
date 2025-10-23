@@ -434,6 +434,9 @@ namespace {
 
     struct Dummy {
 
+        Dummy() = default;
+        Dummy(double v) : m_value{v} {}
+
         void set_value(double v) {
             m_value = v;
         }
@@ -450,7 +453,8 @@ TEST(serialization, member_function_action_cpp)
     grunk::state grunk;
     grunk.register_type<Dummy>("Dummy")
     .add_constructors(
-        []() { return Dummy(); }
+        []() { return Dummy(); },
+        [](double v) { return Dummy(v); }
     )
     .add_member_function("set_value", &Dummy::set_value)
     .add_member_function("value", &Dummy::value);
@@ -471,7 +475,8 @@ TEST(serialization, member_function_action_lua)
     grunk::state grunk;
     grunk.register_type<Dummy>("Dummy")
     .add_constructors(
-        []() { return Dummy(); }
+        []() { return Dummy(); },
+        [](double v) { return Dummy(v); }
     )
     .add_member_function("set_value", &Dummy::set_value)
     .add_member_function("value", &Dummy::value);
@@ -489,4 +494,42 @@ TEST(serialization, member_function_action_lua)
     auto y = grunk.get_feature("y");
     auto ret_y = y.compute_node()->serialize();
     EXPECT_EQ(ret_y, "y = Dummy.value(a)");
+}
+
+TEST(serialization, ctor_action_cpp)
+{
+    grunk::state grunk;
+
+    grunk.register_type<Dummy>("Dummy")
+    .add_constructors(
+        []() { return Dummy(); },
+        [](double v) { return Dummy(v); }
+    )
+    .add_member_function("set_value", &Dummy::set_value)
+    .add_member_function("value", &Dummy::value);
+
+    auto a = grunk.feature(2.).with_id("a");
+    auto x = grunk.action("Dummy.new", a).with_id("x");
+    auto ret_x = x.compute_node()->serialize();
+    EXPECT_EQ(ret_x, "x = Dummy.new(a)");
+}
+
+TEST(serialization, ctor_action_lua)
+{
+    grunk::state grunk;
+
+    grunk.register_type<Dummy>("Dummy")
+    .add_constructors(
+        []() { return Dummy(); },
+        [](double v) { return Dummy(v); }
+    )
+    .add_member_function("set_value", &Dummy::set_value)
+    .add_member_function("value", &Dummy::value);
+
+    grunk.eval(R"(
+        x = Dummy.new(2.):with_id("x")
+    )");
+    auto x = grunk.get_feature("x");
+    auto ret_x = x.compute_node()->serialize();
+    EXPECT_EQ(ret_x, "x = Dummy.new(2)");
 }
