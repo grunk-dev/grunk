@@ -14,8 +14,7 @@ TEST(state, free_function_registration)
 {
     grunk::state grunk;
     grunk.register_function("add", &add);
-    sol::protected_function f = grunk.get_function("add"); // just to see that it exists
-    ASSERT_TRUE(f.valid());
+    auto f = grunk.get_function("add"); // just to see that it exists
     grunk.set_functions_are_actions(false);
     grunk.eval(
         R"(
@@ -181,14 +180,16 @@ TEST(state, usertype_ctor_cpp)
     grunk::state grunk;
 
     grunk.register_type<MyScalar>("MyScalar")
-    .add_constructors<MyScalar(double)>();
+    .add_constructors(
+        [](double v) { return MyScalar(v); }
+    );
 
     grunk.register_type<DefaultConstructible>("DefaultConstructible");
 
     {
         // string overloads
         auto a = grunk.feature(1.);
-        auto x = grunk.action("MyScalar.new", a);       // ctor as action: x depends on a
+        auto x = grunk.action("MyScalar:new", a);       // ctor as action: x depends on a
         auto y = grunk.action("MyScalar.new", 2.);      // ctor as action with argument conversion from contant: y depends on Feature(2.)
         auto z = grunk.feature("MyScalar", 3.);          // forwards ctor args to grunk::feature: z is independent feature
 
@@ -209,7 +210,7 @@ TEST(state, usertype_ctor_cpp)
 
         // gets the original undecorated type and constructor function
         sol::table MyScalarT = grunk.get_type("MyScalar");
-        sol::protected_function MyScalarCtor = grunk.get_function("MyScalar.new");
+        auto MyScalarCtor = grunk.get_function("MyScalar.new");
 
         auto a = grunk.feature(1.);
         auto x = grunk.action(MyScalarCtor, a);       // ctor as action: x depends on a
@@ -254,7 +255,9 @@ TEST(state, usertype_ctor_as_action_lua)
     grunk::state grunk;
 
     grunk.register_type<MyScalar>("MyScalar")
-    .add_constructors<MyScalar(double)>();
+    .add_constructors(
+        [](double v) { return MyScalar(v); }
+    );
 
     grunk.eval(R"(
         local a = grunk.feature(1.)
@@ -285,7 +288,9 @@ TEST(state, usertype_operators_as_action_lua)
     grunk::state grunk;
 
     grunk.register_type<MyScalar>("MyScalar")
-    .add_constructors<MyScalar(double)>()
+    .add_constructors(
+        [](double v) { return MyScalar(v); }
+    )
     .add_member_function("__add", [](MyScalar const& l, MyScalar const&r){
             return l + r;
     })
@@ -313,7 +318,9 @@ TEST(state, usertype_method_as_action_cpp)
     grunk::state grunk;
 
     grunk.register_type<MyScalar>("MyScalar")
-    .add_constructors<MyScalar(double)>()
+    .add_constructors(
+        [](double v) { return MyScalar(v); }
+    )
     .add_member_function("set", &MyScalar::set)
     .add_member_function("pow", &MyScalar::pow);
 
@@ -351,7 +358,9 @@ TEST(state, usertype_method_as_action_lua)
     grunk::state grunk;
 
     grunk.register_type<MyScalar>("MyScalar")
-    .add_constructors<MyScalar(double)>()
+    .add_constructors(
+        [](double v) { return MyScalar(v); }
+    )
     .add_member_function("set", &MyScalar::set)
     .add_member_function("pow", &MyScalar::pow);
 

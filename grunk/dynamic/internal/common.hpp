@@ -9,20 +9,18 @@ namespace grunk {
 
 namespace details {
 
-inline auto make_dynamic_action(sol::state const& lua, sol::protected_function const& func)
+inline auto make_dynamic_action(sol::state const& lua, function_meta const& func)
 {
     auto decorated_function = [func, &lua](sol::variadic_args va) -> grunk::DynamicFeature
     {
+        
         auto raw_args = std::vector<sol::object>(va.begin(), va.end());
 
-        // We need special treatment to remove the self argument, that gets added superfluously by sol sometimes
-        // Currently, we do this by checking the function metadata stored in the registry
-        auto meta = get_metadata(func);
-        if (meta && meta->params) {
-            if (raw_args.size() == meta->params->size() + 1) {
-                // Assume first argument is self and skip it
-                raw_args.erase(raw_args.begin());
-            }
+        // HACK: for unary operators, sol::variadic_args includes the table as the first argument
+        // For serialization/deserialization consistency, we remove it here
+        // Otherwise -x gets serializes as -xx
+        if (func.get_name() == "grunk._dynamic_unm") {
+            raw_args.erase(raw_args.begin());
         }
 
         std::vector<grunk::DynamicFeature> args;

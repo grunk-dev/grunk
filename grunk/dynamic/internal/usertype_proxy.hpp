@@ -10,15 +10,13 @@ struct usertype_proxy {
     usertype_proxy(std::string const& name_, sol::usertype<T> const& ut_)
      : name(name_)
      , ut(ut_)
-    {
-        sol::state_view lua = ut.lua_state();
-        sol::table registry = lua["grunk"]["registry"];
-        registry[name] = lua.create_table();
-    }
+    {}
 
     template <typename... Ctors>
-    usertype_proxy& add_constructors() {
-        ut["new"] = sol::constructors<Ctors...>();
+    usertype_proxy& add_constructors(Ctors&&... ctors) {
+        auto overload = sol::overload(std::forward<Ctors>(ctors)...) ;
+        auto func = create_function_meta(ut.lua_state(), name + ".new", overload);
+        ut[sol::meta_function::construct] = func;
         return *this;
     }
 
@@ -30,20 +28,17 @@ struct usertype_proxy {
 
     template <typename Key, typename F>
     usertype_proxy& add_member_function(Key&& key, F&& fun, std::vector<Parameter> params = {}) {
-        ut.set_function(std::forward<Key>(key), std::forward<F>(fun));
-
+        
         std::string fun_name;
         if constexpr (std::is_convertible_v<Key, std::string>) {
             fun_name = std::forward<Key>(key);
         } else {
             fun_name = sol::to_string(std::forward<Key>(key));
         }
-
         fun_name = name + "." + fun_name;
-        sol::state_view lua = ut.lua_state();
-        sol::reference const& f = ut[std::forward<Key>(key)];
-        register_metadata(f, fun_name, params);
-
+        auto func = create_function_meta(ut.lua_state(), fun_name, params, std::forward<F>(fun));
+        
+        ut.set(std::forward<Key>(key), func);
         return *this;
     }
 
