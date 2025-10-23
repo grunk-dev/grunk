@@ -429,8 +429,7 @@ private:
 
         using DynamicFeatureBase = FeatureBase<DynamicFeature, object>;
         register_type<DynamicFeatureBase>("FeatureBase", g)
-        .add_bases<parametric::param<object>>()
-        .add_member_function("with_id", &DynamicFeatureBase::with_id, {Parameter{"id", }});
+        .add_bases<parametric::param<object>>();
 
         register_type<DynamicFeature>("Feature", g)
         .add_bases<DynamicFeatureBase, parametric::param<object>>()
