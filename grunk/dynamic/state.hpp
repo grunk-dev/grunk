@@ -421,15 +421,26 @@ private:
         );
         function_meta const& _unm = g["_dynamic_unm"];
 
-        // register DynamicFeature as a usertype
+        // register DynamicFeature (and its base classes) as a usertype
+        register_type<parametric::param<object>>("param", g)
+        .add_member_function("value", &parametric::param<object>::value, {})
+        .add_member_function("set_value", &parametric::param<object>::set_value, {Parameter{"value", }})
+        .add_member_function("change_value", &parametric::param<object>::change_value, {});
+
+        using DynamicFeatureBase = FeatureBase<DynamicFeature, object>;
+        register_type<DynamicFeatureBase>("FeatureBase", g)
+        .add_bases<parametric::param<object>>()
+        .add_member_function("with_id", &DynamicFeatureBase::with_id, {Parameter{"id", }});
+
         register_type<DynamicFeature>("Feature", g)
+        .add_bases<DynamicFeatureBase, parametric::param<object>>()
         .add_constructors(
             [](sol::object obj) -> DynamicFeature {
                 return grunk::feature(obj);
             }
         )
-        .add_member_function("set_value", &DynamicFeature::set_value<sol::object>)
-        .add_member_function("change_value", &DynamicFeature::change_value)
+        .add_member_function("set_value", &DynamicFeature::set_value<sol::object>, {Parameter{"value", }})
+        .add_member_function("change_value", &DynamicFeature::change_value, {})
         .add_member_function(
             "with_id",
             [](DynamicFeature& self, std::string const& v) -> DynamicFeature {
@@ -440,21 +451,22 @@ private:
                 // first creates a temoprary at construction, passes it to with_id which returns a reference.
                 // sol is written in such a way, that it doesn't take ownership of references.
                 return self.with_id(v);
-            }
+            },
+            {Parameter{"id", }}
         )
-        .add_member_function("id", &DynamicFeature::id)
-        .add_member_function("set_id", &DynamicFeature::set_id)
-        .add_member_function("is_valid", &DynamicFeature::is_valid)
-        .add_member_function("value", &DynamicFeature::value)
-        .add_member_function("compute_node", &DynamicFeature::compute_node)
-        .add_member_function("as", static_cast<sol::table(DynamicFeature::*)(sol::table) const>(&DynamicFeature::as))
-        .add_member_function(sol::meta_function::addition, details::make_dynamic_action(lua, _add))
-        .add_member_function(sol::meta_function::subtraction, details::make_dynamic_action(lua, _sub))
-        .add_member_function(sol::meta_function::multiplication, details::make_dynamic_action(lua, _mul))
-        .add_member_function(sol::meta_function::division, details::make_dynamic_action(lua, _div))
-        .add_member_function(sol::meta_function::modulus, details::make_dynamic_action(lua, _mod))
-        .add_member_function(sol::meta_function::power_of, details::make_dynamic_action(lua, _pow))
-        .add_member_function(sol::meta_function::unary_minus, details::make_dynamic_action(lua, _unm));
+        .add_member_function("id", &DynamicFeature::id, {})
+        .add_member_function("set_id", &DynamicFeature::set_id, {Parameter{"id", }})
+        .add_member_function("is_valid", &DynamicFeature::is_valid, {})
+        .add_member_function("value", &DynamicFeature::value, {})
+        .add_member_function("compute_node", &DynamicFeature::compute_node, {})
+        .add_member_function("as", static_cast<sol::table(DynamicFeature::*)(sol::table) const>(&DynamicFeature::as), {Parameter{"usertype", }})
+        .add_member_function(sol::meta_function::addition, details::make_dynamic_action(lua, _add), {Parameter{"lhs", }, Parameter{"rhs",}  })
+        .add_member_function(sol::meta_function::subtraction, details::make_dynamic_action(lua, _sub), {Parameter{"lhs", }, Parameter{"rhs",}  })
+        .add_member_function(sol::meta_function::multiplication, details::make_dynamic_action(lua, _mul), {Parameter{"lhs", }, Parameter{"rhs",}  })
+        .add_member_function(sol::meta_function::division, details::make_dynamic_action(lua, _div), {Parameter{"lhs", }, Parameter{"rhs",}  })
+        .add_member_function(sol::meta_function::modulus, details::make_dynamic_action(lua, _mod), {Parameter{"lhs", }, Parameter{"rhs",}  })
+        .add_member_function(sol::meta_function::power_of, details::make_dynamic_action(lua, _pow), {Parameter{"base", }, Parameter{"exponent",}  })
+        .add_member_function(sol::meta_function::unary_minus, details::make_dynamic_action(lua, _unm), {Parameter{"value",}  });
 
     }
 

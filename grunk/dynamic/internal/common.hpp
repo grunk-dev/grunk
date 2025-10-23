@@ -13,15 +13,14 @@ inline auto make_dynamic_action(sol::state const& lua, function_meta const& func
 {
     auto decorated_function = [func, &lua](sol::variadic_args va) -> grunk::DynamicFeature
     {
+        
         auto raw_args = std::vector<sol::object>(va.begin(), va.end());
 
-        // We need special treatment to remove the self argument, that gets added superfluously by sol sometimes
-        // Currently, we do this by checking the function metadata stored in the registry
-        if (func.get_params()) {
-            if (raw_args.size() == func.get_params()->size() + 1) {
-                // Assume first argument is self and skip it
-                raw_args.erase(raw_args.begin());
-            }
+        // HACK: for unary operators, sol::variadic_args includes the table as the first argument
+        // For serialization/deserialization consistency, we remove it here
+        // Otherwise -x gets serializes as -xx
+        if (func.get_name() == "grunk._dynamic_unm") {
+            raw_args.erase(raw_args.begin());
         }
 
         std::vector<grunk::DynamicFeature> args;
