@@ -629,7 +629,9 @@ TEST(operators, DISABLED_usertype_addition_lua)
     grunk::state grunk;
 
     grunk.register_type<MyScalar>("MyScalar")
-    .add_constructors<MyScalar(double)>()
+    .add_constructors(
+        [](double v) { return MyScalar(v); }
+    )
     .add_member_function("__add", [](MyScalar const& l, MyScalar const&r){
         return l + r;
     })

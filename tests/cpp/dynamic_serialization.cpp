@@ -84,13 +84,15 @@ struct Foo {
 
 } // anonymous namespace
 
-TEST(serialization, DISABLED_userdata)
+TEST(serialization, userdata)
 {
     grunk::state grunk;
     grunk.set_functions_are_actions(false);
 
     grunk.register_type<Foo>("Foo")
-    .add_constructors<Foo(int, std::string_view)>()
+    .add_constructors(
+        [](int i, std::string_view s) { return Foo(i, s); }
+    )
     .add_member_function("serialize",
         [](Foo const& foo) {
             return "Foo.new(" + std::to_string(foo.bar) + ", " + "\"" + foo.baz + "\"" + ")";
@@ -447,7 +449,9 @@ TEST(serialization, member_function_action_cpp)
 {
     grunk::state grunk;
     grunk.register_type<Dummy>("Dummy")
-    .add_constructors<Dummy()>()
+    .add_constructors(
+        []() { return Dummy(); }
+    )
     .add_member_function("set_value", &Dummy::set_value)
     .add_member_function("value", &Dummy::value);
 
@@ -466,7 +470,9 @@ TEST(serialization, DISABLED_member_function_action_lua)
 {
     grunk::state grunk;
     grunk.register_type<Dummy>("Dummy")
-    .add_constructors<Dummy()>()
+    .add_constructors(
+        []() { return Dummy(); }
+    )
     .add_member_function("set_value", &Dummy::set_value)
     .add_member_function("value", &Dummy::value);
 

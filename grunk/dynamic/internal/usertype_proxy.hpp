@@ -13,8 +13,10 @@ struct usertype_proxy {
     {}
 
     template <typename... Ctors>
-    usertype_proxy& add_constructors() {
-        ut["new"] = sol::constructors<Ctors...>();
+    usertype_proxy& add_constructors(Ctors&&... ctors) {
+        auto overload = sol::overload(std::forward<Ctors>(ctors)...) ;
+        auto func = create_function_meta(ut.lua_state(), name + ".new", overload);
+        ut[sol::meta_function::construct] = func;
         return *this;
     }
 
@@ -36,7 +38,7 @@ struct usertype_proxy {
         fun_name = name + "." + fun_name;
         auto func = create_function_meta(ut.lua_state(), fun_name, params, std::forward<F>(fun));
         
-        ut.set_function(std::forward<Key>(key), func);
+        ut.set(std::forward<Key>(key), func);
         return *this;
     }
 

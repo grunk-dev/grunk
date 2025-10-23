@@ -423,7 +423,11 @@ private:
 
         // register DynamicFeature as a usertype
         register_type<DynamicFeature>("Feature", g)
-        .add_constructors<DynamicFeature(sol::object)>()
+        .add_constructors(
+            [](sol::object obj) -> DynamicFeature {
+                return grunk::feature(obj);
+            }
+        )
         .add_member_function("set_value", &DynamicFeature::set_value<sol::object>)
         .add_member_function("change_value", &DynamicFeature::change_value)
         .add_member_function(
