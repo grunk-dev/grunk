@@ -210,7 +210,7 @@ TEST(serialization, free_function_action_anonymous_nested)
     EXPECT_EQ(ret, "w = add(add(x, 3), 5)");
 }
 
-TEST(serialization, DISABLED_operator_action_lua_add)
+TEST(serialization, operator_action_lua_add)
 {
     grunk::state grunk;
 
@@ -269,7 +269,7 @@ TEST(serialization, operator_action_cpp_add_anonymous_nested)
     EXPECT_EQ(ret, "w = (2 + y) + 5");
 }
 
-TEST(serialization, DISABLED_operator_action_lua_sub)
+TEST(serialization, operator_action_lua_sub)
 {
     grunk::state grunk;
 
@@ -296,7 +296,7 @@ TEST(serialization, operator_action_cpp_sub)
     EXPECT_EQ(ret, "z = x - y");
 }
 
-TEST(serialization, DISABLED_operator_action_lua_mul)
+TEST(serialization, operator_action_lua_mul)
 {
     grunk::state grunk;
 
@@ -323,7 +323,7 @@ TEST(serialization, operator_action_cpp_mul)
     EXPECT_EQ(ret, "z = x * y");
 }
 
-TEST(serialization, DISABLED_operator_action_lua_div)
+TEST(serialization, operator_action_lua_div)
 {
     grunk::state grunk;
 
@@ -350,7 +350,7 @@ TEST(serialization, operator_action_cpp_div)
     EXPECT_EQ(ret, "z = x / y");
 }
 
-TEST(serialization, DISABLED_operator_action_lua_pow)
+TEST(serialization, operator_action_lua_pow)
 {
     grunk::state grunk;
 
@@ -377,7 +377,7 @@ TEST(serialization, operator_action_cpp_pow)
     EXPECT_EQ(ret, "z = x ^ y");
 }
 
-TEST(serialization, DISABLED_operator_action_lua_mod)
+TEST(serialization, operator_action_lua_mod)
 {
     grunk::state grunk;
 
@@ -404,7 +404,7 @@ TEST(serialization, operator_action_cpp_mod)
     EXPECT_EQ(ret, "z = x % y");
 }
 
-TEST(serialization, DISABLED_operator_action_lua_unm)
+TEST(serialization, operator_action_lua_unm)
 {
     grunk::state grunk;
 
@@ -466,7 +466,7 @@ TEST(serialization, member_function_action_cpp)
     EXPECT_EQ(ret_y, "y = Dummy.value(a)");
 }
 
-TEST(serialization, DISABLED_member_function_action_lua)
+TEST(serialization, member_function_action_lua)
 {
     grunk::state grunk;
     grunk.register_type<Dummy>("Dummy")

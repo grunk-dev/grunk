@@ -109,7 +109,7 @@ TEST(state, free_function_lua)
     ASSERT_NEAR(zv, 6., 1e-14);
 }
 
-TEST(state, DISABLED_free_function_feature_id_lua)
+TEST(state, free_function_feature_id_lua)
 {
     grunk::state grunk;
 
@@ -250,7 +250,7 @@ TEST(state, usertype_ctor_cpp)
 }
 
 
-TEST(state, DISABLED_usertype_ctor_as_action_lua)
+TEST(state, usertype_ctor_as_action_lua)
 {
     grunk::state grunk;
 
@@ -283,7 +283,7 @@ TEST(state, DISABLED_usertype_ctor_as_action_lua)
     EXPECT_EQ(grunk.get_feature("x").value().as<MyScalar>().value(), 4.);
 }
 
-TEST(state, DISABLED_usertype_operators_as_action_lua)
+TEST(state, usertype_operators_as_action_lua)
 {
     grunk::state grunk;
 
@@ -353,7 +353,7 @@ TEST(state, usertype_method_as_action_cpp)
 
 }
 
-TEST(state, DISABLED_usertype_method_as_action_lua)
+TEST(state, usertype_method_as_action_lua)
 {
     grunk::state grunk;
 

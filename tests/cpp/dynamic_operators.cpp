@@ -478,7 +478,7 @@ TEST(operators, chaining_cpp)
 
 // TODO: operators that implicitly convert constants to Feature<T>
 
-TEST(operators, DISABLED_addition_lua)
+TEST(operators, addition_lua)
 {
     grunk::state grunk;
 
@@ -494,7 +494,7 @@ TEST(operators, DISABLED_addition_lua)
    EXPECT_NEAR(grunk["z2"].as<double>(), 4., 1e-14);
 }
 
-TEST(operators, DISABLED_subtraction_lua)
+TEST(operators, subtraction_lua)
 {
     grunk::state grunk;
 
@@ -510,7 +510,7 @@ TEST(operators, DISABLED_subtraction_lua)
     EXPECT_NEAR(grunk["z2"].as<double>(),  0., 1e-14);
 }
 
-TEST(operators, DISABLED_multiplication_lua)
+TEST(operators, multiplication_lua)
 {
     grunk::state grunk;
 
@@ -526,7 +526,7 @@ TEST(operators, DISABLED_multiplication_lua)
     EXPECT_NEAR(grunk["z2"].as<double>(), 4., 1e-14);
 }
 
-TEST(operators, DISABLED_division_lua)
+TEST(operators, division_lua)
 {
     grunk::state grunk;
 
@@ -542,7 +542,7 @@ TEST(operators, DISABLED_division_lua)
     EXPECT_NEAR(grunk["z2"].as<double>(), 1. , 1e-14);
 }
 
-TEST(operators, DISABLED_modulo_lua)
+TEST(operators, modulo_lua)
 {
     grunk::state grunk;
 
@@ -558,7 +558,7 @@ TEST(operators, DISABLED_modulo_lua)
     EXPECT_EQ(grunk["z2"].as<int>(),  9);
 }
 
-TEST(operators, DISABLED_pow_lua)
+TEST(operators, pow_lua)
 {
     grunk::state grunk;
 
@@ -574,7 +574,7 @@ TEST(operators, DISABLED_pow_lua)
     EXPECT_NEAR(grunk["z2"].as<double>(), 27, 1e-14);
 }
 
-TEST(operators, DISABLED_unm_lua)
+TEST(operators, unm_lua)
 {
     grunk::state grunk;
 
@@ -589,7 +589,7 @@ TEST(operators, DISABLED_unm_lua)
     EXPECT_NEAR(grunk["z2"].as<double>(), -3, 1e-14);
 }
 
-TEST(operators, DISABLED_chaining_lua)
+TEST(operators, chaining_lua)
 {
     grunk::state grunk;
 
@@ -624,7 +624,7 @@ MyScalar operator+(MyScalar const& l, MyScalar const& r) {
 } // anonymous namespace
 
 
-TEST(operators, DISABLED_usertype_addition_lua)
+TEST(operators, usertype_addition_lua)
 {
     grunk::state grunk;
 
