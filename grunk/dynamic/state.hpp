@@ -316,6 +316,20 @@ public:
     }
 
     /**
+     * @brief sets the id of every feature in the active environment to 
+     * its LUA variable name. This is particularly useful for serialization
+     */
+    inline void tag_features()
+    {
+        auto tag_feature = [](sol::object key, sol::object value) {
+            if (key.is<std::string>() && value.is<DynamicFeature>()) {
+                value.as<DynamicFeature&>().set_id(key.as<std::string const&>());
+            }
+        };
+        active_env.for_each(tag_feature);
+    }
+
+    /**
      * @brief eval evaluates a LUA script in the active environment
      * @param lua_script The lua script to be evaluated
      */

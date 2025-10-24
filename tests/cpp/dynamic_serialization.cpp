@@ -687,23 +687,31 @@ y = bar(x)
     EXPECT_EQ(grunk.get_feature("y").value().as<int>(), 42);
 }
 
-// TODO
-// 1. Checkout unit tests from grunk's current main branch and copy tests
-// 2. make sure that in the LUA script every feature knows its id
-//
-//   x = grunk.feature(2):with_id("x")
-//   y = grunk.feature(3):with_id("y")
-//   d = ( (a + b) ^ 2 ):with_id("d")
-// 
-//   OR
-//
-//   x = grunk.feature(2)
-//   y = grunk.feature(3)
-//   d = (a + b) ^ 2
-//
-//   x.set_id("x")
-//   y.set_id("y")
-//   z.set_id("z")
-//
-//  We might want to add a function grunk.tag_features that iterates over all named features
-//  in the current env and applies the id
+TEST(serialize, tag_features)
+{
+    auto get_script = [](auto feature){
+        grunk::StringifiedTree tree;
+        tree.parse(feature);
+        return tree.get_string(true);
+    };
+
+    grunk::state grunk;
+    grunk.eval(R"(
+x = grunk.feature(2)
+y = grunk.feature(8)
+z = x * y
+    )");
+    auto z = grunk.get_feature("z");
+    
+    auto script1 = get_script(z);
+    EXPECT_TRUE(script1.empty()); // all features are anonymous! No script generated
+
+    grunk.tag_features();
+
+    auto script2 = get_script(z);
+    EXPECT_EQ("\n" + script2, R"(
+x = grunk.feature(2)
+y = grunk.feature(8)
+z = x * y
+)");  
+}
