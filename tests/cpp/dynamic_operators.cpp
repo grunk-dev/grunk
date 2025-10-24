@@ -1,5 +1,5 @@
 #include <gtest/gtest.h>
-#include <core/state.hpp>
+#include <grunk/dynamic/state.hpp>
 
 
 TEST(operators, addition_object_cpp)
@@ -274,19 +274,19 @@ TEST(operators, pow_object_cpp_mixed)
     EXPECT_NEAR(z2.as<double>(), 8, 1e-14);
 
 
-    // now wrapped in a dynamic Feature;
-    auto fx = grunk::feature(x);
-    auto fy = grunk::feature(y);
+   // now wrapped in a dynamic Feature;
+   auto fx = grunk::feature(x);
+   auto fy = grunk::feature(y);
 
-    auto fz1 = grunk::pow(fx, 3);
-    EXPECT_NEAR(fz1.value().as<double>(), 8, 1e-14);
-    fx.set_value(y);
-    EXPECT_NEAR(fz1.value().as<double>(), 27, 1e-14);
+   auto fz1 = grunk::pow(fx, 3);
+   EXPECT_NEAR(fz1.value().as<double>(), 8, 1e-14);
+   fx.set_value(y);
+   EXPECT_NEAR(fz1.value().as<double>(), 27, 1e-14);
 
-    auto fz2 = grunk::pow(2., fy);
-    EXPECT_NEAR(fz2.value().as<double>(), 8, 1e-14);
-    fy.set_value(x);
-    EXPECT_NEAR(fz2.value().as<double>(), 4, 1e-14);
+   auto fz2 = grunk::pow(2., fy);
+   EXPECT_NEAR(fz2.value().as<double>(), 8, 1e-14);
+   fy.set_value(x);
+   EXPECT_NEAR(fz2.value().as<double>(), 4, 1e-14);
 }
 
 TEST(operators, modulo_object_cpp)
@@ -490,8 +490,8 @@ TEST(operators, addition_lua)
         x:set_value(2.)
         z2 = z:value()
     )");
-    EXPECT_NEAR(grunk["z1"].as<double>(), 3., 1e-14);
-    EXPECT_NEAR(grunk["z2"].as<double>(), 4., 1e-14);
+   EXPECT_NEAR(grunk["z1"].as<double>(), 3., 1e-14);
+   EXPECT_NEAR(grunk["z2"].as<double>(), 4., 1e-14);
 }
 
 TEST(operators, subtraction_lua)
@@ -629,7 +629,9 @@ TEST(operators, usertype_addition_lua)
     grunk::state grunk;
 
     grunk.register_type<MyScalar>("MyScalar")
-    .add_constructors<MyScalar(double)>()
+    .add_constructors(
+        [](double v) { return MyScalar(v); }
+    )
     .add_member_function("__add", [](MyScalar const& l, MyScalar const&r){
         return l + r;
     })

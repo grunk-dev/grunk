@@ -49,7 +49,7 @@ inline decltype(auto) action(F const& fun, Args&&... args)
  * @ingroup dynamic
  */
 template <typename... Args>
-inline ResultHolder<ActionDynamic> action(sol::protected_function const& function, Args&&... args)
+inline ResultHolder<ActionDynamic> action(function_meta const& function, Args&&... args)
 {
     using FirstArg = std::tuple_element<0, std::tuple<Args...>>;
     if constexpr (sizeof...(Args) == 1 && (std::is_same_v<std::decay_t<Args>, std::vector<DynamicFeature>> || ...)) {

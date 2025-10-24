@@ -1,7 +1,6 @@
 #pragma once 
 
-#include "core/feature.hpp"
-#include "parametric/core.hpp"
+#include "grunk/dynamic/feature.hpp"
 #include "ResultHolder.hpp"
 
 namespace grunk {

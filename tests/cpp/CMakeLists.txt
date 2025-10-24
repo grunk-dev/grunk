@@ -13,8 +13,9 @@ include(AddGoogleTest)
 
 set(TESTSOURCES
   testmain.cpp
-  state.cpp
-  operators.cpp
+  dynamic_operators.cpp
+  dynamic_serialization.cpp
+  dynamic_state.cpp
 )
 
 

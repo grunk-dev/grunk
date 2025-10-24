@@ -1,7 +1,7 @@
 #pragma once
 
-#include "core/object.hpp"
-#include "core/action.hpp"
+#include "grunk/dynamic/object.hpp"
+#include "grunk/dynamic/action.hpp"
 
 #include <regex>
 
@@ -9,17 +9,26 @@ namespace grunk {
 
 namespace details {
 
-inline grunk::object make_dynamic_action(sol::state const& lua, sol::protected_function const& func)
+inline auto make_dynamic_action(sol::state const& lua, function_meta const& func)
 {
-    auto decorated_function = [func](sol::variadic_args va) -> grunk::DynamicFeature
+    auto decorated_function = [func, &lua](sol::variadic_args va) -> grunk::DynamicFeature
     {
+        
+        auto raw_args = std::vector<sol::object>(va.begin(), va.end());
+
+        // HACK: for unary operators, sol::variadic_args includes the table as the first argument
+        // For serialization/deserialization consistency, we remove it here
+        // Otherwise -x gets serializes as -xx
+        if (func.get_name() == "grunk._dynamic_unm") {
+            raw_args.erase(raw_args.begin());
+        }
 
         std::vector<grunk::DynamicFeature> args;
-        args.reserve(va.size());
+        args.reserve(raw_args.size());
 
         // Use std::transform to convert variadic_args to std::vector<DynamicFeature>
         std::transform(
-            va.begin(), va.end(),
+            raw_args.begin(), raw_args.end(),
             std::back_inserter(args),
             [](grunk::object const& obj) {
                 if (obj.is<grunk::DynamicFeature>()) {
@@ -32,7 +41,7 @@ inline grunk::object make_dynamic_action(sol::state const& lua, sol::protected_f
 
         return grunk::action(func, args).output();
     };
-    return sol::make_object(lua, sol::as_function(decorated_function));
+    return decorated_function;
 }
 
 } // namespace details

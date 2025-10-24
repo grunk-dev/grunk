@@ -1,7 +1,7 @@
 #pragma once 
 
-#include "parametric/core.hpp"
-#include <core/object.hpp>
+#include "grunk/dynamic/internal/parametric_core.hpp"
+#include <object.hpp>
 
 namespace grunk {
 
@@ -93,6 +93,10 @@ public:
         sol::state_view l(lua);
         sol::table usertype_table = l["environments"]["active"][usertype];
         return as(usertype_table);
+    }
+
+    lua_State* lua_state() const {
+        return lua;
     }
 
 private:

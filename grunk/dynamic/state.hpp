@@ -1,10 +1,11 @@
 #pragma once
 
 #include "object.hpp"
-#include "core/feature.hpp"
+#include "feature.hpp"
 #include "internal/common.hpp"
 #include "internal/usertype_proxy.hpp"
-#include "core/action.hpp"
+#include "function_meta.hpp"
+#include "action.hpp"
 
 #include <sol/sol.hpp>
 #include <stdexcept>
@@ -85,7 +86,7 @@ public:
         if (!table) {
             table = original_env;
         }
-        return usertype_proxy<T>{table->new_usertype<T>(name)};
+        return usertype_proxy<T>{name, table->new_usertype<T>(name)};
     }
 
     /**
@@ -101,12 +102,15 @@ public:
      * @param table optional table as a "namespace", where the type shall be registered.
      */
     template <typename Func>
-    void register_function(std::string const& name, Func&& fun, std::optional<sol::table> table = std::nullopt)
+    void register_function(std::string const& name, Func&& fun, std::vector<Parameter> params = {}, std::optional<sol::table> table = std::nullopt)
     {
+        // set function
+
         if (!table) {
             table = original_env;
         }
-        table->set_function(name, std::forward<Func>(fun));
+        auto meta_func = create_function_meta(lua, name, params, std::forward<Func>(fun));
+        table->set(name, meta_func);
     }
 
     /**
@@ -145,9 +149,13 @@ public:
      * @param keys_nested A string of nested keys
      * @return A sol::protected_function
      */
-    sol::protected_function get_function(std::string const& keys_nested) const
+    function_meta get_function(std::string const& keys_nested) const
     {
-        return lookup_nested(original_env, keys_nested);
+        sol::object tmp = lookup_nested(original_env, keys_nested);
+        if (!tmp.is<function_meta>()) {
+            throw std::logic_error("Function \"" + keys_nested + "\" is not registered in the dynamic function registry.");
+        }
+        return tmp.as<function_meta>();
     }
 
     /**
@@ -241,8 +249,11 @@ public:
     template <typename... Args>
     DynamicFeature action(std::string const& function, Args&&... args) const
     {
-        sol::protected_function const f = lookup_nested(original_env, function);
-        return grunk::action(f, std::forward<Args>(args)...).output();
+        sol::object const f = lookup_nested(original_env, function);
+        if (!f.is<function_meta>()) {
+            throw std::logic_error("Function \"" + function + "\" is not registered in the dynamic function registry.");
+        }
+        return grunk::action(f.as<function_meta>(), std::forward<Args>(args)...).output();
     }
 
     /**
@@ -257,7 +268,7 @@ public:
      * @return a DynamicFeature instance representing the calculation result
      */
     template <typename... Args>
-    DynamicFeature action(sol::protected_function const& function, Args&&... args) const
+    DynamicFeature action(function_meta const& function, Args&&... args) const
     {
         return grunk::action(function, std::forward<Args>(args)...).output();
     }
@@ -270,6 +281,22 @@ public:
     inline sol::object operator[](std::string const& key)
     {
         return active_env[key];
+    }
+
+    /**
+     * @brief deserializes a string back to a grunk::object
+     *
+     * This assumes thtat the object has been previously serialized
+     * with grunk::serialize
+     */
+    inline grunk::object deserialize(std::string const& v)
+    {
+        auto ret = lua.script("return " + v, active_env);
+        if (ret.valid()) {
+            return ret;
+        } else {
+            throw io_error("Error deserializing \"" + v + "\".");
+        }
     }
 
     /**
@@ -305,30 +332,114 @@ private:
      */
     inline void init() {
 
+        // create internal table used by grunk itself.
         auto g = lua.create_named_table("grunk");
 
+        g.new_usertype<function_meta>("function_meta",
+            sol::no_constructor,
+            sol::meta_function::call, &function_meta::operator()
+        );
+
+        
         register_function(
             "feature",
             [](sol::object obj) -> DynamicFeature {
-                return grunk::feature(object(obj));
+                return grunk::feature(obj);
             },
+            {Parameter{"object", }},
             g
         );
 
         // define some operators dynamically
-        lua.script("function grunk._dynamic_add(l, r) return l + r end");
-        lua.script("function grunk._dynamic_sub(l, r) return l - r end");
-        lua.script("function grunk._dynamic_mul(l, r) return l * r end");
-        lua.script("function grunk._dynamic_div(l, r) return l / r end");
-        lua.script("function grunk._dynamic_mod(l, r) return l % r end");
-        lua.script("function grunk._dynamic_pow(l, r) return l ^ r end");
-        lua.script("function grunk._dynamic_unm(v) return -v end");
+        lua.script("function grunk.__dynamic_add(l, r) return l + r end");
+        sol::protected_function _addfun = g["__dynamic_add"];
+        g["_dynamic_add"] = create_function_meta(
+            lua, 
+            "grunk._dynamic_add", 
+            {Parameter{"lhs", }, Parameter{"rhs",}},
+            _addfun
+        );
+        function_meta const& _add = g["_dynamic_add"];
 
-        // register DynamicFeature as a usertype
+        lua.script("function grunk.__dynamic_sub(l, r) return l - r end");
+        sol::protected_function _subfun = g["__dynamic_sub"];
+        g["_dynamic_sub"] = create_function_meta(
+            lua, 
+            "grunk._dynamic_sub", 
+            {Parameter{"lhs", }, Parameter{"rhs",}},
+            _subfun
+        );
+        function_meta const& _sub = g["_dynamic_sub"];
+
+        lua.script("function grunk.__dynamic_mul(l, r) return l * r end");
+        sol::protected_function _mulfun = g["__dynamic_mul"];
+        g["_dynamic_mul"] = create_function_meta(
+            lua, 
+            "grunk._dynamic_mul", 
+            {Parameter{"lhs", }, Parameter{"rhs",}},
+            _mulfun
+        );
+        function_meta const& _mul = g["_dynamic_mul"];
+
+        lua.script("function grunk.__dynamic_div(l, r) return l / r end");
+        sol::protected_function _divfun = g["__dynamic_div"];
+        g["_dynamic_div"] = create_function_meta(
+            lua, 
+            "grunk._dynamic_div", 
+            {Parameter{"lhs", }, Parameter{"rhs",}},
+            _divfun
+        );
+        function_meta const& _div = g["_dynamic_div"];
+
+        lua.script("function grunk.__dynamic_mod(l, r) return l % r end");
+        sol::protected_function _modfun = g["__dynamic_mod"];
+        g["_dynamic_mod"] = create_function_meta(
+            lua, 
+            "grunk._dynamic_mod", 
+            {Parameter{"lhs", }, Parameter{"rhs",}},
+            _modfun
+        );
+        function_meta const& _mod = g["_dynamic_mod"];
+
+        lua.script("function grunk.__dynamic_pow(l, r) return l ^ r end");
+        sol::protected_function _powfun = g["__dynamic_pow"];
+        g["_dynamic_pow"] = create_function_meta(
+            lua, 
+            "grunk._dynamic_pow", 
+            {Parameter{"base", }, Parameter{"exponent",}},
+            _powfun
+        );
+        function_meta const& _pow = g["_dynamic_pow"];
+
+        lua.script("function grunk.__dynamic_unm(v) return -v end");
+        sol::protected_function _unmfun = g["__dynamic_unm"];
+        g["_dynamic_unm"] = create_function_meta(
+            lua, 
+            "grunk._dynamic_unm", 
+            {Parameter{"value", }},
+            _unmfun
+        );
+        function_meta const& _unm = g["_dynamic_unm"];
+
+        // register DynamicFeature (and its base classes) as a usertype
+        register_type<parametric::param<object>>("param", g)
+        .add_member_function("value", &parametric::param<object>::value, {})
+        .add_member_function("set_value", &parametric::param<object>::set_value, {Parameter{"value", }})
+        .add_member_function("change_value", &parametric::param<object>::change_value, {});
+
+        using DynamicFeatureBase = FeatureBase<DynamicFeature, object>;
+        register_type<DynamicFeatureBase>("FeatureBase", g)
+        .add_bases<parametric::param<object>>();
+
         register_type<DynamicFeature>("Feature", g)
-        .add_constructors<DynamicFeature(sol::object)>()
-        .add_member_function("set_value", &DynamicFeature::set_value<sol::object>)
-        .add_member_function("change_value", &DynamicFeature::change_value)
+        .add_bases<DynamicFeatureBase, parametric::param<object>>()
+        .add_constructors(
+            [](sol::object obj) -> DynamicFeature {
+                return grunk::feature(obj);
+            }
+        )
+        .add_member_function("set_value", &DynamicFeature::set_value<sol::object>, {Parameter{"value", }})
+        .add_member_function("change_value", &DynamicFeature::change_value, {})
         .add_member_function(
             "with_id",
             [](DynamicFeature& self, std::string const& v) -> DynamicFeature {
@@ -339,21 +450,22 @@ private:
                 // first creates a temoprary at construction, passes it to with_id which returns a reference.
                 // sol is written in such a way, that it doesn't take ownership of references.
                 return self.with_id(v);
-            }
+            },
+            {Parameter{"id", }}
         )
-        .add_member_function("id", &DynamicFeature::id)
-        .add_member_function("set_id", &DynamicFeature::set_id)
-        .add_member_function("is_valid", &DynamicFeature::is_valid)
-        .add_member_function("value", &DynamicFeature::value)
-        .add_member_function("compute_node", &DynamicFeature::compute_node)
-        .add_member_function("as", static_cast<sol::table(DynamicFeature::*)(sol::table) const>(&DynamicFeature::as))
-        .add_member_function("__add", details::make_dynamic_action(lua, g["_dynamic_add"])) //TODO: Why can't I use &grunk::operator+<DynamicFeature const&, DynamicFeature const&>
-        .add_member_function("__sub", details::make_dynamic_action(lua, g["_dynamic_sub"]))
-        .add_member_function("__mul", details::make_dynamic_action(lua, g["_dynamic_mul"]))
-        .add_member_function("__div", details::make_dynamic_action(lua, g["_dynamic_div"]))
-        .add_member_function("__mod", details::make_dynamic_action(lua, g["_dynamic_mod"]))
-        .add_member_function("__pow", details::make_dynamic_action(lua, g["_dynamic_pow"]))
-        .add_member_function("__unm", details::make_dynamic_action(lua, g["_dynamic_unm"]));
+        .add_member_function("id", &DynamicFeature::id, {})
+        .add_member_function("set_id", &DynamicFeature::set_id, {Parameter{"id", }})
+        .add_member_function("is_valid", &DynamicFeature::is_valid, {})
+        .add_member_function("value", &DynamicFeature::value, {})
+        .add_member_function("compute_node", &DynamicFeature::compute_node, {})
+        .add_member_function("as", static_cast<sol::table(DynamicFeature::*)(sol::table) const>(&DynamicFeature::as), {Parameter{"usertype", }})
+        .add_member_function(sol::meta_function::addition, details::make_dynamic_action(lua, _add), {Parameter{"lhs", }, Parameter{"rhs",}  })
+        .add_member_function(sol::meta_function::subtraction, details::make_dynamic_action(lua, _sub), {Parameter{"lhs", }, Parameter{"rhs",}  })
+        .add_member_function(sol::meta_function::multiplication, details::make_dynamic_action(lua, _mul), {Parameter{"lhs", }, Parameter{"rhs",}  })
+        .add_member_function(sol::meta_function::division, details::make_dynamic_action(lua, _div), {Parameter{"lhs", }, Parameter{"rhs",}  })
+        .add_member_function(sol::meta_function::modulus, details::make_dynamic_action(lua, _mod), {Parameter{"lhs", }, Parameter{"rhs",}  })
+        .add_member_function(sol::meta_function::power_of, details::make_dynamic_action(lua, _pow), {Parameter{"base", }, Parameter{"exponent",}  })
+        .add_member_function(sol::meta_function::unary_minus, details::make_dynamic_action(lua, _unm), {Parameter{"value",}  });
 
     }
 
@@ -377,10 +489,10 @@ private:
                 return lua.globals()[key]; // use globals as fallback, but without decorating callables
             }
 
-            if (result.is<sol::protected_function>()) {
+            if (result.is<function_meta>()) {
                 // Decorate if it's a function
-                sol::protected_function func = result.as<sol::protected_function>();
-                decorated_env[key] =  details::make_dynamic_action(lua, func);
+                function_meta func = result.as<function_meta>();
+                decorated_env.set_function(key, details::make_dynamic_action(lua, func));
                 return decorated_env[key];
             } else if (result.is<sol::table>()) {
                 // If it's a usertype (stored as a table), intercept its metatable
@@ -393,10 +505,9 @@ private:
 
                     sol::object method = usertype_table[key];  // Lookup method in original metatable
 
-                    if (method.is<sol::protected_function>()) {
+                    if (method.is<function_meta>()) {
                         // Decorate methods
-                        sol::protected_function func = method.as<sol::protected_function>();
-                        return details::make_dynamic_action(lua, func);
+                        return sol::make_object(lua, details::make_dynamic_action(lua, method.as<function_meta>()));
                     }
 
                     return method;  // Return non-function elements as-is

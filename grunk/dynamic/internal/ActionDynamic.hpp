@@ -1,8 +1,8 @@
 #pragma once 
 
-#include "core/feature.hpp"
+#include "grunk/dynamic/feature.hpp"
+#include "grunk/dynamic/function_meta.hpp"
 #include "ResultHolder.hpp"
-#include "parametric/core.hpp"
 #include "sol/sol.hpp"
 
 namespace grunk {
@@ -48,7 +48,7 @@ private:
      * @param fun A const pointer to a reflect::Function
      * @param in The input DynamicFeatures
      */
-    ActionDynamic(sol::protected_function const& fun)
+    ActionDynamic(function_meta const& fun)
      : function(fun)
     {}
 
@@ -103,10 +103,10 @@ public:
         }
 
         // call the wrapped function
-        sol::protected_function_result res = function(sol::as_args(inputs_vec));
+        sol::protected_function_result res = function.call(sol::as_args(inputs_vec));
         if (!res.valid()) {
             sol::error err = res;
-            throw std::logic_error(std::string("Error evauationg dynamic action: ") + err.what());
+            throw std::logic_error(std::string("Error evaluting dynamic action: ") + err.what());
         }
 
         // transform to output
@@ -114,6 +114,95 @@ public:
             output->set_value(res[0]);
         }
     }
+
+    /**
+     * @brief serialize a DynamicAction to string
+     *
+     * @return std::string the serialized DynamicAction
+     */
+    std::string serialize() const override final
+    {
+
+        std::string ret;
+        bool is_anonymous = false;
+
+        // output
+        if(auto const& output = result(); output) {
+            if (!output->id().empty()) {
+            ret += output->id() + " = ";
+            } else {
+                is_anonymous = true;
+            }
+        } else {
+            return "";
+        }
+
+        //function name
+        std::string func_name = function.get_name();
+
+        bool is_operator = (func_name.rfind("grunk._dynamic_", 0) == 0);
+        std::string argument_seperator = "";
+        if (!is_operator) {
+            // regular function call syntax
+            ret += func_name + "(";
+            argument_seperator = ", ";
+        } else {
+
+            if (is_anonymous) {
+                ret += "(";
+            }
+
+            if (func_name == "grunk._dynamic_add") {
+                argument_seperator = " + ";
+            } else if (func_name == "grunk._dynamic_sub") {
+                argument_seperator = " - ";
+            } else if (func_name == "grunk._dynamic_mul") {
+                argument_seperator = " * ";
+            } else if (func_name == "grunk._dynamic_div") {
+                argument_seperator = " / ";
+            } else if (func_name == "grunk._dynamic_pow") {
+                argument_seperator = " ^ ";
+            } else if (func_name == "grunk._dynamic_mod") {
+                argument_seperator = " % ";
+            } else if (func_name == "grunk._dynamic_unm") {
+                ret += "-";
+            } else {
+                throw std::logic_error("Unknown operator function in DynamicAction serialization.");
+            }
+        }
+
+        // inputs
+        auto serialize_arg = [](parametric::DAGNode const& node) -> std::string
+        {
+            bool is_anonymous = (node.id() == "");
+            bool is_constant = (node.num_parents() == 0 && is_anonymous);
+            if (is_constant) {
+                return node.serialize();
+            } else if (is_anonymous) {
+                // nested function call
+                return node.get_parents()[0]->serialize();
+            } else {
+                // a named feature
+                return node.id();
+            }
+        };
+
+        bool first_arg = true;
+        for (auto const& input : this->get_parents()){
+            if (first_arg) {
+                first_arg = false;
+            } else {
+                ret += argument_seperator;
+            }
+            ret += serialize_arg(*input);
+        }
+        if (!is_operator || is_anonymous) {
+            ret += ")";
+        }
+
+        return ret;
+    }
+
 
 private:
 
@@ -138,7 +227,7 @@ private:
     // store a vector of functions, that evaluate a (parent) DAGNode to a DynamicObject
     std::vector<DAGNodeToObj> evaluators;
 
-    sol::protected_function const function;
+    function_meta const function;
 };
 
 /**
@@ -218,7 +307,7 @@ struct DynamicActionFactory
      * @return ResultHolder<DynamicAction> The returned ResultHolder wrapping the outputs
      */
     static ResultHolder<ActionDynamic> new_action(
-        sol::protected_function const& fun, 
+        function_meta const& fun, 
         std::vector<DynamicFeature> const& args
     )
     {
@@ -233,7 +322,7 @@ struct DynamicActionFactory
 
     template <typename... Args>
     static ResultHolder<ActionDynamic> new_action(
-        sol::protected_function const& fun, 
+        function_meta const& fun, 
         Feature<Args> const&... args
     )
     {

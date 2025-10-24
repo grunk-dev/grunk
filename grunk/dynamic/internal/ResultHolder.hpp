@@ -1,8 +1,7 @@
 #pragma once
 
-#include "core/feature.hpp"
+#include "grunk/dynamic/feature.hpp"
 #include "function_traits.hpp"
-#include <parametric/core.hpp>
 #include <tuple>
 #include <memory>
 

@@ -1,5 +1,5 @@
 #include <gtest/gtest.h>
-#include <core/state.hpp>
+#include <grunk/dynamic/state.hpp>
 #include <cmath>
 
 namespace {
@@ -14,6 +14,7 @@ TEST(state, free_function_registration)
 {
     grunk::state grunk;
     grunk.register_function("add", &add);
+    auto f = grunk.get_function("add"); // just to see that it exists
     grunk.set_functions_are_actions(false);
     grunk.eval(
         R"(
@@ -179,14 +180,16 @@ TEST(state, usertype_ctor_cpp)
     grunk::state grunk;
 
     grunk.register_type<MyScalar>("MyScalar")
-    .add_constructors<MyScalar(double)>();
+    .add_constructors(
+        [](double v) { return MyScalar(v); }
+    );
 
     grunk.register_type<DefaultConstructible>("DefaultConstructible");
 
     {
         // string overloads
         auto a = grunk.feature(1.);
-        auto x = grunk.action("MyScalar.new", a);       // ctor as action: x depends on a
+        auto x = grunk.action("MyScalar:new", a);       // ctor as action: x depends on a
         auto y = grunk.action("MyScalar.new", 2.);      // ctor as action with argument conversion from contant: y depends on Feature(2.)
         auto z = grunk.feature("MyScalar", 3.);          // forwards ctor args to grunk::feature: z is independent feature
 
@@ -207,7 +210,7 @@ TEST(state, usertype_ctor_cpp)
 
         // gets the original undecorated type and constructor function
         sol::table MyScalarT = grunk.get_type("MyScalar");
-        sol::protected_function MyScalarCtor = grunk.get_function("MyScalar.new");
+        auto MyScalarCtor = grunk.get_function("MyScalar.new");
 
         auto a = grunk.feature(1.);
         auto x = grunk.action(MyScalarCtor, a);       // ctor as action: x depends on a
@@ -252,7 +255,9 @@ TEST(state, usertype_ctor_as_action_lua)
     grunk::state grunk;
 
     grunk.register_type<MyScalar>("MyScalar")
-    .add_constructors<MyScalar(double)>();
+    .add_constructors(
+        [](double v) { return MyScalar(v); }
+    );
 
     grunk.eval(R"(
         local a = grunk.feature(1.)
@@ -283,7 +288,9 @@ TEST(state, usertype_operators_as_action_lua)
     grunk::state grunk;
 
     grunk.register_type<MyScalar>("MyScalar")
-    .add_constructors<MyScalar(double)>()
+    .add_constructors(
+        [](double v) { return MyScalar(v); }
+    )
     .add_member_function("__add", [](MyScalar const& l, MyScalar const&r){
             return l + r;
     })
@@ -311,7 +318,9 @@ TEST(state, usertype_method_as_action_cpp)
     grunk::state grunk;
 
     grunk.register_type<MyScalar>("MyScalar")
-    .add_constructors<MyScalar(double)>()
+    .add_constructors(
+        [](double v) { return MyScalar(v); }
+    )
     .add_member_function("set", &MyScalar::set)
     .add_member_function("pow", &MyScalar::pow);
 
@@ -349,7 +358,9 @@ TEST(state, usertype_method_as_action_lua)
     grunk::state grunk;
 
     grunk.register_type<MyScalar>("MyScalar")
-    .add_constructors<MyScalar(double)>()
+    .add_constructors(
+        [](double v) { return MyScalar(v); }
+    )
     .add_member_function("set", &MyScalar::set)
     .add_member_function("pow", &MyScalar::pow);
 
@@ -401,32 +412,28 @@ TEST(state, usertype_nonconst_method_as_action_lua)
 /*
 
 TO DO
+  - add option to grunk::eval to ammend variable names as feature ids after evaluation
+  - add grunk::Recipe class with serialization to mixed yaml and lua
   - registration syntax as before with reflect
+  - test (nested) enums
+  - test data member as action (read-only) in LUA and C++
   - idea to prevent non-const member functions:
       - wrap registration of method in TypeFactory like in reflect, with a add_member_function method
       - use metaprogramming alchemistry to determine if argument to add_member_function is non-const member function
       - if yes, register a method that throws an exception or returns an invalid sol::protected_function_result
-  - test data member as action (read-only) in LUA and C++
-  - test (nested) enums
   - docstrings + documentation
+  - copy potentially missing tests from main branch
   - think about good syntax for scripts and expressions (having mixed yaml-lua in mind)
+     - Idea: In the recipe, have a block "exports" which contains a LUA script as a string. LUA functions and 
+       "LUA classes" will be made available for use in the recipe.
+     - In the future, this could be used for LUA plugins: A LUA plugin is just a recipe, where the steps are ignored
+       and the exports are the plugin functionality
   - copy plugin interface
   - conan test_package and plugin tests in gtest
-  - add option to grunk::eval to ammend variable names as feature ids after evaluation
-  - add grunk::Recipe class with serialization to mixed yaml and lua
-  - at least function introspection to get default values and parameter names?
   - code generator
   - check smart and custom pointer support
-  - check inheritence support
   - python bindings
   - static actions taking dynamic features
   - parallelization with option to disable
-  - enable easy syntax of calling methods on features containing class instances
-      - e.g. `x:set(42)` instead of `MyScalar.set(x, 42)`
-      - e.g. `x:method(MyScalar.set)(39)
-  - idea for code structure:
-      - header-only core library (optionally with parallelization. Then requires some threadpool lib)
-      - option for plugins (requires boost) and recipes (requires yaml-cpp)
-      - option for python bindings (requires pybind11)
 
 */
