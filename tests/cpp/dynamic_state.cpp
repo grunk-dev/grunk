@@ -412,32 +412,28 @@ TEST(state, usertype_nonconst_method_as_action_lua)
 /*
 
 TO DO
+  - add option to grunk::eval to ammend variable names as feature ids after evaluation
+  - add grunk::Recipe class with serialization to mixed yaml and lua
   - registration syntax as before with reflect
+  - test (nested) enums
+  - test data member as action (read-only) in LUA and C++
   - idea to prevent non-const member functions:
       - wrap registration of method in TypeFactory like in reflect, with a add_member_function method
       - use metaprogramming alchemistry to determine if argument to add_member_function is non-const member function
       - if yes, register a method that throws an exception or returns an invalid sol::protected_function_result
-  - test data member as action (read-only) in LUA and C++
-  - test (nested) enums
   - docstrings + documentation
+  - copy potentially missing tests from main branch
   - think about good syntax for scripts and expressions (having mixed yaml-lua in mind)
+     - Idea: In the recipe, have a block "exports" which contains a LUA script as a string. LUA functions and 
+       "LUA classes" will be made available for use in the recipe.
+     - In the future, this could be used for LUA plugins: A LUA plugin is just a recipe, where the steps are ignored
+       and the exports are the plugin functionality
   - copy plugin interface
   - conan test_package and plugin tests in gtest
-  - add option to grunk::eval to ammend variable names as feature ids after evaluation
-  - add grunk::Recipe class with serialization to mixed yaml and lua
-  - at least function introspection to get default values and parameter names?
   - code generator
   - check smart and custom pointer support
-  - check inheritence support
   - python bindings
   - static actions taking dynamic features
   - parallelization with option to disable
-  - enable easy syntax of calling methods on features containing class instances
-      - e.g. `x:set(42)` instead of `MyScalar.set(x, 42)`
-      - e.g. `x:method(MyScalar.set)(39)
-  - idea for code structure:
-      - header-only core library (optionally with parallelization. Then requires some threadpool lib)
-      - option for plugins (requires boost) and recipes (requires yaml-cpp)
-      - option for python bindings (requires pybind11)
 
 */
