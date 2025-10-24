@@ -1,6 +1,6 @@
 #include <gtest/gtest.h>
 #include <grunk/dynamic/state.hpp>
-#include <grunk/dynamic/internal/ToStringVisitor.hpp>
+#include <grunk/dynamic/internal/StringifiedTree.hpp>
 
 TEST(serialization, primitives)
 {
@@ -535,7 +535,7 @@ TEST(serialization, ctor_action_lua)
     EXPECT_EQ(ret_x, "x = Dummy.new(2)");
 }
 
-TEST(serialization, ToStringVisitor_cpp)
+TEST(serialization, StringifiedTree_cpp)
 {
     grunk::state grunk;
 
@@ -546,23 +546,20 @@ TEST(serialization, ToStringVisitor_cpp)
     auto d = grunk::pow(c, 2);
     d.set_id("d");
 
-    auto visitor = grunk::ToStringVisitor();
-    auto const& node = *d.node_pointer();
-    visitor.set_start_node(node);
-    node.accept(visitor, 0, parametric::DAGNode::Direction::up);
-
+    grunk::StringifiedTree tree;
+    tree.parse(d);
     
-    auto steps = visitor.get_steps();
+    auto steps = tree.get_steps();
     ASSERT_EQ(steps.size(), 2);
     EXPECT_EQ(steps[0], "c = a + b");
     EXPECT_EQ(steps[1], "d = c ^ 2");
     
-    auto parameters = visitor.get_parameters();
+    auto parameters = tree.get_parameters();
     ASSERT_EQ(parameters.size(), 2);
     EXPECT_EQ(parameters.at("a"), "2");
     EXPECT_EQ(parameters.at("b"), "3");
     
-    auto script = visitor.get_string(true);
+    auto script = tree.get_string(true);
     EXPECT_EQ("\n" + script, R"(
 a = grunk.feature(2)
 b = grunk.feature(3)
@@ -574,10 +571,41 @@ d = c ^ 2
     EXPECT_NEAR(grunk.get_feature("d").value().as<double>(), 25, 1e-10);
 }
 
-//TODO:
-// 1. Test serialization of LUA script back to LUA
-// 2. proper handling of anonymous steps (e.g. d = (a + b) ^ 2). Also test this
-// 3. make sure that in the LUA script every feature knows its id
+TEST(serialization, StringifiedTree_lua)
+{
+    grunk::state grunk;
+    grunk.eval(R"(
+        a = grunk.feature(2.):with_id("a")
+        b = grunk.feature(3.):with_id("b")
+        c = a + b -- this is an anonymous feature, therefore this line will not be included and ...
+        d = c ^ 2 -- ... this line will be stringified to d = (a + b) ^ 2
+        d:set_id("d")
+    )");
+    auto d = grunk.get_feature("d");
+    grunk::StringifiedTree tree;
+    tree.parse(d);
+    auto steps = tree.get_steps();
+    ASSERT_EQ(steps.size(), 1);
+    EXPECT_EQ(steps[0], "d = (a + b) ^ 2");
+
+    auto parameters = tree.get_parameters();
+    ASSERT_EQ(parameters.size(), 2);
+    EXPECT_EQ(parameters.at("a"), "2");
+    EXPECT_EQ(parameters.at("b"), "3");
+    auto script = tree.get_string(true);
+    EXPECT_EQ("\n" + script, R"(
+a = grunk.feature(2)
+b = grunk.feature(3)
+d = (a + b) ^ 2
+)");    
+
+    ASSERT_NO_THROW(grunk.eval(script));
+    EXPECT_NEAR(grunk.get_feature("d").value().as<double>(), 25, 1e-10);
+}
+
+// TODO
+// 1. Checkout unit tests from grunk's current main branch and copy tests
+// 2. make sure that in the LUA script every feature knows its id
 //
 //   x = grunk.feature(2):with_id("x")
 //   y = grunk.feature(3):with_id("y")
