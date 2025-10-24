@@ -85,6 +85,28 @@ struct Foo {
 
 } // anonymous namespace
 
+TEST(serialization, DISABLED_nonserializable){
+    // TODO: This doesn't throw but crashes deep in a sol call. 
+    // Might be a sol bug, I am not sure. Will try to figure it out later
+    grunk::state grunk;
+    auto x = grunk.feature(Foo(99, "red balloons"));
+    EXPECT_THROW(x.node_pointer()->serialize(), grunk::io_error);
+}
+
+TEST(serialization, no_serialize_method){
+    // TODO: This doesn't throw but crashes deep in a sol call. 
+    // Might be a sol bug, I am not sure. Will try to figure it out later
+    grunk::state grunk;
+
+    grunk.register_type<Foo>("Foo")
+    .add_constructors(
+        [](int i, std::string_view s) { return Foo(i, s); }
+    );
+
+    auto x = grunk.feature(Foo(99, "red balloons"));
+    EXPECT_THROW(x.node_pointer()->serialize(), grunk::io_error);
+}
+
 TEST(serialization, userdata)
 {
     grunk::state grunk;
@@ -601,6 +623,29 @@ d = (a + b) ^ 2
 
     ASSERT_NO_THROW(grunk.eval(script));
     EXPECT_NEAR(grunk.get_feature("d").value().as<double>(), 25, 1e-10);
+}
+
+TEST(serialize, duplicate_name_in_parameters)
+{
+    grunk::state grunk;
+    auto x = grunk.feature(2).with_id("x");
+    auto y = grunk.feature(5).with_id("x");
+    auto z = x + y;
+    grunk::StringifiedTree tree;
+    EXPECT_THROW(tree.parse(z), grunk::io_error);
+}
+
+TEST(serialize, duplicate_name_in_steps)
+{
+    grunk::state grunk;
+    auto x = grunk.feature(2).with_id("x");
+    auto y = grunk.feature(5).with_id("y");
+    auto a = x + y;
+    auto b = grunk::pow(a,2);
+    a.set_id("a");
+    b.set_id("a");
+    grunk::StringifiedTree tree;
+    EXPECT_THROW(tree.parse(b), grunk::io_error);
 }
 
 // TODO

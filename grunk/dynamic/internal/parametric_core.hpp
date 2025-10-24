@@ -51,18 +51,22 @@ namespace grunk {
                 break;
             }
             case sol::type::userdata: {
-                auto ud = v.as<sol::userdata>();
-                // std::cout << ud["__name"].as<std::string>() << "\n";
-                sol::protected_function serialize = ud["serialize"];
-                if (serialize.valid()) {
-                    auto result = serialize(v);
-                    if (result.valid()) {
-                        return result.get<std::string>();
-                    } else {
-                        throw grunk::io_error(err_msg_prefix + "Serialization method is not available.");
-                    }
+                sol::table ud = v.as<sol::table>();
+                std::string name = ud["__name"];
+                sol::object serialize;
+                try {
+                    serialize = ud["serialize"]; //TODO this panicks for unregistered data! It doesn't throw and the code crashes. What to do?
+                } catch (sol::error) {
+                    throw grunk::io_error("Cannot serialize an opaque type \"" + name + "\". Make sure registery your type and add a serialization method.");
+                }
+                if (!serialize.valid() || !ud["serialize"].is<sol::protected_function>()) {
+                    throw grunk::io_error(err_msg_prefix + "Serialization method is not available for " + name + ".");
+                }
+                auto result = serialize.as<sol::protected_function>()(v);
+                if (result.valid()) {
+                    return result.get<std::string>();
                 } else {
-                    throw grunk::io_error(err_msg_prefix + "Serialization method is not available.");
+                    throw grunk::io_error(err_msg_prefix + "Error invoking Serialization method for " + name + ".");
                 }
                 break;
             }
