@@ -33,7 +33,18 @@ public:
         std::string ret = "";
         if (with_root_nodes) {
             for (auto const& [key, value] : parameters) {
-                ret += key + " = grunk.feature(" + value + ")\n";
+                // we need to check if the value is userdata or a primitive. userdata contains .new somewhere in the 
+                // serialized string.
+                size_t pos = value.find(".new");
+                if (pos == std::string::npos) {
+                    // the value is a primitive. We create it with grunk.feature
+                    ret += key + " = grunk.feature(" + value + ")\n";
+                } else {
+                    // its a usertype. Instead of Foo.new(xxx) we serialize Foo.new_feature(xxx)
+                    std::string value_copy = value;
+                    value_copy.insert(pos + 4, "_feature");
+                    ret += key + " = " + value_copy + "\n";
+                }
             }
         }
         for (auto const& step : step_list) {

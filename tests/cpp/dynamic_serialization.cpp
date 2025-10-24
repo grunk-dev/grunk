@@ -648,6 +648,45 @@ TEST(serialize, duplicate_name_in_steps)
     EXPECT_THROW(tree.parse(b), grunk::io_error);
 }
 
+TEST(serialize, userdata_as_parameters)
+{
+    grunk::state grunk;
+    grunk.register_type<Foo>("Foo")
+    .add_constructors(
+        [](int i, std::string_view s) { return Foo(i, s); }
+    )
+    .add_member_function("serialize",
+        [](Foo const& foo) {
+            return "Foo.new(" + std::to_string(foo.bar) + ", " + "\"" + foo.baz + "\"" + ")";
+        }
+    );
+
+    grunk.register_function("bar", [](Foo const&){ return 42; });
+
+    auto x = grunk.feature(Foo(99, "red balloons")).with_id("x");
+    auto y = grunk.action("bar", x).with_id("y");
+    EXPECT_EQ(y.value().as<int>(), 42);
+    grunk::StringifiedTree tree;
+    tree.parse(y);
+
+    auto steps = tree.get_steps();
+    ASSERT_EQ(steps.size(), 1);
+    EXPECT_EQ(steps[0], "y = bar(x)");
+
+    auto parameters = tree.get_parameters();
+    ASSERT_EQ(parameters.size(), 1);
+    EXPECT_EQ(parameters.at("x"), "Foo.new(99, \"red balloons\")");
+
+    auto script = tree.get_string(true);
+    EXPECT_EQ("\n" + script, R"(
+x = Foo.new_feature(99, "red balloons")
+y = bar(x)
+)");    
+
+    ASSERT_NO_THROW(grunk.eval(script));
+    EXPECT_EQ(grunk.get_feature("y").value().as<int>(), 42);
+}
+
 // TODO
 // 1. Checkout unit tests from grunk's current main branch and copy tests
 // 2. make sure that in the LUA script every feature knows its id
