@@ -73,7 +73,7 @@ TEST(std_vector, no_action_exceptions)
     ASSERT_FALSE(ret2.valid());
 }
 
-TEST(std_vector, lua)
+TEST(std_vector, as_action_lua)
 {
     grunk::state grunk;
     
@@ -89,7 +89,7 @@ x2 = Foo.new_feature(7)
 x3 = Foo.new_feature(9)
 
 l = Foo.as_vec(x1, x2, x3)
--- res = add(Foo.as_vec(x1, x2, x3))
+res = add(Foo.as_vec(x1, x2, x3))
 )");
 
     auto l = grunk.get_feature("l");
@@ -100,6 +100,37 @@ l = Foo.as_vec(x1, x2, x3)
     EXPECT_EQ(lv[1].i, 7);
     EXPECT_EQ(lv[2].i, 9);
 
-    // auto res = grunk.get_feature("res");
-    // EXPECT_EQ(res.value().as<Foo>().i, 21);
+    auto res = grunk.get_feature("res");
+    EXPECT_EQ(res.value().as<Foo>().i, 21);
+    auto x1 = grunk.get_feature("x1");
+    x1.set_value(Foo{26});
+    EXPECT_EQ(res.value().as<Foo>().i, 42);
+}
+
+TEST(std_vector, as_action_cpp)
+{
+    grunk::state grunk;
+    
+    grunk.register_type<Foo>("Foo")
+    .add_constructors([](int i){ return Foo{i}; })
+    .with_std_vector();
+
+    grunk.register_function("add", &add);
+
+    auto x = grunk.feature("Foo", 5);
+    auto y = grunk.feature("Foo", 7);
+    auto z = grunk.feature("Foo", 9);
+    auto l = grunk.action("Foo.as_vec", x, y, z);
+    auto res = grunk.action("add", l);
+
+    ASSERT_TRUE(l.value().is<std::vector<Foo>>());
+    auto lv = l.value().as<std::vector<Foo>>();
+    ASSERT_EQ(lv.size(), 3);
+    EXPECT_EQ(lv[0].i, 5);
+    EXPECT_EQ(lv[1].i, 7);
+    EXPECT_EQ(lv[2].i, 9);
+
+    EXPECT_EQ(res.value().as<Foo>().i, 21);
+    x.set_value(Foo{26});
+    EXPECT_EQ(res.value().as<Foo>().i, 42);
 }
