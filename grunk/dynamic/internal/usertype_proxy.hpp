@@ -49,6 +49,39 @@ struct usertype_proxy {
         return *this;
     }
 
+    usertype_proxy& with_std_vector() {
+
+        std::string ud_name = name;
+        auto from_varargs = [ud_name](sol::variadic_args va){
+            std::vector<T> ret;
+            ret.reserve(va.size());
+            for (auto const& v : va) {
+                if (!v.is<T>()) {
+                    throw std::runtime_error("Cannot create std::vector. The values cannot be converted to the expected usertype \"" + ud_name + "\".");
+                }
+                ret.push_back(v.as<T const&>());
+            }
+            return ret;
+        };
+
+        auto from_table = [ud_name](sol::table t) {
+            std::vector<T> ret;
+            ret.reserve(t.size());
+            for (auto const& kv : t) {
+                if (!kv.second.is<T>()) {
+                    throw std::runtime_error("Cannot create std::vector from table. The values cannot be converted to the expected usertype \"" + ud_name + "\".");
+                }
+                ret.push_back(kv.second.as<T>());
+            }
+            return ret;
+        };
+
+        add_member_function("as_vec", sol::overload(from_table, from_varargs));
+        add_member_function("new_vec", [](){ return std::vector<T>{}; });
+
+        return *this;
+    }
+
     std::string name;
     sol::usertype<T> ut;
 };

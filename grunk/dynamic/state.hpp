@@ -334,7 +334,7 @@ public:
      * @param lua_script The lua script to be evaluated
      */
     inline auto eval(std::string const& lua_script) {
-        return lua.script(lua_script, active_env);
+        return lua.safe_script(lua_script, active_env);
     }
 
 private:
