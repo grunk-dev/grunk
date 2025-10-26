@@ -291,7 +291,7 @@ public:
      */
     inline grunk::object deserialize(std::string const& v)
     {
-        auto ret = lua.script("return " + v, active_env);
+        auto ret = lua.script("return " + v, original_env);
         if (ret.valid()) {
             return ret;
         } else {
