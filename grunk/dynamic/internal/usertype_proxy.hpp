@@ -1,6 +1,7 @@
 #pragma once
 
 #include <sol/sol.hpp>
+#include "grunk/dynamic/function_meta.hpp"
 
 namespace grunk {
 

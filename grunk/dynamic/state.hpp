@@ -2,10 +2,11 @@
 
 #include "object.hpp"
 #include "feature.hpp"
-#include "internal/common.hpp"
+#include "internal/sol_helpers.hpp"
 #include "internal/usertype_proxy.hpp"
 #include "function_meta.hpp"
 #include "action.hpp"
+#include "environment.hpp"
 
 #include <sol/sol.hpp>
 #include <stdexcept>
@@ -47,7 +48,6 @@ public:
     inline state()
      : original_env(lua, sol::create)
      , decorated_env(lua, sol::create)
-     , active_env(lua, sol::create, decorated_env)
     {
         lua.open_libraries(sol::lib::base);
 
@@ -58,15 +58,9 @@ public:
         // original env and decorates the functions as actions
         create_decorated_environment();
 
-        // Initially use decorated_env for symbol lookup
-        sol::table active_env_meta = lua.create_table();
-        active_env_meta["__index"] = decorated_env;
-        active_env[sol::metatable_key] = active_env_meta;
-
         lua["environments"] = lua.create_table();
         lua["environments"]["original"] = original_env;
         lua["environments"]["decorated"] = decorated_env;
-        lua["environments"]["active"] = active_env;
     }
 
     /**
@@ -113,22 +107,16 @@ public:
         table->set(name, meta_func);
     }
 
-    /**
-     * @brief set_functions_are_actions allow you to specify if symbols are to be looked up in
-     * the original environment (functions are evaluated as is) or in the decorated environment
-     * (functions and methods are decorated with an action). By default, symbols are looked up
-     * in the decorated environment.
-     *
-     * @param use_actions set to true, if symbols should be looked up in the decorated environment,
-     *        false otherwise
-     */
-    void set_functions_are_actions(bool use_actions)
-    {
-        if (use_actions) {
-            active_env[sol::metatable_key]["__index"] = decorated_env;
-        } else {
-            active_env[sol::metatable_key]["__index"] = original_env;
-        }
+    environment create_env() const {
+        sol::environment env(lua, sol::create, lua.globals()); 
+        env[sol::metatable_key]["__index"] = original_env;
+        return environment(env);
+    }
+
+    environment create_parametric_env() const {
+        sol::environment env(lua, sol::create, lua.globals()); 
+        env[sol::metatable_key]["__index"] = decorated_env;
+        return environment(env);
     }
 
     /**
@@ -139,7 +127,7 @@ public:
      */
     sol::table get_type(std::string const& keys_nested) const
     {
-        return lookup_nested(original_env, keys_nested);
+        return details::lookup_nested(original_env, keys_nested);
     }
 
     /**
@@ -151,7 +139,7 @@ public:
      */
     function_meta get_function(std::string const& keys_nested) const
     {
-        sol::object tmp = lookup_nested(original_env, keys_nested);
+        sol::object tmp = details::lookup_nested(original_env, keys_nested);
         if (!tmp.is<function_meta>()) {
             throw std::logic_error("Function \"" + keys_nested + "\" is not registered in the dynamic function registry.");
         }
@@ -249,7 +237,7 @@ public:
     template <typename... Args>
     DynamicFeature action(std::string const& function, Args&&... args) const
     {
-        sol::object const f = lookup_nested(original_env, function);
+        sol::object const f = details::lookup_nested(original_env, function);
         if (!f.is<function_meta>()) {
             throw std::logic_error("Function \"" + function + "\" is not registered in the dynamic function registry.");
         }
@@ -274,16 +262,6 @@ public:
     }
 
     /**
-     * @brief returns a variable stored in the active environment
-     * @param key The name of the variable
-     * @return The queried variable
-     */
-    inline sol::object operator[](std::string const& key)
-    {
-        return active_env[key];
-    }
-
-    /**
      * @brief deserializes a string back to a grunk::object
      *
      * This assumes thtat the object has been previously serialized
@@ -297,44 +275,6 @@ public:
         } else {
             throw io_error("Error deserializing \"" + v + "\".");
         }
-    }
-
-    /**
-     * @brief get_feature returns a Feature stored in the active environment
-     *
-     * This is syntactic sugar for static_cast<DynamicFeature>(grunk["foo"]),
-     * i.e. retrieval of the variable as a grunk::object and then casting it
-     * to DynamicFeature
-     *
-     * @param key The name of the Feature
-     * @return The queried feature
-     */
-    inline DynamicFeature get_feature(std::string const& key)
-    {
-        DynamicFeature ret = active_env[key];
-        return ret;
-    }
-
-    /**
-     * @brief sets the id of every feature in the active environment to 
-     * its LUA variable name. This is particularly useful for serialization
-     */
-    inline void tag_features()
-    {
-        auto tag_feature = [](sol::object key, sol::object value) {
-            if (key.is<std::string>() && value.is<DynamicFeature>()) {
-                value.as<DynamicFeature&>().set_id(key.as<std::string const&>());
-            }
-        };
-        active_env.for_each(tag_feature);
-    }
-
-    /**
-     * @brief eval evaluates a LUA script in the active environment
-     * @param lua_script The lua script to be evaluated
-     */
-    inline auto eval(std::string const& lua_script) {
-        return lua.safe_script(lua_script, active_env);
     }
 
 private:
@@ -557,7 +497,6 @@ private:
     sol::state lua;
     sol::environment original_env;
     sol::environment decorated_env;
-    sol::environment active_env;
 };
 
 } // namespace grunk

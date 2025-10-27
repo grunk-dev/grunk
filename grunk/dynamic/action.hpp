@@ -8,7 +8,6 @@
 
 namespace grunk {
 
-
 /**
  * @brief Given a function and some features in the feature tree, this
  * function creates an Action instance representing the evaluation
@@ -58,6 +57,45 @@ inline ResultHolder<ActionDynamic> action(function_meta const& function, Args&&.
         return details::DynamicActionFactory::new_action(function, details::to_feature(std::forward<Args>(args))...);
     }
 }
+
+namespace details {
+
+inline auto make_dynamic_action(sol::state const& lua, function_meta const& func)
+{
+    auto decorated_function = [func, &lua](sol::variadic_args va) -> grunk::DynamicFeature
+    {
+        
+        auto raw_args = std::vector<sol::object>(va.begin(), va.end());
+
+        // HACK: for unary operators, sol::variadic_args includes the table as the first argument
+        // For serialization/deserialization consistency, we remove it here
+        // Otherwise -x gets serializes as -xx
+        if (func.get_name() == "grunk._dynamic_unm") {
+            raw_args.erase(raw_args.begin());
+        }
+
+        std::vector<grunk::DynamicFeature> args;
+        args.reserve(raw_args.size());
+
+        // Use std::transform to convert variadic_args to std::vector<DynamicFeature>
+        std::transform(
+            raw_args.begin(), raw_args.end(),
+            std::back_inserter(args),
+            [](grunk::object const& obj) {
+                if (obj.is<grunk::DynamicFeature>()) {
+                    return obj.as<grunk::DynamicFeature>();
+                } else {
+                    return grunk::feature(obj);
+                }
+            }
+            );
+
+        return grunk::action(func, args).output();
+    };
+    return decorated_function;
+}
+
+} // namespace details
 
 } // namespace grunk
 

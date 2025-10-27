@@ -15,15 +15,15 @@ TEST(state, free_function_registration)
     grunk::state grunk;
     grunk.register_function("add", &add);
     auto f = grunk.get_function("add"); // just to see that it exists
-    grunk.set_functions_are_actions(false);
-    grunk.eval(
+    auto env = grunk.create_env();
+    env.eval(
         R"(
         x = 17
         y = 25
         z = add(x,y)
         )"
     );
-    double z = grunk["z"].as<double>();
+    double z = env["z"].as<double>();
     ASSERT_NEAR(z, 42, 1e-14);
 }
 
@@ -83,16 +83,17 @@ TEST(state, free_function_lua)
 
     grunk.register_function("add", &add);
 
-    grunk.eval(R"(
+    auto env = grunk.create_parametric_env();
+    env.eval(R"(
        x = grunk.feature(2.)
        y = grunk.feature(1.)
        z = add(x,y)
     )");
 
 
-    auto x = grunk.get_feature("x");
-    auto y = grunk.get_feature("y");
-    auto z = grunk.get_feature("z");
+    auto x = env.get_feature("x");
+    auto y = env.get_feature("y");
+    auto z = env.get_feature("z");
 
     EXPECT_FALSE(z.is_valid());
     double zv = z.value().as<double>();
@@ -102,7 +103,7 @@ TEST(state, free_function_lua)
     x.set_value(5.);
 
     EXPECT_FALSE(z.is_valid());
-    EXPECT_NEAR(grunk.get_feature("x").value().as<double>(), 5., 1e-14);
+    EXPECT_NEAR(env.get_feature("x").value().as<double>(), 5., 1e-14);
     EXPECT_NEAR(x.value().as<double>(), 5., 1e-14);
     zv = z.value().as<double>();
     EXPECT_TRUE(z.is_valid());
@@ -115,7 +116,8 @@ TEST(state, free_function_feature_id_lua)
 
     grunk.register_function("add", &add);
 
-    grunk.eval(R"(
+    auto env = grunk.create_parametric_env();
+    env.eval(R"(
 
        x = grunk.feature(2.):with_id('x')
        y = grunk.feature(1.):with_id('y')
@@ -133,13 +135,13 @@ TEST(state, free_function_feature_id_lua)
 
     )");
 
-    EXPECT_EQ(grunk.get_feature("x").id(), "x");
-    EXPECT_EQ(grunk.get_feature("y").id(), "y");
-    EXPECT_EQ(grunk["z_id1"].as<std::string>(), "z");
-    EXPECT_EQ(grunk["z_id2"].as<std::string>(), "horst");
+    EXPECT_EQ(env.get_feature("x").id(), "x");
+    EXPECT_EQ(env.get_feature("y").id(), "y");
+    EXPECT_EQ(env["z_id1"].as<std::string>(), "z");
+    EXPECT_EQ(env["z_id2"].as<std::string>(), "horst");
 
-    EXPECT_NEAR(grunk["z_value1"].as<double>(), 3., 1e-14);
-    EXPECT_NEAR(grunk["z_value2"].as<double>(), 43., 1e-14);
+    EXPECT_NEAR(env["z_value1"].as<double>(), 3., 1e-14);
+    EXPECT_NEAR(env["z_value2"].as<double>(), 43., 1e-14);
 
 }
 
@@ -259,7 +261,8 @@ TEST(state, usertype_ctor_as_action_lua)
         [](double v) { return MyScalar(v); }
     );
 
-    grunk.eval(R"(
+    auto env = grunk.create_parametric_env();
+    env.eval(R"(
         local a = grunk.feature(1.)
 
         x = MyScalar.new(a)             -- ctor as action: x depends on a
@@ -271,16 +274,16 @@ TEST(state, usertype_ctor_as_action_lua)
         x2 = x:value()
     )");
 
-    EXPECT_EQ(grunk.get_feature("x").node_pointer()->get_parents().size(), 1);
-    EXPECT_EQ(grunk.get_feature("y").node_pointer()->get_parents().size(), 1);
-    EXPECT_EQ(grunk.get_feature("z").node_pointer()->get_parents().size(), 0);
+    EXPECT_EQ(env.get_feature("x").node_pointer()->get_parents().size(), 1);
+    EXPECT_EQ(env.get_feature("y").node_pointer()->get_parents().size(), 1);
+    EXPECT_EQ(env.get_feature("z").node_pointer()->get_parents().size(), 0);
 
-    EXPECT_EQ(grunk.get_feature("y").value().as<MyScalar>().value(), 2.);
-    EXPECT_EQ(grunk.get_feature("z").value().as<MyScalar>().value(), 3.);
+    EXPECT_EQ(env.get_feature("y").value().as<MyScalar>().value(), 2.);
+    EXPECT_EQ(env.get_feature("z").value().as<MyScalar>().value(), 3.);
 
-    EXPECT_EQ(grunk["x1"].as<MyScalar>().value(), 1.);
-    EXPECT_EQ(grunk["x2"].as<MyScalar>().value(), 4.);
-    EXPECT_EQ(grunk.get_feature("x").value().as<MyScalar>().value(), 4.);
+    EXPECT_EQ(env["x1"].as<MyScalar>().value(), 1.);
+    EXPECT_EQ(env["x2"].as<MyScalar>().value(), 4.);
+    EXPECT_EQ(env.get_feature("x").value().as<MyScalar>().value(), 4.);
 }
 
 TEST(state, usertype_operators_as_action_lua)
@@ -297,7 +300,8 @@ TEST(state, usertype_operators_as_action_lua)
     .add_member_function("set", &MyScalar::set)
     .add_data_member("value", &MyScalar::value);
 
-    grunk.eval(R"(
+    auto env = grunk.create_parametric_env();
+    env.eval(R"(
         local x = MyScalar.new_feature(2.)
         local y = MyScalar.new_feature(3.)
         local z = x + y
@@ -309,8 +313,8 @@ TEST(state, usertype_operators_as_action_lua)
         z2 = z:value()
     )");
 
-    EXPECT_NEAR(grunk["z1"].as<MyScalar>().value(), 5., 1e-14);
-    EXPECT_NEAR(grunk["z2"].as<MyScalar>().value(), 42., 1e-14);
+    EXPECT_NEAR(env["z1"].as<MyScalar>().value(), 5., 1e-14);
+    EXPECT_NEAR(env["z2"].as<MyScalar>().value(), 42., 1e-14);
 }
 
 TEST(state, usertype_method_as_action_cpp)
@@ -364,7 +368,8 @@ TEST(state, usertype_method_as_action_lua)
     .add_member_function("set", &MyScalar::set)
     .add_member_function("pow", &MyScalar::pow);
 
-    grunk.eval(R"(
+    auto env = grunk.create_parametric_env();
+    env.eval(R"(
         local x = MyScalar.new_feature(2)
 
         -- test the "method as free function" syntax
@@ -384,11 +389,11 @@ TEST(state, usertype_method_as_action_lua)
         z2 = z:value()
     )");
 
-    EXPECT_NEAR(grunk["y1"].as<MyScalar>().value(), 4, 1e-14); // 2^2
-    EXPECT_NEAR(grunk["y2"].as<MyScalar>().value(), 9, 1e-14); // 3^2
+    EXPECT_NEAR(env["y1"].as<MyScalar>().value(), 4, 1e-14); // 2^2
+    EXPECT_NEAR(env["y2"].as<MyScalar>().value(), 9, 1e-14); // 3^2
 
-    EXPECT_NEAR(grunk["z1"].as<MyScalar>().value(),27, 1e-14); // 3^3
-    EXPECT_NEAR(grunk["z2"].as<MyScalar>().value(), 8, 1e-14); // 2^3
+    EXPECT_NEAR(env["z1"].as<MyScalar>().value(),27, 1e-14); // 3^3
+    EXPECT_NEAR(env["z2"].as<MyScalar>().value(), 8, 1e-14); // 2^3
 }
 
 /*TODO: this should ideally fail (non-const member function as action)
