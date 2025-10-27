@@ -25,9 +25,9 @@ TEST(std_vector, no_action)
 
     grunk.register_function("add", &add);
 
-    grunk.set_functions_are_actions(false);
+    auto env = grunk.create_env();
 
-    grunk.eval(R"(
+    env.eval(R"(
 x1 = Foo.new(5)
 x2 = Foo.new(7)
 x3 = Foo.new(9)
@@ -42,13 +42,13 @@ l2:add(x1)
 res3 = add(l2)
 )");
 
-    auto res1 = grunk["res1"];
+    auto res1 = env["res1"];
     EXPECT_EQ(res1.as<Foo>().i, 12);
 
-    auto res2 = grunk["res2"];
+    auto res2 = env["res2"];
     EXPECT_EQ(res2.as<Foo>().i, 16);
 
-    auto res3 = grunk["res3"];
+    auto res3 = env["res3"];
     EXPECT_EQ(res3.as<Foo>().i, 21);
 }
 
@@ -64,8 +64,10 @@ TEST(std_vector, no_action_exceptions)
     // https://github.com/ThePhD/sol2/issues/1724
     auto as_vec =  grunk.get_function("Foo.as_vec");
 
-    grunk.eval(R"(t = {2.3, "horst"})");
-    auto t = grunk["t"];
+    auto env = grunk.create_env();
+
+    env.eval(R"(t = {2.3, "horst"})");
+    auto t = env["t"];
     auto ret1 = as_vec.call(t);
     ASSERT_FALSE(ret1.valid());
 
@@ -83,7 +85,8 @@ TEST(std_vector, as_action_lua)
 
     grunk.register_function("add", &add);
 
-    grunk.eval(R"(
+    auto env = grunk.create_parametric_env();
+    env.eval(R"(
 x1 = Foo.new_feature(5)
 x2 = Foo.new_feature(7)
 x3 = Foo.new_feature(9)
@@ -92,7 +95,7 @@ l = Foo.as_vec(x1, x2, x3)
 res = add(Foo.as_vec(x1, x2, x3))
 )");
 
-    auto l = grunk.get_feature("l");
+    auto l = env.get_feature("l");
     ASSERT_TRUE(l.value().is<std::vector<Foo>>());
     auto lv = l.value().as<std::vector<Foo>>();
     ASSERT_EQ(lv.size(), 3);
@@ -100,9 +103,9 @@ res = add(Foo.as_vec(x1, x2, x3))
     EXPECT_EQ(lv[1].i, 7);
     EXPECT_EQ(lv[2].i, 9);
 
-    auto res = grunk.get_feature("res");
+    auto res = env.get_feature("res");
     EXPECT_EQ(res.value().as<Foo>().i, 21);
-    auto x1 = grunk.get_feature("x1");
+    auto x1 = env.get_feature("x1");
     x1.set_value(Foo{26});
     EXPECT_EQ(res.value().as<Foo>().i, 42);
 }

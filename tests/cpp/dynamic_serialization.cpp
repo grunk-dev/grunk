@@ -110,7 +110,6 @@ TEST(serialization, no_serialize_method){
 TEST(serialization, userdata)
 {
     grunk::state grunk;
-    grunk.set_functions_are_actions(false);
 
     grunk.register_type<Foo>("Foo")
     .add_constructors(
@@ -237,12 +236,13 @@ TEST(serialization, operator_action_lua_add)
 {
     grunk::state grunk;
 
-    grunk.eval(R"(
+    auto env = grunk.create_parametric_env();
+    env.eval(R"(
         x = grunk.feature(2.):with_id("x")
         y = grunk.feature(3.):with_id("y")
         z = x + y 
     )");
-    auto z = grunk.get_feature("z");
+    auto z = env.get_feature("z");
 
     z.set_id("z");
     auto ret = z.compute_node()->serialize();
@@ -296,12 +296,13 @@ TEST(serialization, operator_action_lua_sub)
 {
     grunk::state grunk;
 
-    grunk.eval(R"(
+    auto env = grunk.create_parametric_env();
+    env.eval(R"(
         x = grunk.feature(2.):with_id("x")
         y = grunk.feature(3.):with_id("y")
         z = x - y
     )");
-    auto z = grunk.get_feature("z");
+    auto z = env.get_feature("z");
 
     z.set_id("z");
     auto ret = z.compute_node()->serialize();
@@ -323,12 +324,13 @@ TEST(serialization, operator_action_lua_mul)
 {
     grunk::state grunk;
 
-    grunk.eval(R"(
+    auto env = grunk.create_parametric_env();
+    env.eval(R"(
         x = grunk.feature(2.):with_id("x")
         y = grunk.feature(3.):with_id("y")
         z = x * y
     )");
-    auto z = grunk.get_feature("z");
+    auto z = env.get_feature("z");
 
     z.set_id("z");
     auto ret = z.compute_node()->serialize();
@@ -350,12 +352,13 @@ TEST(serialization, operator_action_lua_div)
 {
     grunk::state grunk;
 
-    grunk.eval(R"(
+    auto env = grunk.create_parametric_env();
+    env.eval(R"(
         x = grunk.feature(2.):with_id("x")
         y = grunk.feature(3.):with_id("y")
         z = x / y
     )");
-    auto z = grunk.get_feature("z");
+    auto z = env.get_feature("z");
 
     z.set_id("z");
     auto ret = z.compute_node()->serialize();
@@ -377,12 +380,13 @@ TEST(serialization, operator_action_lua_pow)
 {
     grunk::state grunk;
 
-    grunk.eval(R"(
+    auto env = grunk.create_parametric_env();
+    env.eval(R"(
         x = grunk.feature(2.):with_id("x")
         y = grunk.feature(3.):with_id("y")
         z = x ^ y
     )");
-    auto z = grunk.get_feature("z");
+    auto z = env.get_feature("z");
 
     z.set_id("z");
     auto ret = z.compute_node()->serialize();
@@ -404,12 +408,13 @@ TEST(serialization, operator_action_lua_mod)
 {
     grunk::state grunk;
 
-    grunk.eval(R"(
+    auto env = grunk.create_parametric_env();
+    env.eval(R"(
         x = grunk.feature(2.):with_id("x")
         y = grunk.feature(3.):with_id("y")
         z = x % y 
     )");
-    auto z = grunk.get_feature("z");
+    auto z = env.get_feature("z");
 
     z.set_id("z");
     auto ret = z.compute_node()->serialize();
@@ -431,11 +436,12 @@ TEST(serialization, operator_action_lua_unm)
 {
     grunk::state grunk;
 
-    grunk.eval(R"(
+    auto env = grunk.create_parametric_env();
+    env.eval(R"(
         x = grunk.feature(2.):with_id("x")
         z = -x
     )");
-    auto z = grunk.get_feature("z");
+    auto z = env.get_feature("z");
 
     z.set_id("z");
     EXPECT_EQ(z.compute_node()->get_parents().size(), 1);
@@ -504,17 +510,18 @@ TEST(serialization, member_function_action_lua)
     .add_member_function("set_value", &Dummy::set_value)
     .add_member_function("value", &Dummy::value);
 
-    grunk.eval(R"(
+    auto env = grunk.create_parametric_env();
+    env.eval(R"(
         a = Dummy.new_feature():with_id("a")
 
         x = Dummy.set_value(a, 4.):with_id("x")
         y = Dummy.value(a):with_id("y")
     )");
-    auto x = grunk.get_feature("x");
+    auto x = env.get_feature("x");
     auto ret_x = x.compute_node()->serialize();
     EXPECT_EQ(ret_x, "x = Dummy.set_value(a, 4)");
 
-    auto y = grunk.get_feature("y");
+    auto y = env.get_feature("y");
     auto ret_y = y.compute_node()->serialize();
     EXPECT_EQ(ret_y, "y = Dummy.value(a)");
 }
@@ -549,10 +556,11 @@ TEST(serialization, ctor_action_lua)
     .add_member_function("set_value", &Dummy::set_value)
     .add_member_function("value", &Dummy::value);
 
-    grunk.eval(R"(
+    auto env = grunk.create_parametric_env();
+    env.eval(R"(
         x = Dummy.new(2.):with_id("x")
     )");
-    auto x = grunk.get_feature("x");
+    auto x = env.get_feature("x");
     auto ret_x = x.compute_node()->serialize();
     EXPECT_EQ(ret_x, "x = Dummy.new(2)");
 }
@@ -589,21 +597,23 @@ c = a + b
 d = c ^ 2
 )");
 
-    ASSERT_NO_THROW(grunk.eval(script));
-    EXPECT_NEAR(grunk.get_feature("d").value().as<double>(), 25, 1e-10);
+    auto env = grunk.create_parametric_env();
+    ASSERT_NO_THROW(env.eval(script));
+    EXPECT_NEAR(env.get_feature("d").value().as<double>(), 25, 1e-10);
 }
 
 TEST(serialization, StringifiedTree_lua)
 {
     grunk::state grunk;
-    grunk.eval(R"(
+    auto env = grunk.create_parametric_env();
+    env.eval(R"(
         a = grunk.feature(2.):with_id("a")
         b = grunk.feature(3.):with_id("b")
         c = a + b -- this is an anonymous feature, therefore this line will not be included and ...
         d = c ^ 2 -- ... this line will be stringified to d = (a + b) ^ 2
         d:set_id("d")
     )");
-    auto d = grunk.get_feature("d");
+    auto d = env.get_feature("d");
     grunk::StringifiedTree tree;
     tree.parse(d);
     auto steps = tree.get_steps();
@@ -621,8 +631,9 @@ b = grunk.feature(3)
 d = (a + b) ^ 2
 )");    
 
-    ASSERT_NO_THROW(grunk.eval(script));
-    EXPECT_NEAR(grunk.get_feature("d").value().as<double>(), 25, 1e-10);
+    auto env2 = grunk.create_parametric_env();
+    ASSERT_NO_THROW(env2.eval(script));
+    EXPECT_NEAR(env2.get_feature("d").value().as<double>(), 25, 1e-10);
 }
 
 TEST(serialize, duplicate_name_in_parameters)
@@ -683,8 +694,9 @@ x = Foo.new_feature(99, "red balloons")
 y = bar(x)
 )");    
 
-    ASSERT_NO_THROW(grunk.eval(script));
-    EXPECT_EQ(grunk.get_feature("y").value().as<int>(), 42);
+    auto env = grunk.create_parametric_env();
+    ASSERT_NO_THROW(env.eval(script));
+    EXPECT_EQ(env.get_feature("y").value().as<int>(), 42);
 }
 
 TEST(serialize, tag_features)
@@ -696,17 +708,18 @@ TEST(serialize, tag_features)
     };
 
     grunk::state grunk;
-    grunk.eval(R"(
+    auto env = grunk.create_parametric_env();
+    env.eval(R"(
 x = grunk.feature(2)
 y = grunk.feature(8)
 z = x * y
     )");
-    auto z = grunk.get_feature("z");
+    auto z = env.get_feature("z");
     
     auto script1 = get_script(z);
     EXPECT_TRUE(script1.empty()); // all features are anonymous! No script generated
 
-    grunk.tag_features();
+    env.tag_features();
 
     auto script2 = get_script(z);
     EXPECT_EQ("\n" + script2, R"(

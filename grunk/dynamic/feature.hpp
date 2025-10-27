@@ -2,6 +2,7 @@
 
 #include "grunk/dynamic/internal/parametric_core.hpp"
 #include <object.hpp>
+#include "grunk/dynamic/internal/sol_helpers.hpp"
 
 namespace grunk {
 
@@ -91,7 +92,7 @@ public:
     {
         check_lua();
         sol::state_view l(lua);
-        sol::table usertype_table = l["environments"]["active"][usertype];
+        sol::table usertype_table = details::lookup_nested(l["environments"]["decorated"], usertype);
         return as(usertype_table);
     }
 

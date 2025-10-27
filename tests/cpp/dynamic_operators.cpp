@@ -5,14 +5,15 @@
 TEST(operators, addition_object_cpp)
 {
     grunk::state grunk;
-    grunk.set_functions_are_actions(false); // This is needed such that LUA code is not decorated as actions, but are used as is
     using grunk::operator+;                 // This is needed for name-dependent lookup of the operator for grunk::object, which is just a typedef
-    grunk.eval(R"(
+    
+    auto env = grunk.create_env();
+    env.eval(R"(
     x = 1.2
     y = 1.3
     )");
-    grunk::object x = grunk["x"];
-    grunk::object y = grunk["y"];
+    grunk::object x = env["x"];
+    grunk::object y = env["y"];
     auto z = x + y;
     EXPECT_NEAR(z.as<double>(), 2.5, 1e-14);
 
@@ -29,14 +30,15 @@ TEST(operators, addition_object_cpp)
 TEST(operators, addition_object_cpp_mixed)
 {
     grunk::state grunk;
-    grunk.set_functions_are_actions(false); // This is needed such that LUA code is not decorated as actions, but are used as is
     using grunk::operator+;                 // This is needed for name-dependent lookup of the operator for grunk::object, which is just a typedef
-    grunk.eval(R"(
+
+    auto env = grunk.create_env();
+    env.eval(R"(
     x = 1.2
     y = 1.3
     )");
-    grunk::object x = grunk["x"];
-    grunk::object y = grunk["y"];
+    grunk::object x = env["x"];
+    grunk::object y = env["y"];
 
     auto z1 = x + 1.3;
     EXPECT_NEAR(z1.as<double>(), 2.5, 1e-14);
@@ -63,14 +65,15 @@ TEST(operators, addition_object_cpp_mixed)
 TEST(operators, subtraction_object_cpp)
 {
     grunk::state grunk;
-    grunk.set_functions_are_actions(false); // This is needed such that LUA code is not decorated as actions, but are used as is
     using grunk::operator-;                 // This is needed for name-dependent lookup of the operator for grunk::object, which is just a typedef
-    grunk.eval(R"(
+
+    auto env = grunk.create_env();
+    env.eval(R"(
     x = 1.9
     y = 1.1
     )");
-    grunk::object x = grunk["x"];
-    grunk::object y = grunk["y"];
+    grunk::object x = env["x"];
+    grunk::object y = env["y"];
     auto z = x - y;
     EXPECT_NEAR(z.as<double>(), 0.8, 1e-14);
 
@@ -87,14 +90,15 @@ TEST(operators, subtraction_object_cpp)
 TEST(operators, subtraction_object_cpp_mixed)
 {
     grunk::state grunk;
-    grunk.set_functions_are_actions(false); // This is needed such that LUA code is not decorated as actions, but are used as is
     using grunk::operator-;                 // This is needed for name-dependent lookup of the operator for grunk::object, which is just a typedef
-    grunk.eval(R"(
+
+    auto env = grunk.create_env();
+    env.eval(R"(
     x = 1.9
     y = 1.1
     )");
-    grunk::object x = grunk["x"];
-    grunk::object y = grunk["y"];
+    grunk::object x = env["x"];
+    grunk::object y = env["y"];
 
     auto z1 = x - 1.1;
     EXPECT_NEAR(z1.as<double>(), 0.8, 1e-14);
@@ -121,14 +125,15 @@ TEST(operators, subtraction_object_cpp_mixed)
 TEST(operators, multiplication_object_cpp)
 {
     grunk::state grunk;
-    grunk.set_functions_are_actions(false); // This is needed such that LUA code is not decorated as actions, but are used as is
     using grunk::operator*;                 // This is needed for name-dependent lookup of the operator for grunk::object, which is just a typedef
-    grunk.eval(R"(
+
+    auto env = grunk.create_env();
+    env.eval(R"(
     x = 4
     y = 5
     )");
-    grunk::object x = grunk["x"];
-    grunk::object y = grunk["y"];
+    grunk::object x = env["x"];
+    grunk::object y = env["y"];
     auto z = x * y;
     EXPECT_NEAR(z.as<double>(), 20, 1e-14);
 
@@ -145,14 +150,15 @@ TEST(operators, multiplication_object_cpp)
 TEST(operators, multiplication_object_cpp_mixed)
 {
     grunk::state grunk;
-    grunk.set_functions_are_actions(false); // This is needed such that LUA code is not decorated as actions, but are used as is
     using grunk::operator*;                 // This is needed for name-dependent lookup of the operator for grunk::object, which is just a typedef
-    grunk.eval(R"(
+
+    auto env = grunk.create_env();
+    env.eval(R"(
     x = 4
     y = 5
     )");
-    grunk::object x = grunk["x"];
-    grunk::object y = grunk["y"];
+    grunk::object x = env["x"];
+    grunk::object y = env["y"];
 
     auto z1 = x * 5;
     EXPECT_NEAR(z1.as<double>(), 20, 1e-14);
@@ -179,14 +185,15 @@ TEST(operators, multiplication_object_cpp_mixed)
 TEST(operators, division_object_cpp)
 {
     grunk::state grunk;
-    grunk.set_functions_are_actions(false); // This is needed such that LUA code is not decorated as actions, but are used as is
     using grunk::operator/;                 // This is needed for name-dependent lookup of the operator for grunk::object, which is just a typedef
-    grunk.eval(R"(
+
+    auto env = grunk.create_env();
+    env.eval(R"(
     x = 6
     y = 3
     )");
-    grunk::object x = grunk["x"];
-    grunk::object y = grunk["y"];
+    grunk::object x = env["x"];
+    grunk::object y = env["y"];
     auto z = x / y;
     EXPECT_NEAR(z.as<double>(), 2, 1e-14);
 
@@ -203,14 +210,15 @@ TEST(operators, division_object_cpp)
 TEST(operators, division_object_cpp_mixed)
 {
     grunk::state grunk;
-    grunk.set_functions_are_actions(false); // This is needed such that LUA code is not decorated as actions, but are used as is
     using grunk::operator/;                 // This is needed for name-dependent lookup of the operator for grunk::object, which is just a typedef
-    grunk.eval(R"(
+
+    auto env = grunk.create_env();
+    env.eval(R"(
     x = 6
     y = 3
     )");
-    grunk::object x = grunk["x"];
-    grunk::object y = grunk["y"];
+    grunk::object x = env["x"];
+    grunk::object y = env["y"];
 
     auto z1 = x / 3;
     EXPECT_NEAR(z1.as<double>(), 2, 1e-14);
@@ -236,13 +244,14 @@ TEST(operators, division_object_cpp_mixed)
 TEST(operators, pow_object_cpp)
 {
     grunk::state grunk;
-    grunk.set_functions_are_actions(false); // This is needed such that LUA code is not decorated as actions, but are used as is
-    grunk.eval(R"(
+
+    auto env = grunk.create_env();
+    env.eval(R"(
     x = 2
     y = 3
     )");
-    grunk::object x = grunk["x"];
-    grunk::object y = grunk["y"];
+    grunk::object x = env["x"];
+    grunk::object y = env["y"];
     auto z = grunk::pow(x, y);
     EXPECT_NEAR(z.as<double>(), 8, 1e-14);
 
@@ -259,13 +268,14 @@ TEST(operators, pow_object_cpp)
 TEST(operators, pow_object_cpp_mixed)
 {
     grunk::state grunk;
-    grunk.set_functions_are_actions(false); // This is needed such that LUA code is not decorated as actions, but are used as is
-    grunk.eval(R"(
+    
+    auto env = grunk.create_env();
+    env.eval(R"(
     x = 2
     y = 3
     )");
-    grunk::object x = grunk["x"];
-    grunk::object y = grunk["y"];
+    grunk::object x = env["x"];
+    grunk::object y = env["y"];
 
     auto z1 = grunk::pow(x, 3);
     EXPECT_NEAR(z1.as<double>(), 8, 1e-14);
@@ -292,14 +302,15 @@ TEST(operators, pow_object_cpp_mixed)
 TEST(operators, modulo_object_cpp)
 {
     grunk::state grunk;
-    grunk.set_functions_are_actions(false); // This is needed such that LUA code is not decorated as actions, but are used as is
     using grunk::operator%;                 // This is needed for name-dependent lookup of the operator for grunk::object, which is just a typedef
-    grunk.eval(R"(
+
+    auto env = grunk.create_env();
+    env.eval(R"(
     x = 18
     y = 12
     )");
-    grunk::object x = grunk["x"];
-    grunk::object y = grunk["y"];
+    grunk::object x = env["x"];
+    grunk::object y = env["y"];
     auto z = x % y;
     EXPECT_NEAR(z.as<double>(), 6, 1e-14);
 
@@ -316,14 +327,15 @@ TEST(operators, modulo_object_cpp)
 TEST(operators, modulo_object_cpp_mixed)
 {
     grunk::state grunk;
-    grunk.set_functions_are_actions(false); // This is needed such that LUA code is not decorated as actions, but are used as is
     using grunk::operator%;                 // This is needed for name-dependent lookup of the operator for grunk::object, which is just a typedef
-    grunk.eval(R"(
+
+    auto env = grunk.create_env();
+    env.eval(R"(
     x = 18
     y = 12
     )");
-    grunk::object x = grunk["x"];
-    grunk::object y = grunk["y"];
+    grunk::object x = env["x"];
+    grunk::object y = env["y"];
 
     auto z1 = x % 12;
     EXPECT_NEAR(z1.as<double>(), 6, 1e-14);
@@ -350,14 +362,15 @@ TEST(operators, modulo_object_cpp_mixed)
 TEST(operators, unm_object_cpp)
 {
     grunk::state grunk;
-    grunk.set_functions_are_actions(false); // This is needed such that LUA code is not decorated as actions, but are used as is
     using grunk::operator-;                 // This is needed for name-dependent lookup of the operator for grunk::object, which is just a typedef
-    grunk.eval(R"(
+
+    auto env = grunk.create_env();
+    env.eval(R"(
     x = 5
     y = -3
     )");
-    grunk::object x = grunk["x"];
-    grunk::object y = grunk["y"];
+    grunk::object x = env["x"];
+    grunk::object y = env["y"];
     auto z = - x;
     EXPECT_NEAR(z.as<double>(), -5, 1e-14);
 
@@ -374,15 +387,16 @@ TEST(operators, unm_object_cpp)
 TEST(operators, chaining_object_cpp)
 {
     grunk::state grunk;
-    grunk.set_functions_are_actions(false); // This is needed such that LUA code is not decorated as actions, but are used as is
     using namespace grunk;                  // This is needed for name-dependent lookup of the operator for grunk::object, which is just a typedef
-    grunk.eval(R"(
+
+    auto env = grunk.create_env();
+    env.eval(R"(
     x = 4
     y = 3
     two = 2
     )");
-    grunk::object x = grunk["x"];
-    grunk::object y = grunk["y"];
+    grunk::object x = env["x"];
+    grunk::object y = env["y"];
     auto z =  -(x+y)/(pow(x, 2) + pow(y, 2));
     EXPECT_NEAR(z.as<double>(), -7./25., 1e-14);
 
@@ -482,7 +496,9 @@ TEST(operators, addition_lua)
 {
     grunk::state grunk;
 
-    grunk.eval(R"(
+    auto env = grunk.create_parametric_env();
+
+    env.eval(R"(
         local x = grunk.feature(1.)
         local y = grunk.feature(2.)
         local z = x + y
@@ -490,15 +506,16 @@ TEST(operators, addition_lua)
         x:set_value(2.)
         z2 = z:value()
     )");
-   EXPECT_NEAR(grunk["z1"].as<double>(), 3., 1e-14);
-   EXPECT_NEAR(grunk["z2"].as<double>(), 4., 1e-14);
+   EXPECT_NEAR(env["z1"].as<double>(), 3., 1e-14);
+   EXPECT_NEAR(env["z2"].as<double>(), 4., 1e-14);
 }
 
 TEST(operators, subtraction_lua)
 {
     grunk::state grunk;
 
-    grunk.eval(R"(
+    auto env = grunk.create_parametric_env();
+    env.eval(R"(
         local x = grunk.feature(1.)
         local y = grunk.feature(2.)
         local z = x - y
@@ -506,15 +523,17 @@ TEST(operators, subtraction_lua)
         x:set_value(2.)
         z2 = z:value()
     )");
-    EXPECT_NEAR(grunk["z1"].as<double>(), -1., 1e-14);
-    EXPECT_NEAR(grunk["z2"].as<double>(),  0., 1e-14);
+    EXPECT_NEAR(env["z1"].as<double>(), -1., 1e-14);
+    EXPECT_NEAR(env["z2"].as<double>(),  0., 1e-14);
 }
 
 TEST(operators, multiplication_lua)
 {
     grunk::state grunk;
 
-    grunk.eval(R"(
+    auto env = grunk.create_parametric_env();
+
+    env.eval(R"(
         local x = grunk.feature(1.)
         local y = grunk.feature(2.)
         local z = x * y
@@ -522,15 +541,17 @@ TEST(operators, multiplication_lua)
         x:set_value(2.)
         z2 = z:value()
     )");
-    EXPECT_NEAR(grunk["z1"].as<double>(), 2., 1e-14);
-    EXPECT_NEAR(grunk["z2"].as<double>(), 4., 1e-14);
+    EXPECT_NEAR(env["z1"].as<double>(), 2., 1e-14);
+    EXPECT_NEAR(env["z2"].as<double>(), 4., 1e-14);
 }
 
 TEST(operators, division_lua)
 {
     grunk::state grunk;
 
-    grunk.eval(R"(
+    auto env = grunk.create_parametric_env();
+
+    env.eval(R"(
         local x = grunk.feature(1.)
         local y = grunk.feature(2.)
         local z = x / y
@@ -538,15 +559,17 @@ TEST(operators, division_lua)
         x:set_value(2.)
         z2 = z:value()
     )");
-    EXPECT_NEAR(grunk["z1"].as<double>(), 0.5, 1e-14);
-    EXPECT_NEAR(grunk["z2"].as<double>(), 1. , 1e-14);
+    EXPECT_NEAR(env["z1"].as<double>(), 0.5, 1e-14);
+    EXPECT_NEAR(env["z2"].as<double>(), 1. , 1e-14);
 }
 
 TEST(operators, modulo_lua)
 {
     grunk::state grunk;
 
-    grunk.eval(R"(
+    auto env = grunk.create_parametric_env();
+
+    env.eval(R"(
         local x = grunk.feature(17)
         local y = grunk.feature(24)
         local z = x % y
@@ -554,15 +577,17 @@ TEST(operators, modulo_lua)
         x:set_value(33)
         z2 = z:value()
     )");
-    EXPECT_EQ(grunk["z1"].as<int>(), 17);
-    EXPECT_EQ(grunk["z2"].as<int>(),  9);
+    EXPECT_EQ(env["z1"].as<int>(), 17);
+    EXPECT_EQ(env["z2"].as<int>(),  9);
 }
 
 TEST(operators, pow_lua)
 {
     grunk::state grunk;
 
-    grunk.eval(R"(
+    auto env = grunk.create_parametric_env();
+    
+    env.eval(R"(
         local x = grunk.feature(2.)
         local y = grunk.feature(3)
         local z = x ^ y
@@ -570,30 +595,34 @@ TEST(operators, pow_lua)
         x:set_value(3.)
         z2 = z:value()
     )");
-    EXPECT_NEAR(grunk["z1"].as<double>(),  8, 1e-14);
-    EXPECT_NEAR(grunk["z2"].as<double>(), 27, 1e-14);
+    EXPECT_NEAR(env["z1"].as<double>(),  8, 1e-14);
+    EXPECT_NEAR(env["z2"].as<double>(), 27, 1e-14);
 }
 
 TEST(operators, unm_lua)
 {
     grunk::state grunk;
 
-    grunk.eval(R"(
+    auto env = grunk.create_parametric_env();
+
+    env.eval(R"(
         local x = grunk.feature(2.)
         local z = -x
         z1 = z:value()
         x:set_value(3.)
         z2 = z:value()
     )");
-    EXPECT_NEAR(grunk["z1"].as<double>(), -2, 1e-14);
-    EXPECT_NEAR(grunk["z2"].as<double>(), -3, 1e-14);
+    EXPECT_NEAR(env["z1"].as<double>(), -2, 1e-14);
+    EXPECT_NEAR(env["z2"].as<double>(), -3, 1e-14);
 }
 
 TEST(operators, chaining_lua)
 {
     grunk::state grunk;
 
-    grunk.eval(R"(
+    auto env = grunk.create_parametric_env();
+
+    env.eval(R"(
         local x = grunk.feature(4.)
         local y = grunk.feature(3)
         z = -(x+y)/(x^2 + y^2)
@@ -601,8 +630,8 @@ TEST(operators, chaining_lua)
         x:set_value(3.)
         z2 = z:value()
     )");
-    EXPECT_NEAR(grunk["z1"].as<double>(), -7./25., 1e-14);
-    EXPECT_NEAR(grunk["z2"].as<double>(), -6./18., 1e-14);
+    EXPECT_NEAR(env["z1"].as<double>(), -7./25., 1e-14);
+    EXPECT_NEAR(env["z2"].as<double>(), -6./18., 1e-14);
 }
 
 namespace {
@@ -638,7 +667,8 @@ TEST(operators, usertype_addition_lua)
     .add_member_function("set", &MyScalar::set)
     .add_member_function("value", &MyScalar::value);
 
-    grunk.eval(R"(
+    auto env = grunk.create_parametric_env();
+    env.eval(R"(
         local x = MyScalar.new_feature(2.)
         local y = MyScalar.new_feature(3.)
         local z = x + y
@@ -650,6 +680,6 @@ TEST(operators, usertype_addition_lua)
         z2 = z:value()
     )");
 
-    EXPECT_NEAR(grunk["z1"].as<MyScalar>().value(), 5., 1e-14);
-    EXPECT_NEAR(grunk["z2"].as<MyScalar>().value(), 42., 1e-14);
+    EXPECT_NEAR(env["z1"].as<MyScalar>().value(), 5., 1e-14);
+    EXPECT_NEAR(env["z2"].as<MyScalar>().value(), 42., 1e-14);
 }
