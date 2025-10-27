@@ -1,5 +1,6 @@
 #pragma once 
 
+#include "grunk/dynamic/feature.hpp"
 #include <sol/sol.hpp>
 
 namespace grunk {
@@ -8,6 +9,11 @@ class environment
 {
 public:
     environment(sol::environment const& env) : m_environment(env) {}
+
+    inline void insert(std::string const& key, DynamicFeature const& feature)
+    {
+        m_environment[key] = feature;
+    }
 
     /**
      * @brief returns a variable stored in the active environment
@@ -58,7 +64,7 @@ public:
         return lua.safe_script(lua_script, m_environment);
     }
 
-private:
+protected:
     sol::environment m_environment;
 };
 

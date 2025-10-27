@@ -28,7 +28,7 @@ install(TARGETS grunk
 
 # install headers
 install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_BINARY_DIR}
-        DESTINATION include/grunk
+        DESTINATION include
         FILES_MATCHING
         REGEX ".*\\.(h|hpp|hxx|inl)$"
 )
