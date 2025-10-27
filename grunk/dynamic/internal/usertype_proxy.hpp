@@ -1,6 +1,7 @@
 #pragma once
 
 #include <sol/sol.hpp>
+#include "grunk/dynamic/internal/to_std_vector.hpp"
 
 namespace grunk {
 
@@ -51,29 +52,12 @@ struct usertype_proxy {
 
     usertype_proxy& with_std_vector() {
 
-        std::string ud_name = name;
-        auto from_varargs = [ud_name](sol::variadic_args va){
-            std::vector<T> ret;
-            ret.reserve(va.size());
-            for (auto const& v : va) {
-                if (!v.is<T>()) {
-                    throw std::runtime_error("Cannot create std::vector. The values cannot be converted to the expected usertype \"" + ud_name + "\".");
-                }
-                ret.push_back(v.as<T const&>());
-            }
-            return ret;
+        auto from_varargs = [](sol::variadic_args va){
+            return to_std_vector<T>(va);
         };
 
-        auto from_table = [ud_name](sol::table t) {
-            std::vector<T> ret;
-            ret.reserve(t.size());
-            for (auto const& kv : t) {
-                if (!kv.second.is<T>()) {
-                    throw std::runtime_error("Cannot create std::vector from table. The values cannot be converted to the expected usertype \"" + ud_name + "\".");
-                }
-                ret.push_back(kv.second.as<T>());
-            }
-            return ret;
+        auto from_table = [](sol::table const& t) {
+            return to_std_vector<T>(t);
         };
 
         add_member_function("as_vec", sol::overload(from_table, from_varargs));

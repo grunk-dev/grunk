@@ -15,7 +15,39 @@ namespace {
 
 } // anonymous namespace
 
-TEST(std_vector, no_action)
+TEST(std_vector, double_no_action)
+{
+    grunk::state grunk;
+    grunk.register_function("add_doubles", [](std::vector<double> const& v){
+        return std::accumulate(v.begin(), v.end(), 0.);
+    });
+    grunk.set_functions_are_actions(false);
+    grunk.eval(R"(
+x1 = 1.2
+x2 = 1.3
+x3 = 1.4
+
+l1 = grunk.as_vec(x1, x2)
+res1 = add_doubles(l1)
+
+l2 = grunk.as_vec({x2, x3})
+res2 = add_doubles(l2)
+
+l2:add(x1)
+res3 = add_doubles(l2)
+)");
+
+    auto res1 = grunk["res1"];
+    EXPECT_NEAR(res1.as<double>(), 2.5, 1e-10);
+
+    auto res2 = grunk["res2"];
+    EXPECT_NEAR(res2.as<double>(), 2.7, 1e-10);
+
+    auto res3 = grunk["res3"];
+    EXPECT_NEAR(res3.as<double>(), 3.9, 1e-10);
+}
+
+TEST(std_vector, usertype_no_action)
 {
     grunk::state grunk;
     
@@ -52,7 +84,7 @@ res3 = add(l2)
     EXPECT_EQ(res3.as<Foo>().i, 21);
 }
 
-TEST(std_vector, no_action_exceptions)
+TEST(std_vector, usertype_no_action_exceptions)
 {
     grunk::state grunk;
     
@@ -73,7 +105,7 @@ TEST(std_vector, no_action_exceptions)
     ASSERT_FALSE(ret2.valid());
 }
 
-TEST(std_vector, as_action_lua)
+TEST(std_vector, usertype_as_action_lua)
 {
     grunk::state grunk;
     
@@ -107,7 +139,7 @@ res = add(Foo.as_vec(x1, x2, x3))
     EXPECT_EQ(res.value().as<Foo>().i, 42);
 }
 
-TEST(std_vector, as_action_cpp)
+TEST(std_vector, usertype_as_action_cpp)
 {
     grunk::state grunk;
     

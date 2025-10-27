@@ -354,6 +354,15 @@ private:
             sol::meta_function::call, &function_meta::operator()
         );
 
+        register_function(
+            "as_vec", 
+            sol::overload(
+                static_cast<sol::object(*)(sol::table const&)>(&grunk::as_vec),
+                static_cast<sol::object(*)(sol::variadic_args)>(&grunk::as_vec)
+            ),
+            {},
+            g
+        );
         
         register_function(
             "feature",
