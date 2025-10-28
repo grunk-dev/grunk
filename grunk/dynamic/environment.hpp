@@ -20,6 +20,11 @@ public:
         return m_environment[key];
     }
 
+    inline decltype(auto) operator[](std::string const& key) const
+    {
+        return m_environment[key];
+    }
+
     template <typename T=sol::object>
     T get(std::string const& key)
     {

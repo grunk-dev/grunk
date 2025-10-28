@@ -1,7 +1,6 @@
 #pragma once 
 
 #include "grunk/recipe/Recipe.hpp"
-#include "grunk/recipe/RecipeAction.hpp"
 
 namespace grunk {
 
@@ -9,7 +8,7 @@ class RecipeCaller
 {
 public:
 
-    RecipeCaller(std::string const& name, DynamicFeature const& recipe);
+    RecipeCaller(std::string const& name, Feature<Recipe> const& recipe);
 
     struct Proxy {
         std::string key;
@@ -27,9 +26,9 @@ public:
 
 private:
     std::string name;
-    DynamicFeature source_recipe;
+    Feature<Recipe> source_recipe;
     std::unordered_map<std::string, DynamicFeature> inputs;
-    std::optional<DynamicFeature> target_recipe;
+    std::optional<Feature<Recipe>> target_recipe;
 };
 
 } // namespace grunk

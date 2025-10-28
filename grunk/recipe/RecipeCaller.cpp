@@ -1,8 +1,10 @@
 #include "RecipeCaller.hpp"
+#include "grunk/recipe/RecipeAction.hpp"
+#include "grunk/recipe/RecipeGetValAction.hpp"
 
 namespace grunk {
 
-RecipeCaller::RecipeCaller(std::string const& name, DynamicFeature const& recipe)
+RecipeCaller::RecipeCaller(std::string const& name, Feature<Recipe> const& recipe)
  : name(name)
  , source_recipe(recipe)
  , target_recipe(std::nullopt)
@@ -36,6 +38,8 @@ RecipeCaller::Proxy::operator DynamicFeature() {
     if (!rc.locked()) {
         rc.create_recipe_action();
     }
+    auto ptr = std::shared_ptr<RecipeGetValAction>(new RecipeGetValAction(rc.name));
+    return parametric::compute(ptr, *rc.target_recipe, key);
 }
 
 } // namespace grunk

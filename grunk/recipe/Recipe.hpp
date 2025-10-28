@@ -29,10 +29,16 @@ namespace grunk {
         
         void populate_from_string(std::string const& yml);
 
+        Recipe const& get_recipe(std::string const&) const;
+
+        void insert_recipe(std::string const& name, Recipe&& recipe);
+
     private:
         Recipe(grunk::environment const& state);
 
         void populate_from_node(YAML::Node const& node);
+
+        std::unordered_map<std::string, Feature<Recipe>> recipes;
     };
 
 } // namespace grunk

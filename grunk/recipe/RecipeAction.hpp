@@ -13,18 +13,18 @@ class RecipeAction : public parametric::ComputeNode<RecipeAction>
 private:
 
     decltype(auto) result() const;
-
-    decltype(auto) argument(int i) const;
+    decltype(auto) input_recipe() const;
+    decltype(auto) input_feature(int i) const;
 
 public:
 
     RecipeAction(std::string const& name);
 
-    void connect_inputs(DynamicFeature const& recipe, std::unordered_map<std::string, DynamicFeature> const& input_map);
+    void connect_inputs(Feature<Recipe> const& recipe, std::unordered_map<std::string, DynamicFeature> const& input_map);
 
-    DynamicFeature initialize_results() const;
+    Feature<Recipe> initialize_results() const;
 
-    void connect_results(DynamicFeature const& res);
+    void connect_results(Feature<Recipe> const& res);
 
     void eval() const override;
 

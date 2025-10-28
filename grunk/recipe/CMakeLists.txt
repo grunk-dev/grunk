@@ -4,6 +4,7 @@ include(FetchContent)
 set(grunk_recipe_src
     Recipe.hpp Recipe.cpp
     RecipeAction.hpp RecipeAction.cpp
+    RecipeGetValAction.hpp RecipeGetValAction.cpp
     RecipeCaller.hpp RecipeCaller.cpp
 )
 
