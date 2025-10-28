@@ -1,14 +1,20 @@
 #pragma once 
 
 #include "grunk/dynamic/environment.hpp"
-#include "grunk/dynamic/state.hpp"
+
+namespace YAML {
+    class Node;
+}
 
 namespace grunk {
 
+    class state;
+
     class Recipe : public environment 
     {
+        friend grunk::state;
+        
     public:
-        Recipe(grunk::state const& state);
 
         /**
          * @brief serializes a recipe to yaml. This is used to write grunk recipes to file
@@ -17,11 +23,13 @@ namespace grunk {
          */
         std::string to_string() const;
 
-        void write(std::string const& filename) const;
-
-        static Recipe from_string(grunk::state const& state, std::string const& str);
+        void populate_from_file(std::string const& filename);
+        void populate_from_string(std::string const& yml);
 
     private:
+        Recipe(grunk::environment const& state);
+
+        void populate_from_node(YAML::Node const& node);
     };
 
 } // namespace grunk

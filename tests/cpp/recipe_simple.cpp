@@ -1,4 +1,5 @@
 #include <gtest/gtest.h>
+#include <grunk/dynamic/state.hpp>
 #include <grunk/recipe/Recipe.hpp>
 #include "grunk/version.hpp"
 
@@ -12,16 +13,17 @@ TEST(Recipe, simple_primitive_parameters)
 {
     grunk::state grunk;
     grunk.register_function("add", &add);
-    
-    auto x = grunk.feature(1.).with_id("x");
-    auto y = grunk.feature(2.).with_id("y");
-    auto z = grunk.action("add", x, y).with_id("z");
-    auto w = grunk::pow(z, 2).with_id("w");
+ 
+    {
+        auto x = grunk.feature(1.).with_id("x");
+        auto y = grunk.feature(2.).with_id("y");
+        auto z = grunk.action("add", x, y).with_id("z");
+        auto w = grunk::pow(z, 2).with_id("w");
 
-    auto recipe = grunk::Recipe(grunk);
-    recipe.insert("w", w);
-    std::string out = "\n" + recipe.to_string();
-    std::string expected = R"(
+        auto recipe = grunk.create_recipe();
+        recipe.insert("w", w);
+        std::string out = "\n" + recipe.to_string();
+        std::string expected = R"(
 uses:
   grunk: )" grunk_VERSION R"(
 parameters:
@@ -31,11 +33,12 @@ steps: |
   z = add(x, y)
   w = z ^ 2
 )";
-    EXPECT_EQ(out, expected);
+        EXPECT_EQ(out, expected);
 
-    recipe.write("test.grr.yml");
+        grunk.write("test.grr.yml", recipe);
+    }
 
-    auto recipe2 = grunk::Recipe::from_string(grunk, out);
+    auto recipe2 = grunk.read("test.grr.yml");
     auto w2 = recipe2.get_feature("w");
     EXPECT_NEAR(w2.value().as<double>(), 9., 1e-10);
     auto z2 = recipe2.get_feature("z");

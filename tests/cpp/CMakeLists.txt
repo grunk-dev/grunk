@@ -17,7 +17,7 @@ set(TESTSOURCES
   dynamic_serialization.cpp
   dynamic_state.cpp
   dynamic_std_vector.cpp
-  recipe.cpp
+  recipe_simple.cpp
 )
 
 

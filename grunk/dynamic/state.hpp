@@ -8,8 +8,14 @@
 #include "action.hpp"
 #include "environment.hpp"
 
+#ifdef GRUNK_WITH_RECIPE
+#include "grunk/recipe/Recipe.hpp"
+#endif
+
 #include <sol/sol.hpp>
+
 #include <stdexcept>
+#include <fstream>
 
 namespace grunk {
 
@@ -107,17 +113,35 @@ public:
         table->set(name, meta_func);
     }
 
-    environment create_env() const {
+    inline environment create_env() const {
         sol::environment env(lua, sol::create, lua.globals()); 
         env[sol::metatable_key]["__index"] = original_env;
         return environment(env);
     }
 
-    environment create_parametric_env() const {
+    inline environment create_parametric_env() const {
         sol::environment env(lua, sol::create, lua.globals()); 
         env[sol::metatable_key]["__index"] = decorated_env;
         return environment(env);
     }
+
+#ifdef GRUNK_WITH_RECIPE
+    inline Recipe create_recipe() const {
+        return Recipe(create_parametric_env());
+    }
+
+    inline void write(std::string const& filename, Recipe const& recipe)
+    {
+        std::ofstream fout(filename);
+        fout << recipe.to_string() << "\n";
+    }
+
+    inline Recipe read(std::string const& filename) {
+        auto recipe = create_recipe();
+        recipe.populate_from_file(filename);
+        return recipe;
+    }
+#endif
 
     /**
      * @brief get_type returns a type based on a nested string of keys. The key is assumed to be seperated

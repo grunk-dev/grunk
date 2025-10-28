@@ -3,12 +3,11 @@
 #include "grunk/dynamic/internal/StringifiedTree.hpp"
 
 #include <yaml-cpp/yaml.h>
-#include <fstream>
 
 namespace grunk {
 
-    Recipe::Recipe(grunk::state const& state)
-     : environment(state.create_parametric_env())
+    Recipe::Recipe(grunk::environment const& env)
+     : environment(env)
     {}
 
     std::string Recipe::to_string() const
@@ -37,24 +36,27 @@ namespace grunk {
         return out.c_str();
     }
 
-    void Recipe::write(std::string const& filename) const
+    void Recipe::populate_from_file(std::string const& filename)
     {
-        std::ofstream fout(filename);
-        fout << to_string() << "\n";
+        YAML::Node yml = YAML::LoadFile(filename);
+        populate_from_node(yml);
     }
 
-    Recipe Recipe::from_string(grunk::state const& state, std::string const& str)
+    void Recipe::populate_from_string(std::string const& yml)
     {
-        auto recipe = Recipe(state);
-        YAML::Node yml = YAML::Load(str);
+        YAML::Node node = YAML::Load(yml);
+        populate_from_node(node);
+    }
+
+    void Recipe::populate_from_node(YAML::Node const& yml)
+    {
         for (auto const& kv : yml["parameters"]) {
             std::string key = kv.first.as<std::string>();
             std::string val = kv.second.as<std::string>();
-            recipe.eval(key + " = grunk.feature(" + val + ")");
+            eval(key + " = grunk.feature(" + val + ")");
         }
-        recipe.eval(yml["steps"].as<std::string>());
-        recipe.tag_features();
-        return recipe;
+        eval(yml["steps"].as<std::string>());
+        tag_features();
     }
 
 } // namespace grunk
