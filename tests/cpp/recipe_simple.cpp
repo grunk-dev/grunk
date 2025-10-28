@@ -49,6 +49,44 @@ steps: |
     EXPECT_NEAR(x2.value().as<double>(), 1., 1e-10);
 }
 
+TEST(Recipe, simple_primitive_parameters_anonymous)
+{
+    grunk::state grunk;
+    grunk.register_function("add", &add);
+ 
+    {
+        auto x = grunk.feature(1.).with_id("x");
+        auto y = grunk.feature(2.).with_id("y");
+        auto z = grunk.action("add", x, 2);
+
+        auto recipe = grunk.create_recipe();
+        recipe["w"] = grunk::pow(z, y).with_id("w");
+
+        std::string out = "\n" + recipe.to_string();
+        std::string expected = R"(
+uses:
+  grunk: )" grunk_VERSION R"(
+parameters:
+  x: 1
+  y: 2
+steps: |
+  w = add(x, 2) ^ y
+)";
+        EXPECT_EQ(out, expected);
+
+        grunk.write("test.grr.yml", recipe);
+    }
+
+    auto recipe = grunk.read("test.grr.yml");
+    auto w = recipe.get_feature("w");
+    EXPECT_NEAR(w.value().as<double>(), 9., 1e-10);
+    auto y = recipe.get_feature("y");
+    EXPECT_NEAR(y.value().as<double>(), 2., 1e-10);
+    auto x = recipe.get_feature("x");
+    EXPECT_NEAR(x.value().as<double>(), 1., 1e-10);
+}
+
+
 namespace {
 
     class MyScalar
