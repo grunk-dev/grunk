@@ -23,7 +23,10 @@ namespace grunk {
          */
         std::string to_string() const;
 
+        Recipe clone() const;
+
         void populate_from_file(std::string const& filename);
+        
         void populate_from_string(std::string const& yml);
 
     private:

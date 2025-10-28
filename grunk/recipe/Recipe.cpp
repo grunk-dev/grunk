@@ -3,12 +3,34 @@
 #include "grunk/dynamic/internal/StringifiedTree.hpp"
 
 #include <yaml-cpp/yaml.h>
+#include <sol//sol.hpp>
 
 namespace grunk {
 
     Recipe::Recipe(grunk::environment const& env)
      : environment(env)
     {}
+
+    Recipe Recipe::clone() const
+    {
+        auto cloned_nodes = parametric::DAGNode::new_cloned_node_map();
+
+        sol::state_view lua(m_environment.lua_state());
+        sol::environment env(lua, sol::create, lua.globals());
+        env[sol::metatable_key]["__index"] = m_environment[sol::metatable_key]["__index"];
+        m_environment.for_each([&env, &cloned_nodes](sol::object const& key, sol::object const& value) {
+            if (value.is<DynamicFeature>()) {
+                DynamicFeature const& f = value;
+                env[key] = DynamicFeature(f.clone(cloned_nodes));
+            }
+        });
+
+        Recipe ret(env);
+        
+        //TODO: Clone recipes
+
+        return ret;
+    }
 
     std::string Recipe::to_string() const
     {
