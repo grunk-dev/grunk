@@ -4,6 +4,21 @@ namespace grunk {
 
 namespace details {
     class ToStringVisitor;
+
+    inline std::string ctor_syntax_to_new_feature_syntax(std::string const& s) {
+        // we need to check if the value is userdata or a primitive. userdata contains .new somewhere in the 
+        // serialized string.
+        size_t pos = s.find(".new");
+        if (pos == std::string::npos) {
+            // the value is a primitive. We create it with grunk.feature
+            return "grunk.feature(" + s + ")";
+        } else {
+            // its a usertype. Instead of Foo.new(xxx) we serialize Foo.new_feature(xxx)
+            std::string s_cpy = s;
+            s_cpy.insert(pos + 4, "_feature");
+            return s_cpy;
+        }
+    }
 } // namespace details
 
 class StringifiedTree
@@ -33,18 +48,8 @@ public:
         std::string ret = "";
         if (with_root_nodes) {
             for (auto const& [key, value] : parameters) {
-                // we need to check if the value is userdata or a primitive. userdata contains .new somewhere in the 
-                // serialized string.
-                size_t pos = value.find(".new");
-                if (pos == std::string::npos) {
-                    // the value is a primitive. We create it with grunk.feature
-                    ret += key + " = grunk.feature(" + value + ")\n";
-                } else {
-                    // its a usertype. Instead of Foo.new(xxx) we serialize Foo.new_feature(xxx)
-                    std::string value_copy = value;
-                    value_copy.insert(pos + 4, "_feature");
-                    ret += key + " = " + value_copy + "\n";
-                }
+                auto val = details::ctor_syntax_to_new_feature_syntax(value);
+                ret += key + " = " + val + "\n";
             }
         }
         for (auto const& step : step_list) {

@@ -501,7 +501,7 @@ private:
                             sol::error err = ret;
                             throw std::runtime_error(std::string("Construction error: ") + err.what());
                         }
-                        object obj = ret[0];
+                        object obj = ret;
                         return grunk::feature(obj);
                     };
                 }

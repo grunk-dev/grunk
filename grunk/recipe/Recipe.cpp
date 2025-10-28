@@ -53,7 +53,8 @@ namespace grunk {
         for (auto const& kv : yml["parameters"]) {
             std::string key = kv.first.as<std::string>();
             std::string val = kv.second.as<std::string>();
-            eval(key + " = grunk.feature(" + val + ")");
+            std::string val_f = details::ctor_syntax_to_new_feature_syntax(val);
+            eval(key + " = " + val_f);
         }
         eval(yml["steps"].as<std::string>());
         tag_features();
