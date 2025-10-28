@@ -72,7 +72,7 @@ private:
 
 namespace details {
 
-void trim(std::string& s)
+inline void trim(std::string& s)
 {
     const char* whitespace = " \t\n\r\f\v";
     s.erase(0, s.find_first_not_of(whitespace));

@@ -1,25 +1,36 @@
 include(FetchContent)
 
-FetchContent_Declare(
-  yaml-cpp
-  GIT_REPOSITORY https://github.com/jbeder/yaml-cpp.git
-  GIT_TAG 0.8.0
-)
-FetchContent_MakeAvailable(yaml-cpp)
-
 # create a library and add source files
 set(grunk_recipe_src
     Recipe.hpp Recipe.cpp
 )
 
+find_package(yaml-cpp REQUIRED)
+
 add_library(grunk_recipe ${grunk_recipe_src})
 
-target_link_libraries(grunk_recipe PUBLIC grunk::dynamic yaml-cpp::yaml-cpp)
-target_include_directories(grunk_recipe INTERFACE
+target_link_libraries(grunk_recipe PUBLIC grunk::dynamic PRIVATE yaml-cpp::yaml-cpp)
+target_include_directories(grunk_recipe PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
-  $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>
+  $<BUILD_INTERFACE:${CMAKE_BINARY_DIR}>
   $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}>
   $<INSTALL_INTERFACE:include/grunk> 
 )
 
 add_library(grunk::recipe ALIAS grunk_recipe)
+
+install(TARGETS grunk_recipe
+        EXPORT grunkTargets
+        RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+        LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+        ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+)
+
+# install headers
+install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_BINARY_DIR}
+        DESTINATION include
+        FILES_MATCHING
+        REGEX ".*\\.(h|hpp|hxx|inl)$"
+        PATTERN "CMakeFiles" EXCLUDE
+        PATTERN ".git" EXCLUDE
+)

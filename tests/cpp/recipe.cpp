@@ -1,6 +1,6 @@
 #include <gtest/gtest.h>
 #include <grunk/recipe/Recipe.hpp>
-#include "../version.hpp"
+#include "grunk/version.hpp"
 
 namespace {
 
@@ -32,6 +32,8 @@ steps: |
   w = z ^ 2
 )";
     EXPECT_EQ(out, expected);
+
+    recipe.write("test.grr.yml");
 
     auto recipe2 = grunk::Recipe::from_string(grunk, out);
     auto w2 = recipe2.get_feature("w");

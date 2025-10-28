@@ -1,5 +1,5 @@
 #include "grunk/recipe/Recipe.hpp"
-#include "../version.hpp"
+#include "grunk/version.hpp"
 #include "grunk/dynamic/internal/StringifiedTree.hpp"
 
 #include <yaml-cpp/yaml.h>
