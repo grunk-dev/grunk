@@ -9,7 +9,7 @@ class RecipeCaller
 {
 public:
 
-    RecipeCaller(std::string const& name, Recipe const& recipe);
+    RecipeCaller(std::string const& name, DynamicFeature const& recipe);
 
     struct Proxy {
         std::string key;
@@ -27,9 +27,9 @@ public:
 
 private:
     std::string name;
-    Recipe recipe;
+    DynamicFeature source_recipe;
     std::unordered_map<std::string, DynamicFeature> inputs;
-    std::optional<RecipeAction> recipe_action;
+    std::optional<DynamicFeature> target_recipe;
 };
 
 } // namespace grunk

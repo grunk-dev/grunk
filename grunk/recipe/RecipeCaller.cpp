@@ -2,20 +2,21 @@
 
 namespace grunk {
 
-RecipeCaller::RecipeCaller(std::string const& name, Recipe const& recipe)
+RecipeCaller::RecipeCaller(std::string const& name, DynamicFeature const& recipe)
  : name(name)
- , recipe(recipe)
- , recipe_action(std::nullopt)
+ , source_recipe(recipe)
+ , target_recipe(std::nullopt)
 {}
 
 bool RecipeCaller::locked() const
 {
-    return recipe_action.has_value();
+    return target_recipe.has_value();
 }
 
 void RecipeCaller::create_recipe_action()
 {
-
+    auto ptr = std::shared_ptr<RecipeAction>(new RecipeAction(name));
+    target_recipe = parametric::compute(ptr, source_recipe, inputs);
 }
 
 void RecipeCaller::Proxy::operator=(DynamicFeature const& other)
