@@ -18,10 +18,10 @@ TEST(Recipe, simple_primitive_parameters)
         auto x = grunk.feature(1.).with_id("x");
         auto y = grunk.feature(2.).with_id("y");
         auto z = grunk.action("add", x, y).with_id("z");
-        auto w = grunk::pow(z, 2).with_id("w");
 
         auto recipe = grunk.create_recipe();
-        recipe.insert("w", w);
+        recipe["w"] = grunk::pow(z, 2).with_id("w");
+
         std::string out = "\n" + recipe.to_string();
         std::string expected = R"(
 uses:
@@ -105,10 +105,10 @@ TEST(Recipe, simple_userdata_parameters)
         auto d = grunk.action("MyScalar.pow", c, 2);
 
         auto recipe = grunk.create_recipe();
-        recipe.insert("a", a);
-        recipe.insert("b", b);
-        recipe.insert("c", c);
-        recipe.insert("d", d);
+        recipe["a"] = a;
+        recipe["b"] = b;
+        recipe["c"] = c;
+        recipe["d"] = d;
         recipe.tag_features();
         std::string out = "\n" + recipe.to_string();
         std::string expected = R"(

@@ -10,17 +10,18 @@ class environment
 public:
     environment(sol::environment const& env) : m_environment(env) {}
 
-    inline void insert(std::string const& key, DynamicFeature const& feature)
-    {
-        m_environment[key] = feature;
-    }
-
     /**
      * @brief returns a variable stored in the active environment
      * @param key The name of the variable
      * @return The queried variable
      */
-    inline sol::object operator[](std::string const& key)
+    inline decltype(auto) operator[](std::string const& key)
+    {
+        return m_environment[key];
+    }
+
+    template <typename T=sol::object>
+    T get(std::string const& key)
     {
         return m_environment[key];
     }
@@ -37,8 +38,7 @@ public:
      */
     inline DynamicFeature get_feature(std::string const& key)
     {
-        DynamicFeature ret = m_environment[key];
-        return ret;
+        return get<DynamicFeature>(key);
     }
 
         /**
