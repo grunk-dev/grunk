@@ -1,5 +1,6 @@
 #pragma once 
 
+#include "grunk/dynamic/feature.hpp"
 #include <sol/sol.hpp>
 
 namespace grunk {
@@ -14,7 +15,13 @@ public:
      * @param key The name of the variable
      * @return The queried variable
      */
-    inline sol::object operator[](std::string const& key)
+    inline decltype(auto) operator[](std::string const& key)
+    {
+        return m_environment[key];
+    }
+
+    template <typename T=sol::object>
+    T get(std::string const& key)
     {
         return m_environment[key];
     }
@@ -31,8 +38,7 @@ public:
      */
     inline DynamicFeature get_feature(std::string const& key)
     {
-        DynamicFeature ret = m_environment[key];
-        return ret;
+        return get<DynamicFeature>(key);
     }
 
         /**
@@ -58,7 +64,7 @@ public:
         return lua.safe_script(lua_script, m_environment);
     }
 
-private:
+protected:
     sol::environment m_environment;
 };
 

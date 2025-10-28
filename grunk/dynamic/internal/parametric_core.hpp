@@ -8,18 +8,16 @@
 
 namespace grunk {
 
-    namespace details {
 
-        inline std::string to_string(double v) {
-            char buf[64]{};
-            std::to_chars_result result = std::to_chars(buf, buf + 64, v, std::chars_format::general);
-            if (result.ec != std::errc()) {
-                throw grunk::io_error("Error serializing double value. " + std::make_error_code(result.ec).message());
-            } else {
-                return std::string(buf, result.ptr - buf);
-            }
-        };
-    } // namespace details
+    inline std::string to_string(double v) {
+        char buf[64]{};
+        std::to_chars_result result = std::to_chars(buf, buf + 64, v, std::chars_format::general);
+        if (result.ec != std::errc()) {
+            throw grunk::io_error("Error serializing double value. " + std::make_error_code(result.ec).message());
+        } else {
+            return std::string(buf, result.ptr - buf);
+        }
+    };
 
     inline std::string serialize(grunk::object const& v)
     {
@@ -46,7 +44,7 @@ namespace grunk {
                     return std::to_string((int)intpart);
                 } else {
                     // the number is a double value
-                    return details::to_string(d);
+                    return to_string(d);
                 }
                 break;
             }
@@ -106,7 +104,7 @@ inline std::string serialize(int const& v)
 template <>
 inline std::string serialize(double const& v)
 {
-    return grunk::details::to_string(v);
+    return grunk::to_string(v);
 }
 
 template <>

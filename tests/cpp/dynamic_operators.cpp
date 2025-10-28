@@ -506,8 +506,8 @@ TEST(operators, addition_lua)
         x:set_value(2.)
         z2 = z:value()
     )");
-   EXPECT_NEAR(env["z1"].as<double>(), 3., 1e-14);
-   EXPECT_NEAR(env["z2"].as<double>(), 4., 1e-14);
+   EXPECT_NEAR(env.get<double>("z1"), 3., 1e-14);
+   EXPECT_NEAR(env.get<double>("z2"), 4., 1e-14);
 }
 
 TEST(operators, subtraction_lua)
@@ -523,8 +523,8 @@ TEST(operators, subtraction_lua)
         x:set_value(2.)
         z2 = z:value()
     )");
-    EXPECT_NEAR(env["z1"].as<double>(), -1., 1e-14);
-    EXPECT_NEAR(env["z2"].as<double>(),  0., 1e-14);
+    EXPECT_NEAR(env.get<double>("z1"), -1., 1e-14);
+    EXPECT_NEAR(env.get<double>("z2"),  0., 1e-14);
 }
 
 TEST(operators, multiplication_lua)
@@ -541,8 +541,8 @@ TEST(operators, multiplication_lua)
         x:set_value(2.)
         z2 = z:value()
     )");
-    EXPECT_NEAR(env["z1"].as<double>(), 2., 1e-14);
-    EXPECT_NEAR(env["z2"].as<double>(), 4., 1e-14);
+    EXPECT_NEAR(env.get<double>("z1"), 2., 1e-14);
+    EXPECT_NEAR(env.get<double>("z2"), 4., 1e-14);
 }
 
 TEST(operators, division_lua)
@@ -559,8 +559,8 @@ TEST(operators, division_lua)
         x:set_value(2.)
         z2 = z:value()
     )");
-    EXPECT_NEAR(env["z1"].as<double>(), 0.5, 1e-14);
-    EXPECT_NEAR(env["z2"].as<double>(), 1. , 1e-14);
+    EXPECT_NEAR(env.get<double>("z1"), 0.5, 1e-14);
+    EXPECT_NEAR(env.get<double>("z2"), 1. , 1e-14);
 }
 
 TEST(operators, modulo_lua)
@@ -577,8 +577,8 @@ TEST(operators, modulo_lua)
         x:set_value(33)
         z2 = z:value()
     )");
-    EXPECT_EQ(env["z1"].as<int>(), 17);
-    EXPECT_EQ(env["z2"].as<int>(),  9);
+    EXPECT_EQ(env.get<int>("z1"), 17);
+    EXPECT_EQ(env.get<int>("z2"),  9);
 }
 
 TEST(operators, pow_lua)
@@ -595,8 +595,8 @@ TEST(operators, pow_lua)
         x:set_value(3.)
         z2 = z:value()
     )");
-    EXPECT_NEAR(env["z1"].as<double>(),  8, 1e-14);
-    EXPECT_NEAR(env["z2"].as<double>(), 27, 1e-14);
+    EXPECT_NEAR(env.get<double>("z1"),  8, 1e-14);
+    EXPECT_NEAR(env.get<double>("z2"), 27, 1e-14);
 }
 
 TEST(operators, unm_lua)
@@ -612,8 +612,8 @@ TEST(operators, unm_lua)
         x:set_value(3.)
         z2 = z:value()
     )");
-    EXPECT_NEAR(env["z1"].as<double>(), -2, 1e-14);
-    EXPECT_NEAR(env["z2"].as<double>(), -3, 1e-14);
+    EXPECT_NEAR(env.get<double>("z1"), -2, 1e-14);
+    EXPECT_NEAR(env.get<double>("z2"), -3, 1e-14);
 }
 
 TEST(operators, chaining_lua)
@@ -630,8 +630,8 @@ TEST(operators, chaining_lua)
         x:set_value(3.)
         z2 = z:value()
     )");
-    EXPECT_NEAR(env["z1"].as<double>(), -7./25., 1e-14);
-    EXPECT_NEAR(env["z2"].as<double>(), -6./18., 1e-14);
+    EXPECT_NEAR(env.get<double>("z1"), -7./25., 1e-14);
+    EXPECT_NEAR(env.get<double>("z2"), -6./18., 1e-14);
 }
 
 namespace {
@@ -680,6 +680,6 @@ TEST(operators, usertype_addition_lua)
         z2 = z:value()
     )");
 
-    EXPECT_NEAR(env["z1"].as<MyScalar>().value(), 5., 1e-14);
-    EXPECT_NEAR(env["z2"].as<MyScalar>().value(), 42., 1e-14);
+    EXPECT_NEAR(env.get<MyScalar>("z1").value(), 5., 1e-14);
+    EXPECT_NEAR(env.get<MyScalar>("z2").value(), 42., 1e-14);
 }

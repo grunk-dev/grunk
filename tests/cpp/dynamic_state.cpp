@@ -23,7 +23,7 @@ TEST(state, free_function_registration)
         z = add(x,y)
         )"
     );
-    double z = env["z"].as<double>();
+    double z = env.get<double>("z");
     ASSERT_NEAR(z, 42, 1e-14);
 }
 
@@ -137,11 +137,11 @@ TEST(state, free_function_feature_id_lua)
 
     EXPECT_EQ(env.get_feature("x").id(), "x");
     EXPECT_EQ(env.get_feature("y").id(), "y");
-    EXPECT_EQ(env["z_id1"].as<std::string>(), "z");
-    EXPECT_EQ(env["z_id2"].as<std::string>(), "horst");
+    EXPECT_EQ(env.get<std::string>("z_id1"), "z");
+    EXPECT_EQ(env.get<std::string>("z_id2"), "horst");
 
-    EXPECT_NEAR(env["z_value1"].as<double>(), 3., 1e-14);
-    EXPECT_NEAR(env["z_value2"].as<double>(), 43., 1e-14);
+    EXPECT_NEAR(env.get<double>("z_value1"), 3., 1e-14);
+    EXPECT_NEAR(env.get<double>("z_value2"), 43., 1e-14);
 
 }
 
@@ -281,8 +281,8 @@ TEST(state, usertype_ctor_as_action_lua)
     EXPECT_EQ(env.get_feature("y").value().as<MyScalar>().value(), 2.);
     EXPECT_EQ(env.get_feature("z").value().as<MyScalar>().value(), 3.);
 
-    EXPECT_EQ(env["x1"].as<MyScalar>().value(), 1.);
-    EXPECT_EQ(env["x2"].as<MyScalar>().value(), 4.);
+    EXPECT_EQ(env.get<MyScalar>("x1").value(), 1.);
+    EXPECT_EQ(env.get<MyScalar>("x2").value(), 4.);
     EXPECT_EQ(env.get_feature("x").value().as<MyScalar>().value(), 4.);
 }
 
@@ -313,8 +313,8 @@ TEST(state, usertype_operators_as_action_lua)
         z2 = z:value()
     )");
 
-    EXPECT_NEAR(env["z1"].as<MyScalar>().value(), 5., 1e-14);
-    EXPECT_NEAR(env["z2"].as<MyScalar>().value(), 42., 1e-14);
+    EXPECT_NEAR(env.get<MyScalar>("z1").value(), 5., 1e-14);
+    EXPECT_NEAR(env.get<MyScalar>("z2").value(), 42., 1e-14);
 }
 
 TEST(state, usertype_method_as_action_cpp)
@@ -389,11 +389,11 @@ TEST(state, usertype_method_as_action_lua)
         z2 = z:value()
     )");
 
-    EXPECT_NEAR(env["y1"].as<MyScalar>().value(), 4, 1e-14); // 2^2
-    EXPECT_NEAR(env["y2"].as<MyScalar>().value(), 9, 1e-14); // 3^2
+    EXPECT_NEAR(env.get<MyScalar>("y1").value(), 4, 1e-14); // 2^2
+    EXPECT_NEAR(env.get<MyScalar>("y2").value(), 9, 1e-14); // 3^2
 
-    EXPECT_NEAR(env["z1"].as<MyScalar>().value(),27, 1e-14); // 3^3
-    EXPECT_NEAR(env["z2"].as<MyScalar>().value(), 8, 1e-14); // 2^3
+    EXPECT_NEAR(env.get<MyScalar>("z1").value(),27, 1e-14); // 3^3
+    EXPECT_NEAR(env.get<MyScalar>("z2").value(), 8, 1e-14); // 2^3
 }
 
 /*TODO: this should ideally fail (non-const member function as action)

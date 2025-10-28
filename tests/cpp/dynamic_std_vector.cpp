@@ -42,13 +42,13 @@ l2:add(x1)
 res3 = add(l2)
 )");
 
-    auto res1 = env["res1"];
+    sol::object res1 = env["res1"];
     EXPECT_EQ(res1.as<Foo>().i, 12);
 
-    auto res2 = env["res2"];
+    sol::object res2 = env["res2"];
     EXPECT_EQ(res2.as<Foo>().i, 16);
 
-    auto res3 = env["res3"];
+    sol::object res3 = env["res3"];
     EXPECT_EQ(res3.as<Foo>().i, 21);
 }
 

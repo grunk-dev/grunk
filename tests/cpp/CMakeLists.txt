@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.4)
 project(grunk-tests)
 
 if (NOT TARGET grunk)
-  find_package(grunk REQUIRED)
+  find_package(grunk REQUIRED COMPONENTS dynamic recipe)
 endif()
 
 enable_testing()
@@ -17,6 +17,7 @@ set(TESTSOURCES
   dynamic_serialization.cpp
   dynamic_state.cpp
   dynamic_std_vector.cpp
+  recipe_simple.cpp
 )
 
 
