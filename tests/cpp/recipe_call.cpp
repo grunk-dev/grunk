@@ -268,4 +268,6 @@ recipes:
         grunk.write("test.grr.yml", recipe_outer);
     }
 
+    auto recipe = grunk.read("test.grr.yml");
+    EXPECT_NEAR(recipe.get_feature("c").value().as<double>(), 25, 1e-15);
 }

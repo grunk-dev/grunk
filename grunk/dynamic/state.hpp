@@ -461,8 +461,12 @@ private:
         )
         .set(
             sol::meta_function::new_index, 
-            [](RecipeCaller& rc, std::string const& key, DynamicFeature const& value){ 
-                return rc[key] = value; 
+            [](RecipeCaller& rc, std::string const& key, sol::object const& value){ 
+                if (value.is<DynamicFeature>()) {
+                    return rc[key] = value.as<DynamicFeature>(); 
+                } else {
+                    return rc[key] = value;
+                }
             }
         )
         .add_member_function("get", &RecipeCaller::get)
