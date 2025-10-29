@@ -448,18 +448,18 @@ private:
 
 #ifdef GRUNK_WITH_RECIPE
 
+        //TODO: Can I nest RecipeCallerProxy in RecipeCaller, just like in C++?
         register_type<RecipeCaller::Proxy>("RecipeCallerProxy", g)
-        .add_member_function("to_feature", &RecipeCaller::Proxy::to_feature)
-        .add_member_function("assign", &RecipeCaller::Proxy::assign);
+        .add_member_function("to_feature", &RecipeCaller::Proxy::to_feature);
 
         register_type<RecipeCaller>("RecipeCaller", g)
-        .add_member_function(
+        .set(
             sol::meta_function::index, 
-            [](RecipeCaller& rc, std::string const& key){ 
-                return rc[key]; 
+            [](RecipeCaller& rc, std::string const& key) { 
+                return rc.get(key); 
             }
         )
-        .add_member_function(
+        .set(
             sol::meta_function::new_index, 
             [](RecipeCaller& rc, std::string const& key, DynamicFeature const& value){ 
                 return rc[key] = value; 

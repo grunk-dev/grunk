@@ -93,26 +93,14 @@ TEST(Recipe, call_lua)
         a = grunk.feature(15.)
         b = grunk.feature(11.)
         inner = recipe_caller("inner")
-        tmp = inner["x"]
-        --inner["x"]:assign(a)
-        inner["x"] = a
-        inner["y"] = b
-        c = inner.get("w")
+        inner.x = a
+        inner.y = b
+        c = inner.w
     )");
 
-    sol::object tmp = recipe_outer["tmp"];
-    EXPECT_FALSE(tmp.is<sol::nil_t>());
-    // EXPECT_TRUE(tmp.is<grunk::RecipeCaller::Proxy>());
-    EXPECT_FALSE(tmp.is<grunk::DynamicFeature>());
-    EXPECT_EQ(tmp.get_type(), sol::type::userdata);
-    EXPECT_TRUE(tmp.valid());
-
-    sol::object c = recipe_outer["c"];
-    EXPECT_FALSE(c.is<sol::nil_t>());
-    EXPECT_TRUE(c.is<grunk::DynamicFeature>());
-
-    // auto c = recipe_outer.get_feature("c");
-/*    
+    EXPECT_TRUE(recipe_outer["c"].is<grunk::DynamicFeature>());
+    auto c = recipe_outer.get_feature("c");
+   
     // Check topology of the parametric tree
     EXPECT_EQ(c.node_pointer()->get_children().size(), 0); // c is output
     ASSERT_EQ(c.node_pointer()->get_parents().size(), 1);  // c's parent is a RecipeGetValAction compute node
@@ -149,5 +137,4 @@ TEST(Recipe, call_lua)
     EXPECT_EQ(inner_recipe.get_feature("y").value().as<double>(), 13);
     EXPECT_EQ(inner_recipe.get_feature("z").value().as<double>(), 0.5);
     EXPECT_NEAR(inner_recipe.get_feature("w").value().as<double>(), 15, 1e-15);
-*/
 }

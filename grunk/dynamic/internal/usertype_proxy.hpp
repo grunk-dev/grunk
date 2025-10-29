@@ -50,6 +50,12 @@ struct usertype_proxy {
         return *this;
     }
 
+    template <typename... Args>
+    decltype(auto) set(Args... args) {
+        ut.set(std::forward<Args>(args)...);
+        return *this;
+    }
+
     usertype_proxy& with_std_vector() {
 
         std::string ud_name = name;

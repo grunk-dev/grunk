@@ -13,7 +13,7 @@ RecipeCaller::RecipeCaller(std::string const& name, Feature<Recipe> const& recip
 
 RecipeCaller::Proxy RecipeCaller::operator[](std::string const& key)
 {
-    return RecipeCaller::Proxy{key, *this};
+    return {key, *this};
 }
 
 bool RecipeCaller::locked() const
@@ -33,11 +33,6 @@ DynamicFeature RecipeCaller::get(std::string const& key)
 }
 
 void RecipeCaller::Proxy::operator=(DynamicFeature const& other)
-{
-    return assign(other);
-}
-
-void RecipeCaller::Proxy::assign(DynamicFeature const& other)
 {
     if (!rc.locked()) {
         rc.inputs.insert({key, other});
