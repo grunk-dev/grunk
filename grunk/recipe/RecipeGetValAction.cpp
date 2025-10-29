@@ -39,7 +39,7 @@ namespace grunk {
 
         // transform to output
         if (auto output = result(); output) {
-            output->set_value(recipe[source_feature]);
+            output->set_value(recipe.get_feature(source_feature).value());
         }
     }
 

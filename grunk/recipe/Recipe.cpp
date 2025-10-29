@@ -1,6 +1,7 @@
 #include "grunk/recipe/Recipe.hpp"
 #include "grunk/version.hpp"
 #include "grunk/dynamic/internal/StringifiedTree.hpp"
+#include "grunk/recipe/RecipeCaller.hpp"
 
 #include <yaml-cpp/yaml.h>
 #include <sol//sol.hpp>
@@ -138,6 +139,11 @@ namespace grunk {
     void Recipe::insert_recipe(std::string const& name, Recipe&& recipe)
     {
         recipes.insert({ name, grunk::feature<Recipe>(recipe)});
+    }
+
+    RecipeCaller Recipe::recipe_caller(std::string const& recipe_name) const
+    {
+        return RecipeCaller(recipe_name, recipes.at(recipe_name));
     }
 
 } // namespace grunk

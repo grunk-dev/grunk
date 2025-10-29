@@ -31,6 +31,12 @@ public:
         return m_environment[key];
     }
 
+    template <typename T=sol::object>
+    T get(std::string const& key) const
+    {
+        return m_environment[key];
+    }
+
     /**
      * @brief get_feature returns a Feature stored in the active environment
      *
@@ -42,6 +48,11 @@ public:
      * @return The queried feature
      */
     inline DynamicFeature get_feature(std::string const& key)
+    {
+        return get<DynamicFeature>(key);
+    }
+
+    inline DynamicFeature get_feature(std::string const& key) const
     {
         return get<DynamicFeature>(key);
     }

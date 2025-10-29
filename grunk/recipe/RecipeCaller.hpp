@@ -1,8 +1,10 @@
 #pragma once 
 
-#include "grunk/recipe/Recipe.hpp"
+#include "grunk/dynamic/feature.hpp"
 
 namespace grunk {
+
+class Recipe;
 
 class RecipeCaller
 {
@@ -17,7 +19,11 @@ public:
         void operator=(DynamicFeature const& other);
 
         operator DynamicFeature();
+
+        DynamicFeature to_feature();
     };
+
+    Proxy operator[](std::string const& key);
 
     bool locked() const;
 

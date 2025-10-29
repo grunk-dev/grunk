@@ -49,7 +49,7 @@ namespace grunk {
 
         for (size_t i = 1; i < this->num_parents(); ++i) {
             auto const& arg = input_feature(i).value();
-            auto target = cloned.get_feature(target_features[i]);
+            auto target = cloned.get_feature(target_features[i-1]);
             target.set_value(arg);
         }
 

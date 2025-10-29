@@ -10,6 +10,7 @@ namespace YAML {
 namespace grunk {
 
     class state;
+    class RecipeCaller;
 
     class Recipe : public environment 
     {
@@ -34,6 +35,8 @@ namespace grunk {
         Feature<Recipe>& get_recipe(std::string const&);
 
         void insert_recipe(std::string const& name, Recipe&& recipe);
+
+        RecipeCaller recipe_caller(std::string const& recipe_name) const;
 
     private:
         Recipe(grunk::environment const& state);
