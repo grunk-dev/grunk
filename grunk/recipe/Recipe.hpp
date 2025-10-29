@@ -4,6 +4,7 @@
 
 namespace YAML {
     class Node;
+    class Emitter;
 }
 
 namespace grunk {
@@ -29,12 +30,15 @@ namespace grunk {
         
         void populate_from_string(std::string const& yml);
 
-        Recipe const& get_recipe(std::string const&) const;
+        Feature<Recipe> const& get_recipe(std::string const&) const;
+        Feature<Recipe>& get_recipe(std::string const&);
 
         void insert_recipe(std::string const& name, Recipe&& recipe);
 
     private:
         Recipe(grunk::environment const& state);
+
+        void emit_yml(YAML::Emitter& out) const;
 
         void populate_from_node(YAML::Node const& node);
 

@@ -18,15 +18,15 @@ namespace grunk {
         sol::state_view lua(m_environment.lua_state());
         sol::environment env(lua, sol::create, lua.globals());
         env[sol::metatable_key]["__index"] = m_environment[sol::metatable_key]["__index"];
+        Recipe ret(env);
 
-        m_environment.for_each([&env, &cloned_nodes](sol::object const& key, sol::object const& value) {
+        m_environment.for_each([&ret, &cloned_nodes](sol::object const& key, sol::object const& value) {
             if (value.is<DynamicFeature>()) {
-                DynamicFeature const& f = value;
-                env[key] = DynamicFeature(f.clone(cloned_nodes));
+                std::string const& id = key.as<std::string const&>();
+                DynamicFeature const& f = value.as<DynamicFeature const&>();
+                ret[id] = f.clone(cloned_nodes);
             }
         });
-
-        Recipe ret(env);
 
         for (auto const& [key, value] : recipes) {
             Recipe recipe = value.value().clone();
@@ -41,41 +41,7 @@ namespace grunk {
     std::string Recipe::to_string() const
     {
         YAML::Emitter out;
-        out << YAML::BeginMap;
-        
-        std::map<std::string, std::string> uses;
-        uses["grunk"] = grunk_VERSION;
-
-        out << YAML::Key << "uses" << YAML::Value << uses;
-
-        StringifiedTree tree;
-        m_environment.for_each([&tree](sol::object key, sol::object value) {
-            if (value.is<DynamicFeature>()) {
-                tree.parse(value.as<DynamicFeature>());
-            }
-        });
-
-        if (tree.get_parameters().size() > 0) {
-            out << YAML::Key << "parameters"
-                << YAML::Value << tree.get_parameters();
-        }
-
-        if (!tree.get_string().empty()) {
-            out << YAML::Key << "steps" 
-                << YAML::Value << YAML::Literal << tree.get_string();
-        }
-            
-        if (recipes.size() > 0) {
-            out << YAML::Key << "recipes";
-            out << YAML::Value << YAML::BeginMap;
-            for (auto const& [key, frecipe] : recipes) {
-                out << YAML::Key << key
-                    << YAML::Value << YAML::Load(frecipe.value().to_string());
-            }
-            out << YAML::EndMap;
-        }
-
-        out << YAML::EndMap;
+        emit_yml(out);
         return out.c_str();
     }
 
@@ -119,9 +85,54 @@ namespace grunk {
         tag_features();
     }
 
-    Recipe const& Recipe::get_recipe(std::string const& name) const
+    void Recipe::emit_yml(YAML::Emitter& out) const
     {
-        return recipes.at(name).value();
+        out << YAML::BeginMap;
+        
+        std::map<std::string, std::string> uses;
+        uses["grunk"] = grunk_VERSION;
+
+        out << YAML::Key << "uses" << YAML::Value << uses;
+
+        StringifiedTree tree;
+        m_environment.for_each([&tree](sol::object key, sol::object value) {
+            if (value.is<DynamicFeature>()) {
+                tree.parse(value.as<DynamicFeature>());
+            }
+        });
+
+        if (tree.get_parameters().size() > 0) {
+            out << YAML::Key << "parameters"
+                << YAML::Value << tree.get_parameters();
+        }
+
+        if (!tree.get_string().empty()) {
+            out << YAML::Key << "steps" 
+                << YAML::Value << YAML::Literal << tree.get_string();
+        }
+            
+        if (recipes.size() > 0) {
+            out << YAML::Key << "recipes";
+            out << YAML::Value << YAML::BeginMap;
+            for (auto const& [key, frecipe] : recipes) {
+                out << YAML::Key << key
+                    << YAML::Value;
+                frecipe.value().emit_yml(out);
+            }
+            out << YAML::EndMap;
+        }
+
+        out << YAML::EndMap;
+    }
+
+    Feature<Recipe> const& Recipe::get_recipe(std::string const& name) const
+    {
+        return recipes.at(name);
+    }
+
+    Feature<Recipe>& Recipe::get_recipe(std::string const& name)
+    {
+        return recipes.at(name);
     }
 
     void Recipe::insert_recipe(std::string const& name, Recipe&& recipe)

@@ -23,6 +23,15 @@ public:
     bool operator==(Derived const& other) {
         return this->node_pointer() == other.node_pointer();
     }
+
+    Derived clone(
+        std::shared_ptr<parametric::DAGNode::ClonedNodeMap> cloned_nodes = parametric::DAGNode::new_cloned_node_map()
+    ) const
+    {
+        auto const p = parametric::param<T>::clone(cloned_nodes);
+        return Derived(p);
+    }
+
 };
 
 template <typename T>
