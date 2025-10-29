@@ -10,7 +10,11 @@ namespace grunk {
 
     Recipe::Recipe(grunk::environment const& env)
      : environment(env)
-    {}
+    {
+        m_environment["recipe_caller"] = [this](std::string const& subrecipe){
+            return recipe_caller(subrecipe);
+        };
+    }
 
     Recipe Recipe::clone() const
     {

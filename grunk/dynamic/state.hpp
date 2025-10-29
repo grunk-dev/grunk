@@ -10,6 +10,7 @@
 
 #ifdef GRUNK_WITH_RECIPE
 #include "grunk/recipe/Recipe.hpp"
+#include "grunk/recipe/RecipeCaller.hpp"
 #endif
 
 #include <sol/sol.hpp>
@@ -444,6 +445,30 @@ private:
         .add_member_function(sol::meta_function::modulus, details::make_dynamic_action(lua, _mod), {Parameter{"lhs", }, Parameter{"rhs",}  })
         .add_member_function(sol::meta_function::power_of, details::make_dynamic_action(lua, _pow), {Parameter{"base", }, Parameter{"exponent",}  })
         .add_member_function(sol::meta_function::unary_minus, details::make_dynamic_action(lua, _unm), {Parameter{"value",}  });
+
+#ifdef GRUNK_WITH_RECIPE
+
+        register_type<RecipeCaller::Proxy>("RecipeCallerProxy", g)
+        .add_member_function("to_feature", &RecipeCaller::Proxy::to_feature)
+        .add_member_function("assign", &RecipeCaller::Proxy::assign);
+
+        register_type<RecipeCaller>("RecipeCaller", g)
+        .add_member_function(
+            sol::meta_function::index, 
+            [](RecipeCaller& rc, std::string const& key){ 
+                return rc[key]; 
+            }
+        )
+        .add_member_function(
+            sol::meta_function::new_index, 
+            [](RecipeCaller& rc, std::string const& key, DynamicFeature const& value){ 
+                return rc[key] = value; 
+            }
+        )
+        .add_member_function("get", &RecipeCaller::get)
+        .add_member_function("locked", &RecipeCaller::locked);
+
+#endif
 
     }
 

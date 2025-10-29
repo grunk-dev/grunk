@@ -27,7 +27,17 @@ void RecipeCaller::create_recipe_action()
     target_recipe = parametric::compute(ptr, source_recipe, inputs);
 }
 
+DynamicFeature RecipeCaller::get(std::string const& key)
+{
+    return RecipeCaller::Proxy{key, *this}.to_feature();
+}
+
 void RecipeCaller::Proxy::operator=(DynamicFeature const& other)
+{
+    return assign(other);
+}
+
+void RecipeCaller::Proxy::assign(DynamicFeature const& other)
 {
     if (!rc.locked()) {
         rc.inputs.insert({key, other});
