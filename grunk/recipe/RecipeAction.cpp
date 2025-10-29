@@ -61,8 +61,27 @@ namespace grunk {
 
     std::string RecipeAction::serialize() const
     {
-        //TODO
-        return name;
+        std::string ret = name + " = recipe_caller(\"" + name + "\")\n";
+        for (size_t i = 1; i < this->num_parents(); ++i) {
+            auto const& node = input_feature(i);
+            bool is_anonymous = (node.id() == "");
+            bool is_constant = (node.num_parents() == 0 && is_anonymous);
+
+            auto const& target = target_features[i-1];
+            std::string source;
+            if (is_constant) {
+                source = node.serialize();
+            } else if (is_anonymous) {
+                source = node.get_parents()[0]->serialize();
+            } else {
+                source = node.id();
+            }
+            ret += name + "." + target + " = " + source;
+            if (i < this->num_parents() - 1) {
+                ret += "\n";
+            }
+        }
+        return ret;
     }
 
 } // namespace grunk

@@ -16,7 +16,7 @@ TEST(Recipe, empty)
     std::string out = "\n" + recipe.to_string();
     std::string expected = R"(
 uses:
-  grunk: )" grunk_VERSION;
+  grunk: )" grunk_VERSION "\n";
     EXPECT_EQ(out, expected);
 }
 
@@ -37,7 +37,8 @@ uses:
   grunk: )" grunk_VERSION R"(
 parameters:
   x: 1
-  y: 2)";
+  y: 2
+)";
         EXPECT_EQ(out, expected);
 
         grunk.write("test.grr.yml", recipe);

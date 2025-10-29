@@ -5,9 +5,14 @@
 
 namespace grunk {
 
-RecipeCaller::RecipeCaller(std::string const& name, Feature<Recipe> const& recipe)
+RecipeCaller::RecipeCaller(
+    std::string const& name, 
+    Feature<Recipe> const& recipe,
+    lua_State* lua
+)
  : name(name)
  , source_recipe(recipe)
+ , lua(lua)
  , target_recipe(std::nullopt)
 {}
 
@@ -30,19 +35,6 @@ void RecipeCaller::create_recipe_action()
 DynamicFeature RecipeCaller::get(std::string const& key)
 {
     return RecipeCaller::Proxy{key, *this}.to_feature();
-}
-
-void RecipeCaller::Proxy::operator=(DynamicFeature const& other)
-{
-    if (!rc.locked()) {
-        rc.inputs.insert({key, other});
-    } else {
-        throw std::runtime_error(
-            "Cannot assign an input to a RecipeCaller once it has been locked. "
-            "A RecipeCaller gets locked once an output has been queried. "
-            "All inputs must be assigned before the first output is queried."
-        );
-    }
 }
 
 DynamicFeature RecipeCaller::Proxy::to_feature() {

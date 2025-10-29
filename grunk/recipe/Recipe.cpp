@@ -47,7 +47,9 @@ namespace grunk {
     {
         YAML::Emitter out;
         emit_yml(out);
-        return out.c_str();
+        std::string ret = out.c_str();
+        if (ret.back() != '\n') { ret += '\n'; }
+        return ret;
     }
 
     void Recipe::populate_from_file(std::string const& filename)
@@ -147,7 +149,7 @@ namespace grunk {
 
     RecipeCaller Recipe::recipe_caller(std::string const& recipe_name) const
     {
-        return RecipeCaller(recipe_name, recipes.at(recipe_name));
+        return RecipeCaller(recipe_name, recipes.at(recipe_name), m_environment.lua_state());
     }
 
 } // namespace grunk

@@ -10,13 +10,40 @@ class RecipeCaller
 {
 public:
 
-    RecipeCaller(std::string const& name, Feature<Recipe> const& recipe);
+    RecipeCaller(
+        std::string const& name, 
+        Feature<Recipe> const& recipe,
+        lua_State* lua
+    );
 
     struct Proxy {
         std::string key;
         RecipeCaller& rc;
 
-        void operator=(DynamicFeature const& other);
+        template <typename T>
+        void operator=(T&& other) {
+            if (!rc.locked()) {
+                if constexpr (std::is_same_v<std::decay_t<T>, DynamicFeature>) {
+                    rc.inputs.insert({key, std::forward<T>(other)});
+                } else {
+                    if constexpr (std::is_same_v<std::decay_t<T>, sol::object>) {
+                        auto feature = DynamicFeature(std::forward<T>(other));
+                        rc.inputs.insert({key, feature});
+                    } else {
+                        sol::state_view lua(rc.lua);
+                        auto obj = sol::make_object(lua, std::forward<T>(other));
+                        auto feature = DynamicFeature(obj);
+                        rc.inputs.insert({key, feature});
+                    }
+                }
+            } else {
+                throw std::runtime_error(
+                    "Cannot assign an input to a RecipeCaller once it has been locked. "
+                    "A RecipeCaller gets locked once an output has been queried. "
+                    "All inputs must be assigned before the first output is queried."
+                );
+            }
+        }
 
         operator DynamicFeature();
 
@@ -34,6 +61,7 @@ private:
 
     std::string name;
     Feature<Recipe> source_recipe;
+    lua_State* lua;
     std::unordered_map<std::string, DynamicFeature> inputs;
     std::optional<Feature<Recipe>> target_recipe;
 };

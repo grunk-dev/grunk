@@ -138,3 +138,134 @@ TEST(Recipe, call_lua)
     EXPECT_EQ(inner_recipe.get_feature("z").value().as<double>(), 0.5);
     EXPECT_NEAR(inner_recipe.get_feature("w").value().as<double>(), 15, 1e-15);
 }
+
+TEST(Recipe, serialize)
+{
+    grunk::state grunk;
+
+    {
+        // create inner recipe
+        auto recipe_inner = grunk.create_recipe();
+        auto x = grunk.feature(17.);
+        auto y = grunk.feature(13.);
+        auto z = grunk.feature(2);
+        auto w = (x + y) * z;
+        recipe_inner["x"] = x;
+        recipe_inner["y"] = y;
+        recipe_inner["z"] = z;
+        recipe_inner["w"] = w;
+        recipe_inner.tag_features();
+
+        // create outer recipe
+        auto recipe_outer = grunk.create_recipe();
+        auto a = grunk.feature(15.);
+        auto b = grunk.feature(11.);
+        recipe_outer["a"] = a;
+        recipe_outer["b"] = b;
+        recipe_outer.insert_recipe("inner", std::move(recipe_inner));
+
+        auto inner = recipe_outer.recipe_caller("inner");
+        inner["x"] = a;
+        inner["y"] = b;
+        auto c = inner.get("w");
+        recipe_outer["c"] = c;
+        recipe_outer.tag_features();
+
+        std::string out = "\n" + recipe_outer.to_string();
+        std::string expected = R"(
+uses:
+  grunk: )" grunk_VERSION R"(
+parameters:
+  a: 15
+  b: 11
+steps: |
+  inner = recipe_caller("inner")
+  inner.y = b
+  inner.x = a
+  c = inner.w
+recipes:
+  inner:
+    uses:
+      grunk: )" grunk_VERSION R"(
+    parameters:
+      x: 17
+      y: 13
+      z: 2
+    steps: |
+      w = (x + y) * z
+)";
+        EXPECT_EQ(out, expected);
+
+        grunk.write("test.grr.yml", recipe_outer);
+    }
+
+    auto recipe = grunk.read("test.grr.yml");
+
+    EXPECT_NEAR(recipe.get_feature("c").value().as<double>(), 52, 1e-15);
+}
+
+namespace {
+    double mul(double l, double r) { return l * r; }
+}
+
+TEST(Recipe, call_anonymous_cpp)
+{
+    grunk::state grunk;
+    grunk.register_function("mul", &mul);
+
+    {
+        // create inner recipe
+        auto recipe_inner = grunk.create_recipe();
+        auto x = grunk.feature(17.);
+        auto y = grunk.feature(13.);
+        auto z = x + y;
+        recipe_inner["x"] = x;
+        recipe_inner["y"] = y;
+        recipe_inner["z"] = z;
+        recipe_inner.tag_features();
+
+        // create outer recipe
+        auto recipe_outer = grunk.create_recipe();
+        auto a = grunk.feature(2.).with_id("a");
+        auto b = grunk.feature(11.).with_id("b");
+        auto anon = grunk.action("mul", a, b); //anonymous
+        recipe_outer["a"] = a;
+        recipe_outer["b"] = b;
+        recipe_outer.insert_recipe("inner", std::move(recipe_inner));
+
+        auto inner = recipe_outer.recipe_caller("inner");
+        inner["x"] = anon;
+        inner["y"] = 3.;
+        auto c = inner.get("z").with_id("c");
+        recipe_outer["c"] = c;
+
+        EXPECT_NEAR(c.value().as<double>(), 25, 1e-15);
+
+        std::string out = "\n" + recipe_outer.to_string();
+        std::string expected = R"(
+uses:
+  grunk: )" grunk_VERSION R"(
+parameters:
+  a: 2
+  b: 11
+steps: |
+  inner = recipe_caller("inner")
+  inner.y = 3
+  inner.x = mul(a, b)
+  c = inner.z
+recipes:
+  inner:
+    uses:
+      grunk: )" grunk_VERSION R"(
+    parameters:
+      x: 17
+      y: 13
+    steps: |
+      z = x + y
+)";
+        EXPECT_EQ(out, expected);
+
+        grunk.write("test.grr.yml", recipe_outer);
+    }
+
+}

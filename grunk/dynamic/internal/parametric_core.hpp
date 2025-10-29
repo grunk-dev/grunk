@@ -8,6 +8,7 @@
 
 namespace grunk {
 
+    class Recipe;
 
     inline std::string to_string(double v) {
         char buf[64]{};
@@ -119,6 +120,14 @@ inline std::string serialize(bool const& v)
     return v ? "true" : "false";
 }
 
+// This is needed, because grunk::Recipes are the root inputs
+// of recipe call actions. A feature that serializes to an 
+// empty string is ignored in StringifiedTree
+template <>
+inline std::string serialize(grunk::Recipe const&)
+{
+    return "";
+}
 
 } // namespace parametric
 
