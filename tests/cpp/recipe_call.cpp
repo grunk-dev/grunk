@@ -4,6 +4,38 @@
 #include <grunk/recipe/RecipeCaller.hpp>
 #include "grunk/version.hpp"
 
+TEST(Recipe, call_RecipeCaller_locked_error)
+{
+    grunk::state grunk;
+
+    // create inner recipe
+    auto recipe_inner = grunk.create_recipe();
+    auto x = grunk.feature(17.);
+    auto y = grunk.feature(13.);
+    auto z = grunk.feature(2);
+    auto w = (x + y) * z;
+    recipe_inner["x"] = x;
+    recipe_inner["y"] = y;
+    recipe_inner["z"] = z;
+    recipe_inner["w"] = w;
+
+    // create outer recipe
+    auto recipe_outer = grunk.create_recipe();
+    auto a = grunk.feature(15.);
+    auto b = grunk.feature(11.);
+    recipe_outer["a"] = a;
+    recipe_outer["b"] = b;
+    recipe_outer.insert_recipe("inner", std::move(recipe_inner));
+
+    auto inner = recipe_outer.recipes["inner"]();
+    inner["x"] = a;
+    inner["y"] = b;
+    auto c = inner.get("w");
+    recipe_outer["c"] = c;
+    EXPECT_THROW(inner["x"] = c, std::runtime_error);
+
+}
+
 TEST(Recipe, call_cpp)
 {
     grunk::state grunk;
