@@ -89,7 +89,7 @@ namespace grunk {
         if (yml["steps"]) {
             eval(yml["steps"].as<std::string>());
         }
-        tag_features();
+        tag();
     }
 
     void Recipe::emit_yml(YAML::Emitter& out) const
@@ -150,6 +150,18 @@ namespace grunk {
     RecipeCaller Recipe::recipe_caller(std::string const& recipe_name) const
     {
         return RecipeCaller(recipe_name, recipes.at(recipe_name), m_environment.lua_state());
+    }
+
+    void Recipe::tag() 
+    {
+        tag_features();
+
+        // tag RecipeCallers
+        m_environment.for_each([](sol::object key, sol::object value) {
+            if (key.is<std::string>() && value.is<RecipeCaller>()) {
+                value.as<RecipeCaller&>().set_id(key.as<std::string const&>());
+            }
+        });
     }
 
 } // namespace grunk

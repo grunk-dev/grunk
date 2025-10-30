@@ -38,6 +38,8 @@ namespace grunk {
 
         RecipeCaller recipe_caller(std::string const& recipe_name) const;
 
+        void tag();
+
     private:
         Recipe(grunk::environment const& state);
 

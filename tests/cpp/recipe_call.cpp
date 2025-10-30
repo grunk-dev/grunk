@@ -154,7 +154,7 @@ TEST(Recipe, serialize)
         recipe_inner["y"] = y;
         recipe_inner["z"] = z;
         recipe_inner["w"] = w;
-        recipe_inner.tag_features();
+        recipe_inner.tag();
 
         // create outer recipe
         auto recipe_outer = grunk.create_recipe();
@@ -169,7 +169,7 @@ TEST(Recipe, serialize)
         inner["y"] = b;
         auto c = inner.get("w");
         recipe_outer["c"] = c;
-        recipe_outer.tag_features();
+        recipe_outer.tag();
 
         std::string out = "\n" + recipe_outer.to_string();
         std::string expected = R"(
@@ -208,6 +208,130 @@ namespace {
     double mul(double l, double r) { return l * r; }
 }
 
+TEST(Recipe, call_cpp_RecipeCallerID)
+{
+    grunk::state grunk;
+
+    {
+        // create inner recipe
+        auto recipe_inner = grunk.create_recipe();
+        recipe_inner.eval(R"(
+            x = grunk.feature(1.)
+            y = grunk.feature(2.)
+            z = x + y
+        )");
+        recipe_inner.tag();
+
+        // create outer recipe
+        auto recipe_outer = grunk.create_recipe();
+        recipe_outer.insert_recipe("inner", std::move(recipe_inner));
+        auto a = grunk.feature(3.).with_id("a");
+        auto b = grunk.feature(4.).with_id("b");
+        auto boing = recipe_outer.recipe_caller("inner").with_id("boing");
+        boing["x"] = a;
+        boing["y"] = b;
+        auto c = boing.get("z").with_id("c");
+        recipe_outer["a"] = a;
+        recipe_outer["b"] = b;
+        recipe_outer["c"] = c;
+
+        EXPECT_TRUE(recipe_outer["c"].is<grunk::DynamicFeature>());
+        EXPECT_NEAR(recipe_outer.get_feature("c").value().as<double>(), 7, 1e-15);
+        
+        std::string out = "\n" + recipe_outer.to_string();
+        std::string expected = R"(
+uses:
+  grunk: )" grunk_VERSION R"(
+parameters:
+  a: 3
+  b: 4
+steps: |
+  boing = recipe_caller("inner")
+  boing.y = b
+  boing.x = a
+  c = boing.z
+recipes:
+  inner:
+    uses:
+      grunk: )" grunk_VERSION R"(
+    parameters:
+      x: 1
+      y: 2
+    steps: |
+      z = x + y
+)";
+        EXPECT_EQ(out, expected);
+
+        grunk.write("test.grr.yml", recipe_outer);
+    }
+
+    auto recipe = grunk.read("test.grr.yml");
+    EXPECT_NEAR(recipe.get_feature("c").value().as<double>(), 7, 1e-15);
+}
+
+TEST(Recipe, call_lua_RecipeCallerID)
+{
+    grunk::state grunk;
+
+    {
+        // create inner recipe
+        auto recipe_inner = grunk.create_recipe();
+        recipe_inner.eval(R"(
+            x = grunk.feature(1.)
+            y = grunk.feature(2.)
+            z = x + y
+        )");
+        recipe_inner.tag();
+
+        // create outer recipe
+        auto recipe_outer = grunk.create_recipe();
+        recipe_outer.insert_recipe("inner", std::move(recipe_inner));
+
+        recipe_outer.eval(R"(
+            a = grunk.feature(3.)
+            b = grunk.feature(4.)
+            bazinga = recipe_caller("inner")
+            bazinga.x = a
+            bazinga.y = b
+            c = bazinga.z
+        )");
+        recipe_outer.tag();
+
+        EXPECT_TRUE(recipe_outer["c"].is<grunk::DynamicFeature>());
+        auto c = recipe_outer.get_feature("c");
+        EXPECT_NEAR(c.value().as<double>(), 7, 1e-15);
+        
+        std::string out = "\n" + recipe_outer.to_string();
+        std::string expected = R"(
+uses:
+  grunk: )" grunk_VERSION R"(
+parameters:
+  a: 3
+  b: 4
+steps: |
+  bazinga = recipe_caller("inner")
+  bazinga.y = b
+  bazinga.x = a
+  c = bazinga.z
+recipes:
+  inner:
+    uses:
+      grunk: )" grunk_VERSION R"(
+    parameters:
+      x: 1
+      y: 2
+    steps: |
+      z = x + y
+)";
+        EXPECT_EQ(out, expected);
+
+        grunk.write("test.grr.yml", recipe_outer);
+    }
+
+    auto recipe = grunk.read("test.grr.yml");
+    EXPECT_NEAR(recipe.get_feature("c").value().as<double>(), 7, 1e-15);
+}
+
 TEST(Recipe, call_anonymous_cpp)
 {
     grunk::state grunk;
@@ -222,7 +346,7 @@ TEST(Recipe, call_anonymous_cpp)
         recipe_inner["x"] = x;
         recipe_inner["y"] = y;
         recipe_inner["z"] = z;
-        recipe_inner.tag_features();
+        recipe_inner.tag();
 
         // create outer recipe
         auto recipe_outer = grunk.create_recipe();
@@ -285,7 +409,7 @@ TEST(Recipe, call_anonymous_lua)
             y = grunk.feature(13.)
             z = x + y
         )");
-        recipe_inner.tag_features();
+        recipe_inner.tag();
 
         // create outer recipe
         auto recipe_outer = grunk.create_recipe();

@@ -45,8 +45,9 @@ namespace grunk {
 
     std::string RecipeGetValAction::serialize() const
     {
+        std::string recipe_caller_name = argument().id();
         if (auto output = result(); output) {
-            std::string ret = name + "." + source_feature;
+            std::string ret = recipe_caller_name + "." + source_feature;
             if (!output->id().empty()) {
                 return output->id() + " = " + ret;
             } else {

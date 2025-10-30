@@ -56,10 +56,14 @@ public:
 
     DynamicFeature get(std::string const& key);
 
+    RecipeCaller& with_id(std::string const& value);
+    void set_id(std::string const& value);
+
 private:
     void create_recipe_action();
 
     std::string name;
+    std::optional<std::string> id;
     Feature<Recipe> source_recipe;
     lua_State* lua;
     std::unordered_map<std::string, DynamicFeature> inputs;

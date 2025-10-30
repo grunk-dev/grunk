@@ -217,7 +217,7 @@ TEST(Recipe, simple_userdata_parameters)
         recipe["b"] = b;
         recipe["c"] = c;
         recipe["d"] = d;
-        recipe.tag_features();
+        recipe.tag();
         std::string out = "\n" + recipe.to_string();
         std::string expected = R"(
 uses:
