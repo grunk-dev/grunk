@@ -18,6 +18,8 @@ set(TESTSOURCES
   dynamic_state.cpp
   dynamic_std_vector.cpp
   recipe_simple.cpp
+  recipe_clone.cpp
+  recipe_call.cpp
 )
 
 

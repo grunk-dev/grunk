@@ -3,6 +3,9 @@ include(FetchContent)
 # create a library and add source files
 set(grunk_recipe_src
     Recipe.hpp Recipe.cpp
+    RecipeAction.hpp RecipeAction.cpp
+    RecipeGetValAction.hpp RecipeGetValAction.cpp
+    RecipeCaller.hpp RecipeCaller.cpp
 )
 
 find_package(yaml-cpp REQUIRED)

@@ -594,8 +594,7 @@ TEST(serialization, StringifiedTree_cpp)
 a = grunk.feature(2)
 b = grunk.feature(3)
 c = a + b
-d = c ^ 2
-)");
+d = c ^ 2)");
 
     auto env = grunk.create_parametric_env();
     ASSERT_NO_THROW(env.eval(script));
@@ -628,8 +627,7 @@ TEST(serialization, StringifiedTree_lua)
     EXPECT_EQ("\n" + script, R"(
 a = grunk.feature(2)
 b = grunk.feature(3)
-d = (a + b) ^ 2
-)");    
+d = (a + b) ^ 2)");    
 
     auto env2 = grunk.create_parametric_env();
     ASSERT_NO_THROW(env2.eval(script));
@@ -691,8 +689,7 @@ TEST(serialize, userdata_as_parameters)
     auto script = tree.get_string(true);
     EXPECT_EQ("\n" + script, R"(
 x = Foo.new_feature(99, "red balloons")
-y = bar(x)
-)");    
+y = bar(x))");    
 
     auto env = grunk.create_parametric_env();
     ASSERT_NO_THROW(env.eval(script));
@@ -712,8 +709,7 @@ TEST(serialize, tag_features)
     env.eval(R"(
 x = grunk.feature(2)
 y = grunk.feature(8)
-z = x * y
-    )");
+z = x * y)");
     auto z = env.get_feature("z");
     
     auto script1 = get_script(z);
@@ -725,6 +721,5 @@ z = x * y
     EXPECT_EQ("\n" + script2, R"(
 x = grunk.feature(2)
 y = grunk.feature(8)
-z = x * y
-)");  
+z = x * y)");  
 }

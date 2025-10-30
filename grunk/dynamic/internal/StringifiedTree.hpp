@@ -52,8 +52,14 @@ public:
                 ret += key + " = " + val + "\n";
             }
         }
+        bool first = true;
         for (auto const& step : step_list) {
-            ret += step + "\n";
+            if (!first) {
+                ret += "\n";
+            } else {
+                first = false;
+            }
+            ret += step;
         }
         return ret;
     }

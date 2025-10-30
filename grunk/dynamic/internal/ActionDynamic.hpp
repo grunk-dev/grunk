@@ -30,11 +30,7 @@ namespace details {
  * 
  * @ingroup dynamic_advanced
  */
-class ActionDynamic : public parametric::ComputeNode<
-                                 ActionDynamic,
-                                 parametric::Results<object>, /* Results are ignored*/
-                                 parametric::Arguments<std::vector<object>> /* Arguments are ignored by derived class */
-                             >
+class ActionDynamic : public parametric::ComputeNode<ActionDynamic>
 {
 
     friend struct details::DynamicActionFactory;
@@ -216,6 +212,7 @@ private:
                 return dynamic_cast<parametric::impl::param_holder<object> const&>(node).value();
             };
         } else {
+            //TODO: Can this code be reached? Is this an artifact from the pre-LUA era of grunk?
             auto* lua_state = function.lua_state();
             return [lua_state](parametric::DAGNode const& node) -> sol::object {
                 auto value = dynamic_cast<parametric::impl::param_holder<T> const&>(node).value();

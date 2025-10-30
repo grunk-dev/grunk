@@ -13,6 +13,8 @@ public:
     FeatureBase(T const& v)
     : parametric::param<T>(v, "") {}
 
+    FeatureBase() : parametric::param<T>("") {}
+
     explicit FeatureBase(parametric::param<T> const& p) : parametric::param<T>(p) {}
 
     Derived& with_id(std::string const& id) {
@@ -23,6 +25,15 @@ public:
     bool operator==(Derived const& other) {
         return this->node_pointer() == other.node_pointer();
     }
+
+    Derived clone(
+        std::shared_ptr<parametric::DAGNode::ClonedNodeMap> cloned_nodes = parametric::DAGNode::new_cloned_node_map()
+    ) const
+    {
+        auto const p = parametric::param<T>::clone(cloned_nodes);
+        return Derived(p);
+    }
+
 };
 
 template <typename T>
@@ -33,6 +44,8 @@ struct Feature : public FeatureBase<Feature<T>, T>
     {}
 
     explicit Feature(parametric::param<T> const& p) : FeatureBase<Feature<T>,T>(p) {}
+
+    Feature() : FeatureBase<Feature<T>, T>() {}
 
     void set_value(T const& t) {
         this->change_value() = t;
@@ -55,6 +68,11 @@ public:
     explicit Feature(parametric::param<object> const& p)
      : FeatureBase<Feature<object>,object>(p)
      , lua(nullptr) //TODO: This might be a problem. But we can't extract the lua state from the object without evaluating
+    {}
+
+    Feature()
+     : FeatureBase<Feature<object>, object>()
+     , lua(nullptr)
     {}
 
     template <typename T>
