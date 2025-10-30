@@ -67,7 +67,7 @@ namespace grunk {
         } else {
             recipe_caller_name = name;
         }
-        std::string ret = recipe_caller_name + " = recipe_caller(\"" + name + "\")\n";
+        std::string ret = recipe_caller_name + " = recipes." + name + "()\n";
         for (size_t i = 1; i < this->num_parents(); ++i) {
             auto const& node = input_feature(i);
             bool is_anonymous = (node.id() == "");

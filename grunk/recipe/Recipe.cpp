@@ -11,9 +11,15 @@ namespace grunk {
     Recipe::Recipe(grunk::environment const& env)
      : environment(env)
     {
-        m_environment["recipe_caller"] = [this](std::string const& subrecipe){
-            return recipe_caller(subrecipe);
-        };
+        sol::state_view lua(m_environment.lua_state());
+        sol::table mt = lua.create_table();
+        mt.set_function("__index", [=](sol::table ts, std::string const& key) -> sol::object {
+            return sol::make_object(lua, recipes[key]);
+        });
+        m_environment.create_named("recipes");
+        sol::table lua_recipes = m_environment["recipes"];
+        lua_recipes[sol::metatable_key] = mt;
+        
     }
 
     Recipe Recipe::clone() const
@@ -34,9 +40,12 @@ namespace grunk {
         });
 
         for (auto const& [key, value] : recipes) {
-            Recipe recipe = value.value().clone();
+            Recipe recipe = value.recipe.value().clone();
             ret.recipes.insert(
-                {key, grunk::feature<Recipe>(std::move(recipe))}
+                {
+                    key, 
+                    SubRecipe{key, grunk::feature<Recipe>(std::move(recipe)), m_environment.lua_state()}
+                }
             );
         }
 
@@ -75,7 +84,12 @@ namespace grunk {
                 env[sol::metatable_key]["__index"] = m_environment[sol::metatable_key]["__index"];
                 auto recipe = Recipe(env);
                 recipe.populate_from_node(kv.second);
-                recipes.insert({key, Feature<Recipe>(std::move(recipe))});
+                recipes.insert(
+                    {
+                        key, 
+                        SubRecipe{key, Feature<Recipe>(std::move(recipe)), m_environment.lua_state()}
+                    }
+                );
             }
         }
         if (yml["parameters"]) {
@@ -121,10 +135,10 @@ namespace grunk {
         if (recipes.size() > 0) {
             out << YAML::Key << "recipes";
             out << YAML::Value << YAML::BeginMap;
-            for (auto const& [key, frecipe] : recipes) {
+            for (auto const& [key, subrecipe] : recipes) {
                 out << YAML::Key << key
                     << YAML::Value;
-                frecipe.value().emit_yml(out);
+                subrecipe.recipe.value().emit_yml(out);
             }
             out << YAML::EndMap;
         }
@@ -132,24 +146,14 @@ namespace grunk {
         out << YAML::EndMap;
     }
 
-    Feature<Recipe> const& Recipe::get_recipe(std::string const& name) const
-    {
-        return recipes.at(name);
-    }
-
-    Feature<Recipe>& Recipe::get_recipe(std::string const& name)
-    {
-        return recipes.at(name);
-    }
-
     void Recipe::insert_recipe(std::string const& name, Recipe&& recipe)
     {
-        recipes.insert({ name, grunk::feature<Recipe>(recipe)});
-    }
-
-    RecipeCaller Recipe::recipe_caller(std::string const& recipe_name) const
-    {
-        return RecipeCaller(recipe_name, recipes.at(recipe_name), m_environment.lua_state());
+        recipes.insert(
+            { 
+                name, 
+                SubRecipe{name, grunk::feature<Recipe>(recipe), m_environment.lua_state()}
+            }
+        );
     }
 
     void Recipe::tag() 
@@ -162,6 +166,21 @@ namespace grunk {
                 value.as<RecipeCaller&>().set_id(key.as<std::string const&>());
             }
         });
+    }
+
+    Feature<Recipe> const& Recipe::get_recipe(std::string const& key) const
+    {
+        return recipes.at(key).recipe;
+    }
+    
+    Feature<Recipe>& Recipe::get_recipe(std::string const& key)
+    {
+        return recipes.at(key).recipe;
+    }
+
+    RecipeCaller Recipe::SubRecipe::operator()() const
+    {
+        return RecipeCaller(name, recipe, lua_state);
     }
 
 } // namespace grunk

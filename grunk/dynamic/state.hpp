@@ -452,6 +452,12 @@ private:
         register_type<RecipeCaller::Proxy>("RecipeCallerProxy", g)
         .add_member_function("to_feature", &RecipeCaller::Proxy::to_feature);
 
+        register_type<Recipe::SubRecipe>("SubRecipe", g)
+        .set(
+            sol::meta_function::call,
+            [](Recipe::SubRecipe const& sr){ return sr(); }
+        );
+
         register_type<RecipeCaller>("RecipeCaller", g)
         .set(
             sol::meta_function::index, 

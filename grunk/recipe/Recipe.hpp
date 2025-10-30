@@ -31,14 +31,23 @@ namespace grunk {
         
         void populate_from_string(std::string const& yml);
 
-        Feature<Recipe> const& get_recipe(std::string const&) const;
-        Feature<Recipe>& get_recipe(std::string const&);
-
         void insert_recipe(std::string const& name, Recipe&& recipe);
 
-        RecipeCaller recipe_caller(std::string const& recipe_name) const;
-
         void tag();
+
+        struct SubRecipe {
+
+            std::string name;
+            Feature<Recipe> recipe;
+            lua_State* lua_state;
+
+            RecipeCaller operator()() const;
+        };
+
+        Feature<Recipe> const& get_recipe(std::string const& key) const;
+        Feature<Recipe>& get_recipe(std::string const& key);
+
+        std::unordered_map<std::string, SubRecipe> recipes;
 
     private:
         Recipe(grunk::environment const& state);
@@ -46,8 +55,6 @@ namespace grunk {
         void emit_yml(YAML::Emitter& out) const;
 
         void populate_from_node(YAML::Node const& node);
-
-        std::unordered_map<std::string, Feature<Recipe>> recipes;
     };
 
 } // namespace grunk

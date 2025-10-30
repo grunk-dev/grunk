@@ -27,7 +27,7 @@ TEST(Recipe, call_cpp)
     recipe_outer["b"] = b;
     recipe_outer.insert_recipe("inner", std::move(recipe_inner));
 
-    auto inner = recipe_outer.recipe_caller("inner");
+    auto inner = recipe_outer.recipes["inner"]();
     inner["x"] = a;
     inner["y"] = b;
     auto c = inner.get("w");
@@ -92,7 +92,7 @@ TEST(Recipe, call_lua)
     recipe_outer.eval(R"(
         a = grunk.feature(15.)
         b = grunk.feature(11.)
-        inner = recipe_caller("inner")
+        inner = recipes.inner()
         inner.x = a
         inner.y = b
         c = inner.w
@@ -164,7 +164,7 @@ TEST(Recipe, serialize)
         recipe_outer["b"] = b;
         recipe_outer.insert_recipe("inner", std::move(recipe_inner));
 
-        auto inner = recipe_outer.recipe_caller("inner");
+        auto inner = recipe_outer.recipes["inner"]();
         inner["x"] = a;
         inner["y"] = b;
         auto c = inner.get("w");
@@ -179,7 +179,7 @@ parameters:
   a: 15
   b: 11
 steps: |
-  inner = recipe_caller("inner")
+  inner = recipes.inner()
   inner.y = b
   inner.x = a
   c = inner.w
@@ -227,7 +227,7 @@ TEST(Recipe, call_cpp_RecipeCallerID)
         recipe_outer.insert_recipe("inner", std::move(recipe_inner));
         auto a = grunk.feature(3.).with_id("a");
         auto b = grunk.feature(4.).with_id("b");
-        auto boing = recipe_outer.recipe_caller("inner").with_id("boing");
+        auto boing = recipe_outer.recipes["inner"]().with_id("boing");
         boing["x"] = a;
         boing["y"] = b;
         auto c = boing.get("z").with_id("c");
@@ -246,7 +246,7 @@ parameters:
   a: 3
   b: 4
 steps: |
-  boing = recipe_caller("inner")
+  boing = recipes.inner()
   boing.y = b
   boing.x = a
   c = boing.z
@@ -290,7 +290,7 @@ TEST(Recipe, call_lua_RecipeCallerID)
         recipe_outer.eval(R"(
             a = grunk.feature(3.)
             b = grunk.feature(4.)
-            bazinga = recipe_caller("inner")
+            bazinga = recipes.inner()
             bazinga.x = a
             bazinga.y = b
             c = bazinga.z
@@ -309,7 +309,7 @@ parameters:
   a: 3
   b: 4
 steps: |
-  bazinga = recipe_caller("inner")
+  bazinga = recipes.inner()
   bazinga.y = b
   bazinga.x = a
   c = bazinga.z
@@ -357,7 +357,7 @@ TEST(Recipe, call_anonymous_cpp)
         recipe_outer["b"] = b;
         recipe_outer.insert_recipe("inner", std::move(recipe_inner));
 
-        auto inner = recipe_outer.recipe_caller("inner");
+        auto inner = recipe_outer.recipes["inner"]();
         inner["x"] = anon;
         inner["y"] = 3.;
         auto c = inner.get("z").with_id("c");
@@ -373,7 +373,7 @@ parameters:
   a: 2
   b: 11
 steps: |
-  inner = recipe_caller("inner")
+  inner = recipes.inner()
   inner.y = 3
   inner.x = mul(a, b)
   c = inner.z
@@ -417,7 +417,7 @@ TEST(Recipe, call_anonymous_lua)
         recipe_outer.eval(R"(
             a = grunk.feature(2.):with_id("a")
             b = grunk.feature(11.):with_id("b")
-            inner = recipe_caller("inner")
+            inner = recipes.inner()
             inner.x = mul(a, b)
             inner.y = 3.
             c = inner.z
@@ -434,7 +434,7 @@ parameters:
   a: 2
   b: 11
 steps: |
-  inner = recipe_caller("inner")
+  inner = recipes.inner()
   inner.y = 3
   inner.x = mul(a, b)
   c = inner.z
