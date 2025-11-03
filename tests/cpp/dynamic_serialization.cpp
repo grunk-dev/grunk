@@ -115,7 +115,7 @@ TEST(serialization, userdata)
     .add_constructors(
         [](int i, std::string_view s) { return Foo(i, s); }
     )
-    .add_member_function("serialize",
+    .set(sol::meta_function::to_string,
         [](Foo const& foo) {
             return "Foo.new(" + std::to_string(foo.bar) + ", " + "\"" + foo.baz + "\"" + ")";
         }
@@ -164,7 +164,7 @@ TEST(serialization, free_function_action_anonymous1)
     auto z = grunk.action("add", x, y).with_id("z");
 
     auto ret = z.compute_node()->serialize();
-    EXPECT_EQ(ret, "z = add(2, y)");
+    EXPECT_EQ(ret, "z = add(2.0, y)");
 }
 
 TEST(serialization, free_function_action_anonymous2)
@@ -180,7 +180,7 @@ TEST(serialization, free_function_action_anonymous2)
     auto z = grunk.action("add", x, y).with_id("z");
 
     auto ret = z.compute_node()->serialize();
-    EXPECT_EQ(ret, "z = add(x, 3)");
+    EXPECT_EQ(ret, "z = add(x, 3.0)");
 }
 
 TEST(serialization, free_function_action_anonymous3)
@@ -196,7 +196,7 @@ TEST(serialization, free_function_action_anonymous3)
     auto z = grunk.action("add", x, y).with_id("z");
 
     auto ret = z.compute_node()->serialize();
-    EXPECT_EQ(ret, "z = add(2, 3)");
+    EXPECT_EQ(ret, "z = add(2.0, 3.0)");
 }
 
 TEST(serialization, free_function_action_anonymous4)
@@ -212,7 +212,7 @@ TEST(serialization, free_function_action_anonymous4)
     auto z = grunk.action("add", x, y);
 
     auto ret = z.compute_node()->serialize();
-    EXPECT_EQ(ret, "add(2, 3)");
+    EXPECT_EQ(ret, "add(2.0, 3.0)");
 }
 
 TEST(serialization, free_function_action_anonymous_nested)
@@ -229,7 +229,7 @@ TEST(serialization, free_function_action_anonymous_nested)
     auto w = grunk.action("add", z, 5).with_id("w");
 
     auto ret = w.compute_node()->serialize();
-    EXPECT_EQ(ret, "w = add(add(x, 3), 5)");
+    EXPECT_EQ(ret, "w = add(add(x, 3.0), 5)");
 }
 
 TEST(serialization, operator_action_lua_add)
@@ -277,7 +277,7 @@ TEST(serialization, operator_action_cpp_add_anonymous2)
     auto y = grunk.feature(3.).with_id("y");
     auto z = x + y;
     auto ret = z.compute_node()->serialize();
-    EXPECT_EQ(ret, "(2 + y)");
+    EXPECT_EQ(ret, "(2.0 + y)");
 }
 
 TEST(serialization, operator_action_cpp_add_anonymous_nested)
@@ -289,7 +289,7 @@ TEST(serialization, operator_action_cpp_add_anonymous_nested)
     auto w = z + 5;
     w.set_id("w");
     auto ret = w.compute_node()->serialize();
-    EXPECT_EQ(ret, "w = (2 + y) + 5");
+    EXPECT_EQ(ret, "w = (2.0 + y) + 5");
 }
 
 TEST(serialization, operator_action_lua_sub)
@@ -492,7 +492,7 @@ TEST(serialization, member_function_action_cpp)
 
     auto x = grunk.action("Dummy.set_value", a, 4.).with_id("x");
     auto ret_x = x.compute_node()->serialize();
-    EXPECT_EQ(ret_x, "x = Dummy.set_value(a, 4)");
+    EXPECT_EQ(ret_x, "x = Dummy.set_value(a, 4.0)");
 
     auto y = grunk.action("Dummy.value", a).with_id("y");   
     auto ret_y = y.compute_node()->serialize();
@@ -519,7 +519,7 @@ TEST(serialization, member_function_action_lua)
     )");
     auto x = env.get_feature("x");
     auto ret_x = x.compute_node()->serialize();
-    EXPECT_EQ(ret_x, "x = Dummy.set_value(a, 4)");
+    EXPECT_EQ(ret_x, "x = Dummy.set_value(a, 4.0)");
 
     auto y = env.get_feature("y");
     auto ret_y = y.compute_node()->serialize();
@@ -562,7 +562,7 @@ TEST(serialization, ctor_action_lua)
     )");
     auto x = env.get_feature("x");
     auto ret_x = x.compute_node()->serialize();
-    EXPECT_EQ(ret_x, "x = Dummy.new(2)");
+    EXPECT_EQ(ret_x, "x = Dummy.new(2.0)");
 }
 
 TEST(serialization, StringifiedTree_cpp)
@@ -586,13 +586,13 @@ TEST(serialization, StringifiedTree_cpp)
     
     auto parameters = tree.get_parameters();
     ASSERT_EQ(parameters.size(), 2);
-    EXPECT_EQ(parameters.at("a"), "2");
-    EXPECT_EQ(parameters.at("b"), "3");
+    EXPECT_EQ(parameters.at("a"), "2.0");
+    EXPECT_EQ(parameters.at("b"), "3.0");
     
     auto script = tree.get_string(true);
     EXPECT_EQ("\n" + script, R"(
-a = grunk.feature(2)
-b = grunk.feature(3)
+a = grunk.feature(2.0)
+b = grunk.feature(3.0)
 c = a + b
 d = c ^ 2)");
 
@@ -621,12 +621,12 @@ TEST(serialization, StringifiedTree_lua)
 
     auto parameters = tree.get_parameters();
     ASSERT_EQ(parameters.size(), 2);
-    EXPECT_EQ(parameters.at("a"), "2");
-    EXPECT_EQ(parameters.at("b"), "3");
+    EXPECT_EQ(parameters.at("a"), "2.0");
+    EXPECT_EQ(parameters.at("b"), "3.0");
     auto script = tree.get_string(true);
     EXPECT_EQ("\n" + script, R"(
-a = grunk.feature(2)
-b = grunk.feature(3)
+a = grunk.feature(2.0)
+b = grunk.feature(3.0)
 d = (a + b) ^ 2)");    
 
     auto env2 = grunk.create_parametric_env();
@@ -664,7 +664,7 @@ TEST(serialize, userdata_as_parameters)
     .add_constructors(
         [](int i, std::string_view s) { return Foo(i, s); }
     )
-    .add_member_function("serialize",
+    .set(sol::meta_function::to_string,
         [](Foo const& foo) {
             return "Foo.new(" + std::to_string(foo.bar) + ", " + "\"" + foo.baz + "\"" + ")";
         }

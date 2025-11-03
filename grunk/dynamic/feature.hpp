@@ -110,7 +110,7 @@ public:
     {
         check_lua();
         sol::state_view l(lua);
-        sol::table usertype_table = details::lookup_nested(l["environments"]["decorated"], usertype);
+        sol::table usertype_table = details::lookup_nested(l["grunk"]["parametric_env"], usertype);
         return as(usertype_table);
     }
 

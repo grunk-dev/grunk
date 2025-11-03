@@ -16,63 +16,54 @@ namespace grunk {
         if (result.ec != std::errc()) {
             throw grunk::io_error("Error serializing double value. " + std::make_error_code(result.ec).message());
         } else {
-            return std::string(buf, result.ptr - buf);
+            std::string s(buf, result.ptr - buf);
+            
+            // only append ".0" for finite numeric representations that lack '.' or exponent
+            if (std::isfinite(v) &&
+                s.find('.') == std::string::npos &&
+                s.find('e') == std::string::npos &&
+                s.find('E') == std::string::npos) {
+                s += ".0";
+            }
+
+            return s;
         }
     };
 
     inline std::string serialize(grunk::object const& v)
     {
+        sol::state_view lua(v.lua_state());
         std::string err_msg_prefix = "Error serializing grunk::object to string: ";
 
-        switch (v.get_type()) {
-            case sol::type::nil:
-                return "nil";
-            break;
-            case sol::type::boolean:
-                return v.as<bool>()? "true" : "false";
-            break;
-            case sol::type::string:
-                return std::string("\"") + v.as<std::string>() + "\"";
-            break;
-            case sol::type::number: {
-
-                double d = v.as<double>();
-
-                // handle int and double cases differently
-                double intpart;
-                if (std::modf(d, &intpart) == 0.0) {
-                    // the number is an integer
-                    return std::to_string((int)intpart);
-                } else {
-                    // the number is a double value
-                    return to_string(d);
-                }
-                break;
+        // for userdata, we want to throw if there is no tostring metamethod
+        if (v.get_type() == sol::type::userdata) {
+            sol::table ud = v.as<sol::table>();
+            std::string name = ud["__name"];
+            sol::object serialize;
+            try {
+                serialize = ud[sol::meta_function::to_string]; //TODO this panicks for unregistered data! It doesn't throw and the code crashes. What to do?
+            } catch (sol::error) {
+                throw grunk::io_error("Cannot serialize an opaque type \"" + name + "\". Make sure registery your type and add a tostring metamethod.");
             }
-            case sol::type::userdata: {
-                sol::table ud = v.as<sol::table>();
-                std::string name = ud["__name"];
-                sol::object serialize;
-                try {
-                    serialize = ud["serialize"]; //TODO this panicks for unregistered data! It doesn't throw and the code crashes. What to do?
-                } catch (sol::error) {
-                    throw grunk::io_error("Cannot serialize an opaque type \"" + name + "\". Make sure registery your type and add a serialization method.");
-                }
-                if (!serialize.valid() || !ud["serialize"].is<sol::protected_function>()) {
-                    throw grunk::io_error(err_msg_prefix + "Serialization method is not available for " + name + ".");
-                }
-                auto result = serialize.as<sol::protected_function>()(v);
-                if (result.valid()) {
-                    return result.get<std::string>();
-                } else {
-                    throw grunk::io_error(err_msg_prefix + "Error invoking Serialization method for " + name + ".");
-                }
-                break;
+            if (!serialize.valid() || !ud[sol::meta_function::to_string].is<sol::protected_function>()) {
+                throw grunk::io_error(err_msg_prefix + "tostring metamethod is not available for " + name + ".");
             }
-            default:
-                throw grunk::io_error(err_msg_prefix + "Serialization not supported for sol::objects of the given type.");
         }
-        return "";
+
+        sol::protected_function tostring_func = lua["tostring"];
+        sol::protected_function_result tostring_result = tostring_func(v);
+        if (tostring_result.valid()) {
+            if (v.get_type() == sol::type::string) {
+                // wrap strings in quotes
+                return "\"" + tostring_result.get<std::string>() + "\"";
+            } else {
+                return tostring_result.get<std::string>();
+            }
+        } else {
+            sol::error err = tostring_result;
+            throw grunk::io_error(err_msg_prefix + "Lua error in tostring: " + err.what());
+        }
+        throw grunk::io_error(err_msg_prefix + "Unknown error.");
     }
 
 } // namespace grunk
