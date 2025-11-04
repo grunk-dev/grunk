@@ -11,6 +11,9 @@ namespace details {
         size_t pos = s.find(".new");
         if (pos == std::string::npos) {
             // the value is a primitive. We create it with grunk.feature
+            if (s == "nil") {
+                return "grunk.feature()";
+            }
             return "grunk.feature(" + s + ")";
         } else {
             // its a usertype. Instead of Foo.new(xxx) we serialize Foo.new_feature(xxx)
@@ -151,7 +154,16 @@ public:
 
         if (is_root_parameter || is_compute_node){
 
-            std::string node =  n.serialize();
+            std::string node;
+            if (is_root_parameter) {
+                n.eval();
+            }
+            bool is_placeholder = (is_root_parameter && !n.IsValid()); // an invalid root node is a placeholder
+            if (is_placeholder) {
+                node = "nil";
+            } else {
+                node = n.serialize();
+            }
 
             if (is_root_parameter) {
                 if (n.id() != "") {
