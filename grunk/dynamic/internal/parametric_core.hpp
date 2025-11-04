@@ -113,7 +113,7 @@ inline std::string serialize(bool const& v)
 
 // This is needed, because grunk::Recipes are the root inputs
 // of recipe call actions. A feature that serializes to an 
-// empty string is ignored in StringifiedTree
+// empty string is ignored in Serializer
 template <>
 inline std::string serialize(grunk::Recipe const&)
 {

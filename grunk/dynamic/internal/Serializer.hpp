@@ -21,13 +21,13 @@ namespace details {
     }
 } // namespace details
 
-class StringifiedTree
+class Serializer
 {
 public:
     using Visited = std::unordered_map<parametric::DAGNode const*, bool>;
     friend class details::ToStringVisitor;
 
-    StringifiedTree() = default;
+    Serializer() = default;
 
     inline std::map<std::string, std::string> const& get_parameters() const {
         return parameters;
@@ -97,7 +97,7 @@ public:
     /**
     * @brief Construct a new ToStringVisitor object
     */
-    inline ToStringVisitor(StringifiedTree& tree, parametric::DAGNode const& start_node)
+    inline ToStringVisitor(Serializer& tree, parametric::DAGNode const& start_node)
      : start_node(start_node)
      , tree(tree)
     {}
@@ -186,7 +186,7 @@ private:
     }
 
     parametric::DAGNode const& start_node;
-    StringifiedTree& tree;
+    Serializer& tree;
 };
 
 } // namespace details

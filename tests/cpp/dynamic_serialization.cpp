@@ -1,6 +1,6 @@
 #include <gtest/gtest.h>
 #include <grunk/dynamic/state.hpp>
-#include <grunk/dynamic/internal/StringifiedTree.hpp>
+#include <grunk/dynamic/internal/Serializer.hpp>
 
 TEST(serialization, primitives)
 {
@@ -565,7 +565,7 @@ TEST(serialization, ctor_action_lua)
     EXPECT_EQ(ret_x, "x = Dummy.new(2.0)");
 }
 
-TEST(serialization, StringifiedTree_cpp)
+TEST(serialization, Serializer_cpp)
 {
     grunk::state grunk;
 
@@ -576,7 +576,7 @@ TEST(serialization, StringifiedTree_cpp)
     auto d = grunk::pow(c, 2);
     d.set_id("d");
 
-    grunk::StringifiedTree tree;
+    grunk::Serializer tree;
     tree.parse(d);
     
     auto steps = tree.get_steps();
@@ -601,7 +601,7 @@ d = c ^ 2)");
     EXPECT_NEAR(env.get_feature("d").value().as<double>(), 25, 1e-10);
 }
 
-TEST(serialization, StringifiedTree_lua)
+TEST(serialization, Serializer_lua)
 {
     grunk::state grunk;
     auto env = grunk.create_parametric_env();
@@ -613,7 +613,7 @@ TEST(serialization, StringifiedTree_lua)
         d:set_id("d")
     )");
     auto d = env.get_feature("d");
-    grunk::StringifiedTree tree;
+    grunk::Serializer tree;
     tree.parse(d);
     auto steps = tree.get_steps();
     ASSERT_EQ(steps.size(), 1);
@@ -640,7 +640,7 @@ TEST(serialize, duplicate_name_in_parameters)
     auto x = grunk.feature(2).with_id("x");
     auto y = grunk.feature(5).with_id("x");
     auto z = x + y;
-    grunk::StringifiedTree tree;
+    grunk::Serializer tree;
     EXPECT_THROW(tree.parse(z), grunk::io_error);
 }
 
@@ -653,7 +653,7 @@ TEST(serialize, duplicate_name_in_steps)
     auto b = grunk::pow(a,2);
     a.set_id("a");
     b.set_id("a");
-    grunk::StringifiedTree tree;
+    grunk::Serializer tree;
     EXPECT_THROW(tree.parse(b), grunk::io_error);
 }
 
@@ -675,7 +675,7 @@ TEST(serialize, userdata_as_parameters)
     auto x = grunk.feature(Foo(99, "red balloons")).with_id("x");
     auto y = grunk.action("bar", x).with_id("y");
     EXPECT_EQ(y.value().as<int>(), 42);
-    grunk::StringifiedTree tree;
+    grunk::Serializer tree;
     tree.parse(y);
 
     auto steps = tree.get_steps();
@@ -699,7 +699,7 @@ y = bar(x))");
 TEST(serialize, tag_features)
 {
     auto get_script = [](auto feature){
-        grunk::StringifiedTree tree;
+        grunk::Serializer tree;
         tree.parse(feature);
         return tree.get_string(true);
     };

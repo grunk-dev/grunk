@@ -1,6 +1,6 @@
 #include "grunk/recipe/Recipe.hpp"
 #include "grunk/version.hpp"
-#include "grunk/dynamic/internal/StringifiedTree.hpp"
+#include "grunk/dynamic/internal/Serializer.hpp"
 #include "grunk/recipe/RecipeCaller.hpp"
 
 #include <yaml-cpp/yaml.h>
@@ -115,7 +115,7 @@ namespace grunk {
 
         out << YAML::Key << "uses" << YAML::Value << uses;
 
-        StringifiedTree tree;
+        Serializer tree;
         m_environment.for_each([&tree](sol::object key, sol::object value) {
             if (value.is<DynamicFeature>()) {
                 tree.parse(value.as<DynamicFeature>());
