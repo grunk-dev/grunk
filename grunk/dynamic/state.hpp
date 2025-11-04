@@ -173,6 +173,11 @@ public:
         return tmp.as<function_meta>();
     }
 
+    inline DynamicFeature feature() const
+    {
+        return DynamicFeature(original_env.lua_state());
+    }
+
     /**
      * @brief feature Creates a new dynamic feature wrapping a value
      * @param value The value to be wrapped
@@ -323,9 +328,14 @@ private:
         
         register_function(
             "feature",
-            [](sol::object obj) -> DynamicFeature {
-                return grunk::feature(obj);
-            },
+            sol::overload(
+                [=](sol::object obj) -> DynamicFeature {
+                    return feature(obj);
+                },
+                [=]() -> DynamicFeature {
+                    return feature();
+                }
+            ),
             {Parameter{"object", }},
             g
         );

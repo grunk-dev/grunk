@@ -9,7 +9,7 @@ namespace details {
 
     inline lua_State* get_state(Feature<object> const& f) {
         lua_State* lua_state = f.lua_state();
-        if (!lua_state) {
+        if (!lua_state && !f.is_placeholder()) {
             lua_state = f.value().lua_state();
         }
         if (!lua_state) {

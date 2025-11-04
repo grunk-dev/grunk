@@ -396,6 +396,50 @@ TEST(state, usertype_method_as_action_lua)
     EXPECT_NEAR(env.get<MyScalar>("z2").value(), 8, 1e-14); // 2^3
 }
 
+TEST(state, placeholder_feature_cpp)
+{
+    grunk::state grunk;
+    auto x = grunk.feature().with_id("x");
+    auto y = grunk.feature().with_id("y");
+    auto z = x + y;
+    z.set_id("z");
+    EXPECT_TRUE(x.is_placeholder());
+    EXPECT_TRUE(y.is_placeholder());
+    EXPECT_THROW(z.value(), std::runtime_error);
+    x.set_value(1);
+    y.set_value(2);
+    EXPECT_FALSE(x.is_placeholder());
+    EXPECT_FALSE(y.is_placeholder());
+    EXPECT_NEAR(z.value().as<double>(), 3., 1e-14);
+}
+
+TEST(state, placeholder_feature_lua)
+{
+    grunk::state grunk;
+
+    auto env = grunk.create_parametric_env();
+    env.eval(R"(
+        x = grunk.feature()
+        y = grunk.feature()
+        z = x + y
+    )");
+    env.tag_features();
+
+    auto x = env.get_feature("x");
+    auto y = env.get_feature("y");
+    auto z = env.get_feature("z");
+
+    EXPECT_TRUE(x.is_placeholder());
+    EXPECT_TRUE(y.is_placeholder());
+    EXPECT_THROW(z.value(), std::runtime_error);
+
+    x.set_value(1);
+    y.set_value(2);
+    EXPECT_FALSE(x.is_placeholder());
+    EXPECT_FALSE(y.is_placeholder());
+    EXPECT_NEAR(z.value().as<double>(), 3., 1e-14);
+}
+
 /*TODO: this should ideally fail (non-const member function as action)
 TEST(state, usertype_nonconst_method_as_action_lua)
 {
