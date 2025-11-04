@@ -36,8 +36,8 @@ TEST(Recipe, no_steps)
 uses:
   grunk: )" grunk_VERSION R"(
 parameters:
-  x: 1
-  y: 2
+  x: 1.0
+  y: 2.0
 )";
         EXPECT_EQ(out, expected);
 
@@ -69,8 +69,8 @@ TEST(Recipe, simple_primitive_parameters)
 uses:
   grunk: )" grunk_VERSION R"(
 parameters:
-  x: 1
-  y: 2
+  x: 1.0
+  y: 2.0
 steps: |
   z = add(x, y)
   w = z ^ 2
@@ -109,8 +109,8 @@ TEST(Recipe, simple_primitive_parameters_anonymous)
 uses:
   grunk: )" grunk_VERSION R"(
 parameters:
-  x: 1
-  y: 2
+  x: 1.0
+  y: 2.0
 steps: |
   w = add(x, 2) ^ y
 )";
@@ -144,7 +144,7 @@ TEST(Recipe, no_parameters)
 uses:
   grunk: )" grunk_VERSION R"(
 steps: |
-  w = add(1, 2) ^ 2
+  w = add(1.0, 2.0) ^ 2
 )";
         EXPECT_EQ(out, expected);
 
@@ -202,7 +202,7 @@ TEST(Recipe, simple_userdata_parameters)
     .add_member_function("__add", [](MyScalar const& l, MyScalar const&r){
         return l + r;
     })
-    .add_member_function("serialize", [](MyScalar const& s){
+    .set(sol::meta_function::to_string, [](MyScalar const& s){
         return "MyScalar.new(" + grunk::to_string(s.value()) + ", \"" + s.tag() + "\")";
     });
  
@@ -223,8 +223,8 @@ TEST(Recipe, simple_userdata_parameters)
 uses:
   grunk: )" grunk_VERSION R"(
 parameters:
-  a: MyScalar.new(31, "horst")
-  b: MyScalar.new(11, "annette")
+  a: MyScalar.new(31.0, "horst")
+  b: MyScalar.new(11.0, "annette")
 steps: |
   c = a + b
   d = MyScalar.pow(c, 2)
@@ -273,15 +273,15 @@ TEST(Recipe, serialize_with_subrecipes)
 uses:
   grunk: )" grunk_VERSION R"(
 parameters:
-  a: 13
-  b: 11
+  a: 13.0
+  b: 11.0
 recipes:
   addition:
     uses:
       grunk: )" grunk_VERSION R"(
     parameters:
-      x: 17
-      y: 11
+      x: 17.0
+      y: 11.0
     steps: |
       z = add(x, y)
 )";

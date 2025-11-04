@@ -208,8 +208,8 @@ TEST(Recipe, serialize)
 uses:
   grunk: )" grunk_VERSION R"(
 parameters:
-  a: 15
-  b: 11
+  a: 15.0
+  b: 11.0
 steps: |
   inner = recipes.inner()
   inner.y = b
@@ -220,8 +220,8 @@ recipes:
     uses:
       grunk: )" grunk_VERSION R"(
     parameters:
-      x: 17
-      y: 13
+      x: 17.0
+      y: 13.0
       z: 2
     steps: |
       w = (x + y) * z
@@ -275,8 +275,8 @@ TEST(Recipe, call_cpp_RecipeCallerID)
 uses:
   grunk: )" grunk_VERSION R"(
 parameters:
-  a: 3
-  b: 4
+  a: 3.0
+  b: 4.0
 steps: |
   boing = recipes.inner()
   boing.y = b
@@ -287,8 +287,8 @@ recipes:
     uses:
       grunk: )" grunk_VERSION R"(
     parameters:
-      x: 1
-      y: 2
+      x: 1.0
+      y: 2.0
     steps: |
       z = x + y
 )";
@@ -338,8 +338,8 @@ TEST(Recipe, call_lua_RecipeCallerID)
 uses:
   grunk: )" grunk_VERSION R"(
 parameters:
-  a: 3
-  b: 4
+  a: 3.0
+  b: 4.0
 steps: |
   bazinga = recipes.inner()
   bazinga.y = b
@@ -350,8 +350,8 @@ recipes:
     uses:
       grunk: )" grunk_VERSION R"(
     parameters:
-      x: 1
-      y: 2
+      x: 1.0
+      y: 2.0
     steps: |
       z = x + y
 )";
@@ -402,11 +402,11 @@ TEST(Recipe, call_anonymous_cpp)
 uses:
   grunk: )" grunk_VERSION R"(
 parameters:
-  a: 2
-  b: 11
+  a: 2.0
+  b: 11.0
 steps: |
   inner = recipes.inner()
-  inner.y = 3
+  inner.y = 3.0
   inner.x = mul(a, b)
   c = inner.z
 recipes:
@@ -414,8 +414,8 @@ recipes:
     uses:
       grunk: )" grunk_VERSION R"(
     parameters:
-      x: 17
-      y: 13
+      x: 17.0
+      y: 13.0
     steps: |
       z = x + y
 )";
@@ -463,11 +463,11 @@ TEST(Recipe, call_anonymous_lua)
 uses:
   grunk: )" grunk_VERSION R"(
 parameters:
-  a: 2
-  b: 11
+  a: 2.0
+  b: 11.0
 steps: |
   inner = recipes.inner()
-  inner.y = 3
+  inner.y = 3.0
   inner.x = mul(a, b)
   c = inner.z
 recipes:
@@ -475,8 +475,8 @@ recipes:
     uses:
       grunk: )" grunk_VERSION R"(
     parameters:
-      x: 17
-      y: 13
+      x: 17.0
+      y: 13.0
     steps: |
       z = x + y
 )";

@@ -58,6 +58,9 @@ public:
     {
         lua.open_libraries(sol::lib::base);
 
+        // create internal table used by grunk itself.
+        auto g = lua.create_named_table("grunk");
+
         // register grunk symbols in dynamic type system
         init();
 
@@ -65,9 +68,8 @@ public:
         // original env and decorates the functions as actions
         create_decorated_environment();
 
-        lua["environments"] = lua.create_table();
-        lua["environments"]["original"] = original_env;
-        lua["environments"]["decorated"] = decorated_env;
+        lua["grunk"]["env"] = original_env;
+        lua["grunk"]["parametric_env"] = decorated_env;
     }
 
     /**
@@ -311,8 +313,7 @@ private:
      */
     inline void init() {
 
-        // create internal table used by grunk itself.
-        auto g = lua.create_named_table("grunk");
+        sol::table g = lua["grunk"];
 
         g.new_usertype<function_meta>("function_meta",
             sol::no_constructor,
