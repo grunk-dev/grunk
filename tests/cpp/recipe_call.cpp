@@ -488,3 +488,152 @@ recipes:
     auto recipe = grunk.read("test.grr.yml");
     EXPECT_NEAR(recipe.get_feature("c").value().as<double>(), 25, 1e-15);
 }
+
+TEST(Recipe, call_inner_recipe_with_placeholders_error)
+{
+    grunk::state grunk;
+
+      // create inner recipe
+      auto recipe_inner = grunk.create_recipe();
+      recipe_inner.eval(R"(
+          x = grunk.feature() -- placeholder
+          y = grunk.feature(5)
+          z = x + y
+      )");
+      recipe_inner.tag();
+
+      // create outer recipe
+      auto recipe_outer = grunk.create_recipe();
+      recipe_outer.insert_recipe("inner", std::move(recipe_inner));
+      recipe_outer.eval(R"(
+          a = grunk.feature(2):with_id("a")
+          b = grunk.feature(11):with_id("b")
+          inner = recipes.inner()
+          inner.y = b
+          c = inner.z
+          c:set_id("c")
+      )");
+
+      // we haven't set inner.x yet, so c should be invalid
+      EXPECT_THROW(recipe_outer.get_feature("c").value().as<double>(), std::runtime_error);
+}
+
+TEST(Recipe, call_inner_recipe_with_placeholders)
+{
+    grunk::state grunk;
+
+    {
+        // create inner recipe
+        auto recipe_inner = grunk.create_recipe();
+        recipe_inner.eval(R"(
+            x = grunk.feature() -- placeholder
+            y = grunk.feature(5)
+            z = x + y
+        )");
+        recipe_inner.tag();
+
+        // create outer recipe
+        auto recipe_outer = grunk.create_recipe();
+        recipe_outer.insert_recipe("inner", std::move(recipe_inner));
+        recipe_outer.eval(R"(
+            a = grunk.feature(2):with_id("a")
+            b = grunk.feature(11):with_id("b")
+            inner = recipes.inner()
+            inner.x = a
+            inner.y = b
+            c = inner.z
+            c:set_id("c")
+        )");
+
+        // we haven't set inner.x yet, so c should be invalid
+        EXPECT_NEAR(recipe_outer.get_feature("c").value().as<double>(), 13, 1e-15);
+
+        std::string out = "\n" + recipe_outer.to_string();
+        std::string expected = R"(
+uses:
+  grunk: )" grunk_VERSION R"(
+parameters:
+  a: 2
+  b: 11
+steps: |
+  inner = recipes.inner()
+  inner.y = b
+  inner.x = a
+  c = inner.z
+recipes:
+  inner:
+    uses:
+      grunk: )" grunk_VERSION R"(
+    parameters:
+      x: nil
+      y: 5
+    steps: |
+      z = x + y
+)";
+        EXPECT_EQ(out, expected);
+
+        grunk.write("test.grr.yml", recipe_outer);
+    }
+
+    auto recipe = grunk.read("test.grr.yml");
+    EXPECT_NEAR(recipe.get_feature("c").value().as<double>(), 13, 1e-15);
+}
+
+TEST(Recipe, call_inner_recipe_with_placeholders2)
+{
+    grunk::state grunk;
+
+    {
+        // create inner recipe
+        auto recipe_inner = grunk.create_recipe();
+        recipe_inner.eval(R"(
+            x = grunk.feature() -- placeholder
+            y = grunk.feature(5)
+            z = x + y
+        )");
+        recipe_inner.tag();
+
+        // create outer recipe
+        auto recipe_outer = grunk.create_recipe();
+        recipe_outer.insert_recipe("inner", std::move(recipe_inner));
+        recipe_outer.eval(R"(
+            a = grunk.feature(2):with_id("a")
+            b = grunk.feature(11):with_id("b")
+            inner = recipes.inner()
+            inner.x = a
+            c = inner.z
+            c:set_id("c")
+        )");
+
+        // we haven't set inner.x yet, so c should be invalid
+        EXPECT_NEAR(recipe_outer.get_feature("c").value().as<double>(), 7, 1e-15);
+
+        std::string out = "\n" + recipe_outer.to_string();
+        std::string expected = R"(
+uses:
+  grunk: )" grunk_VERSION R"(
+parameters:
+  a: 2
+  b: 11
+steps: |
+  inner = recipes.inner()
+  inner.x = a
+  c = inner.z
+recipes:
+  inner:
+    uses:
+      grunk: )" grunk_VERSION R"(
+    parameters:
+      x: nil
+      y: 5
+    steps: |
+      z = x + y
+)";
+        EXPECT_EQ(out, expected);
+
+        grunk.write("test.grr.yml", recipe_outer);
+    }
+
+    auto recipe = grunk.read("test.grr.yml");
+    EXPECT_NEAR(recipe.get_feature("c").value().as<double>(), 7, 1e-15);
+}

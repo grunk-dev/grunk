@@ -34,11 +34,23 @@ public:
         return Derived(p);
     }
 
+    bool is_placeholder() const {
+        // A placeholder is a root parameter that is invalid even after evaluation
+        bool is_root_parameter = this->node_pointer()->num_parents() == 0;
+        if (is_root_parameter) {
+            parametric::DAGNode const& node = *this->node_pointer();
+            node.eval(); // trigger evaluation
+            return !this->is_valid();
+        }
+        return false;
+    }
+
 };
 
 template <typename T>
 struct Feature : public FeatureBase<Feature<T>, T> 
 {
+
     Feature(T const& v)
     : FeatureBase<Feature<T>, T>(v)
     {}
@@ -46,10 +58,6 @@ struct Feature : public FeatureBase<Feature<T>, T>
     explicit Feature(parametric::param<T> const& p) : FeatureBase<Feature<T>,T>(p) {}
 
     Feature() : FeatureBase<Feature<T>, T>() {}
-
-    void set_value(T const& t) {
-        this->change_value() = t;
-    }
 
 };
 
@@ -70,21 +78,21 @@ public:
      , lua(nullptr) //TODO: This might be a problem. But we can't extract the lua state from the object without evaluating
     {}
 
-    Feature()
+    Feature(lua_State* lua_state = nullptr)
      : FeatureBase<Feature<object>, object>()
-     , lua(nullptr)
+     , lua(lua_state)
     {}
 
     template <typename T>
     void set_value(T const& t) {
         if constexpr (std::is_same_v<T, object>) {
-            this->change_value() = t;
+            this->Base::set_value(t);
         } else {
             if (lua == nullptr) {
                 // need to evalatue
                 lua = value().lua_state();
             }
-            this->change_value() = sol::make_object(lua, t);
+            this->Base::set_value(sol::make_object(lua, t));
         }
     }
 
@@ -137,6 +145,12 @@ template <typename T>
 Feature<T> feature(T const& v)
 {
     return Feature<T>(v);
+}
+
+template <typename T>
+Feature<T> feature()
+{
+    return Feature<T>();
 }
 
 namespace details {

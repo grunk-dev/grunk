@@ -723,3 +723,25 @@ x = grunk.feature(2)
 y = grunk.feature(8)
 z = x * y)");  
 }
+
+TEST(serialize, placeholder_feature_cpp)
+{
+    grunk::state grunk;
+    auto x = grunk.feature().with_id("x");
+    auto y = grunk.feature().with_id("y");
+    auto z = x + y;
+
+    EXPECT_TRUE(x.is_placeholder());
+    EXPECT_TRUE(y.is_placeholder());
+    EXPECT_FALSE(z.is_placeholder());
+
+    z.set_id("z");
+
+    grunk::Serializer tree;
+    tree.parse(z);
+    auto script = tree.get_string(true);
+    EXPECT_EQ("\n" + script, R"(
+x = grunk.feature()
+y = grunk.feature()
+z = x + y)");
+}
