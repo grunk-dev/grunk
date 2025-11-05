@@ -30,7 +30,7 @@ public:
         return params;
     }
 
-    sol::function const& get_function() const {
+    sol::protected_function const& get_function() const {
         return func;
     }
 
