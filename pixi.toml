@@ -13,6 +13,9 @@ lua = "*"
 taskflow = "*"
 yaml-cpp = "*"
 
+[activation.env]
+TF_ENABLE_PROFILER="simple.json"
+
 [tasks]
 configure = { cmd = [
     "cmake", 

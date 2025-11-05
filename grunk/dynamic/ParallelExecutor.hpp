@@ -11,31 +11,50 @@ class ParallelExecutor
 public:
 
     template <typename T>
-    ParallelExecutor(Feature<T> const& feature) {
-        TaskflowVisitor(taskflow);
-        auto const& node = *feature.node_pointer();
-        node.accept(visitor, 0, parametric::DAGNODE::Direction::up);
+    ParallelExecutor(Feature<T> const& feature)
+     : node{feature.node_pointer()}
+     , taskflow(feature.id().empty() ? "<anonymous>" : feature.id())
+    {
+    }
+
+    void build_taskflow() {
+        if (node == nullptr) {
+            throw std::runtime_error("ParallelExecutor: Cannot build taskflow for null node.");
+        }
+        auto visitor = TaskflowVisitor(taskflow);
+        node->accept(visitor, 0, parametric::DAGNode::Direction::up);
+    }
+
+    tf::Taskflow const& get_taskflow() const {
+        return taskflow;
+    }
+
+    inline void reset() {
+        taskflow.clear();
     }
 
     inline void run() {
-        exectur.run(taskflow).wait();
+        if (taskflow.empty()) {
+            build_taskflow();
+        }
+        executor.run(taskflow).wait();
     }
 
 private:
 
-    tf::Executor executor;
+    parametric::NodeRef node;
     tf::Taskflow taskflow;
+    tf::Executor executor;
 
     class TaskflowVisitor
     {
         using Visited = std::unordered_map<parametric::DAGNode const*, bool>;
-        using Tasks = std::unordered_map<parametric::DAGNode const*, tf::Taskflow>;
+        using Tasks = std::unordered_map<parametric::DAGNode const*, tf::Task>;
 
     public:
 
-        TaskflowVisitor(tf::Taskflow& taskflow)
-         : start_node(start_node)
-         , taskflow(taskflow)
+        TaskflowVisitor(tf::Taskflow& tf)
+         : taskflow{tf}
          , first{true}
         {}
 
@@ -45,7 +64,7 @@ private:
             if (visited(&n)) {
                 return;
             }
-            tree.m_visited[&n] = true;
+            m_visited[&n] = true;
 
             bool is_feature = ((depth %  2) == 0);
             if (!is_feature){
@@ -63,10 +82,10 @@ private:
             //  parent_compute_node is the compute_node that computes me
             auto const& parent = n.get_parents()[0];
 
-            // emplace the first compute node of the tree
+            // emplace the parent compute node
             auto parent_task = taskflow.emplace([parent]() {
                 parent->eval();
-            });
+            }).name(n.id().empty() ? "<anonymous>" : n.id());
             m_tasks[parent.get()] = parent_task;
 
             if (first) {
@@ -74,17 +93,11 @@ private:
                 return;
             }
 
-            for (std::weak_ptr<DAGNode>& child : n.get_children()) {
+            for (auto& child : n.get_children()) {
 
                 // my children are the compute nodes that use me
                 if(auto c = child.lock(); c){
-                    auto const& child = *c;
-                    auto child_task = taskflow.emplace([c]() {
-                        if (auto c = child.lock(); c) {
-                            child->eval();
-                        }
-                    });
-                    m_tasks[&child].succeed(parent_task);
+                    m_tasks[c.get()].succeed(parent_task);
                 }
             }
         }
@@ -94,10 +107,10 @@ private:
             return (m_visited.find(key) != m_visited.end());
         }
 
-        Visited m_visited;
-        Tasks m_tasks;
         tf::Taskflow& taskflow;
         bool first;
+        Visited m_visited;
+        Tasks m_tasks;
     };
 };
 
