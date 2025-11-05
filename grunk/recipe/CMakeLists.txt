@@ -8,8 +8,6 @@ set(grunk_recipe_src
     RecipeCaller.hpp RecipeCaller.cpp
 )
 
-find_package(yaml-cpp REQUIRED)
-
 add_library(grunk_recipe ${grunk_recipe_src})
 
 target_link_libraries(grunk_recipe PUBLIC grunk::dynamic PRIVATE yaml-cpp::yaml-cpp)
