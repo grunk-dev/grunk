@@ -4,7 +4,16 @@
 #include <taskflow/taskflow.hpp>
 #include "grunk/dynamic/feature.hpp"
 
+#ifdef GRUNK_WITH_RECIPE
+#include "grunk/dynamic/internal/parametric_core.hpp"
+#include "grunk/recipe/Recipe.hpp"
+#endif
+
 namespace grunk {
+
+#ifdef GRUNK_WITH_RECIPE
+    tf::Taskflow to_taskflow(Recipe const& nodes);
+#endif
 
 namespace details {
 
@@ -74,6 +83,27 @@ namespace details {
                         }
                     }
 
+#ifdef GRUNK_WITH_RECIPE
+                    if (auto const* recipe_ptr = dynamic_cast<parametric::impl::param_holder<grunk::Recipe> const*>(&n); recipe_ptr) {
+                        if (!has_task(&n)) {
+                            
+                            // get the taskflow of the recipe and run it asynchronously
+                            m_tasks[&n] = taskflow.emplace([recipe_ptr](tf::Runtime& rt) {
+                                auto const& recipe = recipe_ptr->value();
+                                rt.silent_async(
+                                    [&]() { rt.executor().run(to_taskflow(recipe)).wait(); }
+                                );
+                            }).name("RecipeAsyncTask:" + n.id());
+
+                            // add dependency: async_recipe_task depends on parent
+                            m_tasks[&n].succeed(m_tasks[parent.get()]);
+
+                        }
+
+                        // add dependency: child depends on async_recipe_task
+                        m_tasks[c.get()].succeed(m_tasks[&n]);
+                    }
+#endif
                     // add dependency: child depends on parent
                     m_tasks[c.get()].succeed(m_tasks[parent.get()]);
                 }
@@ -115,6 +145,25 @@ tf::Taskflow to_taskflow(Feature<T> const&... feature)
     tf::Taskflow taskflow;
     return details::to_taskflow({feature.node_pointer()...});
 }
+
+#ifdef GRUNK_WITH_RECIPE
+inline tf::Taskflow to_taskflow(Recipe const& recipe)
+{
+    auto features = recipe.get_all_features();
+    std::vector<parametric::NodeRef> nodes;
+
+    nodes.reserve(features.size());
+    std::transform(
+        features.begin(), features.end(),
+        std::back_inserter(nodes),
+        [](DynamicFeature const& f) {
+            return f.node_pointer();
+        }
+    );
+
+    return details::to_taskflow(nodes);
+}
+#endif 
 
 class ParallelExecutor 
 {
