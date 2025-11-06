@@ -44,11 +44,12 @@ namespace details {
             //  parent_compute_node is the compute_node that computes me
             auto const& parent = n.get_parents()[0];
 
-            // emplace the parent compute node
-            auto parent_task = taskflow.emplace([parent]() {
-                parent->eval();
-            }).name(n.id().empty() ? "<anonymous>" : n.id());
-            m_tasks[parent.get()] = parent_task;
+            // emplace the parent compute node, if not already done
+            if (!has_task(parent.get())) {
+                m_tasks[parent.get()] = taskflow.emplace([parent]() {
+                    parent->eval();
+                }).name(n.id().empty() ? "<anonymous>" : n.id());
+            }
 
             if (first) {
                 first = false;
@@ -59,7 +60,22 @@ namespace details {
 
                 // my children are the compute nodes that use me
                 if(auto c = child.lock(); c){
-                    m_tasks[c.get()].succeed(parent_task);
+                    // emplace the child compute node, if not already done
+                    if (!has_task(c.get())) {
+                        m_tasks[c.get()] = taskflow.emplace([c]() {
+                            c->eval();
+                        }).name("<anonymous>");
+                        // give the task the name of the childs output feature, if any
+                        if (c->get_children().size() > 0) {
+                            auto grandchild = c->get_children()[0].lock();
+                            if (grandchild) {
+                                m_tasks[c.get()].name(grandchild->id().empty() ? "<anonymous>" : grandchild->id());
+                            }
+                        }
+                    }
+
+                    // add dependency: child depends on parent
+                    m_tasks[c.get()].succeed(m_tasks[parent.get()]);
                 }
             }
         }
@@ -67,6 +83,10 @@ namespace details {
     private:
         inline bool visited(parametric::DAGNode const* key) {
             return (m_visited.find(key) != m_visited.end());
+        }
+
+        inline bool has_task(parametric::DAGNode const* key) {
+            return (m_tasks.find(key) != m_tasks.end());
         }
 
         tf::Taskflow& taskflow;
