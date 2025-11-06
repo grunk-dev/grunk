@@ -210,9 +210,9 @@ TEST(multithreading, nested_recipe)
 
     auto a2 = outer.get_feature("a3");;
     auto b2 = outer.get_feature("b3");
-    grunk::ParallelExecutor executor(1, a2, b2);
-    dump_dot_file(executor);
+    grunk::ParallelExecutor executor(a2, b2);
     executor.run();
+    dump_dot_file(executor); // for subflow visualization, an executor run is needed first
     EXPECT_TRUE(a2.is_valid());
     EXPECT_TRUE(b2.is_valid());
     EXPECT_NEAR(a2.value().as<double>(), 81., 1e-14);

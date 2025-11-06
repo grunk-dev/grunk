@@ -11,21 +11,28 @@
 
 namespace grunk {
 
-#ifdef GRUNK_WITH_RECIPE
-    tf::Taskflow to_taskflow(Recipe const& nodes);
-#endif
-
 namespace details {
 
+#ifdef GRUNK_WITH_RECIPE
+    void emplace_recipe(tf::Subflow& subflow, Recipe const& recipe);
+#endif
+
+    template <typename Flow>
     class TaskflowVisitor
     {
+        static_assert(
+            std::is_same_v<Flow, tf::Taskflow> ||
+            std::is_same_v<Flow, tf::Subflow>,
+            "TaskflowVisitor: Flow must be either tf::Taskflow or tf::Subflow"
+        );
+
         using Visited = std::unordered_map<parametric::DAGNode const*, bool>;
         using Tasks = std::unordered_map<parametric::DAGNode const*, tf::Task>;
 
     public:
 
-        TaskflowVisitor(tf::Taskflow& tf)
-         : taskflow{tf}
+        TaskflowVisitor(Flow& flow)
+         : flow{flow}
          , first{true}
         {}
 
@@ -55,7 +62,7 @@ namespace details {
 
             // emplace the parent compute node, if not already done
             if (!has_task(parent.get())) {
-                m_tasks[parent.get()] = taskflow.emplace([parent]() {
+                m_tasks[parent.get()] = flow.emplace([parent]() {
                     parent->eval();
                 }).name(n.id().empty() ? "<anonymous>" : n.id());
             }
@@ -71,7 +78,7 @@ namespace details {
                 if(auto c = child.lock(); c){
                     // emplace the child compute node, if not already done
                     if (!has_task(c.get())) {
-                        m_tasks[c.get()] = taskflow.emplace([c]() {
+                        m_tasks[c.get()] = flow.emplace([c]() {
                             c->eval();
                         }).name("<anonymous>");
                         // give the task the name of the childs output feature, if any
@@ -88,12 +95,12 @@ namespace details {
                         if (!has_task(&n)) {
                             
                             // get the taskflow of the recipe and run it asynchronously
-                            m_tasks[&n] = taskflow.emplace([recipe_ptr](tf::Runtime& rt) {
+                            m_tasks[&n] = flow.emplace([recipe_ptr](tf::Subflow& subflow) {
+#ifdef NDEBUG
+                                subflow.retain(true); // This makes sure the subflow is retained for gaphviz visualization
+#endif
                                 auto const& recipe = recipe_ptr->value();
-                                rt.silent_async(
-                                    [&]() { rt.executor().run(to_taskflow(recipe)); }
-                                );
-                                rt.corun();
+                                details::emplace_recipe(subflow, recipe);
                             }).name("SubRecipeTask:" + n.id());
 
                             // add dependency: async_recipe_task depends on parent
@@ -120,7 +127,7 @@ namespace details {
             return (m_tasks.find(key) != m_tasks.end());
         }
 
-        tf::Taskflow& taskflow;
+        Flow& flow;
         bool first;
         Visited m_visited;
         Tasks m_tasks;
@@ -138,17 +145,30 @@ namespace details {
         }
         return taskflow;
     }
+
+    inline void emplace_nodes(tf::Subflow& subflow, std::vector<parametric::NodeRef> const& nodes)
+    {
+        TaskflowVisitor visitor(subflow);
+        for (auto const& node: nodes) {
+            if (node == nullptr) {
+                throw std::runtime_error("ParallelExecutor: Cannot build taskflow for null node.");
+            }
+            node->accept(visitor, 0, parametric::DAGNode::Direction::up);
+        }
+    }
+
 }
 
 template <typename... T>
 tf::Taskflow to_taskflow(Feature<T> const&... feature)
 {
-    tf::Taskflow taskflow;
     return details::to_taskflow({feature.node_pointer()...});
 }
 
 #ifdef GRUNK_WITH_RECIPE
-inline tf::Taskflow to_taskflow(Recipe const& recipe)
+namespace details {
+
+inline void emplace_recipe(tf::Subflow& subflow, Recipe const& recipe)
 {
     auto features = recipe.get_all_features();
     std::vector<parametric::NodeRef> nodes;
@@ -156,14 +176,15 @@ inline tf::Taskflow to_taskflow(Recipe const& recipe)
     nodes.reserve(features.size());
     std::transform(
         features.begin(), features.end(),
-        std::back_inserter(nodes),
+        std::back_inserter(nodes),  
         [](DynamicFeature const& f) {
             return f.node_pointer();
         }
     );
-
-    return details::to_taskflow(nodes);
+    emplace_nodes(subflow, nodes);
 }
+
+} // namespace details
 #endif 
 
 class ParallelExecutor 
