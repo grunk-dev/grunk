@@ -2,6 +2,37 @@
 #include "grunk/dynamic/ParallelExecutor.hpp"
 #include "grunk/dynamic/action.hpp"
 
+TEST(multithreading, simple_single_threaded)
+{
+    /*
+    create the following computation graph:
+    
+        x1(1) --> x2(+1) --
+                           \
+                            --> z(+)
+                           /
+        y1(2) --> y2(*2) --
+    */
+    auto x1 = grunk::feature(1.);
+    auto x2 = grunk::action([](double v){ return v + 1.; }, x1).output();
+    x2.set_id("x2");
+
+    auto y1 = grunk::feature(2.);
+    auto y2 = grunk::action([](double v){ return v * 2.; }, y1).output();
+    y2.set_id("y2");
+
+    auto z = grunk::action([](double a, double b){ return a + b; }, x2, y2).output();
+    z.set_id("z");
+
+    // single threaded execution
+    grunk::ParallelExecutor executor(1, z);
+    executor.run();
+    EXPECT_TRUE(z.is_valid());
+    EXPECT_TRUE(x2.is_valid());
+    EXPECT_TRUE(y2.is_valid());
+    EXPECT_NEAR(z.value(), 6., 1e-14);
+}
+
 TEST(multithreading, simple)
 {
     /*
@@ -24,6 +55,7 @@ TEST(multithreading, simple)
     auto z = grunk::action([](double a, double b){ return a + b; }, x2, y2).output();
     z.set_id("z");
 
+    // multi-threaded execution
     grunk::ParallelExecutor executor(z);
     executor.run();
     EXPECT_TRUE(z.is_valid());
@@ -38,11 +70,11 @@ TEST(multithreading, simple_shared_ancestor)
     /*
     create the following computation graph:
     
-                         --> y1(+1) --
+                         --> y1(*2) --
                         /             \
          x -->  y(+1) --                --> z(+)
                         \             /
-                         --> y2(*2) --
+                         --> y2(*3) --
     */
     auto x  = grunk::feature(1.).with_id("x");
     auto y  = grunk::action([](double v){ return v + 1.; }, x).output().with_id("y");
@@ -53,8 +85,34 @@ TEST(multithreading, simple_shared_ancestor)
     grunk::ParallelExecutor executor(z);
     executor.run();
     EXPECT_TRUE(z.is_valid());
-    EXPECT_TRUE(y2.is_valid());
+    EXPECT_TRUE(y1.is_valid());
     EXPECT_TRUE(y2.is_valid());
     EXPECT_TRUE(y.is_valid());
     EXPECT_NEAR(z.value(), 10., 1e-14);
+}
+
+TEST(multithreading, simple_shared_ancestor2)
+{
+
+    /*
+    create the following computation graph:
+    
+                         --> y1(*2) 
+                        /
+         x -->  y(+1) --
+                        \ 
+                         --> y2(*3) --
+    */
+    auto x  = grunk::feature(1.).with_id("x");
+    auto y  = grunk::action([](double v){ return v + 1.; }, x).output().with_id("y");
+    auto y1 = grunk::action([](double v){ return v * 2.; }, y).output().with_id("y1");
+    auto y2 = grunk::action([](double v){ return v * 3.; }, y).output().with_id("y2");
+
+    grunk::ParallelExecutor executor(y1, y2);
+    executor.run();
+    EXPECT_TRUE(y2.is_valid());
+    EXPECT_TRUE(y1.is_valid());
+    EXPECT_TRUE(y.is_valid());
+    EXPECT_NEAR(y1.value(), 4., 1e-14);
+    EXPECT_NEAR(y2.value(), 6., 1e-14);
 }
