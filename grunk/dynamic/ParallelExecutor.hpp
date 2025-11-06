@@ -91,9 +91,10 @@ namespace details {
                             m_tasks[&n] = taskflow.emplace([recipe_ptr](tf::Runtime& rt) {
                                 auto const& recipe = recipe_ptr->value();
                                 rt.silent_async(
-                                    [&]() { rt.executor().run(to_taskflow(recipe)).wait(); }
+                                    [&]() { rt.executor().run(to_taskflow(recipe)); }
                                 );
-                            }).name("RecipeAsyncTask:" + n.id());
+                                rt.corun();
+                            }).name("SubRecipeTask:" + n.id());
 
                             // add dependency: async_recipe_task depends on parent
                             m_tasks[&n].succeed(m_tasks[parent.get()]);
