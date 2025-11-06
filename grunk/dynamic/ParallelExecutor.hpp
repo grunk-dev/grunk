@@ -6,45 +6,7 @@
 
 namespace grunk {
 
-class ParallelExecutor 
-{
-public:
-
-    template <typename T>
-    ParallelExecutor(Feature<T> const& feature)
-     : node{feature.node_pointer()}
-     , taskflow(feature.id().empty() ? "<anonymous>" : feature.id())
-    {
-    }
-
-    void build_taskflow() {
-        if (node == nullptr) {
-            throw std::runtime_error("ParallelExecutor: Cannot build taskflow for null node.");
-        }
-        auto visitor = TaskflowVisitor(taskflow);
-        node->accept(visitor, 0, parametric::DAGNode::Direction::up);
-    }
-
-    tf::Taskflow const& get_taskflow() const {
-        return taskflow;
-    }
-
-    inline void reset() {
-        taskflow.clear();
-    }
-
-    inline void run() {
-        if (taskflow.empty()) {
-            build_taskflow();
-        }
-        executor.run(taskflow).wait();
-    }
-
-private:
-
-    parametric::NodeRef node;
-    tf::Taskflow taskflow;
-    tf::Executor executor;
+namespace details {
 
     class TaskflowVisitor
     {
@@ -112,6 +74,78 @@ private:
         Visited m_visited;
         Tasks m_tasks;
     };
+
+    inline tf::Taskflow to_taskflow(std::vector<parametric::NodeRef> const& nodes)
+    {
+        tf::Taskflow taskflow;
+        TaskflowVisitor visitor(taskflow);
+        for (auto const& node: nodes) {
+            if (node == nullptr) {
+                throw std::runtime_error("ParallelExecutor: Cannot build taskflow for null node.");
+            }
+            node->accept(visitor, 0, parametric::DAGNode::Direction::up);
+        }
+        return taskflow;
+    }
+}
+
+template <typename... T>
+tf::Taskflow to_taskflow(Feature<T> const&... feature)
+{
+    tf::Taskflow taskflow;
+    return details::to_taskflow({feature.node_pointer()...});
+}
+
+class ParallelExecutor 
+{
+public:
+
+    template <typename... T>
+    ParallelExecutor(Feature<T> const&... feature)
+     : nodes{feature.node_pointer()...}
+     , taskflow()
+     , executor()
+    {}
+
+    template <typename... T>
+    ParallelExecutor(size_t num_threads, Feature<T> const&... feature)
+     : nodes{feature.node_pointer()...}
+     , taskflow()
+     , executor(num_threads)
+    {}
+
+    inline void build_taskflow() {
+        taskflow = details::to_taskflow(nodes);
+    }
+
+    inline tf::Taskflow const& get_taskflow() const {
+        return taskflow;
+    }
+
+    inline void reset() {
+        taskflow.clear();
+    }
+
+    inline void name(std::string const& name) {
+        taskflow.name(name);
+    }
+
+    inline std::string const& name() const {
+        return taskflow.name();
+    }
+
+    inline void run() {
+        if (taskflow.empty()) {
+            build_taskflow();
+        }
+        executor.run(taskflow).wait();
+    }
+
+private:
+
+    std::vector<parametric::NodeRef> nodes;
+    tf::Taskflow taskflow;
+    tf::Executor executor;
 };
 
 } // namespace grunk
