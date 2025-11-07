@@ -26,7 +26,7 @@ namespace {
 
 }
 
-TEST(multithreading, simple_single_threaded)
+TEST(multithreading, cpp_static_mode_simple_single_threaded)
 {
     /*
     create the following computation graph:
@@ -58,7 +58,7 @@ TEST(multithreading, simple_single_threaded)
     EXPECT_NEAR(z.value(), 6., 1e-14);
 }
 
-TEST(multithreading, simple)
+TEST(multithreading, cpp_static_mode_simple)
 {
     /*
     create the following computation graph:
@@ -90,7 +90,7 @@ TEST(multithreading, simple)
     EXPECT_NEAR(z.value(), 6., 1e-14);
 }
 
-TEST(multithreading, simple_shared_ancestor)
+TEST(multithreading, cpp_static_mode_simple_shared_ancestor)
 {
 
     /*
@@ -118,7 +118,7 @@ TEST(multithreading, simple_shared_ancestor)
     EXPECT_NEAR(z.value(), 10., 1e-14);
 }
 
-TEST(multithreading, simple_shared_ancestor2)
+TEST(multithreading, cpp_static_mode_simple_shared_ancestor2)
 {
 
     /*
@@ -145,7 +145,7 @@ TEST(multithreading, simple_shared_ancestor2)
     EXPECT_NEAR(y2.value(), 6., 1e-14);
 }
 
-TEST(multithreading, complex_graph)
+TEST(multithreading, cpp_static_mode_complex_graph)
 {
     /*
     create the following computation graph:
@@ -180,7 +180,30 @@ TEST(multithreading, complex_graph)
     EXPECT_NEAR(z.value(), 14., 1e-14);
 }
 
-TEST(multithreading, nested_recipe)
+TEST(multithreading, lua_simple)
+{
+    grunk::state grunk;
+
+    auto recipe = grunk.create_recipe();
+    recipe.eval(R"(
+        x1 = grunk.feature(6)
+        y1 = grunk.feature(41)
+        x2 = x1 ^ 2
+        y2 = y1 + 1
+    )");
+    recipe.tag();
+    auto x2 = recipe.get_feature("x2");
+    auto y2 = recipe.get_feature("y2");
+    grunk::ParallelExecutor executor(x2, y2);
+    executor.run();
+    dump_dot_file(executor); // for subflow visualization, an executor run is needed first
+    EXPECT_TRUE(x2.is_valid());
+    EXPECT_TRUE(y2.is_valid());
+    EXPECT_NEAR(x2.value().as<double>(), 36., 1e-14);
+    EXPECT_NEAR(y2.value().as<double>(), 42., 1e-14);
+}
+
+TEST(multithreading, lua_nested_recipe)
 {
     grunk::state grunk;
 
@@ -196,8 +219,8 @@ TEST(multithreading, nested_recipe)
     auto outer = grunk.create_recipe();
     outer.insert_recipe("inner", std::move(inner));
     outer.eval(R"(
-        a1 = grunk.feature(3.)
-        b1 = grunk.feature(4.)
+        a1 = grunk.feature(3)
+        b1 = grunk.feature(4)
         a2 = a1 * 3
         b2 = b1 % 3
         r = recipes.inner()
@@ -210,7 +233,7 @@ TEST(multithreading, nested_recipe)
 
     auto a2 = outer.get_feature("a3");;
     auto b2 = outer.get_feature("b3");
-    grunk::ParallelExecutor executor(a2, b2);
+    grunk::ParallelExecutor executor(2, a2, b2);
     executor.run();
     dump_dot_file(executor); // for subflow visualization, an executor run is needed first
     EXPECT_TRUE(a2.is_valid());

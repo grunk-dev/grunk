@@ -72,6 +72,24 @@ namespace details {
                 return;
             }
 
+#ifdef GRUNK_WITH_RECIPE
+        if (auto const* recipe_ptr = dynamic_cast<parametric::impl::param_holder<grunk::Recipe> const*>(&n); recipe_ptr) {
+            if (!has_task(&n)) {
+                
+                // get the taskflow of the recipe and run it asynchronously
+                m_tasks[&n] = flow.emplace([recipe_ptr](tf::Subflow& subflow) {
+                    subflow.retain(true); //TODO: Only for debugging This makes sure the subflow is retained for gaphviz visualization
+                    auto const& recipe = recipe_ptr->value();
+                    details::emplace_recipe(subflow, recipe);
+                }).name("SubRecipeTask:" + n.id());
+
+                // add dependency: async_recipe_task depends on parent
+                m_tasks[&n].succeed(m_tasks[parent.get()]);
+
+            }
+        }
+#endif
+
             for (auto& child : n.get_children()) {
 
                 // my children are the compute nodes that use me
@@ -89,31 +107,19 @@ namespace details {
                             }
                         }
                     }
-
 #ifdef GRUNK_WITH_RECIPE
-                    if (auto const* recipe_ptr = dynamic_cast<parametric::impl::param_holder<grunk::Recipe> const*>(&n); recipe_ptr) {
-                        if (!has_task(&n)) {
-                            
-                            // get the taskflow of the recipe and run it asynchronously
-                            m_tasks[&n] = flow.emplace([recipe_ptr](tf::Subflow& subflow) {
-#ifdef NDEBUG
-                                subflow.retain(true); // This makes sure the subflow is retained for gaphviz visualization
-#endif
-                                auto const& recipe = recipe_ptr->value();
-                                details::emplace_recipe(subflow, recipe);
-                            }).name("SubRecipeTask:" + n.id());
-
-                            // add dependency: async_recipe_task depends on parent
-                            m_tasks[&n].succeed(m_tasks[parent.get()]);
-
-                        }
-
+                    if (has_task(&n)) {
                         // add dependency: child depends on async_recipe_task
                         m_tasks[c.get()].succeed(m_tasks[&n]);
                     }
-#endif
+                    else {
+                        // add dependency: child depends on parent
+                        m_tasks[c.get()].succeed(m_tasks[parent.get()]);
+                    }
+#else 
                     // add dependency: child depends on parent
                     m_tasks[c.get()].succeed(m_tasks[parent.get()]);
+#endif
                 }
             }
         }
