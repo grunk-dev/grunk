@@ -13,6 +13,7 @@ include(AddGoogleTest)
 
 set(TESTSOURCES
   testmain.cpp
+  dynamic_multithreading.cpp
   dynamic_operators.cpp
   dynamic_serialization.cpp
   dynamic_state.cpp
