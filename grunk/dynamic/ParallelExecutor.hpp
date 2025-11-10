@@ -13,10 +13,6 @@ namespace grunk {
 
 namespace details {
 
-#ifdef GRUNK_WITH_RECIPE
-    void emplace_recipe(tf::Subflow& subflow, Recipe const& recipe);
-#endif
-
     template <typename Flow>
     class TaskflowVisitor
     {
@@ -72,24 +68,6 @@ namespace details {
                 return;
             }
 
-#ifdef GRUNK_WITH_RECIPE
-        if (auto const* recipe_ptr = dynamic_cast<parametric::impl::param_holder<grunk::Recipe> const*>(&n); recipe_ptr) {
-            if (!has_task(&n)) {
-                
-                // get the taskflow of the recipe and run it asynchronously
-                m_tasks[&n] = flow.emplace([recipe_ptr](tf::Subflow& subflow) {
-                    subflow.retain(true); //TODO: Only for debugging This makes sure the subflow is retained for gaphviz visualization
-                    auto const& recipe = recipe_ptr->value();
-                    details::emplace_recipe(subflow, recipe);
-                }).name("SubRecipeTask:" + n.id());
-
-                // add dependency: async_recipe_task depends on parent
-                m_tasks[&n].succeed(m_tasks[parent.get()]);
-
-            }
-        }
-#endif
-
             for (auto& child : n.get_children()) {
 
                 // my children are the compute nodes that use me
@@ -107,19 +85,10 @@ namespace details {
                             }
                         }
                     }
-#ifdef GRUNK_WITH_RECIPE
-                    if (has_task(&n)) {
-                        // add dependency: child depends on async_recipe_task
-                        m_tasks[c.get()].succeed(m_tasks[&n]);
-                    }
-                    else {
-                        // add dependency: child depends on parent
-                        m_tasks[c.get()].succeed(m_tasks[parent.get()]);
-                    }
-#else 
+
                     // add dependency: child depends on parent
                     m_tasks[c.get()].succeed(m_tasks[parent.get()]);
-#endif
+
                 }
             }
         }
@@ -168,30 +137,13 @@ namespace details {
 template <typename... T>
 tf::Taskflow to_taskflow(Feature<T> const&... feature)
 {
+    // parallel execution is only supported in dynamic mode, i.e. no T is a sol::object
+    static_assert(
+        (... && !std::is_same_v<T, sol::object>),
+        "Parallel execution is only supported for non-dynamic features." 
+    );
     return details::to_taskflow({feature.node_pointer()...});
 }
-
-#ifdef GRUNK_WITH_RECIPE
-namespace details {
-
-inline void emplace_recipe(tf::Subflow& subflow, Recipe const& recipe)
-{
-    auto features = recipe.get_all_features();
-    std::vector<parametric::NodeRef> nodes;
-
-    nodes.reserve(features.size());
-    std::transform(
-        features.begin(), features.end(),
-        std::back_inserter(nodes),  
-        [](DynamicFeature const& f) {
-            return f.node_pointer();
-        }
-    );
-    emplace_nodes(subflow, nodes);
-}
-
-} // namespace details
-#endif 
 
 class ParallelExecutor 
 {
@@ -202,14 +154,26 @@ public:
      : nodes{feature.node_pointer()...}
      , taskflow()
      , executor()
-    {}
+    {
+        // parallel execution is only supported in dynamic mode, i.e. no T is a sol::object
+        static_assert(
+            (... && !std::is_same_v<T, sol::object>),
+            "Parallel execution is only supported for non-dynamic features." 
+        );
+    }
 
     template <typename... T>
     ParallelExecutor(size_t num_threads, Feature<T> const&... feature)
      : nodes{feature.node_pointer()...}
      , taskflow()
      , executor(num_threads)
-    {}
+    {
+        // parallel execution is only supported in dynamic mode, i.e. no T is a sol::object
+        static_assert(
+            (... && !std::is_same_v<T, sol::object>),
+            "Parallel execution is only supported for non-dynamic features." 
+        );
+    }
 
     inline void build_taskflow() {
         taskflow = details::to_taskflow(nodes);
