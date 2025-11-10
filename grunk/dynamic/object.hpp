@@ -6,6 +6,8 @@ namespace grunk {
 
 using object = sol::object;
 
+} // namespace grunk
+
 /************
  * Addition *
  ************/
@@ -154,6 +156,8 @@ inline grunk::object operator/(L const& l, grunk::object const& r) {
  * pow *
  *******/
 
+namespace grunk {
+
 inline grunk::object pow(grunk::object const& base, grunk::object const& exponent) {
     sol::state_view lua(base.lua_state());
     auto result = lua["grunk"]["__dynamic_pow"](base, exponent);
@@ -184,6 +188,8 @@ inline grunk::object pow(L const& base, grunk::object const& exponent) {
         throw std::runtime_error("Lua error: " + std::string(err.what()));
     }
     return result;
+}
+
 }
 
 /**********
@@ -236,5 +242,3 @@ inline grunk::object operator-(grunk::object const& l) {
     return result;
 }
 
-
-} // namespace grunk

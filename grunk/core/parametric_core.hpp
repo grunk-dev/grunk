@@ -1,5 +1,7 @@
 #pragma once
 
+#ifdef GRUNK_WITH_DYNAMIC
+
 #include "grunk/dynamic/object.hpp"
 #include "grunk/dynamic/io_error.hpp"
 
@@ -121,5 +123,7 @@ inline std::string serialize(grunk::Recipe const&)
 }
 
 } // namespace parametric
+
+#endif // GRUNK_WITH_DYNAMIC
 
 #include <parametric/core.hpp>

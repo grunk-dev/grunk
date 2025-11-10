@@ -1,7 +1,5 @@
 #include <gtest/gtest.h>
-#include "grunk/dynamic/ParallelExecutor.hpp"
-#include "grunk/dynamic/action.hpp"
-#include "grunk/dynamic/state.hpp"
+#include "grunk/core.hpp"
 
 namespace {
 

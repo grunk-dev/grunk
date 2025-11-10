@@ -2,10 +2,10 @@
 
 #ifdef GRUNK_WITH_TASKFLOW
 #include <taskflow/taskflow.hpp>
-#include "grunk/dynamic/feature.hpp"
+#include "grunk/core/Feature.hpp"
 
 #ifdef GRUNK_WITH_RECIPE
-#include "grunk/dynamic/internal/parametric_core.hpp"
+#include "grunk/core/parametric_core.hpp"
 #include "grunk/recipe/Recipe.hpp"
 #endif
 

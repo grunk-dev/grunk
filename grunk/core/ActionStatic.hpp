@@ -1,6 +1,6 @@
 #pragma once 
 
-#include "grunk/dynamic/feature.hpp"
+#include "grunk/core/Feature.hpp"
 #include "ResultHolder.hpp"
 
 namespace grunk {
@@ -162,5 +162,31 @@ ResultHolder<Action<F, Args...>> action(F const& fun, Feature<Args> const&... ar
 }
 
 } // namespace details
+
+/**
+ * @brief Given a function and some features in the feature tree, this
+ * function creates an Action instance representing the evaluation
+ * of the input function for the input features.
+ *
+ * This function accepts features as arguments for the functions, as well
+ * as instances that are not wrapped in features. Internally, the latter will
+ * be wrapped in an unnamed/anonymous feature
+ *
+ * @tparam F The type of the function to be wrapped. This can be any referentially transparent function,
+             In particular, the function must be invokable on const
+             references.
+ * @tparam Args The types of the arguments expected by the input function
+ * @param fun The input function
+ * @param args The input features of the feature tree
+ * @return ResultHolder wrapping the outputs of the Action
+ *
+ * @ingroup static
+ */
+template <typename F,
+          typename... Args>
+inline decltype(auto) action(F const& fun, Args&&... args)
+{
+    return details::ActionFactory::new_action(fun, details::to_feature(std::forward<Args>(args))...);
+}
 
 } // namespace grunk

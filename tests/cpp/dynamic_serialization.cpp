@@ -1,6 +1,5 @@
 #include <gtest/gtest.h>
-#include <grunk/dynamic/state.hpp>
-#include <grunk/dynamic/internal/Serializer.hpp>
+#include <grunk/dynamic.hpp>
 
 TEST(serialization, primitives)
 {
