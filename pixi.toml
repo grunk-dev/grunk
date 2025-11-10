@@ -9,7 +9,7 @@ channels = ["conda-forge"]
 [dependencies]
 #TODO: parametric
 lua = "*"
-#TODO: sol2
+sol2 = "*"
 taskflow = "*"
 yaml-cpp = "*"
 
@@ -23,11 +23,11 @@ configure = { cmd = [
     "-B", "build",
     "-D", "CMAKE_INSTALL_PREFIX=build/install",
     "-D", "CMAKE_BUILD_TYPE={{ config }}",
+    "-D", "GRUNK_TESTS=ON",
     "-D", "parametric_DIR=/localdata2/klei_j0/code/parametric/build/install/lib/cmake/parametric/",
-    "-D", "sol2_DIR=/localdata2/klei_j0/code/sol2/build/install/share/cmake/sol2/"
 ], args = [
     { "arg" = "config", "default"="Release"},
 ]}
 build = { cmd = "cmake --build . {{ extra_args }}", cwd = "build", args= [ { "arg" = "extra_args", "default" = "-j"}]}
 install = { cmd = "cmake --build . --target install {{ extra_args }}", cwd = "build", args= [ { "arg" = "extra_args", "default" = "-j"}] }
-unittests = { cmd = "./runUnitTests", cwd = "build/tests/cpp" }
+test = { cmd = "./runUnitTests", cwd = "build/tests/cpp" }

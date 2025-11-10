@@ -13,6 +13,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/linux-64/lua-5.4.8-h03e1676_1.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/ncurses-6.5-h2d0b736_3.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/readline-8.2-h8c095d6_2.conda
+      - conda: https://conda.anaconda.org/conda-forge/linux-64/sol2-3.5.0-lua54hb700be7_0.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/taskflow-3.10.0-h84d6215_0.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/yaml-cpp-0.8.0-h3f2d84a_0.conda
       osx-64:
@@ -20,10 +21,12 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/osx-64/lua-5.4.8-h07ffd45_1.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-64/ncurses-6.5-h0622a9a_3.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-64/readline-8.2-h7cca4af_2.conda
+      - conda: https://conda.anaconda.org/conda-forge/osx-64/sol2-3.5.0-lua54hcb651aa_0.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-64/taskflow-3.10.0-h9275861_0.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-64/yaml-cpp-0.8.0-h92383a6_0.conda
       win-64:
       - conda: https://conda.anaconda.org/conda-forge/win-64/lua-5.4.8-h1839187_1.conda
+      - conda: https://conda.anaconda.org/conda-forge/win-64/sol2-3.5.0-lua54h49e36cd_0.conda
       - conda: https://conda.anaconda.org/conda-forge/win-64/taskflow-3.10.0-h7f575de_0.conda
       - conda: https://conda.anaconda.org/conda-forge/win-64/ucrt-10.0.26100.0-h57928b3_0.conda
       - conda: https://conda.anaconda.org/conda-forge/win-64/vc-14.3-h2b53caa_32.conda
@@ -170,6 +173,41 @@ packages:
   license_family: GPL
   size: 256712
   timestamp: 1740379577668
+- conda: https://conda.anaconda.org/conda-forge/linux-64/sol2-3.5.0-lua54hb700be7_0.conda
+  sha256: b7c7dc3bbb83f918f2f82ec1a536b1e78f50a825ff45e8058928046573879c35
+  md5: a406d0d177a8459a017d8e8481d87424
+  depends:
+  - __glibc >=2.17,<3.0.a0
+  - libgcc >=14
+  - libstdcxx >=14
+  - lua >=5.4.8,<5.5.0a0
+  license: MIT
+  license_family: MIT
+  size: 150813
+  timestamp: 1762617014065
+- conda: https://conda.anaconda.org/conda-forge/osx-64/sol2-3.5.0-lua54hcb651aa_0.conda
+  sha256: af34b6a9ac4dda38127b11df0a8d7dc22c6f247df350237bc5f2611fd02452e5
+  md5: dfcd8a7fd7d484b3a7923a2cff180cf7
+  depends:
+  - __osx >=10.13
+  - libcxx >=19
+  - lua >=5.4.8,<5.5.0a0
+  license: MIT
+  license_family: MIT
+  size: 150849
+  timestamp: 1762617426406
+- conda: https://conda.anaconda.org/conda-forge/win-64/sol2-3.5.0-lua54h49e36cd_0.conda
+  sha256: 19a76e249611058edac58a534e3422859e71b8f0dbbdf22871c68e67861525d5
+  md5: 228d28bc9fb8a2fc28a4ea41edb9583e
+  depends:
+  - lua >=5.4.8,<5.5.0a0
+  - ucrt >=10.0.20348.0
+  - vc >=14.3,<15
+  - vc14_runtime >=14.44.35208
+  license: MIT
+  license_family: MIT
+  size: 150710
+  timestamp: 1762617261150
 - conda: https://conda.anaconda.org/conda-forge/linux-64/taskflow-3.10.0-h84d6215_0.conda
   sha256: d72738a2707b813925cb8c251de9261e4c2aa896472c17655dc1592f905e3c6a
   md5: 3359bdf6bcd25e703038da89c8d24df1
