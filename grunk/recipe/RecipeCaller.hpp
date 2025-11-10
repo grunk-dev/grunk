@@ -1,6 +1,6 @@
 #pragma once 
 
-#include "grunk/dynamic/feature.hpp"
+#include "grunk/dynamic/DynamicFeature.hpp"
 
 namespace grunk {
 

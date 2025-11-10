@@ -1,8 +1,6 @@
 #include <gtest/gtest.h>
-#include <grunk/dynamic/state.hpp>
-#include <grunk/recipe/Recipe.hpp>
-#include <grunk/recipe/RecipeCaller.hpp>
-#include "grunk/version.hpp"
+#include <grunk/dynamic.hpp>
+#include <grunk/recipe.hpp>
 
 TEST(Recipe, call_RecipeCaller_locked_error)
 {

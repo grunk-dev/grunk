@@ -1,6 +1,6 @@
 #include "grunk/recipe/Recipe.hpp"
 #include "grunk/version.hpp"
-#include "grunk/dynamic/internal/Serializer.hpp"
+#include "grunk/dynamic/Serializer.hpp"
 #include "grunk/recipe/RecipeCaller.hpp"
 
 #include <yaml-cpp/yaml.h>

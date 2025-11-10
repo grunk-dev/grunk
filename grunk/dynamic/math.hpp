@@ -1,6 +1,7 @@
 #pragma once
-#include "feature.hpp"
-#include "action.hpp"
+#include "DynamicFeature.hpp"
+#include "grunk/core/ActionStatic.hpp"
+#include "ActionDynamic.hpp"
 #include <cmath>
 
 namespace grunk {
@@ -20,23 +21,27 @@ namespace details {
      
 } // namespace details 
 
+} // namespace grunk
+
+#ifdef GRUNK_WITH_DYNAMIC
+
 /************
  * Addition *
  ************/
 
 template <typename L, typename R>
-decltype(auto) operator+(Feature<L> const& l, Feature<R> const& r) {
+decltype(auto) operator+(grunk::Feature<L> const& l, grunk::Feature<R> const& r) {
     // if either l or r are grunk::objects, the result will be a dynamic action
     // this distinction is necessary to allow deserialization of dynamic actions
     if constexpr (std::is_same_v<L, grunk::object> || std::is_same_v<R, grunk::object>) {
         lua_State* lua_state = nullptr;
         if constexpr (std::is_same_v<L, grunk::object>) {
-            lua_state = details::get_state(l);
+            lua_state = grunk::details::get_state(l);
         } else {
-            lua_state = details::get_state(r);
+            lua_state = grunk::details::get_state(r);
         }
         sol::state_view lua(lua_state);
-        function_meta fun = lua["grunk"]["_dynamic_add"];
+        grunk::function_meta fun = lua["grunk"]["_dynamic_add"];
         return grunk::action(fun, l, r).output();
     } else {
         // static action
@@ -45,13 +50,13 @@ decltype(auto) operator+(Feature<L> const& l, Feature<R> const& r) {
 }
 
 template <typename L, typename R>
-decltype(auto) operator+(Feature<L> const& l, R const& r) {
-    return l + details::to_feature(r);
+decltype(auto) operator+(grunk::Feature<L> const& l, R const& r) {
+    return l + grunk::details::to_feature(r);
 }
 
 template <typename L, typename R>
-decltype(auto) operator+(L const& l, Feature<R> const& r) {
-    return details::to_feature(l) + r;
+decltype(auto) operator+(L const& l, grunk::Feature<R> const& r) {
+    return grunk::details::to_feature(l) + r;
 }
 
 /***************
@@ -59,18 +64,18 @@ decltype(auto) operator+(L const& l, Feature<R> const& r) {
  ***************/
 
 template <typename L, typename R>
-decltype(auto) operator-(Feature<L> const& l, Feature<R> const& r) {
+decltype(auto) operator-(grunk::Feature<L> const& l, grunk::Feature<R> const& r) {
     // if either l or r are grunk::objects, the result will be a dynamic action
     // this distinction is necessary to allow deserialization of dynamic actions
     if constexpr (std::is_same_v<L, grunk::object> || std::is_same_v<R, grunk::object>) {
         lua_State* lua_state = nullptr;
         if constexpr (std::is_same_v<L, grunk::object>) {
-            lua_state = details::get_state(l);
+            lua_state = grunk::details::get_state(l);
         } else {
-            lua_state = details::get_state(r);
+            lua_state = grunk::details::get_state(r);
         }
         sol::state_view lua(lua_state);
-        function_meta fun = lua["grunk"]["_dynamic_sub"];
+        grunk::function_meta fun = lua["grunk"]["_dynamic_sub"];
         return grunk::action(fun, l, r).output();
     } else {
         // static action
@@ -79,13 +84,13 @@ decltype(auto) operator-(Feature<L> const& l, Feature<R> const& r) {
 }
 
 template <typename L, typename R>
-decltype(auto) operator-(Feature<L> const& l, R const& r) {
-    return l - details::to_feature(r);
+decltype(auto) operator-(grunk::Feature<L> const& l, R const& r) {
+    return l - grunk::details::to_feature(r);
 }
 
 template <typename L, typename R>
-decltype(auto) operator-(L const& l, Feature<R> const& r) {
-    return details::to_feature(l) - r;
+decltype(auto) operator-(L const& l, grunk::Feature<R> const& r) {
+    return grunk::details::to_feature(l) - r;
 }
 
 /******************
@@ -93,18 +98,18 @@ decltype(auto) operator-(L const& l, Feature<R> const& r) {
  ******************/
 
 template <typename L, typename R>
-decltype(auto) operator*(Feature<L> const& l, Feature<R> const& r) {
+decltype(auto) operator*(grunk::Feature<L> const& l, grunk::Feature<R> const& r) {
     // if either l or r are grunk::objects, the result will be a dynamic action
     // this distinction is necessary to allow deserialization of dynamic actions
     if constexpr (std::is_same_v<L, grunk::object> || std::is_same_v<R, grunk::object>) {
         lua_State* lua_state = nullptr;
         if constexpr (std::is_same_v<L, grunk::object>) {
-            lua_state = details::get_state(l);
+            lua_state = grunk::details::get_state(l);
         } else {
-            lua_state = details::get_state(r);
+            lua_state = grunk::details::get_state(r);
         }
         sol::state_view lua(lua_state);
-        function_meta fun = lua["grunk"]["_dynamic_mul"];
+        grunk::function_meta fun = lua["grunk"]["_dynamic_mul"];
         return grunk::action(fun, l, r).output();
     } else {
         // static action
@@ -113,13 +118,13 @@ decltype(auto) operator*(Feature<L> const& l, Feature<R> const& r) {
 }
 
 template <typename L, typename R>
-decltype(auto) operator*(Feature<L> const& l, R const& r) {
-    return l * details::to_feature(r);
+decltype(auto) operator*(grunk::Feature<L> const& l, R const& r) {
+    return l * grunk::details::to_feature(r);
 }
 
 template <typename L, typename R>
-decltype(auto) operator*(L const& l, Feature<R> const& r) {
-    return details::to_feature(l) * r;
+decltype(auto) operator*(L const& l, grunk::Feature<R> const& r) {
+    return grunk::details::to_feature(l) * r;
 }
 
 /************
@@ -127,18 +132,18 @@ decltype(auto) operator*(L const& l, Feature<R> const& r) {
  ************/
 
 template <typename L, typename R>
-decltype(auto) operator/(Feature<L> const& l, Feature<R> const& r) {
+decltype(auto) operator/(grunk::Feature<L> const& l, grunk::Feature<R> const& r) {
     // if either l or r are grunk::objects, the result will be a dynamic action
     // this distinction is necessary to allow deserialization of dynamic actions
     if constexpr (std::is_same_v<L, grunk::object> || std::is_same_v<R, grunk::object>) {
         lua_State* lua_state = nullptr;
         if constexpr (std::is_same_v<L, grunk::object>) {
-            lua_state = details::get_state(l);
+            lua_state = grunk::details::get_state(l);
         } else {
-            lua_state = details::get_state(r);
+            lua_state = grunk::details::get_state(r);
         }
         sol::state_view lua(lua_state);
-        function_meta fun = lua["grunk"]["_dynamic_div"];
+        grunk::function_meta fun = lua["grunk"]["_dynamic_div"];
         return grunk::action(fun, l, r).output();
     } else {
         // static action
@@ -147,34 +152,36 @@ decltype(auto) operator/(Feature<L> const& l, Feature<R> const& r) {
 }
 
 template <typename L, typename R>
-decltype(auto) operator/(Feature<L> const& l, R const& r) {
-    return l / details::to_feature(r);
+decltype(auto) operator/(grunk::Feature<L> const& l, R const& r) {
+    return l / grunk::details::to_feature(r);
 }
 
 template <typename L, typename R>
-decltype(auto) operator/(L const& l, Feature<R> const& r) {
-    return details::to_feature(l) / r;
+decltype(auto) operator/(L const& l, grunk::Feature<R> const& r) {
+    return grunk::details::to_feature(l) / r;
 }
 
 /*******
  * pow *
  *******/
 
+namespace grunk {
+
 using std::pow;
 
 template <typename L, typename R>
-decltype(auto) pow(Feature<L> const& l, Feature<R> const& r) {
+decltype(auto) pow(grunk::Feature<L> const& l, grunk::Feature<R> const& r) {
     // if either l or r are grunk::objects, the result will be a dynamic action
     // this distinction is necessary to allow deserialization of dynamic actions
     if constexpr (std::is_same_v<L, grunk::object> || std::is_same_v<R, grunk::object>) {
         lua_State* lua_state = nullptr;
         if constexpr (std::is_same_v<L, grunk::object>) {
-            lua_state = details::get_state(l);
+            lua_state = grunk::details::get_state(l);
         } else {
-            lua_state = details::get_state(r);
+            lua_state = grunk::details::get_state(r);
         }
         sol::state_view lua(lua_state);
-        function_meta fun = lua["grunk"]["_dynamic_pow"];
+        grunk::function_meta fun = lua["grunk"]["_dynamic_pow"];
         return grunk::action(fun, l, r).output();
     } else {
         // static action
@@ -183,32 +190,34 @@ decltype(auto) pow(Feature<L> const& l, Feature<R> const& r) {
 }
 
 template <typename L, typename R>
-decltype(auto) pow(Feature<L> const& l, R const& r) {
-    return pow(l, details::to_feature(r));
+decltype(auto) pow(grunk::Feature<L> const& l, R const& r) {
+    return pow(l, grunk::details::to_feature(r));
 }
 
 template <typename L, typename R>
-decltype(auto) pow(L const& l, Feature<R> const& r) {
-    return pow(details::to_feature(l), r);
+decltype(auto) pow(L const& l, grunk::Feature<R> const& r) {
+    return pow(grunk::details::to_feature(l), r);
 }
+
+} // namespace grunk
 
 /**********
  * modulo *
  **********/
 
 template <typename L, typename R>
-decltype(auto) operator%(Feature<L> const& l, Feature<R> const& r) {
+decltype(auto) operator%(grunk::Feature<L> const& l, grunk::Feature<R> const& r) {
     // if either l or r are grunk::objects, the result will be a dynamic action
     // this distinction is necessary to allow deserialization of dynamic actions
     if constexpr (std::is_same_v<L, grunk::object> || std::is_same_v<R, grunk::object>) {
         lua_State* lua_state = nullptr;
         if constexpr (std::is_same_v<L, grunk::object>) {
-            lua_state = details::get_state(l);
+            lua_state = grunk::details::get_state(l);
         } else {
-            lua_state = details::get_state(r);
+            lua_state = grunk::details::get_state(r);
         }
         sol::state_view lua(lua_state);
-        function_meta fun = lua["grunk"]["_dynamic_mod"];
+        grunk::function_meta fun = lua["grunk"]["_dynamic_mod"];
         return grunk::action(fun, l, r).output();
     } else {
         // static action
@@ -217,13 +226,13 @@ decltype(auto) operator%(Feature<L> const& l, Feature<R> const& r) {
 }
 
 template <typename L, typename R>
-decltype(auto) operator%(Feature<L> const& l, R const& r) {
-    return l % details::to_feature(r);
+decltype(auto) operator%(grunk::Feature<L> const& l, R const& r) {
+    return l % grunk::details::to_feature(r);
 }
 
 template <typename L, typename R>
-decltype(auto) operator%(L const& l, Feature<R> const& r) {
-    return details::to_feature(l) % r;
+decltype(auto) operator%(L const& l, grunk::Feature<R> const& r) {
+    return grunk::details::to_feature(l) % r;
 }
 
 /************
@@ -231,13 +240,13 @@ decltype(auto) operator%(L const& l, Feature<R> const& r) {
  ************/
 
 template <typename L>
-Feature<L> operator-(Feature<L> const& l) {
+grunk::Feature<L> operator-(grunk::Feature<L> const& l) {
     // if l is a grunk::object, the result will be a dynamic action
     // this distinction is necessary to allow deserialization of dynamic actions
     if constexpr (std::is_same_v<L, grunk::object>) {
-        lua_State* lua_state = details::get_state(l);
+        lua_State* lua_state = grunk::details::get_state(l);
         sol::state_view lua(lua_state);
-        function_meta fun = lua["grunk"]["_dynamic_unm"];
+        grunk::function_meta fun = lua["grunk"]["_dynamic_unm"];
         return grunk::action(fun, l).output();
     } else {
         // static action
@@ -245,4 +254,4 @@ Feature<L> operator-(Feature<L> const& l) {
     }
 }
 
-}
+#endif // GRUNK_WITH_DYNAMIC

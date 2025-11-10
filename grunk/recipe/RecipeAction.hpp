@@ -1,7 +1,7 @@
 #pragma once 
 
-#include "grunk/dynamic/internal/parametric_core.hpp"
-#include "grunk/dynamic/internal/ResultHolder.hpp"
+#include "grunk/core/parametric_core.hpp"
+#include "grunk/core/ResultHolder.hpp"
 #include "grunk/recipe/Recipe.hpp"
 
 namespace grunk {
