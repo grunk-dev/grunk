@@ -121,17 +121,6 @@ namespace details {
         return taskflow;
     }
 
-    inline void emplace_nodes(tf::Subflow& subflow, std::vector<parametric::NodeRef> const& nodes)
-    {
-        TaskflowVisitor visitor(subflow);
-        for (auto const& node: nodes) {
-            if (node == nullptr) {
-                throw std::runtime_error("ParallelExecutor: Cannot build taskflow for null node.");
-            }
-            node->accept(visitor, 0, parametric::DAGNode::Direction::up);
-        }
-    }
-
 }
 
 template <typename... T>

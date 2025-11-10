@@ -52,18 +52,6 @@ public:
         return get<DynamicFeature>(key);
     }
 
-    std::vector<DynamicFeature> get_all_features() const
-    {
-        std::vector<DynamicFeature> features;
-        auto collect_feature = [&features](sol::object key, sol::object value) {
-            if (value.is<DynamicFeature>()) {
-                features.push_back(value.as<DynamicFeature>());
-            }
-        };
-        m_environment.for_each(collect_feature);
-        return features;
-    }
-
     inline DynamicFeature get_feature(std::string const& key) const
     {
         return get<DynamicFeature>(key);
