@@ -1,0 +1,33 @@
+[workspace]
+name = "grunk"
+version = "0.5.0"
+authors = ["Jan Kleienrt <jan.kleinert@dlr.de>"]
+platforms = ["win-64", "linux-64", "osx-64"]
+channels = ["conda-forge"]
+
+
+[dependencies]
+#TODO: parametric
+lua = "*"
+sol2 = "*"
+taskflow = "*"
+yaml-cpp = "*"
+
+[activation.env]
+TF_ENABLE_PROFILER="simple.json"
+
+[tasks]
+configure = { cmd = [
+    "cmake", 
+    "-S", ".",
+    "-B", "build",
+    "-D", "CMAKE_INSTALL_PREFIX=build/install",
+    "-D", "CMAKE_BUILD_TYPE={{ config }}",
+    "-D", "GRUNK_TESTS=ON"#,
+    #"-D", "parametric_DIR=/localdata2/klei_j0/code/parametric/build/install/lib/cmake/parametric/",
+], args = [
+    { "arg" = "config", "default"="Release"},
+]}
+build = { cmd = "cmake --build . {{ extra_args }}", cwd = "build", args= [ { "arg" = "extra_args", "default" = "-j"}]}
+install = { cmd = "cmake --build . --target install {{ extra_args }}", cwd = "build", args= [ { "arg" = "extra_args", "default" = "-j"}] }
+test = { cmd = "./runUnitTests", cwd = "build/tests/cpp" }
