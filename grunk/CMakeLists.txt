@@ -49,11 +49,24 @@ set_target_properties(grunk PROPERTIES
         EXPORT_NAME grunk
 )
 
-# install headers
-install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_BINARY_DIR}
-        DESTINATION include
-        FILES_MATCHING
-        REGEX ".*\\.(h|hpp|hxx|inl)$"
-        PATTERN "CMakeFiles" EXCLUDE
-        PATTERN ".git" EXCLUDE
+# install core.hpp and grunk.hpp
+install(FILES
+    ${PROJECT_SOURCE_DIR}/grunk/core.hpp ${PROJECT_SOURCE_DIR}/grunk/grunk.hpp
+    DESTINATION include/grunk
 )
+
+if (GRUNK_WITH_DYNAMIC)
+    # install dynamic.hpp
+    install(FILES
+        ${PROJECT_SOURCE_DIR}/grunk/dynamic.hpp
+        DESTINATION include/grunk
+    )
+endif()
+
+if (GRUNK_WITH_RECIPE)
+    # install recipe.hpp
+    install(FILES
+        ${PROJECT_SOURCE_DIR}/grunk/recipe.hpp
+        DESTINATION include/grunk
+    )
+endif()

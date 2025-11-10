@@ -1,6 +1,5 @@
 #include <gtest/gtest.h>
-#include <grunk/dynamic/math.hpp>
-#include <grunk/dynamic/state.hpp>
+#include <grunk/dynamic.hpp>
 
 
 TEST(operators, addition_object_cpp)

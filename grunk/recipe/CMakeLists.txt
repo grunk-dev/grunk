@@ -1,5 +1,3 @@
-include(FetchContent)
-
 # create a library and add source files
 set(grunk_recipe_src
     Recipe.hpp Recipe.cpp
@@ -29,7 +27,7 @@ install(TARGETS grunk_recipe
 
 # install headers
 install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_BINARY_DIR}
-        DESTINATION include
+        DESTINATION include/grunk
         FILES_MATCHING
         REGEX ".*\\.(h|hpp|hxx|inl)$"
         PATTERN "CMakeFiles" EXCLUDE

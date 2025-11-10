@@ -7,12 +7,7 @@ if (GRUNK_WITH_RECIPE)
 endif()
 
 target_compile_features(grunk_dynamic INTERFACE cxx_std_17)
-
 target_link_libraries(grunk_dynamic INTERFACE grunk::core sol2::sol2 ${LUA_LIBRARIES})
-if (GRUNK_WITH_TASKFLOW)
-    target_link_libraries(grunk_dynamic INTERFACE Taskflow::Taskflow)
-    target_compile_definitions(grunk_dynamic INTERFACE GRUNK_WITH_TASKFLOW)
-endif()
 
 target_include_directories(grunk_dynamic INTERFACE
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
@@ -27,7 +22,7 @@ install(TARGETS grunk_dynamic
 
 # install headers
 install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_BINARY_DIR}
-        DESTINATION include
+        DESTINATION include/grunk
         FILES_MATCHING
         REGEX ".*\\.(h|hpp|hxx|inl)$"
         PATTERN "CMakeFiles" EXCLUDE
