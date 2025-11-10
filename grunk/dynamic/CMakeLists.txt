@@ -8,7 +8,7 @@ endif()
 
 target_compile_features(grunk_dynamic INTERFACE cxx_std_17)
 
-target_link_libraries(grunk_dynamic INTERFACE parametric sol2::sol2 ${LUA_LIBRARIES})
+target_link_libraries(grunk_dynamic INTERFACE grunk::core sol2::sol2 ${LUA_LIBRARIES})
 if (GRUNK_WITH_TASKFLOW)
     target_link_libraries(grunk_dynamic INTERFACE Taskflow::Taskflow)
     target_compile_definitions(grunk_dynamic INTERFACE GRUNK_WITH_TASKFLOW)

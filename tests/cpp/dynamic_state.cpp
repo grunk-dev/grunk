@@ -1,4 +1,5 @@
 #include <gtest/gtest.h>
+#include "grunk/dynamic/math.hpp"
 #include <grunk/dynamic/state.hpp>
 #include <cmath>
 

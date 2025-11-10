@@ -1,11 +1,11 @@
 #pragma once
 
 #include "object.hpp"
-#include "feature.hpp"
-#include "internal/sol_helpers.hpp"
-#include "internal/usertype_proxy.hpp"
+#include "DynamicFeature.hpp"
+#include "sol_helpers.hpp"
+#include "usertype_proxy.hpp"
 #include "function_meta.hpp"
-#include "action.hpp"
+#include "ActionDynamic.hpp"
 #include "environment.hpp"
 
 #ifdef GRUNK_WITH_RECIPE

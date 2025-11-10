@@ -12,6 +12,7 @@ if (NOT EXISTS "${CMAKE_BINARY_DIR}/.gitignore")
     file(WRITE "${CMAKE_BINARY_DIR}/.gitignore" "*\n")
 endif()
 
+# Add the library grunk
 if (GRUNK_WITH_RECIPE)
         # ensure the library has at least one source so CMake won't complain
         file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/grunk_version.cpp"
@@ -21,12 +22,17 @@ else()
         add_library(grunk)
 endif()
 
-add_subdirectory(dynamic)
-target_link_libraries(grunk INTERFACE grunk::dynamic)
+add_subdirectory(core)
+target_link_libraries(grunk INTERFACE grunk::core)
+
+if (GRUNK_WITH_DYNAMIC)
+        add_subdirectory(dynamic)
+        target_link_libraries(grunk INTERFACE grunk::dynamic)
+endif()
 
 if (GRUNK_WITH_RECIPE)
-    add_subdirectory(recipe)
-    target_link_libraries(grunk PUBLIC grunk::recipe)
+        add_subdirectory(recipe)
+        target_link_libraries(grunk PUBLIC grunk::recipe)
 endif()
 
 # install grunk

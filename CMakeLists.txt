@@ -7,6 +7,7 @@ include(GNUInstallDirs)
 set(CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake" ${CMAKE_MODULE_PATH})
 
 option(GRUNK_WITH_TASKFLOW "Builds grunk with multi-threading support using Taskflow" ON)
+option(GRUNK_WITH_DYNAMIC  "Builds the grunk::dynamic library, for dynamic parametric models" ON)
 option(GRUNK_WITH_RECIPE   "Builds the grunk::recipe library, for exporting and importing recipes from/to yaml format" ON)
 option(GRUNK_PYTHON        "Build python bindings using pybind11" OFF)
 option(GRUNK_TESTS         "Build unit tests using GTest" OFF)
@@ -18,11 +19,14 @@ set(CMAKE_PREFIX_PATH ${CMAKE_BINARY_DIR} ${CMAKE_PREFIX_PATH})
 
 # find dependencies
 find_package(parametric REQUIRED)
-find_package(sol2 REQUIRED)
-find_package(Lua REQUIRED)
 
 if (GRUNK_WITH_TASKFLOW)
     find_package(Taskflow REQUIRED)
+endif()
+
+if (GRUNK_WITH_DYNAMIC)
+    find_package(sol2 REQUIRED)
+    find_package(Lua REQUIRED)
 endif()
 
 if (GRUNK_WITH_RECIPE)

@@ -1,11 +1,11 @@
 #include <gtest/gtest.h>
+#include <grunk/dynamic/math.hpp>
 #include <grunk/dynamic/state.hpp>
 
 
 TEST(operators, addition_object_cpp)
 {
     grunk::state grunk;
-    using grunk::operator+;                 // This is needed for name-dependent lookup of the operator for grunk::object, which is just a typedef
     
     auto env = grunk.create_env();
     env.eval(R"(
@@ -30,7 +30,6 @@ TEST(operators, addition_object_cpp)
 TEST(operators, addition_object_cpp_mixed)
 {
     grunk::state grunk;
-    using grunk::operator+;                 // This is needed for name-dependent lookup of the operator for grunk::object, which is just a typedef
 
     auto env = grunk.create_env();
     env.eval(R"(
@@ -65,7 +64,6 @@ TEST(operators, addition_object_cpp_mixed)
 TEST(operators, subtraction_object_cpp)
 {
     grunk::state grunk;
-    using grunk::operator-;                 // This is needed for name-dependent lookup of the operator for grunk::object, which is just a typedef
 
     auto env = grunk.create_env();
     env.eval(R"(
@@ -90,7 +88,6 @@ TEST(operators, subtraction_object_cpp)
 TEST(operators, subtraction_object_cpp_mixed)
 {
     grunk::state grunk;
-    using grunk::operator-;                 // This is needed for name-dependent lookup of the operator for grunk::object, which is just a typedef
 
     auto env = grunk.create_env();
     env.eval(R"(
@@ -125,7 +122,6 @@ TEST(operators, subtraction_object_cpp_mixed)
 TEST(operators, multiplication_object_cpp)
 {
     grunk::state grunk;
-    using grunk::operator*;                 // This is needed for name-dependent lookup of the operator for grunk::object, which is just a typedef
 
     auto env = grunk.create_env();
     env.eval(R"(
@@ -150,7 +146,6 @@ TEST(operators, multiplication_object_cpp)
 TEST(operators, multiplication_object_cpp_mixed)
 {
     grunk::state grunk;
-    using grunk::operator*;                 // This is needed for name-dependent lookup of the operator for grunk::object, which is just a typedef
 
     auto env = grunk.create_env();
     env.eval(R"(
@@ -185,7 +180,6 @@ TEST(operators, multiplication_object_cpp_mixed)
 TEST(operators, division_object_cpp)
 {
     grunk::state grunk;
-    using grunk::operator/;                 // This is needed for name-dependent lookup of the operator for grunk::object, which is just a typedef
 
     auto env = grunk.create_env();
     env.eval(R"(
@@ -210,7 +204,6 @@ TEST(operators, division_object_cpp)
 TEST(operators, division_object_cpp_mixed)
 {
     grunk::state grunk;
-    using grunk::operator/;                 // This is needed for name-dependent lookup of the operator for grunk::object, which is just a typedef
 
     auto env = grunk.create_env();
     env.eval(R"(
@@ -302,7 +295,6 @@ TEST(operators, pow_object_cpp_mixed)
 TEST(operators, modulo_object_cpp)
 {
     grunk::state grunk;
-    using grunk::operator%;                 // This is needed for name-dependent lookup of the operator for grunk::object, which is just a typedef
 
     auto env = grunk.create_env();
     env.eval(R"(
@@ -327,7 +319,6 @@ TEST(operators, modulo_object_cpp)
 TEST(operators, modulo_object_cpp_mixed)
 {
     grunk::state grunk;
-    using grunk::operator%;                 // This is needed for name-dependent lookup of the operator for grunk::object, which is just a typedef
 
     auto env = grunk.create_env();
     env.eval(R"(
@@ -362,7 +353,6 @@ TEST(operators, modulo_object_cpp_mixed)
 TEST(operators, unm_object_cpp)
 {
     grunk::state grunk;
-    using grunk::operator-;                 // This is needed for name-dependent lookup of the operator for grunk::object, which is just a typedef
 
     auto env = grunk.create_env();
     env.eval(R"(
