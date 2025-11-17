@@ -1,0 +1,5 @@
+[requires]
+grunk/0.2.2
+
+[generators]
+CMakeDeps

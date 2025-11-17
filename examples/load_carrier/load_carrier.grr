@@ -1,0 +1,45 @@
+uses:
+  grunk: 0.2.2
+  grocc: 0.1.1
+  geo: 0.2.0
+parameters:
+  o_corner1: !<grocc::gp_Pnt> [0, 0, 0]
+  vec_y: !<grocc::gp_Vec> [0, 1, 0]
+  rect_width: !<double> 2
+  vec_z: !<grocc::gp_Vec> [0, 0, 1]
+  rect_hight: !<double> 3
+  extr_dir: !<grocc::gp_Vec> [1, 0, 0]
+  box_length: !<double> 10
+  n_1: !<int> 1
+  n_2: !<int> 2
+  n_5: !<int> 5
+  n_8: !<int> 8
+  radius_fillet: !<double> 0.050000000000000003
+  sphere_position: !<double> 3
+  sphere_radius: !<double> 0.20000000000000001
+steps:
+  - !<vec> [[index_list], [n_1, n_2, n_5, n_8]]
+  - !<geo::scale_vector> [[extr_vec], [extr_dir, box_length]]
+  - !<geo::move> [[center_1], [o_corner1, extr_dir, sphere_position]]
+  - !<geo::sphere> [[sphere_shape_1], [center_1, sphere_radius]]
+  - !<geo::move> [[o_corner4], [o_corner1, vec_z, rect_hight]]
+  - !<geo::move> [[center_4], [o_corner4, extr_dir, sphere_position]]
+  - !<geo::sphere> [[sphere_shape_4], [center_4, sphere_radius]]
+  - !<geo::move> [[o_corner2], [o_corner1, vec_y, rect_width]]
+  - !<geo::move> [[center_2], [o_corner2, extr_dir, sphere_position]]
+  - !<geo::sphere> [[sphere_shape_2], [center_2, sphere_radius]]
+  - !<geo::move> [[o_corner3], [o_corner2, vec_z, rect_hight]]
+  - !<geo::move> [[center_3], [o_corner3, extr_dir, sphere_position]]
+  - !<geo::sphere> [[sphere_shape_3], [center_3, sphere_radius]]
+  - !<vec> [[list_of_spheres], [sphere_shape_1, sphere_shape_2, sphere_shape_3, sphere_shape_4]]
+  - !<geo::make_compound> [[sphere_compound], [list_of_spheres]]
+  - !<vec> [[o_corner_points], [o_corner1, o_corner2, o_corner3, o_corner4]]
+  - !<geo::surface_from_4_points> [[o_four_point_srf], [o_corner_points]]
+  - !<geo::extrude_surface> [[o_extruded_shape], [o_four_point_srf, extr_vec]]
+  - !<geo::make_fillet> [[rounded_box], [o_extruded_shape, index_list, radius_fillet]]
+  - !<geo::cut_away> [[cut_shape], [rounded_box, sphere_compound]]
+  - !<geo::internal::GetFace> [[face_to_remove_2], [cut_shape, n_5]]
+  - !<geo::internal::GetFace> [[face_to_remove_1], [cut_shape, n_1]]
+  - !<vec> [[exclude_faces], [face_to_remove_1, face_to_remove_2]]
+  - !<geo::make_shell> [[shell_prelim], [cut_shape]]
+  - !<geo::remove_faces> [[final_shell_shape], [shell_prelim, exclude_faces]]

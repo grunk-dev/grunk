@@ -4,3 +4,10 @@ python/_grunk.*.so
 .vscode
 CMakeLists.txt.user
 venv
+*activate_run.*
+deactivate_run.*
+*conan.lock
+*conanbuildinfo.txt
+*graph_info.json
+*conaninfo.txt
+*environment_run.*
