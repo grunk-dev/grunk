@@ -31,7 +31,7 @@ jobs:
     runs-on: ${{ inputs.os }}
     steps:
       # checkout, setup pixi, compilers and ccache/sccache
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - name: Set up Visual Studio shell
         if: startsWith(inputs.os, 'windows')
         uses: egor-tensin/vs-shell@v2
@@ -55,7 +55,7 @@ jobs:
 
       # checkout and install parametric (To Do: conda-forge feedstock)
       - name: Checkout parametric
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           repository: grunk-dev/parametric
           path: parametric
@@ -98,7 +98,7 @@ jobs:
     runs-on: ${{ inputs.os }}
     needs: build
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - name: Download build directory
         uses: actions/download-artifact@v6
         with:
