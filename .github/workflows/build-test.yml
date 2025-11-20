@@ -65,7 +65,7 @@ jobs:
         run: |
           cd parametric
           mkdir build && cd build
-          cmake -GNinja -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=${{ env.CONDA_PREFIX }}
+          cmake .. -GNinja -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=${{ env.CONDA_PREFIX }}
           ninja install
 
       # configure, build and install grunk
