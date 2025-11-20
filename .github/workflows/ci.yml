@@ -16,6 +16,7 @@ jobs:
 
   build-test:
     strategy:
+      fail-fast: false
       matrix:
         include:
          - config: Release
@@ -35,4 +36,3 @@ jobs:
     with:
       os: ${{ matrix.os }}
       config: ${{ matrix.config }}
-      
