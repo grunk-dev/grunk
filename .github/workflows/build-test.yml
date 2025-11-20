@@ -51,7 +51,7 @@ jobs:
         with:
           cache: true
           cache-write: ${{ github.event_name == 'push' && github.ref_name == 'main' }}
-          activate-evironment: true
+          activate-environment: true
 
       # checkout and install parametric (To Do: conda-forge feedstock)
       - name: Checkout parametric
@@ -59,6 +59,7 @@ jobs:
         with:
           repository: grunk-dev/parametric
           path: parametric
+          token: ${{ secrets.GH_TOKEN }}
           ref: main
       - name: Build and install parametric
         run: |
