@@ -1,3 +1,4 @@
+#include <sol/sol.hpp>
 #include <gtest/gtest.h>
 #include <grunk/dynamic.hpp>
 
