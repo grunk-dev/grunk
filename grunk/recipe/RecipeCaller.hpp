@@ -1,6 +1,5 @@
 #pragma once 
 
-#include "lua.h"
 #include "grunk/dynamic/DynamicFeature.hpp"
 
 namespace grunk {
