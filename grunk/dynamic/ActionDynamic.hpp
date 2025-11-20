@@ -361,9 +361,9 @@ inline ResultHolder<ActionDynamic> action(function_meta const& function, Args&&.
 
 namespace details {
 
-inline auto make_dynamic_action(sol::state const& lua, function_meta const& func)
+inline auto make_dynamic_action(function_meta const& func)
 {
-    auto decorated_function = [func, &lua](sol::variadic_args va) -> grunk::DynamicFeature
+    auto decorated_function = [func](sol::variadic_args va) -> grunk::DynamicFeature
     {
         
         auto raw_args = std::vector<sol::object>(va.begin(), va.end());

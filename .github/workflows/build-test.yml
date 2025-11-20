@@ -1,0 +1,115 @@
+name: "Build and test grunk"
+
+on: 
+
+  workflow_call:
+
+    secrets:
+      GH_TOKEN:
+        description: 'A Github PAT'
+        required: false
+      CODECOV_TOKEN:
+        description: 'Needed to upload coverage report to codecov'
+        required: false
+
+    inputs:
+
+      os:
+        description: "Operating system to run the job on"
+        required: true
+        type: string
+
+      config:
+        description: "Build configuration (Debug or Release)"
+        required: true
+        type: string
+
+
+jobs:
+
+  build:
+    runs-on: ${{ inputs.os }}
+    steps:
+      # checkout, setup pixi, compilers and ccache/sccache
+      - uses: actions/checkout@v5
+      - name: Set up Visual Studio shell
+        if: startsWith(inputs.os, 'windows')
+        uses: egor-tensin/vs-shell@v2
+        with:
+          arch: x64
+      - name: Setup ccache
+        uses: hendrikmuhs/ccache-action@v1
+        if: startsWith(inputs.os, 'windows') == false
+        with:
+          key: compiler-cache-${{ inputs.os }}-${{ inputs.config }}-${{ inputs.pixienv }}
+      - name: Setup sccache
+        if: startsWith(inputs.os, 'windows')
+        uses: mozilla-actions/sccache-action@v0.0.9
+
+      - name: Setup pixi
+        uses: prefix-dev/setup-pixi@v0.9.3
+        with:
+          cache: true
+          cache-write: ${{ github.event_name == 'push' && github.ref_name == 'main' }}
+          activate-environment: true
+
+      # checkout and install parametric (To Do: conda-forge feedstock)
+      - name: Checkout parametric
+        uses: actions/checkout@v5
+        with:
+          repository: grunk-dev/parametric
+          path: parametric
+          token: ${{ secrets.GH_TOKEN }}
+          ref: main
+      - name: Build and install parametric
+        run: |
+          cd parametric
+          mkdir build && cd build
+          cmake .. -GNinja -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=${{ env.CONDA_PREFIX }}
+          ninja install
+
+      # configure, build and install grunk
+      - name: Configure grunk (Linux, MacOS)
+        run: pixi run configure ${{ inputs.config }}
+        if: startsWith(inputs.os, 'windows') == false
+        env:
+          CMAKE_CXX_COMPILER_LAUNCHER: ccache
+      - name: Configure grunk (Windows)
+        run: pixi run configure ${{ inputs.config }}
+        if: startsWith(inputs.os, 'windows')
+        env:
+          CMAKE_CXX_COMPILER_LAUNCHER: sccache
+          SCCACHE_GHA_ENABLED: "true"
+      - name: Build and install grunk
+        run: pixi run install -j4
+
+      # save build artifacts
+
+      - name: Create build archive
+        run: tar -czf build.tar.gz build
+      - name: Upload build archive
+        uses: actions/upload-artifact@v5
+        with:
+          name: build-${{ inputs.os }}-${{ inputs.config }}
+          path: build.tar.gz
+          retention-days: 1
+
+  test:
+    runs-on: ${{ inputs.os }}
+    needs: build
+    steps:
+      - uses: actions/checkout@v5
+      - name: Download build directory
+        uses: actions/download-artifact@v6
+        with:
+          name: build-${{ inputs.os }}-${{ inputs.config }}
+      - name: Extract build archive
+        run: tar -xzf build.tar.gz
+      - name: Setup pixi
+        uses: prefix-dev/setup-pixi@v0.9.3
+        with:
+          cache: true
+          cache-write: ${{ github.event_name == 'push' && github.ref_name == 'main' }}
+
+      - name: Run unit tests
+        run: pixi run test

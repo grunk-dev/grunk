@@ -70,17 +70,17 @@ TEST(Recipe, clone_with_subrecipes)
 
     // just some quick sanity checks
     auto other = recipe_outer.clone();
-    EXPECT_NE(other.get_feature("a"), recipe_outer.get_feature("a"));
+    EXPECT_NE(other.get_feature("a").node_pointer(), recipe_outer.get_feature("a").node_pointer());
     EXPECT_EQ(other.get_feature("a").value().as<double>(), 13.);
-    EXPECT_NE(other.get_feature("b"), recipe_outer.get_feature("b"));
+    EXPECT_NE(other.get_feature("b").node_pointer(), recipe_outer.get_feature("b").node_pointer());
     EXPECT_EQ(other.get_feature("b").value().as<double>(), 11.);
 
     auto& orig_inner = recipe_outer.get_recipe("addition").change_value();
     auto& other_inner = other.get_recipe("addition").change_value();
-    EXPECT_NE(other_inner.get_feature("x"), orig_inner.get_feature("x"));
+    EXPECT_NE(other_inner.get_feature("x").node_pointer(), orig_inner.get_feature("x").node_pointer());
     EXPECT_EQ(other_inner.get_feature("x").value().as<double>(), 17.);
-    EXPECT_NE(other_inner.get_feature("y"), orig_inner.get_feature("y"));
+    EXPECT_NE(other_inner.get_feature("y").node_pointer(), orig_inner.get_feature("y").node_pointer());
     EXPECT_EQ(other_inner.get_feature("y").value().as<double>(), 11.);
-    EXPECT_NE(other_inner.get_feature("z"), orig_inner.get_feature("z"));
+    EXPECT_NE(other_inner.get_feature("z").node_pointer(), orig_inner.get_feature("z").node_pointer());
     EXPECT_EQ(other_inner.get_feature("z").value().as<double>(), 28.);
 }

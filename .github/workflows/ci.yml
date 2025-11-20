@@ -1,0 +1,38 @@
+name: CI
+
+on:
+  schedule:
+    - cron: "20 3 * * 2"
+  pull_request:
+    types: [opened, reopened, synchronize, ready_for_review]
+  push:
+    branches:
+      - 'main'
+    tags:
+      - v*
+  workflow_dispatch:
+
+jobs:
+
+  build-test:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+         - config: Release
+           os: ubuntu-latest
+           build-docs: ON
+         - config: Debug
+           os: ubuntu-latest
+           build-docs: OFF
+         - config: Release
+           os: macos-latest
+           build-docs: OFF
+         - config: Release
+           os: windows-latest
+           build-docs: OFF
+    uses: ./.github/workflows/build-test.yml
+    secrets: inherit
+    with:
+      os: ${{ matrix.os }}
+      config: ${{ matrix.config }}

@@ -7,6 +7,8 @@ channels = ["conda-forge"]
 
 
 [dependencies]
+cmake = "*"
+ninja = "*"
 #TODO: parametric
 lua = "*"
 sol2 = "*"
@@ -18,12 +20,14 @@ TF_ENABLE_PROFILER="simple.json"
 
 [tasks]
 configure = { cmd = [
-    "cmake", 
+    "cmake",
+    "-G", "Ninja",
     "-S", ".",
     "-B", "build",
     "-D", "CMAKE_INSTALL_PREFIX=build/install",
     "-D", "CMAKE_BUILD_TYPE={{ config }}",
-    "-D", "GRUNK_TESTS=ON"#,
+    "-D", "GRUNK_TESTS=ON",
+    "-D", "LUA_INCLUDE_DIR=$CONDA_PREFIX/include"#,
     #"-D", "parametric_DIR=/localdata2/klei_j0/code/parametric/build/install/lib/cmake/parametric/",
 ], args = [
     { "arg" = "config", "default"="Release"},
@@ -31,3 +35,12 @@ configure = { cmd = [
 build = { cmd = "cmake --build . {{ extra_args }}", cwd = "build", args= [ { "arg" = "extra_args", "default" = "-j"}]}
 install = { cmd = "cmake --build . --target install {{ extra_args }}", cwd = "build", args= [ { "arg" = "extra_args", "default" = "-j"}] }
 test = { cmd = "./runUnitTests", cwd = "build/tests/cpp" }
+
+[target.linux-64.activation.env]
+CMAKE_PREFIX_PATH = "$CONDA_PREFIX"
+
+[target.osx-64.activation.env]
+CMAKE_PREFIX_PATH = "$CONDA_PREFIX"
+
+[target.win-64.activation.env]
+CMAKE_PREFIX_PATH = "%CONDA_PREFIX%/Library"
