@@ -202,7 +202,7 @@ TEST(Recipe, serialize)
         recipe_outer.tag();
 
         std::string out = "\n" + recipe_outer.to_string();
-        std::string expected = R"(
+        std::string expected_start = R"(
 uses:
   grunk: )" grunk_VERSION R"(
 parameters:
@@ -210,8 +210,9 @@ parameters:
   b: 11.0
 steps: |
   inner = recipes.inner()
-  inner.y = b
-  inner.x = a
+)";
+
+        std::string expected_end = R"(
   c = inner.w
 recipes:
   inner:
@@ -224,7 +225,12 @@ recipes:
     steps: |
       w = (x + y) * z
 )";
-        EXPECT_EQ(out, expected);
+
+        // the order of the two inner values is implementation dependent.
+        std::string expected_1 = expected_start + "  inner.y = b\n  inner.x = a" + expected_end;
+        std::string expected_2 = expected_start + "  inner.x = a\n  inner.y = b" + expected_end;
+
+        EXPECT_TRUE(out == expected_1 || out == expected_2);
 
         grunk.write("test.grr.yml", recipe_outer);
     }
@@ -269,7 +275,7 @@ TEST(Recipe, call_cpp_RecipeCallerID)
         EXPECT_NEAR(recipe_outer.get_feature("c").value().as<double>(), 7, 1e-15);
         
         std::string out = "\n" + recipe_outer.to_string();
-        std::string expected = R"(
+        std::string expected_start = R"(
 uses:
   grunk: )" grunk_VERSION R"(
 parameters:
@@ -277,8 +283,9 @@ parameters:
   b: 4.0
 steps: |
   boing = recipes.inner()
-  boing.y = b
-  boing.x = a
+)";
+
+        std::string expected_end = R"(
   c = boing.z
 recipes:
   inner:
@@ -290,7 +297,11 @@ recipes:
     steps: |
       z = x + y
 )";
-        EXPECT_EQ(out, expected);
+        // the order of the two inner values is implementation dependent.
+        std::string expected_1 = expected_start + "  boing.y = b\n  boing.x = a" + expected_end;
+        std::string expected_2 = expected_start + "  boing.x = a\n  boing.y = b" + expected_end;
+
+        EXPECT_TRUE(out == expected_1 || out == expected_2);
 
         grunk.write("test.grr.yml", recipe_outer);
     }
@@ -332,7 +343,7 @@ TEST(Recipe, call_lua_RecipeCallerID)
         EXPECT_NEAR(c.value().as<double>(), 7, 1e-15);
         
         std::string out = "\n" + recipe_outer.to_string();
-        std::string expected = R"(
+        std::string expected_start = R"(
 uses:
   grunk: )" grunk_VERSION R"(
 parameters:
@@ -340,8 +351,9 @@ parameters:
   b: 4.0
 steps: |
   bazinga = recipes.inner()
-  bazinga.y = b
-  bazinga.x = a
+)";
+
+        std::string expected_end = R"(
   c = bazinga.z
 recipes:
   inner:
@@ -353,7 +365,11 @@ recipes:
     steps: |
       z = x + y
 )";
-        EXPECT_EQ(out, expected);
+        // the order of the two inner values is implementation dependent.
+        std::string expected_1 = expected_start + "  bazinga.y = b\n  bazinga.x = a" + expected_end;
+        std::string expected_2 = expected_start + "  bazinga.x = a\n  bazinga.y = b" + expected_end;
+
+        EXPECT_TRUE(out == expected_1 || out == expected_2);
 
         grunk.write("test.grr.yml", recipe_outer);
     }
@@ -396,7 +412,7 @@ TEST(Recipe, call_anonymous_cpp)
         EXPECT_NEAR(c.value().as<double>(), 25, 1e-15);
 
         std::string out = "\n" + recipe_outer.to_string();
-        std::string expected = R"(
+        std::string expected_start = R"(
 uses:
   grunk: )" grunk_VERSION R"(
 parameters:
@@ -404,8 +420,9 @@ parameters:
   b: 11.0
 steps: |
   inner = recipes.inner()
-  inner.y = 3.0
-  inner.x = mul(a, b)
+)";
+
+        std::string expected_end = R"(
   c = inner.z
 recipes:
   inner:
@@ -417,7 +434,11 @@ recipes:
     steps: |
       z = x + y
 )";
-        EXPECT_EQ(out, expected);
+        // the order of the two inner values is implementation dependent.
+        std::string expected_1 = expected_start + "  inner.y = 3.0\n  inner.x = mul(a, b)" + expected_end;
+        std::string expected_2 = expected_start + "  inner.x = mul(a, b)\n  inner.y = 3.0" + expected_end;
+
+        EXPECT_TRUE(out == expected_1 || out == expected_2);
 
         grunk.write("test.grr.yml", recipe_outer);
     }
@@ -457,7 +478,7 @@ TEST(Recipe, call_anonymous_lua)
         EXPECT_NEAR(recipe_outer.get_feature("c").value().as<double>(), 25, 1e-15);
 
         std::string out = "\n" + recipe_outer.to_string();
-        std::string expected = R"(
+        std::string expected_start = R"(
 uses:
   grunk: )" grunk_VERSION R"(
 parameters:
@@ -465,8 +486,9 @@ parameters:
   b: 11.0
 steps: |
   inner = recipes.inner()
-  inner.y = 3.0
-  inner.x = mul(a, b)
+)";
+
+        std::string expected_end = R"(
   c = inner.z
 recipes:
   inner:
@@ -478,7 +500,11 @@ recipes:
     steps: |
       z = x + y
 )";
-        EXPECT_EQ(out, expected);
+        // the order of the two inner values is implementation dependent.
+        std::string expected_1 = expected_start + "  inner.y = 3.0\n  inner.x = mul(a, b)" + expected_end;
+        std::string expected_2 = expected_start + "  inner.x = mul(a, b)\n  inner.y = 3.0" + expected_end;
+
+        EXPECT_TRUE(out == expected_1 || out == expected_2);
 
         grunk.write("test.grr.yml", recipe_outer);
     }
@@ -547,7 +573,7 @@ TEST(Recipe, call_inner_recipe_with_placeholders)
         EXPECT_NEAR(recipe_outer.get_feature("c").value().as<double>(), 13, 1e-15);
 
         std::string out = "\n" + recipe_outer.to_string();
-        std::string expected = R"(
+        std::string expected_start = R"(
 uses:
   grunk: )" grunk_VERSION R"(
 parameters:
@@ -555,8 +581,9 @@ parameters:
   b: 11
 steps: |
   inner = recipes.inner()
-  inner.y = b
-  inner.x = a
+)";
+
+       std::string expected_end = R"(
   c = inner.z
 recipes:
   inner:
@@ -568,7 +595,12 @@ recipes:
     steps: |
       z = x + y
 )";
-        EXPECT_EQ(out, expected);
+
+        // the order of the two inner values is implementation dependent.
+        std::string expected_1 = expected_start + "  inner.y = b\n  inner.x = a" + expected_end;
+        std::string expected_2 = expected_start + "  inner.x = a\n  inner.y = b" + expected_end;
+
+        EXPECT_TRUE(out == expected_1 || out == expected_2);
 
         grunk.write("test.grr.yml", recipe_outer);
     }

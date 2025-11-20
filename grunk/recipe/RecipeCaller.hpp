@@ -31,8 +31,8 @@ public:
                         auto feature = DynamicFeature(std::forward<T>(other));
                         rc.inputs.insert({key, feature});
                     } else {
-                        sol::state_view lua(rc.lua);
-                        auto obj = sol::make_object(lua, std::forward<T>(other));
+                        sol::state_view state_view(rc.lua);
+                        auto obj = sol::make_object(state_view, std::forward<T>(other));
                         auto feature = DynamicFeature(obj);
                         rc.inputs.insert({key, feature});
                     }

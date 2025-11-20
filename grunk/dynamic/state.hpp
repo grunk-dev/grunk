@@ -409,25 +409,15 @@ private:
             {Parameter{"value", }},
             _unmfun
         );
-        function_meta const& _unm = g["_dynamic_unm"];
-
-        // register DynamicFeature (and its base classes) as a usertype
-        register_type<parametric::param<object>>("param", g)
-        .add_member_function("value", &parametric::param<object>::value, {})
-        .add_member_function("set_value", &parametric::param<object>::set_value, {Parameter{"value", }})
-        .add_member_function("change_value", &parametric::param<object>::change_value, {});
-
-        using DynamicFeatureBase = FeatureBase<DynamicFeature, object>;
-        register_type<DynamicFeatureBase>("FeatureBase", g)
-        .add_bases<parametric::param<object>>();
+        function_meta const& _unm = g["_dynamic_unm"];        
 
         register_type<DynamicFeature>("Feature", g)
-        .add_bases<DynamicFeatureBase, parametric::param<object>>()
         .add_constructors(
             [](sol::object obj) -> DynamicFeature {
                 return grunk::feature(obj);
             }
         )
+        .add_member_function("value", &DynamicFeature::value, {})
         .add_member_function("set_value", &DynamicFeature::set_value<sol::object>, {Parameter{"value", }})
         .add_member_function("change_value", &DynamicFeature::change_value, {})
         .add_member_function(
