@@ -9,7 +9,7 @@ struct FeatureBase : public parametric::param<T>
 {
 public:
     FeatureBase(T const& v)
-    : parametric::param<T>(v, "") {}
+    : parametric::param<T>("", v) {}
 
     FeatureBase() : parametric::param<T>("") {}
 
