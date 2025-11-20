@@ -47,7 +47,7 @@ namespace grunk {
         //TODO: It this expensive?
         Recipe cloned = recipe_from.clone();
 
-        for (size_t i = 1; i < this->num_parents(); ++i) {
+        for (int i = 1; i < this->num_parents(); ++i) {
             auto const& arg = input_feature(i).value();
             auto target = cloned.get_feature(target_features[i-1]);
             target.set_value(arg);
@@ -68,7 +68,7 @@ namespace grunk {
             recipe_caller_name = name;
         }
         std::string ret = recipe_caller_name + " = recipes." + name + "()\n";
-        for (size_t i = 1; i < this->num_parents(); ++i) {
+        for (int i = 1; i < this->num_parents(); ++i) {
             auto const& node = input_feature(i);
             bool is_anonymous = (node.id() == "");
             bool is_constant = (node.num_parents() == 0 && is_anonymous);
