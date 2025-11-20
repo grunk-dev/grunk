@@ -51,6 +51,21 @@ jobs:
         with:
           cache: true
           cache-write: ${{ github.event_name == 'push' && github.ref_name == 'main' }}
+          activate-evironment: true
+
+      # checkout and install parametric (To Do: conda-forge feedstock)
+      - name: Checkout parametric
+        uses: actions/checkout@v5
+        with:
+          repository: grunk-dev/parametric
+          path: parametric
+          ref: main
+      - name: Build and install parametric
+        run: |
+          cd parametric
+          mkdir build && cd build
+          cmake -GNinja -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=${{ env.CONDA_PREFIX }}
+          ninja install
 
       # configure, build and install grunk
       - name: Configure grunk (Linux, MacOS)
