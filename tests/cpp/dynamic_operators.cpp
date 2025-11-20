@@ -495,8 +495,8 @@ TEST(operators, addition_lua)
         x:set_value(2.)
         z2 = z:value()
     )");
-   EXPECT_NEAR(env.get<double>("z1"), 3., 1e-14);
-   EXPECT_NEAR(env.get<double>("z2"), 4., 1e-14);
+    EXPECT_NEAR(env.get<double>("z1"), 3., 1e-14);
+    EXPECT_NEAR(env.get<double>("z2"), 4., 1e-14);
 }
 
 TEST(operators, subtraction_lua)
