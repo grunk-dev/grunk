@@ -31,3 +31,12 @@ configure = { cmd = [
 build = { cmd = "cmake --build . {{ extra_args }}", cwd = "build", args= [ { "arg" = "extra_args", "default" = "-j"}]}
 install = { cmd = "cmake --build . --target install {{ extra_args }}", cwd = "build", args= [ { "arg" = "extra_args", "default" = "-j"}] }
 test = { cmd = "./runUnitTests", cwd = "build/tests/cpp" }
+
+[target.linux-64.activation.env]
+CMAKE_PREFIX_PATH = "$CONDA_PREFIX"
+
+[target.osx-64.activation.env]
+CMAKE_PREFIX_PATH = "$CONDA_PREFIX"
+
+[target.win-64.activation.env]
+CMAKE_PREFIX_PATH = "%CONDA_PREFIX%/Library"
