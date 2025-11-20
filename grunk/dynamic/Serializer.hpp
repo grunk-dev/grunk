@@ -70,12 +70,7 @@ public:
     }
 
     template <typename Arg>
-    void parse(Feature<Arg> const& f)
-    {
-        auto const& node = *f.node_pointer();
-        details::ToStringVisitor visitor(*this, node);
-        node.accept(visitor, 0, parametric::DAGNode::Direction::up);
-    }
+    void parse(Feature<Arg> const& f);
 
 private:
 
@@ -204,5 +199,13 @@ private:
 };
 
 } // namespace details
+
+template <typename Arg>
+inline void Serializer::parse(Feature<Arg> const& f)
+{
+    auto const& node = *f.node_pointer();
+    details::ToStringVisitor visitor(*this, node);
+    node.accept(visitor, 0, parametric::DAGNode::Direction::up);
+}
 
 } // namespace grunk
