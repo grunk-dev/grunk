@@ -100,7 +100,7 @@ jobs:
     steps:
       - uses: actions/checkout@v6
       - name: Download build directory
-        uses: actions/download-artifact@v7
+        uses: actions/download-artifact@v8
         with:
           name: build-${{ inputs.os }}-${{ inputs.config }}
       - name: Extract build archive
