@@ -1,10 +1,13 @@
+# SPDX-FileCopyrightText: 2026 Jan Kleinert <jan.kleinert@dlr.de>
+#
+# SPDX-License-Identifier: MPL-2.0
+
 [workspace]
 name = "grunk"
 version = "0.5.0"
 authors = ["Jan Kleienrt <jan.kleinert@dlr.de>"]
 platforms = ["win-64", "linux-64", "osx-64"]
 channels = ["conda-forge"]
-
 
 [dependencies]
 cmake = "*"
@@ -14,6 +17,14 @@ lua = "*"
 sol2 = "*"
 taskflow = "*"
 yaml-cpp = "*"
+
+[feature.tools]
+dependencies = { python = "*" }
+pypi-dependencies = { reuse = "*" }
+
+[environments]
+"default" = ["default"]
+"tools" = ["tools"]
 
 [activation.env]
 TF_ENABLE_PROFILER="simple.json"
@@ -35,6 +46,11 @@ configure = { cmd = [
 build = { cmd = "cmake --build . {{ extra_args }}", cwd = "build", args= [ { "arg" = "extra_args", "default" = "-j"}]}
 install = { cmd = "cmake --build . --target install {{ extra_args }}", cwd = "build", args= [ { "arg" = "extra_args", "default" = "-j"}] }
 test = { cmd = "./runUnitTests", cwd = "build/tests/cpp" }
+
+_reuse = { cmd = "reuse {{ sub_cmd }}",args = [ { "arg" = "sub_cmd", "default" = "lint"} ] }
+[tasks.reuse]
+args = [ { "arg" = "sub_cmd", "default" = "lint"} ]
+depends-on = [{ task = "_reuse", environment="tools", args = ["{{sub_cmd}}"] }]
 
 [target.linux-64.activation.env]
 CMAKE_PREFIX_PATH = "$CONDA_PREFIX"
