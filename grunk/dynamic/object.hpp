@@ -242,3 +242,38 @@ inline grunk::object operator-(grunk::object const& l) {
     return result;
 }
 
+/************
+ * Lessthan *
+ ************/
+
+inline grunk::object operator<(grunk::object const& l, grunk::object const& r) {
+    sol::state_view lua(l.lua_state());
+    auto result = lua["grunk"]["__dynamic_lt"](l, r);
+    if (!result.valid()) {
+        sol::error err = result;
+        throw std::runtime_error("Lua error: " + std::string(err.what()));
+    }
+    return result;
+}
+
+template <typename R>
+inline grunk::object operator<(grunk::object const& l, R const& r) {
+    sol::state_view lua(l.lua_state());
+    auto result = lua["grunk"]["__dynamic_lt"](l, r);
+    if (!result.valid()) {
+        sol::error err = result;
+        throw std::runtime_error("Lua error: " + std::string(err.what()));
+    }
+    return result;
+}
+
+template <typename L>
+inline grunk::object operator<(L const& l, grunk::object const& r) {
+    sol::state_view lua(r.lua_state());
+    auto result = lua["grunk"]["__dynamic_lt"](l, r);
+    if (!result.valid()) {
+        sol::error err = result;
+        throw std::runtime_error("Lua error: " + std::string(err.what()));
+    }
+    return result;
+}

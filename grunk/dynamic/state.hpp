@@ -18,6 +18,13 @@
 #include <stdexcept>
 #include <fstream>
 
+//TODO: I need this to prevent a compiler error related to the overloading of the < operator.
+// I haven't fully understand why I need it though...
+namespace sol {
+        template <>
+        struct is_automagical<grunk::DynamicFeature> : std::false_type {};
+}
+
 namespace grunk {
 
 // Tag to tell grunk::state::feature to default-construct a type
@@ -409,7 +416,17 @@ private:
             {Parameter{"value", }},
             _unmfun
         );
-        function_meta const& _unm = g["_dynamic_unm"];        
+        function_meta const& _unm = g["_dynamic_unm"];
+        
+        lua.script("function grunk.__dynamic_lt(l,r) return l<r end");
+        sol::protected_function _ltfun = g["__dynamic_lt"];
+        g["_dynamic_lt"] = create_function_meta(
+            lua, 
+            "grunk._dynamic_lt", 
+            {Parameter{"lhs", }, Parameter{"rhs",}},
+            _ltfun
+        );
+        function_meta const& _lt = g["_dynamic_lt"];
 
         register_type<DynamicFeature>("Feature", g)
         .add_constructors(
@@ -444,7 +461,8 @@ private:
         .add_member_function(sol::meta_function::division, details::make_dynamic_action(_div), {Parameter{"lhs", }, Parameter{"rhs",}  })
         .add_member_function(sol::meta_function::modulus, details::make_dynamic_action(_mod), {Parameter{"lhs", }, Parameter{"rhs",}  })
         .add_member_function(sol::meta_function::power_of, details::make_dynamic_action(_pow), {Parameter{"base", }, Parameter{"exponent",}  })
-        .add_member_function(sol::meta_function::unary_minus, details::make_dynamic_action(_unm), {Parameter{"value",}  });
+        .add_member_function(sol::meta_function::unary_minus, details::make_dynamic_action(_unm), {Parameter{"value",}  })
+        .add_member_function(sol::meta_function::less_than, details::make_dynamic_action(_lt), {Parameter{"lhs", }, Parameter{"rhs",}  });
 
 #ifdef GRUNK_WITH_RECIPE
 

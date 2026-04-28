@@ -469,6 +469,16 @@ TEST(operators, unm_cpp)
     EXPECT_NEAR(z.value(), 3, 1e-14);
 }
 
+TEST(operators, less_than_cpp)
+{
+    auto x = grunk::Feature(3);
+    auto y = grunk::Feature(5);
+    auto z = x<y;
+    EXPECT_TRUE(z.value());
+    x.set_value(42);
+    EXPECT_FALSE(z.value());
+}
+
 TEST(operators, chaining_cpp)
 {
     auto x = grunk::Feature(4.);
@@ -603,6 +613,24 @@ TEST(operators, unm_lua)
     )");
     EXPECT_NEAR(env.get<double>("z1"), -2, 1e-14);
     EXPECT_NEAR(env.get<double>("z2"), -3, 1e-14);
+}
+
+TEST(operators, less_than_lua)
+{
+    grunk::state grunk;
+
+    auto env = grunk.create_parametric_env();
+
+    env.eval(R"(
+        local x = grunk.feature(3)
+        local y = grunk.feature(5)
+        local z = x<y
+        z1 = z:value()
+        x:set_value(42)
+        z2 = z:value()
+    )");
+    EXPECT_TRUE(env.get<bool>("z1"));
+    EXPECT_FALSE(env.get<bool>("z2"));
 }
 
 TEST(operators, chaining_lua)

@@ -254,4 +254,33 @@ grunk::Feature<L> operator-(grunk::Feature<L> const& l) {
     }
 }
 
+/************
+ * Lessthan *
+ ************/
+
+template <typename L, typename R>
+grunk::Feature<bool> operator<(grunk::Feature<L> const& l, grunk::Feature<R> const& r) {
+    // if l is a grunk::object, the result will be a dynamic action
+    // this distinction is necessary to allow deserialization of dynamic actions
+    if constexpr (std::is_same_v<L, grunk::object>) {
+        lua_State* lua_state = grunk::details::get_state(l);
+        sol::state_view lua(lua_state);
+        grunk::function_meta fun = lua["grunk"]["_dynamic_lt"];
+        return grunk::action(fun, l).output();
+    } else {
+        // static action
+        return grunk::action([](L const& lhs, R const& rhs){ return lhs < rhs; }, l, r).output();
+    }
+}
+
+template <typename L, typename R>
+decltype(auto) operator<(grunk::Feature<L> const& l, R const& r) {
+    return l < grunk::details::to_feature(r);
+}
+
+template <typename L, typename R>
+decltype(auto) operator<(L const& l, grunk::Feature<R> const& r) {
+    return grunk::details::to_feature(l) < r;
+}
+
 #endif // GRUNK_WITH_DYNAMIC
