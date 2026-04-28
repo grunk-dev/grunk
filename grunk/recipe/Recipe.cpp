@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2026 Jan Kleinert <jan.kleinert@dlr.de>
+//
+// SPDX-License-Identifier: MPL-2.0
+
 #include "grunk/recipe/Recipe.hpp"
 #include "grunk/version.hpp"
 #include "grunk/dynamic/Serializer.hpp"

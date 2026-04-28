@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2026 Jan Kleinert <jan.kleinert@dlr.de>
+#
+# SPDX-License-Identifier: MPL-2.0
+
 # create a library and add source files
 set(grunk_recipe_src
     Recipe.hpp Recipe.cpp

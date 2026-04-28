@@ -1,3 +1,9 @@
+<!--
+SPDX-FileCopyrightText: 2026 Jan Kleinert <jan.kleinert@dlr.de>
+
+SPDX-License-Identifier: MPL-2.0
+-->
+
 # v0.3.2
 
  - bump reflect to 0.2.0

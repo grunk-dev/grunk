@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2026 Jan Kleinert <jan.kleinert@dlr.de>
+#
+# SPDX-License-Identifier: MPL-2.0
+
 from conan import ConanFile
 from conan.tools.cmake import CMake, cmake_layout,CMakeDeps, CMakeToolchain
 from conan.tools.files import load
