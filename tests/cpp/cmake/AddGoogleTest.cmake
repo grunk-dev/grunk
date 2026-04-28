@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2026 Jan Kleinert <jan.kleinert@dlr.de>
+#
+# SPDX-License-Identifier: MPL-2.0
+
 # 
 #
 # Downloads GTest and provides a helper macro to add tests. Add make check, as well, which

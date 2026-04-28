@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2026 Jan Kleinert <jan.kleinert@dlr.de>
+#
+# SPDX-License-Identifier: MPL-2.0
+
 # create a library and add source files
 add_library(grunk_dynamic INTERFACE)
 add_library(grunk::dynamic ALIAS grunk_dynamic)

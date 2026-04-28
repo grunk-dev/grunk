@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2026 Jan Kleinert <jan.kleinert@dlr.de>
+#
+# SPDX-License-Identifier: MPL-2.0
+
 if(MSVC)
     #https://developercommunity.visualstudio.com/t/error-C2187-syntax-error:-attribute-sp/10439022
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /Zc:lambda")
