@@ -75,6 +75,9 @@ NB_MODULE(_bindings, m) {
     nb::class_<grunk::DynamicFeature>(m, "Feature")
         .def(nb::init<>())
         .def(nb::init<grunk::object const&>(), "value"_a)
+        .def("id", &grunk::DynamicFeature::id)
+        .def("set_id", &grunk::DynamicFeature::set_id, "id"_a)
+        .def("is_valid", &grunk::DynamicFeature::is_valid)
         .def("with_id", &grunk::DynamicFeature::with_id, "id"_a)
         .def("is_placeholder", &grunk::DynamicFeature::is_placeholder)
         .def("value", &grunk::DynamicFeature::value)
@@ -149,6 +152,9 @@ NB_MODULE(_bindings, m) {
             },
             "key"_a
         )
+        .def("get_feature", [](grunk::environment& env, std::string const& key) {
+            return env.get_feature(key);
+        }, "key"_a)
         .def("tag_features", &grunk::environment::tag_features);
 
     nb::class_<grunk::state>(m, "state")

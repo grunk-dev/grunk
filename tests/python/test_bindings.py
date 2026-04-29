@@ -84,6 +84,14 @@ def test_operators_feature():
     fz_mod = fx % fy
     fz_neg = -fx
 
+    assert not fz_add.is_valid()
+    assert not fz_sub.is_valid()
+    assert not fz_mul.is_valid()
+    assert not fz_div.is_valid()
+    assert not fz_pow.is_valid()
+    assert not fz_mod.is_valid()
+    assert not fz_neg.is_valid()
+
     assert pytest.approx(fz_add.value().as_float()) == 4.6
     assert pytest.approx(fz_sub.value().as_float()) == -2.2
     assert pytest.approx(fz_mul.value().as_float()) == 4.08
@@ -92,7 +100,23 @@ def test_operators_feature():
     assert pytest.approx(fz_mod.value().as_float()) == 1.2 % 3.4
     assert pytest.approx(fz_neg.value().as_float()) == -1.2
 
+    assert fz_add.is_valid()
+    assert fz_sub.is_valid()
+    assert fz_mul.is_valid()
+    assert fz_div.is_valid()
+    assert fz_pow.is_valid()
+    assert fz_mod.is_valid()
+    assert fz_neg.is_valid()
+
     fy.set_value(1.2)
+
+    assert not fz_add.is_valid()
+    assert not fz_sub.is_valid()
+    assert not fz_mul.is_valid()
+    assert not fz_div.is_valid()
+    assert not fz_pow.is_valid()
+    assert not fz_mod.is_valid()
+    assert fz_neg.is_valid()
 
     assert pytest.approx(fz_add.value().as_float()) == 2.4
     assert pytest.approx(fz_sub.value().as_float()) == 0.0
@@ -101,3 +125,23 @@ def test_operators_feature():
     assert pytest.approx(fz_pow.value().as_float()) == 1.2 ** 1.2
     assert pytest.approx(fz_mod.value().as_float()) == 0.0
     assert pytest.approx(fz_neg.value().as_float()) == -1.2
+
+
+def test_feature_id():
+
+    grnk = grunk.state()
+    
+    e = grnk.create_parametric_env()
+    e.eval("""
+        x = grunk.feature(1.2)
+        y = grunk.feature(3.4):with_id("a")           
+    """)
+    x = e.get_feature("x")
+    y = e.get_feature("y")
+    assert x.id() == ""
+    assert y.id() == "a"
+    e.tag_features()
+    assert x.id() == "x"
+    assert y.id() == "y"
+    x.set_id("b")
+    assert x.id() == "b"
