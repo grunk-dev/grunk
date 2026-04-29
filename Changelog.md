@@ -3,6 +3,16 @@ SPDX-FileCopyrightText: 2026 Jan Kleinert <jan.kleinert@dlr.de>
 
 SPDX-License-Identifier: MPL-2.0
 -->
+ 
+ - This version is a large rewrite of the v0.3 grunk library. The dynamic
+   type system is replaced entirely by LUA. This removes the dependency on reflect and adds a dependency on LUA and sol2. Introducing LUA allows a sandboxed scriptable environment for parametric models. The 
+   core idea remains unchanged. The syntax changes but is still recognizable and migrating from v0.3 to v0.5 should be doable.
+ - The library is now seperated into several modules. The fundamental 
+   module is `grunk::core`, which is just a wrapper around the `parametric` library, including an optional multithreading support. This library implements static mode. `grunk::dynamic` enables dynamic 
+   typing by bringing in LUA as a dynamic scripting language. `grunk::recipe` allows reading and writing mixed yaml and lua recipes. 
+   A recipe still has the same yaml structure, but the steps are now a LUA
+   script.
+
 
 # v0.3.2
 

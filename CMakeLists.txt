@@ -2,7 +2,7 @@
 #
 # SPDX-License-Identifier: MPL-2.0
 
-cmake_minimum_required(VERSION 3.12)
+cmake_minimum_required(VERSION 3.15)
 
 project(grunk VERSION 0.5.0)
 
@@ -15,6 +15,14 @@ option(GRUNK_WITH_DYNAMIC  "Builds the grunk::dynamic library, for dynamic param
 option(GRUNK_WITH_RECIPE   "Builds the grunk::recipe library, for exporting and importing recipes from/to yaml format" ON)
 option(GRUNK_PYTHON        "Build python bindings using pybind11" OFF)
 option(GRUNK_TESTS         "Build unit tests using GTest" OFF)
+
+# If scikit-build (SKBUILD) is driving the build (i.e. when building wheels),
+# enable Python bindings by default so the `python/` subdirectory is
+# processed and the nanobind extension is built and packaged.
+if(DEFINED SKBUILD)
+    message(STATUS "SKBUILD detected: enabling Python bindings (GRUNK_PYTHON=ON)")
+    set(GRUNK_PYTHON ON CACHE BOOL "Build python bindings using nanobind" FORCE)
+endif()
 
 
 # conan creates FindPackage.cmake files in the CMAKE_BINARY_DIR
@@ -44,6 +52,10 @@ add_subdirectory(grunk)
 
 if (GRUNK_TESTS)
     add_subdirectory(tests/cpp)
+endif()
+
+if (GRUNK_PYTHON)
+    add_subdirectory(python)
 endif()
 
 # Create a package configuration file
