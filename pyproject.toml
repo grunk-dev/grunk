@@ -68,6 +68,7 @@ yaml-cpp = "*"
 python = ">=3.9"
 pip = "*"
 nanobind = "*"
+pytest = "*"
 
 [tool.pixi.feature.tools]
 dependencies = { python = "*" }
@@ -97,15 +98,33 @@ configure = { cmd = [
 
 build = { cmd = "cmake --build . {{ extra_args }}", cwd = "build", args= [ { "arg" = "extra_args", "default" = "-j"}], description = "Build the project using CMake. The 'extra_args' argument allows you to pass additional flags to the build command (e.g., -j for parallel builds)."}
 
-install = { cmd = "cmake --build . --target install {{ extra_args }}", cwd = "build", args= [ { "arg" = "extra_args", "default" = "-j"}], description = "Install the built project to the specified prefix. The 'extra_args' argument allows you to pass additional flags to the install command (e.g., -j for parallel installation)."}
+install_cpp = { cmd = "cmake --build . --target install {{ extra_args }}", cwd = "build", args= [ { "arg" = "extra_args", "default" = "-j"}], description = "Install the built project to the specified prefix. The 'extra_args' argument allows you to pass additional flags to the install command (e.g., -j for parallel installation)."}
+install_python = { cmd = "pip install -e .", description = "Install the Python package in development mode." }
 
-test = { cmd = "./runUnitTests", cwd = "build/tests/cpp", description = "Run the unit tests for the C++ code."}
+test_cpp = { cmd = "./runUnitTests", cwd = "build/tests/cpp", description = "Run the unit tests for the C++ code."}
+test_python = { cmd = "pytest -xvs tests", description = "Run the unit tests for the Python bindings." }
 
 _reuse = { cmd = "reuse {{ sub_cmd }}",args = [ { "arg" = "sub_cmd", "default" = "lint"} ]}
+
+
 [tool.pixi.tasks.reuse]
 args = [ { "arg" = "sub_cmd", "default" = "lint"} ]
 depends-on = [{ task = "_reuse", environment="tools", args = ["{{sub_cmd}}"] }]
 description = "Run the REUSE tool with the specified sub-command. The 'sub_cmd' argument allows you to specify which REUSE command to run (e.g., lint, spdx, etc.). By default, it runs 'reuse lint' in the 'tools' environment."
+
+[tool.pixi.tasks.install]
+depends-on = [
+    { task = "install_cpp", environment="default" },
+    { task = "install_python", environment="default" }
+]
+description = "Install both the C++ components and the Python package."
+
+[tool.pixi.tasks.test]
+depends-on = [
+    { task = "test_cpp", environment="default" },
+    { task = "test_python", environment="default" }
+]
+description = "Run both C++ and Python tests."
 
 [tool.pixi.target.linux-64.activation.env]
 CMAKE_PREFIX_PATH = "$CONDA_PREFIX"
