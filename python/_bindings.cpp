@@ -6,12 +6,28 @@
 #include <nanobind/operators.h>
 #include <nanobind/stl/string.h>
 #include <nanobind/stl/shared_ptr.h>
+#include <nanobind/stl/unordered_map.h>
 
 #include <grunk/grunk.hpp>
 
 namespace nb = nanobind;
 
 using namespace nb::literals;
+
+namespace {
+
+    template <typename T>
+    void add_feature_base_methods(auto&& nbclass) {
+        nbclass.def("id", &T::id)
+            .def("set_id", &T::set_id, "id"_a)
+            .def("is_valid", &T::is_valid)
+            .def("with_id", &T::with_id, "id"_a)
+            .def("is_placeholder", &T::is_placeholder)
+            .def("change_value", &T::change_value)
+            .def("value", &T::value);
+    };
+
+} // anonymous namespace
 
 NB_MODULE(_bindings, m) {
     m.attr("__version__") = grunk_VERSION;
@@ -72,17 +88,11 @@ NB_MODULE(_bindings, m) {
         .def("as_string", &grunk::object::as<std::string>)
         .def("as_feature", &grunk::object::as<grunk::DynamicFeature>);
 
-
-    nb::class_<grunk::DynamicFeature>(m, "Feature")
+    auto feature = nb::class_<grunk::DynamicFeature>(m, "Feature")
         .def(nb::init<>())
         .def(nb::init<grunk::object const&>(), "value"_a)
-        .def("id", &grunk::DynamicFeature::id)
-        .def("set_id", &grunk::DynamicFeature::set_id, "id"_a)
-        .def("is_valid", &grunk::DynamicFeature::is_valid)
-        .def("with_id", &grunk::DynamicFeature::with_id, "id"_a)
-        .def("is_placeholder", &grunk::DynamicFeature::is_placeholder)
-        .def("value", &grunk::DynamicFeature::value)
         .def("set_value", &grunk::DynamicFeature::set_value<int>, "value"_a)
+        .def("set_value", &grunk::DynamicFeature::set_value<double>, "value"_a)
         .def("set_value", &grunk::DynamicFeature::set_value<double>, "value"_a)
         .def("set_value", &grunk::DynamicFeature::set_value<std::string>, "value"_a)
         .def("set_value", &grunk::DynamicFeature::set_value<grunk::object>, "value"_a)
@@ -136,6 +146,8 @@ NB_MODULE(_bindings, m) {
             },
             nb::is_operator()
         );
+
+    add_feature_base_methods<grunk::DynamicFeature>(feature);
 
     m.def("pow", [](grunk::DynamicFeature const& base, grunk::DynamicFeature const& exponent) {
         return grunk::pow(base, exponent);
@@ -192,7 +204,8 @@ NB_MODULE(_bindings, m) {
                 return grunk.feature(nb::cast<std::string>(obj));
             else
                 throw nb::type_error("Unsupported type");
-        }, "obj"_a);
+        }, "obj"_a)
+        .def("feature", [](grunk::state const& grunk) { return grunk.feature(); });
 
     // Expose a default state for convenience. This allows users to use grunk without explicitly creating a state
     // Member functions of the default state can be accessed via module-level functions that forward to the default state. 
@@ -227,27 +240,50 @@ NB_MODULE(_bindings, m) {
         else
             throw nb::type_error("Unsupported type");
     }, "obj"_a);
+    m.def("feature", [=]() { 
+        return default_state().feature();
+    });
 
     auto recipe = nb::class_<grunk::Recipe, grunk::environment>(m, "Recipe")
         .def("to_string", &grunk::Recipe::to_string)
         .def("clone", &grunk::Recipe::clone)
         .def("populate_from_file", &grunk::Recipe::populate_from_file, "filename"_a)
         .def("populate_from_string", &grunk::Recipe::populate_from_string, "yml"_a)
-        .def("insert_recipe", &grunk::Recipe::insert_recipe, "name"_a, "recipe"_a)
-        .def("tag", &grunk::Recipe::tag);
+        //.def("insert_recipe", &grunk::Recipe::insert_recipe, "name"_a, "recipe"_a)
+        .def(
+            "insert_recipe", 
+            [](grunk::Recipe& self, std::string const& name, grunk::Recipe const& inner)
+            { 
+                // this is unfortunate, but without move-semantics in python, 
+                // we have to deep clone here
+                self.insert_recipe(name, inner.clone()); 
+            }, 
+            "name"_a,
+            "inner_recipe"_a
+        )
+        .def("tag", &grunk::Recipe::tag)
+        .def("get_recipe", [](grunk::Recipe& r, std::string const& key) {
+            return r.get_recipe(key);
+        }, "key"_a)
+        .def_ro("recipes", &grunk::Recipe::recipes);
 
-    // nb::class_<grunk::Recipe::SubRecipe>(recipe, "SubRecipe")
-    //     .def_readonly("name", &grunk::Recipe::SubRecipe::name)
-    //     .def_readonly("recipe", &grunk::Recipe::SubRecipe::recipe)
-    //     .def("__call__", &grunk::Recipe::SubRecipe::operator());
+    auto recipe_feature = nb::class_<grunk::Feature<grunk::Recipe>>(m, "RecipeFeature");
+    add_feature_base_methods<grunk::Feature<grunk::Recipe>>(recipe_feature);
 
-    // auto recipe_caller =nb::class_<grunk::RecipeCaller>(m, "RecipeCaller")
-    //     .def(nb::init<std::string const&, grunk::Feature<grunk::Recipe> const&, lua_State*>(), "name"_a, "recipe"_a, "lua"_a)
-    //     .def("with_id", &grunk::RecipeCaller::with_id, "id"_a)
-    //     .def("set_id", &grunk::RecipeCaller::set_id, "id"_a)
-    //     .def("get", &grunk::RecipeCaller::get, "key"_a)
-    //     .def("__getitem__", &grunk::RecipeCaller::get, "key"_a)
-    //     .def("locked", &grunk::RecipeCaller::locked)
+    nb::class_<grunk::Recipe::SubRecipe>(recipe, "SubRecipe")
+        .def_ro("name", &grunk::Recipe::SubRecipe::name)
+        .def_ro("recipe", &grunk::Recipe::SubRecipe::recipe)
+        .def("__call__", &grunk::Recipe::SubRecipe::operator());
+
+    auto recipe_caller =nb::class_<grunk::RecipeCaller>(m, "RecipeCaller")
+        .def("with_id", &grunk::RecipeCaller::with_id, "id"_a)
+        .def("set_id", &grunk::RecipeCaller::set_id, "id"_a)
+        .def("get", &grunk::RecipeCaller::get, "key"_a)
+        .def("__getitem__", &grunk::RecipeCaller::get, "key"_a)
+        .def("__setitem__", [](grunk::RecipeCaller& rc, std::string const& key, grunk::DynamicFeature const& value) {
+            rc[key] = value;
+        }, "key"_a, "value"_a)
+        .def("locked", &grunk::RecipeCaller::locked);
 
     // nb::class_<grunk::RecipeCaller::Proxy>(recipe_caller, "Proxy")
     //     .def("__set__", &grunk::RecipeCaller::Proxy::operator=)

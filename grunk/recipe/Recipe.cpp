@@ -15,15 +15,53 @@ namespace grunk {
     Recipe::Recipe(grunk::environment const& env)
      : environment(env)
     {
+        m_environment.create_named("recipes");
+        re_register_lua_index();
+    }
+
+    Recipe::Recipe(Recipe&& other)
+    : environment(std::move(other))
+    , recipes(std::move(other.recipes))
+    {
+        re_register_lua_index();  // ← rebind __index to new 'this' after every move
+    }
+
+    Recipe::Recipe(Recipe const& other)
+        : environment(other)
+        , recipes(other.recipes)
+    {
+        re_register_lua_index();  // ← same for copy constructor
+    }
+
+    Recipe& Recipe::operator=(Recipe&& other)
+    {
+        if (this != &other) {
+            environment::operator=(std::move(other));
+            recipes = std::move(other.recipes);
+            re_register_lua_index();
+        }
+        return *this;
+    }
+
+    Recipe& Recipe::operator=(Recipe const& other)
+    {
+        if (this != &other) {
+            environment::operator=(other);
+            recipes = other.recipes;
+            re_register_lua_index();
+        }
+        return *this;
+    }
+
+    void Recipe::re_register_lua_index()
+    {
         sol::state_view lua(m_environment.lua_state());
         sol::table mt = lua.create_table();
-        mt.set_function("__index", [=](sol::table ts, std::string const& key) -> sol::object {
-            return sol::make_object(lua, recipes[key]);
+        mt.set_function("__index", [this, lua](sol::table, std::string const& key) -> sol::object {
+            return sol::make_object(lua, this->recipes[key]);
         });
-        m_environment.create_named("recipes");
         sol::table lua_recipes = m_environment["recipes"];
         lua_recipes[sol::metatable_key] = mt;
-        
     }
 
     Recipe Recipe::clone() const

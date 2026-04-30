@@ -221,3 +221,80 @@ def test_recipe_clone():
     assert clone.get_feature("x").value().as_float() == 12.3
     assert clone.get_feature("y").value().as_float() == 29.7
     assert pytest.approx(clone.get_feature("z").value().as_float()) == 42.0
+
+
+def test_recipe_call():
+
+    recipe_inner = grunk.create_recipe()
+    x = grunk.feature(17.)
+    y = grunk.feature(13.)
+    z = grunk.feature(2)
+    w = (x + y) * z 
+    recipe_inner["x"] = x
+    recipe_inner["y"] = y
+    recipe_inner["z"] = z
+    recipe_inner["w"] = w
+    recipe_inner.tag()
+
+    recipe_outer = grunk.create_recipe()
+    a = grunk.feature(15.)
+    b = grunk.feature(11.)
+    recipe_outer["a"] = a
+    recipe_outer["b"] = b
+    recipe_outer.insert_recipe("inner", recipe_inner)
+
+    inner = recipe_outer.recipes["inner"]()
+    inner["x"] = a
+    inner["y"] = b
+    c = inner.get("w")
+    recipe_outer["c"] = c
+    recipe_outer.tag()
+
+    # c = (a + b) * inner_z = (15 + 11) * 2 = 52
+    assert pytest.approx(recipe_outer.get_feature("c").value().as_float()) == 52
+
+    # inner recipe should be unaffected (due to deep-copy)
+    inner_recipe = recipe_outer.get_recipe("inner").change_value()
+    assert inner_recipe.get_feature("x").value().as_float() == 17
+    assert inner_recipe.get_feature("y").value().as_float() == 13
+    assert inner_recipe.get_feature("z").value().as_float() == 2
+    assert pytest.approx(inner_recipe.get_feature("w").value().as_float()) == 60
+
+    # changing inner recipe should invalidate c
+    inner_recipe.get_feature("z").set_value(0.5)
+    assert not c.is_valid()
+    assert pytest.approx(c.value().as_float()) == 13.0 
+
+    # inner recipe should be unaffected (due to deep-copy)
+    assert inner_recipe.get_feature("x").value().as_float() == 17
+    assert inner_recipe.get_feature("y").value().as_float() == 13
+    assert inner_recipe.get_feature("z").value().as_float() == 0.5
+    assert pytest.approx(inner_recipe.get_feature("w").value().as_float()) == 15
+
+ 
+def test_placeholder():
+
+    x = grunk.feature().with_id("x")  # This is a placeholder: a feature with a name but no value
+    y = grunk.feature(5).with_id("y")
+    z = (x + y).with_id("z")
+
+    recipe_inner = grunk.create_recipe()
+    recipe_inner["x"] = x
+    recipe_inner["y"] = y
+    recipe_inner["z"] = z
+
+    recipe_outer = grunk.create_recipe()
+    recipe_outer.insert_recipe("inner", recipe_inner)
+
+    recipe_outer.eval("""
+        a = grunk.feature(2):with_id("a")
+        b = grunk.feature(11):with_id("b")
+        inner = recipes.inner()
+        inner.x = a
+        inner.y = b
+        c = inner.z
+        c:set_id("c")
+    """)
+
+    assert pytest.approx(recipe_outer.get_feature("c").value().as_float()) == 13
+    

@@ -22,6 +22,11 @@ namespace grunk {
         
     public:
 
+        Recipe(Recipe const&);
+        Recipe& operator=(Recipe&& other); 
+        Recipe(Recipe&&);
+        Recipe& operator=(Recipe const& other);
+
         /**
          * @brief serializes a recipe to yaml. This is used to write grunk recipes to file
          * 
@@ -59,6 +64,8 @@ namespace grunk {
         void emit_yml(YAML::Emitter& out) const;
 
         void populate_from_node(YAML::Node const& node);
+
+        void re_register_lua_index();
     };
 
 } // namespace grunk
