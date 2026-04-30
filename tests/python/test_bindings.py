@@ -145,3 +145,42 @@ def test_feature_id():
     assert y.id() == "y"
     x.set_id("b")
     assert x.id() == "b"
+
+
+def test_recipe_simple():
+
+    grnk = grunk.state()
+    x = grnk.feature(1.).with_id("x")
+    y = grnk.feature(2.).with_id("y")
+    z = (x+y).with_id("z")
+
+    recipe = grnk.create_recipe()
+    # recipe["w"] = grunk.pow(z, 2).with_id("w")  #TODO: Unfortunately, the implicit conversion to feature does not work from python yet
+    recipe["w"] = grunk.pow(z, grnk.feature(2)).with_id("w")
+
+    res = recipe.to_string()
+    expected = f"""
+uses:
+  grunk: {grunk.__version__}
+parameters:
+  x: 1.0
+  y: 2.0
+steps: |
+  z = x + y
+  w = z ^ 2
+"""
+    
+    assert "\n" + res == expected
+
+    grnk.write("test.grr.yml", recipe)
+
+    recipe2 = grnk.read("test.grr.yml")
+    w2 = recipe2.get_feature("w")
+    z2 = recipe2.get_feature("z")
+    y2 = recipe2.get_feature("y")
+    x2 = recipe2.get_feature("x")
+
+    assert pytest.approx(w2.value().as_float()) == 9.0
+    assert pytest.approx(z2.value().as_float()) == 3.0
+    assert pytest.approx(y2.value().as_float()) == 2.0
+    assert pytest.approx(x2.value().as_float()) == 1.0

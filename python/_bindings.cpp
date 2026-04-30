@@ -136,6 +136,10 @@ NB_MODULE(_bindings, m) {
             nb::is_operator()
         );
 
+    m.def("pow", [](grunk::DynamicFeature const& base, grunk::DynamicFeature const& exponent) {
+        return grunk::pow(base, exponent);
+    }, "base"_a, "exponent"_a);
+
     nb::class_<grunk::environment>(m, "environment")
         .def(
             "eval", 
@@ -151,6 +155,20 @@ NB_MODULE(_bindings, m) {
                 return obj;
             },
             "key"_a
+        )
+        .def(
+            "__setitem__", 
+            [](grunk::environment& env, std::string const& key, grunk::object const& value) {
+                env[key] = value;
+            },
+            "key"_a, "value"_a
+        )
+        .def(
+            "__setitem__", 
+            [](grunk::environment& env, std::string const& key, grunk::DynamicFeature const& value) {
+                env[key] = value;
+            },
+            "key"_a, "value"_a
         )
         .def("get_feature", [](grunk::environment& env, std::string const& key) {
             return env.get_feature(key);
@@ -174,5 +192,30 @@ NB_MODULE(_bindings, m) {
             else
                 throw nb::type_error("Unsupported type");
         }, "obj"_a);
+
+        auto recipe = nb::class_<grunk::Recipe, grunk::environment>(m, "Recipe")
+            .def("to_string", &grunk::Recipe::to_string)
+            .def("clone", &grunk::Recipe::clone)
+            .def("populate_from_file", &grunk::Recipe::populate_from_file, "filename"_a)
+            .def("populate_from_string", &grunk::Recipe::populate_from_string, "yml"_a)
+            .def("insert_recipe", &grunk::Recipe::insert_recipe, "name"_a, "recipe"_a)
+            .def("tag", &grunk::Recipe::tag);
+
+        // nb::class_<grunk::Recipe::SubRecipe>(recipe, "SubRecipe")
+        //     .def_readonly("name", &grunk::Recipe::SubRecipe::name)
+        //     .def_readonly("recipe", &grunk::Recipe::SubRecipe::recipe)
+        //     .def("__call__", &grunk::Recipe::SubRecipe::operator());
+
+        // auto recipe_caller =nb::class_<grunk::RecipeCaller>(m, "RecipeCaller")
+        //     .def(nb::init<std::string const&, grunk::Feature<grunk::Recipe> const&, lua_State*>(), "name"_a, "recipe"_a, "lua"_a)
+        //     .def("with_id", &grunk::RecipeCaller::with_id, "id"_a)
+        //     .def("set_id", &grunk::RecipeCaller::set_id, "id"_a)
+        //     .def("get", &grunk::RecipeCaller::get, "key"_a)
+        //     .def("__getitem__", &grunk::RecipeCaller::get, "key"_a)
+        //     .def("locked", &grunk::RecipeCaller::locked)
+
+        // nb::class_<grunk::RecipeCaller::Proxy>(recipe_caller, "Proxy")
+        //     .def("__set__", &grunk::RecipeCaller::Proxy::operator=)
+        //     .def("__call__", &grunk::RecipeCaller::Proxy::operator DynamicFeature);
 
 }
