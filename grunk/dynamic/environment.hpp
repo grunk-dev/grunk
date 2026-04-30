@@ -36,7 +36,7 @@ public:
         if (!ret.valid()) {
             throw std::runtime_error("Key '" + key + "' not found in environment");
         }
-        return m_environment[key];
+        return ret;
     }
 
     template <typename T=sol::object>
