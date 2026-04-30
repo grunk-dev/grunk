@@ -5,10 +5,24 @@
 import pytest
 import grunk 
 
+
+def test_local_state():
+    
+    grnk = grunk.state()
+    e = grnk.create_env()
+    e.eval("""
+        x = 1.2
+        y = 3.4
+    """)
+    x = e["x"]
+    y = e["y"]
+    assert pytest.approx(x.as_float()) == 1.2
+    assert pytest.approx(y.as_float()) == 3.4
+
+
 def test_operators_python():
 
-    grnk = grunk.state()
-    env = grnk.create_env()
+    env = grunk.create_env()
     env.eval("""
         x = 1.2
         y = 3.4
@@ -40,8 +54,7 @@ def test_operators_python():
 
 def test_operators_lua():
     
-    grnk = grunk.state()
-    env = grnk.create_env()
+    env = grunk.create_env()
     env.eval("""
         x = 1.2
         y = 3.4
@@ -73,9 +86,8 @@ def test_operators_lua():
 
 def test_operators_feature():
 
-    grnk = grunk.state()
-    fx = grnk.feature(1.2)
-    fy = grnk.feature(3.4)
+    fx = grunk.feature(1.2)
+    fy = grunk.feature(3.4)
     fz_add = fx + fy
     fz_sub = fx - fy
     fz_mul = fx * fy
@@ -128,10 +140,8 @@ def test_operators_feature():
 
 
 def test_feature_id():
-
-    grnk = grunk.state()
     
-    e = grnk.create_parametric_env()
+    e = grunk.create_parametric_env()
     e.eval("""
         x = grunk.feature(1.2)
         y = grunk.feature(3.4):with_id("a")           
@@ -148,15 +158,14 @@ def test_feature_id():
 
 
 def test_recipe_simple():
-
-    grnk = grunk.state()
-    x = grnk.feature(1.).with_id("x")
-    y = grnk.feature(2.).with_id("y")
+    
+    x = grunk.feature(1.).with_id("x")
+    y = grunk.feature(2.).with_id("y")
     z = (x+y).with_id("z")
 
-    recipe = grnk.create_recipe()
+    recipe = grunk.create_recipe()
     # recipe["w"] = grunk.pow(z, 2).with_id("w")  #TODO: Unfortunately, the implicit conversion to feature does not work from python yet
-    recipe["w"] = grunk.pow(z, grnk.feature(2)).with_id("w")
+    recipe["w"] = grunk.pow(z, grunk.feature(2)).with_id("w")
 
     res = recipe.to_string()
     expected = f"""
@@ -172,9 +181,9 @@ steps: |
     
     assert "\n" + res == expected
 
-    grnk.write("test.grr.yml", recipe)
+    grunk.write("test.grr.yml", recipe)
 
-    recipe2 = grnk.read("test.grr.yml")
+    recipe2 = grunk.read("test.grr.yml")
     w2 = recipe2.get_feature("w")
     z2 = recipe2.get_feature("z")
     y2 = recipe2.get_feature("y")
