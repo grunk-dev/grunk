@@ -7,7 +7,7 @@ import grunk
 
 
 def test_local_state():
-    
+
     grnk = grunk.state()
     e = grnk.create_env()
     e.eval("""
@@ -193,3 +193,31 @@ steps: |
     assert pytest.approx(z2.value().as_float()) == 3.0
     assert pytest.approx(y2.value().as_float()) == 2.0
     assert pytest.approx(x2.value().as_float()) == 1.0
+
+
+def test_recipe_clone():
+
+    x = grunk.feature(12.3).with_id("x")
+    y = grunk.feature(29.7).with_id("y")
+    z = (x + y).with_id("z")
+
+    recipe = grunk.create_recipe()
+    recipe["x"] = x
+    recipe["y"] = y
+    recipe["z"] = z
+
+    clone = recipe.clone()
+
+    # # I expect no rounding errors when copying floating point numbers
+    assert clone.get_feature("x").value().as_float() == 12.3
+    assert clone.get_feature("y").value().as_float() == 29.7
+    assert pytest.approx(clone.get_feature("z").value().as_float()) == 42.0
+
+    x.set_value(13.2)
+    assert not z.is_valid()
+    assert pytest.approx(z.value().as_float()) == 42.9
+
+    # cloned recipe should be unaffected by changes to the original recipe
+    assert clone.get_feature("x").value().as_float() == 12.3
+    assert clone.get_feature("y").value().as_float() == 29.7
+    assert pytest.approx(clone.get_feature("z").value().as_float()) == 42.0
