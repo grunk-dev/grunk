@@ -85,7 +85,7 @@ jobs:
           CMAKE_CXX_COMPILER_LAUNCHER: sccache
           SCCACHE_GHA_ENABLED: "true"
       - name: Build and install grunk
-        run: pixi run install -j4
+        run: pixi run install_cpp -j4 && pixi run install_python
 
       # save build artifacts
 
