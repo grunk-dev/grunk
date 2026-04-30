@@ -285,8 +285,4 @@ NB_MODULE(_bindings, m) {
         }, "key"_a, "value"_a)
         .def("locked", &grunk::RecipeCaller::locked);
 
-    // nb::class_<grunk::RecipeCaller::Proxy>(recipe_caller, "Proxy")
-    //     .def("__set__", &grunk::RecipeCaller::Proxy::operator=)
-    //     .def("__call__", &grunk::RecipeCaller::Proxy::operator DynamicFeature);
-
 }
