@@ -6,6 +6,11 @@
 Usage 
 *************
 
+If you are interested in using grunk as a backend for your C++ code, the :ref:`section on static mode <usage-static-mode>` and 
+the :ref:`section on parallel execution <usage-parallel-execution>` are a good starting point. 
+
+If you plan to use grunk entirely for scripting and manipulating grunk recipes, these sections can be skipped, because the python bindings only support grunk's dynamic mode and the reading and writing of grunk recipes to file.
+
 .. _usage-static-mode:
 
 Static Mode
@@ -145,7 +150,57 @@ If you want to use types and functions provided by plugins which are loaded at r
 Parallel Execution
 ==================
 
-TODO
+Consider the following grunk recipe:
+
+.. code-block:: cpp
+   
+   auto x1 = grunk::feature(1.);
+   auto x2 = grunk::action([](double v){ return v + 1.; }, x1).output();
+   x2.set_id("x2");
+
+   auto y1 = grunk::feature(2.);
+   auto y2 = grunk::action([](double v){ return v * 2.; }, y1).output();
+   y2.set_id("y2");
+
+   auto z = grunk::action([](double a, double b){ return a + b; }, x2, y2).output();
+   z.set_id("z");
+
+Ignoring the actual calculations, note that ``x2`` and ``y2`` can be computed in parallel, because they do not depend on each other.
+
+Since grunk tracks parametric dependencies, it can use this information to deduce which parts of a parametric tree 
+can be executed in parallel - provided that the functions themselves are thread-safe.
+
+To do so, we can use the ``ParallelExecutor``:
+
+.. code-block:: cpp
+
+   grunk::ParallelExecutor executor(z);
+   executor.run();
+
+You can also specify the number of threads to use for the parallel execution:
+
+.. code-block:: cpp
+
+   int nthreads = 4;
+   grunk::ParallelExecutor executor(nthreads, z);
+   executor.run();
+
+The parallel executor uses the `taskflow <https://github.com/taskflow/taskflow>`_ library under the hood. If you want to see the actual task graph that gets executed, you can dump it to a file:
+
+.. code-block:: cpp 
+
+   std::string graphviz = executor.get_taskflow().dump();
+
+   std::ofstream fout("my_taskflow.dot");
+   fout << graphviz;
+
+
+.. image:: images/parallel_execution_graphviz.png
+   :alt: Parallel execution of a feature tree
+
+Note, that parallel execution is only possible in static mode. 
+Dynamic mode relies on LUA. Like most scripting languages, LUA is single-threaded 
+and does not support parallel execution.
 
 .. _usage-dynamic-mode:
 
