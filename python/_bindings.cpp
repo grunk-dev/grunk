@@ -249,7 +249,6 @@ NB_MODULE(_bindings, m) {
         .def("clone", &grunk::Recipe::clone)
         .def("populate_from_file", &grunk::Recipe::populate_from_file, "filename"_a)
         .def("populate_from_string", &grunk::Recipe::populate_from_string, "yml"_a)
-        //.def("insert_recipe", &grunk::Recipe::insert_recipe, "name"_a, "recipe"_a)
         .def(
             "insert_recipe", 
             [](grunk::Recipe& self, std::string const& name, grunk::Recipe const& inner)
