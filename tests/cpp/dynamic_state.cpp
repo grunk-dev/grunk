@@ -31,6 +31,15 @@ TEST(state, free_function_registration)
     ASSERT_NEAR(z, 42, 1e-14);
 }
 
+TEST(state, object)
+{
+    grunk::state grunk;
+    auto x = grunk.create_object(2.);
+    auto y = grunk.create_object(3.);
+    auto z = x + y;
+    ASSERT_NEAR(z.as<double>(), 5., 1e-14);
+}
+
 TEST(state, environment_get)
 {
     grunk::state grunk;

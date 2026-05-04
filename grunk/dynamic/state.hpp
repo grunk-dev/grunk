@@ -235,12 +235,23 @@ public:
     }
 
     /**
+     * @brief object Creates a grunk::object from a value. This is useful for wrapping values in a grunk::object without creating a DynamicFeature, e.g. when passing arguments to an action that are not features themselves.
+     * @param value The value to be wrapped
+     * @return a grunk::object instance
+     */
+    template <typename T>
+    grunk::object create_object(T const& value) const
+    {
+        return sol::make_object(lua, value);
+    }
+
+    /**
      * @brief feature Creates a new dynamic feature wrapping an existing
      * grunk::object
      * @param value The grunk::object
      * @return a DynamicFeature instance
      */
-    DynamicFeature feature(object const& value) const
+    DynamicFeature feature(grunk::object const& value) const
     {
         return grunk::feature(value);
     }
@@ -463,7 +474,7 @@ private:
             }
         )
         .add_member_function("value", [](DynamicFeature const& f) { return f.value(); }, {})
-        .add_member_function("set_value", [](DynamicFeature& f, object const& v){ return f.set_value(v); }, {Parameter{"value", }})
+        .add_member_function("set_value", [](DynamicFeature& f, grunk::object const& v){ return f.set_value(v); }, {Parameter{"value", }})
         .add_member_function("change_value", [](DynamicFeature& f) { return f.change_value(); }, {})
         .add_member_function(
             "with_id",
@@ -581,7 +592,7 @@ private:
                             sol::error err = ret;
                             throw std::runtime_error(std::string("Construction error: ") + err.what());
                         }
-                        object obj = ret;
+                        grunk::object obj = ret;
                         return grunk::feature(obj);
                     };
                 }

@@ -37,6 +37,13 @@ def test_local_state():
         y = e2["y"]
 
 
+def test_objects_python():
+
+    x = grunk.create_object(1.2)
+    y = grunk.create_object(3.4)
+    z = x + y
+    assert pytest.approx(z.as_float()) == 4.6
+
 def test_operators_python():
 
     env = grunk.create_env()
