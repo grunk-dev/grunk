@@ -1,6 +1,13 @@
-// SPDX-FileCopyrightText: 2026 Jan Kleinert <jan.kleinert@dlr.de>
-//
-// SPDX-License-Identifier: MPL-2.0
+/**
+ * @file Feature.hpp
+ *
+ * SPDX-FileCopyrightText: 2026 Jan Kleinert <jan.kleinert@dlr.de>
+ *
+ * SPDX-License-Identifier: MPL-2.0
+ *
+ * @defgroup core
+ * @defgroup advanced_core
+ */
 
 #pragma once 
 

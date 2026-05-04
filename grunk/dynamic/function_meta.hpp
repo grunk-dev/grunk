@@ -6,6 +6,11 @@
 
 namespace grunk {
 
+/**
+ * @brief Represents a parameter for a dynamic function.
+ *
+ * @ingroup advanced_dynamic
+ */
 struct Parameter 
 {
     std::optional<std::string> name {std::nullopt};
@@ -14,6 +19,11 @@ struct Parameter
     bool is_const_reference {false};
 };
 
+/**
+ * @brief Represents metadata for a dynamic function.
+ *
+ * @ingroup advanced_dynamic
+ */
 class function_meta
 {
 public:
@@ -57,6 +67,11 @@ private:
     sol::protected_function func;
 };
 
+/**
+ * @brief Creates a function_meta instance from a function and its metadata.
+ *
+ * @ingroup advanced_dynamic
+ */
 template <typename F>
 sol::object create_function_meta(
     sol::state_view lua,
@@ -69,6 +84,11 @@ sol::object create_function_meta(
     return sol::make_object(lua, meta);
 }
 
+/**
+ * @brief Creates a function_meta instance from a function and its name, without parameter metadata.
+ *
+ * @ingroup advanced_dynamic
+ */
 template <typename F>
 sol::object create_function_meta(
     sol::state_view lua,

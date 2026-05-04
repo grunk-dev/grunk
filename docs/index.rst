@@ -3,9 +3,6 @@
 .. SPDX-License-Identifier: MPL-2.0
 
 .. mdinclude:: ../README.md
-
-Docs
-====
    
 .. toctree::
    :maxdepth: 2

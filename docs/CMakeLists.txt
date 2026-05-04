@@ -9,12 +9,16 @@ find_package(Sphinx REQUIRED)
 set(DOXYGEN_INDEX_FILE ${CMAKE_CURRENT_SOURCE_DIR}/html/index.html)
 
 set(DOXYGEN_INPUT_DIR 
-    "${PROJECT_SOURCE_DIR}/grunk/ ${PROJECT_SOURCE_DIR}/grunk/common ${PROJECT_SOURCE_DIR}/grunk/compute_nodes ${PROJECT_SOURCE_DIR}/grunk/plugins")
+    "${PROJECT_SOURCE_DIR}/grunk/ ${PROJECT_SOURCE_DIR}/grunk/core ${PROJECT_SOURCE_DIR}/grunk/dynamic ${PROJECT_SOURCE_DIR}/grunk/recipe")
 set(DOXYGEN_OUTPUT_DIR ${CMAKE_CURRENT_BINARY_DIR}/doxygen)
 set(DOXYFILE_IN ${CMAKE_CURRENT_SOURCE_DIR}/Doxyfile.in)
 set(DOXYFILE_OUT ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile)
 set(SPHINXCONF_IN ${CMAKE_CURRENT_SOURCE_DIR}/conf.py.in)
 set(SPHINXCONF_OUT ${CMAKE_CURRENT_BINARY_DIR}/conf.py)
+
+# Pass preprocessor defines to Doxygen so conditionally-compiled headers
+# guarded by those defines are included in the generated XML.
+set(DOXYGEN_PREDEFINED "GRUNK_WITH_TASKFLOW GRUNK_WITH_DYNAMIC GRUNK_WITH_RECIPE")
 
 #Replace variables inside @@ with the current values
 configure_file(${DOXYFILE_IN} ${DOXYFILE_OUT} @ONLY)

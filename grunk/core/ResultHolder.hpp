@@ -2,6 +2,15 @@
 //
 // SPDX-License-Identifier: MPL-2.0
 
+/**
+ * @file Feature.hpp
+ *
+ * Declaration and Definition of the Feature class.
+ *
+ * @defgroup core
+ * @defgroup advanced
+ */
+
 #pragma once
 
 #include "grunk/core/Feature.hpp"

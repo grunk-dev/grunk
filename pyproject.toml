@@ -76,7 +76,7 @@ doxygen = "*"
 
 [tool.pixi.feature.docs.pypi-dependencies]
 sphinx = "*"
-sphinx_rtd_theme = "*"
+furo = "*"
 breathe = "*"
 m2r = "*"
 mistune = "*"

@@ -22,8 +22,8 @@
 # -- Project information -----------------------------------------------------
 
 project = 'grunk'
-copyright = '2022, German Aerospace Center'
-author = 'Anton Reiswich, DLR-SC'
+copyright = '2026, German Aerospace Center'
+author = 'Jan Kleinert, DLR-SC'
 
 # The full version, including alpha/beta/rc tags
 release = "@PROJECT_VERSION@"
@@ -50,22 +50,7 @@ exclude_patterns = []
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 #
-html_theme = 'sphinx_rtd_theme'
-
-html_theme_options = {
-    'logo_only': True,
-    'display_version': True,
-    'prev_next_buttons_location': 'bottom',
-    'style_external_links': False,
-    'vcs_pageview_mode': '',
-    'style_nav_header_background': '#58777b',
-    # Toc options
-    'collapse_navigation': True,
-    'sticky_navigation': True,
-    'navigation_depth': 4,
-    'includehidden': True,
-    'titles_only': False
-}
+html_theme = 'furo'
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,

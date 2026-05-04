@@ -18,9 +18,9 @@ Grunk is a C++ library for dataflow/incremental programming.Use it to create gen
  - grunk is targeted at - but not limited to - geometric modeling
  - header-only C++17 library with Python bindings
  - Dynamic typing and scripting interface based on LUA
+ - Reproducible exchange file format based on mixed YAML and LUA
  - Plugin-interface to add custom types and functions as building blocks at runtime *(WIP)*
  - Package manager for grunk plugins *(WIP)*
- - Reproducible exchange file format *(WIP)*
 
 Models built with grunk are highly modular and extendable. Users can share plugins and enrich their models without the need to re-compile anything.
 
@@ -31,7 +31,7 @@ Models built with grunk are highly modular and extendable. Users can share plugi
 | `grunk::core` | Backend for tracking parametric dependencies. Lazy evaluation and automatic invalidation with minimal overhead. Header-only, thin wrapper for parametric | parametric, *optional: taskflow for multithreading support. Build with `GRUNK_WITH_TASKFLOW=ON` cmake option/precompiler definition to enable multithreading.* |
 | `grunk::dynamic` | Dynamic scripting support (LUA). Write scripts without boilerplate that are automatically parametric. Simple serialization and deserialization of parametric trees to and from LUA. Header-only. | `grunk::core` |
 | `grunk::recipe` | YAML-based recipes: A human-readable structured exchange format for parametric models | `grunk::dynamic`, yaml-cpp | 
-`grunk::plugins` | Plugin support for sharing re-usable functions and data types. Plugins can be written in C++ for maximum performance or in LUA for ease-of-use | `grunk::recipe`
+| `grunk::plugins` | Plugin support for sharing re-usable functions and data types. Plugins can be written in C++ for maximum performance or in LUA for ease-of-use | `grunk::recipe`
 
 ## Sneak Peak
 
@@ -160,19 +160,6 @@ int main() {
 
 [Read the documentation](https://paradigms.pages.gitlab.dlr.de/grunk/) to learn more.
 
+## License
 
-## Installation
-
-The C++ library can be installed via conan or built from source using cmake, see the [installation section](https://paradigms.pages.gitlab.dlr.de/grunk/installation.html#installation) of the documentation for details.
-
-The python module can be installed using `pip`:
-
-```console
-pip install git+https://gitlab.dlr.de/paradigms/grunk
-```
-
-Make sure you have [setup conan properly](https://paradigms.pages.gitlab.dlr.de/grunk/installation.html#setup-conan) before so that the dependencies can be downloaded during the installation with pip.
-
-## Building grunk from source
-
-Refer to the [build instructions](https://paradigms.pages.gitlab.dlr.de/grunk/installation.html#building-from-source) of the documentation.
+This project is licensed under the Mozilla Public License 2.0 - see the [license file](LICENSES/MPL-2.0.txt) file for details.

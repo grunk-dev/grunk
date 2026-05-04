@@ -32,7 +32,7 @@ namespace details {
  * is interpreted as an output of the function and each element can be retrieved
  * individually as a feature.
  * 
- * @ingroup dynamic_advanced
+ * @ingroup advanced_dynamic
  */
 class ActionDynamic : public parametric::ComputeNode<ActionDynamic>
 {
@@ -232,7 +232,7 @@ private:
 };
 
 /**
- * @ingroup dynamic_advanced
+ * @ingroup advanced_dynamic
  * @brief Specialization of the ResultHolder class template for DynamicActions. It is a proxy for holding the 
  * result of a ::grunk::DynamicAction instance. The results is an std::vector of DynamicFeatures. 
  * In addition to storing the result, it stores a const reference to the compute_node so that void functions
@@ -295,6 +295,8 @@ namespace details {
  * The proxy factory is needed, because the factory functions action must be templated, and
  * templated friend functions are a pain in the ass. This way we have a non-templated friend
  * struct with templated member functions.
+ *
+ * @ingroup advanced_dynamic
  */
 struct DynamicActionFactory
 {
@@ -321,6 +323,14 @@ struct DynamicActionFactory
 
     }
 
+    /**
+     * @brief Returns a new DynamicActionPtr given a DynamicFunction and an
+     * vector of DynamicFeatures
+     * 
+     * @param fun The reflect::DynamicFunction to be wrapped
+     * @param args The input features
+     * @return ResultHolder<DynamicAction> The returned ResultHolder wrapping the outputs
+     */
     template <typename... Args>
     static ResultHolder<ActionDynamic> new_action(
         function_meta const& fun, 
@@ -365,6 +375,14 @@ inline ResultHolder<ActionDynamic> action(function_meta const& function, Args&&.
 
 namespace details {
 
+/**
+ * @brief make_dynamic_action is a helper function to create a lambda function that can be registered in the grunk state as a DynamicFunction. The returned lambda takes variadic arguments, converts them to DynamicFeatures and calls the action factory to create a DynamicAction.
+ * 
+ * @param func the function_meta of the function to be wrapped in the lambda
+ * @return auto a lambda function that can be registered as a DynamicFunction in the grunk state
+ *
+ * @ingroup advanced_dynamic
+ */
 inline auto make_dynamic_action(function_meta const& func)
 {
     auto decorated_function = [func](sol::variadic_args va) -> grunk::DynamicFeature

@@ -47,6 +47,8 @@ constexpr const default_construct_t default_construct;
  * evaluation and automatic invalidation enabled. Code run in the original environment simply uses the original
  * undecorated symbols.
  *
+ * @ingroup dynamic
+ *
  */
 class state
 {
@@ -120,12 +122,27 @@ public:
         table->set(name, meta_func);
     }
 
+
+    /**
+     * @brief create_env creates a new environment based on the original environment.
+     *
+     * A new environment is created with the original environment as its __index metamethod, which means that any code executed in this environment will have access to all symbols in the original environment, but any new symbols created in this environment will not be visible in the original environment. This is the environment that should be used for executing user-provided LUA scripts, where you don't want dependency tracking, lazy evaluation and automatic invalidation to be enabled.
+     *
+     * @return A new environment instance.
+     */
     inline environment create_env() const {
         sol::environment env(lua, sol::create, lua.globals()); 
         env[sol::metatable_key]["__index"] = original_env;
         return environment(env);
     }
 
+    /**
+     * @brief create_parametric_env creates a new parametric environment based on the decorated environment.
+     *
+     * A parametric environment is an environment where all functions are decorated as actions, which means that any code executed in this environment will have dependency tracking, lazy evaluation and automatic invalidation enabled. This is the environment that should be used for executing grunk recipes and for creating grunk features and actions.
+     *
+     * @return A new parametric environment instance.
+     */
     inline environment create_parametric_env() const {
         sol::environment env(lua, sol::create, lua.globals()); 
         env[sol::metatable_key]["__index"] = decorated_env;
@@ -133,16 +150,36 @@ public:
     }
 
 #ifdef GRUNK_WITH_RECIPE
+
+    /**
+     * @brief create_recipe creates a new recipe based on the decorated environment.
+     *
+     * A recipe is created with a parametric environment, which means that any code executed in this recipe will have dependency tracking, lazy evaluation and automatic invalidation enabled. This is the environment that should be used for executing grunk recipes and for creating grunk features and actions.
+     *
+     * @return A new recipe instance.
+     */
     inline Recipe create_recipe() const {
         return Recipe(create_parametric_env());
     }
 
+    /**
+     * @brief write writes a recipe to a file. The recipe is serialized using the to_string method of the recipe, which returns a LUA script that can be executed to recreate the recipe.
+     *
+     * @param filename The name of the file to write the recipe to
+     * @param recipe The recipe to be written to the file
+     */
     inline void write(std::string const& filename, Recipe const& recipe)
     {
         std::ofstream fout(filename);
         fout << recipe.to_string() << "\n";
     }
 
+    /**
+     * @brief read reads a recipe from a file.
+     *
+     * @param filename The name of the file to read the recipe from
+     * @return A new recipe instance
+     */
     inline Recipe read(std::string const& filename) {
         auto recipe = create_recipe();
         recipe.populate_from_file(filename);
@@ -177,6 +214,10 @@ public:
         return tmp.as<function_meta>();
     }
 
+    /**
+     * @brief feature Creates a new dynamic feature without an initial value. This can be used as a placeholder for a value that will be set later, e.g. when creating a recipe with some features that are not yet known.
+     * @return a DynamicFeature instance
+     */
     inline DynamicFeature feature() const
     {
         return DynamicFeature(original_env.lua_state());
