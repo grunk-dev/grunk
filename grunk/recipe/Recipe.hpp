@@ -65,6 +65,11 @@ namespace grunk {
 
         void populate_from_node(YAML::Node const& node);
 
+        /**
+         * @brief re_register_lua_index re-registers the __index metamethod for the "recipes" table in the lua environment
+         * 
+         * This is necessary after copy/move assignment of a Recipe, because the __index metamethod captures the "this" pointer of the Recipe instance, which changes after assignment
+         */
         void re_register_lua_index();
     };
 
