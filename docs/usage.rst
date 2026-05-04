@@ -198,6 +198,17 @@ The parallel executor uses the `taskflow <https://github.com/taskflow/taskflow>`
 .. image:: images/parallel_execution_graphviz.png
    :alt: Parallel execution of a feature tree
 
+The class ``ParallelExecutor`` takes a set of features as input and executes all computations necessary to evaluate these features in parallel, if possible.
+
+.. code-block:: cpp
+
+   auto x  = grunk::feature(1.).with_id("x");
+   auto y  = grunk::action([](double v){ return v + 1.; }, x).output().with_id("y");
+   auto y1 = grunk::action([](double v){ return v * 2.; }, y).output().with_id("y1");
+   auto y2 = grunk::action([](double v){ return v * 3.; }, y).output().with_id("y2");
+   
+   grunk::ParallelExecutor executor(y1, y2);
+
 Note, that parallel execution is only possible in static mode. 
 Dynamic mode relies on LUA. Like most scripting languages, LUA is single-threaded 
 and does not support parallel execution.
@@ -207,8 +218,90 @@ and does not support parallel execution.
 Dynamic Mode
 ============
 
-TODO
+Grunk's dynamic mode is the basis for using grunk with plugins. It relies on a runtime reflection system and a type-erased object called ``grunk::object``. This allows grunk to work with any kind of type and function provided by plugins, without the need to know about them at compile time.
 
+The dynamic mode relies on a LUA state, that is wrapped in a `grunk::state` instance. We can register functions and types
+in the LUA state and generate LUA environments to execute dynamic scripts.
+
+.. code-block:: cpp
+
+   grunk::state grunk;
+   grunk.register_function("add", [](int l, int r){ return l + r; }); // register the function "add" in the grunk state, so that it can be used in the feature tree
+   auto env = grunk.create_env();
+   env.eval(R"(
+       x = 17
+       y = 25
+       z = add(x,y)
+   )");
+   double z = env.get<double>("z");
+
+The script passed to ``env.eval`` can be any valid LUA code. The function ``env.get`` can be used to retrieve any variable from the LUA state and cast it to a type that we can deal with in C++.
+
+The usage from Python is very similiar, with one minor caveat. For convenience, the `grunk` module comes with a default `grunk::state` instance and
+the member functions of `grunk::state` are exposed as free functions. So from python we have the choice of working with the default state or creating 
+our own state and working with it.
+
+.. code-block:: python
+
+   import grunk
+
+   # use the default stae
+   env = grunk.create_env()
+
+   # create a new state and use it
+   grnk = grunk.state()
+   env2 = grunk.create_env()
+
+In practice, custom types and functions are registered in the `grunk::state` via 
+grunk plugins, see the next section. For simplicity, assume for now that the function ``add`` is registered in the grunk state and can be used in the feature tree.
+
+Notice that in the example above, we have only used the functions in a dynamic context. We did not make use of grunk's dependency tracking. 
+The following example shows how to use grunk's dynamic mode together with the dependency tracking of features and actions.
+
+.. tabs::
+
+   .. code-tab:: cpp 
+   
+         grunk::state grunk;
+
+         // assume that the function "add" is registered in the grunk state, so that it can be used in the feature tree
+
+         auto env = grunk.create_parametric_env();
+         env.eval(R"(
+            x = grunk.feature(2.)
+            y = grunk.feature(1.)
+            z = add(x,y)
+         )");
+
+         auto x = env.get_feature("x");
+         auto y = env.get_feature("y");
+         auto z = env.get_feature("z");
+
+         double zv = z.value().as<double>();
+
+
+   .. code-tab:: python 
+   
+         import grunk
+
+         // assume that the function "add" is registered in the grunk state, so that it can be used in the feature tree
+
+         env = grunk.create_parametric_env();
+         env.eval("""
+            x = grunk.feature(2.)
+            y = grunk.feature(1.)
+            z = add(x,y)
+         """)
+
+         x = env.get_feature("x")
+         y = env.get_feature("y")
+         z = env.get_feature("z")
+
+         zv = z.value().as_float()
+
+
+TODO: Show again lazy evaluation and caching, show calling from cpp, show mixing static and dynamic mode.
+Show type registration and usage. Show the Feature.as syntax
 
 .. _using-plugins:
 
