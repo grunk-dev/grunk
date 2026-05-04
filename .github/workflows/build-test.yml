@@ -127,6 +127,7 @@ jobs:
         with:
           cache: true
           cache-write: ${{ github.event_name == 'push' && github.ref_name == 'main' }}
+          activate-environment: true
       - name: Checkout parametric
         uses: actions/checkout@v6
         with:
