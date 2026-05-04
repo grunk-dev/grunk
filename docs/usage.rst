@@ -755,6 +755,8 @@ TODO
 Reading and writing to file
 ===========================
 
+TODO: This is outdated
+
 We can write the feature tree from the :ref:`previous section<using-plugins>` to a file, 
 the *grunk recipe*, with the command
 
@@ -777,9 +779,9 @@ The grunk recipe will have the following contents:
      SomePluginA: 2.4.19
      SomePluginB: 1.3.0
    parameters:
-     x: MyDouble.new(4.3)
-     y: MyDouble.new(3.3)
-     z: MyDouble.new(2.0)
+     x: SomePluginA.MyDouble.new(4.3)
+     y: SomePluginA.MyDouble.new(3.3)
+     z: SomePluginA.MyDouble.new(2.0)
     steps: |
       a = SomePluginA.add(x, y)
       b = SomePluginB.multiply(a, z)
@@ -928,14 +930,14 @@ Let us invoke the new subrecipe ``multiplication`` of ``recipe1`` on ``a`` and `
    .. code-tab:: cpp 
 
       // Retrieve a proxy to the inner recipe
-      auto inner = recipe1.recipes["multiplication"];
+      auto multiplication = recipe1.recipes["multiplication"];
    
       // Map the independent features of the inner recipe to features of the outer recipe
-      inner["x"] = a;
-      inner["y"] = b;
+      multiplication["x"] = a;
+      multiplication["y"] = b;
 
       // Map the output feature of the inner recipe to a new feature in the outer recipe and assign a label to it
-      auto d = inner.get("z").with_id("d");
+      auto d = multiplication.get("z").with_id("d");
 
       // Add the new feature to the outer recipe
       recipe1["d"] = d;
@@ -943,14 +945,14 @@ Let us invoke the new subrecipe ``multiplication`` of ``recipe1`` on ``a`` and `
    .. code-tab:: python 
 
       # Retrieve a proxy to the inner recipe
-      inner = recipes1.recipes["multiplication"]
+      multiplication = recipe1.recipes["multiplication"]
 
       # Map the independent features of the inner recipe to features of the outer recipe
-      inner["x"] = a
-      inner["y"] = b
+      multiplication["x"] = a
+      multiplication["y"] = b
 
       # Map the output feature of the inner recipe to a new feature in the outer recipe and assign a label to it
-      d = inner.get("z").with_id("d")
+      d = multiplication.get("z").with_id("d")
 
       # Add the new feature to the outer recipe
       recipe1["d"] = d
@@ -996,7 +998,7 @@ Exporting the recipe will result in the following yaml-representation:
 
 .. _types-of-compute-nodes:
 
-TODO: Example with Placeholder, explain dependence of inner recipe
+TODO: Example with Placeholder, explain dependence of inner recipe. Add picture from paradigm-x meeting.
 
 Types of Compute Nodes
 ======================
