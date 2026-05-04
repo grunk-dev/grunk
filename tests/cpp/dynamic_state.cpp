@@ -14,6 +14,38 @@ namespace {
 
 } // anonymous namespace
 
+TEST(state, simple_parametric)
+{
+    grunk::state grunk;
+
+    auto env = grunk.create_parametric_env();
+    env.eval(R"(
+        x = grunk.feature(2.)
+        y = grunk.feature(38.)
+
+        a = x ^ 2
+        b = a + y  
+
+        b1 = b:value()
+
+        x:set_value(1)
+
+        b2 = b:value()
+    )");
+
+    auto b1 = env.get("b1").as<double>();
+    EXPECT_NEAR(b1, 42, 1e-15);
+
+    auto b2 = env.get("b2").as<double>();
+    EXPECT_NEAR(b2, 39, 1e-15);
+
+    auto y = env.get_feature("y"); // short for env.get<grunk::DynamicFeature>("y")
+    y.set_value(41);
+
+    auto b3 = env.get_feature("b").value().as<double>();
+    EXPECT_NEAR(b3, 42, 1e-15);
+}
+
 TEST(state, free_function_registration)
 {
     grunk::state grunk;

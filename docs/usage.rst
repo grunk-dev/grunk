@@ -31,7 +31,7 @@ grunk lets you delay the evaluation of the function until the result is queried.
 
 .. code-block:: cpp
 
-   #include <grunk/grunk.h>
+   #include <grunk/grunk.hpp>
 
    auto o = grunk::action(&add, 1.2, 40.8).output();
    o.set_id("o");
@@ -153,6 +153,8 @@ Parallel Execution
 Consider the following grunk recipe:
 
 .. code-block:: cpp
+
+   #include <grunk/grunk.hpp>
    
    auto x1 = grunk::feature(1.);
    auto x2 = grunk::action([](double v){ return v + 1.; }, x1).output();
@@ -165,7 +167,7 @@ Consider the following grunk recipe:
    auto z = grunk::action([](double a, double b){ return a + b; }, x2, y2).output();
    z.set_id("z");
 
-Ignoring the actual calculations, note that ``x2`` and ``y2`` can be computed in parallel, because they do not depend on each other.
+Setting aside that parallel execution is not reasonable for this example, note that ``x2`` and ``y2`` can be computed in parallel, because they do not depend on each other.
 
 Since grunk tracks parametric dependencies, it can use this information to deduce which parts of a parametric tree 
 can be executed in parallel - provided that the functions themselves are thread-safe.
@@ -202,6 +204,8 @@ The class ``ParallelExecutor`` takes a set of features as input and executes all
 
 .. code-block:: cpp
 
+   #include <grunk/grunk.hpp>
+
    auto x  = grunk::feature(1.).with_id("x");
    auto y  = grunk::action([](double v){ return v + 1.; }, x).output().with_id("y");
    auto y1 = grunk::action([](double v){ return v * 2.; }, y).output().with_id("y1");
@@ -218,26 +222,101 @@ and does not support parallel execution.
 Dynamic Mode
 ============
 
+Before we dive into the parametric trees of grunk's dynamic mode, let's first see how to interact with the underlying LUA state.
+
+Interacting with the LUA state
+------------------------------
+
 Grunk's dynamic mode is the basis for using grunk with plugins. It relies on a runtime reflection system and a type-erased object called ``grunk::object``. This allows grunk to work with any kind of type and function provided by plugins, without the need to know about them at compile time.
 
-The dynamic mode relies on a LUA state, that is wrapped in a `grunk::state` instance. We can register functions and types
-in the LUA state and generate LUA environments to execute dynamic scripts.
+An instance of ``grunk::state`` is used to manage the dynamic state and register types and functions in an internal LUA state.
+
+In practice, functions and types are registered in a ``grunk::state`` via grunk plugins, see the :ref:`next section <using-plugins>` section. For simplicity, assume for now that the type ``MyScalar`` and a function ``add`` are registered in the grunk state and can be used in the feature tree.
 
 .. code-block:: cpp
 
+   #include <grunk/grunk.hpp>
+
+   struct MyScalar
+   {
+       double get() const { return v; }
+       double v;
+   };
+
    grunk::state grunk;
-   grunk.register_function("add", [](int l, int r){ return l + r; }); // register the function "add" in the grunk state, so that it can be used in the feature tree
+   grunk.register_type<MyScalar>("MyScalar")
+   .add_constructor<double>()
+   .add_member_function("get", &MyScalar::get);
+
+   grunk.register_function(
+      "add", 
+      [](MyScalar const& l, Myscalar const& r){ 
+         return l + r; 
+      }
+   );
+
+Now, we can use the registered type and function in a LUA script. 
+
+.. tabs:: 
+
+   .. code-tab:: cpp 
+
+         #include <grunk/grunk.hpp>
+   
+         grunk::state grunk;
+
+         /* type and function registration omitted here */
+
+         auto env = grunk.create_env();
+         env.eval(R"(
+            local x = MyScalar.new(17.)
+            local y = MyScalar.new(25.)
+            local z = add(x,y)
+            result = z:get() ^ 2 + 5
+         )");
+         std::cout << env.get<double>("result") << std::endl;
+
+   .. code-tab:: python 
+   
+         import grunk
+
+         # type and function registration omitted here
+
+         env = grunk.create_env()
+         env.eval("""
+            local x = MyScalar(17.)
+            local y = MyScalar(25.)
+            local z = add(x,y)
+            result = z:get() ^ 2 + 5
+         """)
+         print(env.get("result").as_float())
+
+
+The script passed to ``env.eval`` can be any valid LUA code. The function ``env.get`` can be used to retrieve any variable from the LUA state and cast it to a type that we can deal with in C++ or Python.
+We can retrieve the variable as a grunk::object and then use the ``as`` function to cast it back to the actual type.
+Conversely, we can also create a grunk::object from a C++ type and pass it to the LUA state.
+
+.. code-block:: cpp
+
+   #include <grunk/grunk.hpp>
+
+   grunk::state grunk;
+
+   /* type and function registration omitted here */
+   
    auto env = grunk.create_env();
-   env.eval(R"(
-       x = 17
-       y = 25
-       z = add(x,y)
-   )");
-   double z = env.get<double>("z");
 
-The script passed to ``env.eval`` can be any valid LUA code. The function ``env.get`` can be used to retrieve any variable from the LUA state and cast it to a type that we can deal with in C++.
+   env["x"] = MyScalar(17.);
+   env["y"] = MyScalar(25.);
+   env.eval("result = add(x,y):get()");
+   std::cout << env.get<double>("result") << std::endl;
 
-The usage from Python is very similiar, with one minor caveat. For convenience, the `grunk` module comes with a default `grunk::state` instance and
+
+The usage from Python is very similiar, with a few minor caveats. 
+
+Firstly, python types cannot be registered in the grunk state, because they are not known to C++. Instead, we can only work with native LUA types and types that are registered in the grunk state via plugins.
+
+Secondly, for convenience, the `grunk` module comes with a default `grunk::state` instance and
 the member functions of `grunk::state` are exposed as free functions. So from python we have the choice of working with the default state or creating 
 our own state and working with it.
 
@@ -248,60 +327,98 @@ our own state and working with it.
    # use the default stae
    env = grunk.create_env()
 
-   # create a new state and use it
+   # or create a new state called grnk and use it
    grnk = grunk.state()
    env2 = grnk.create_env()
 
-In practice, custom types and functions are registered in the `grunk::state` via 
-grunk plugins, see the next section. For simplicity, assume for now that the function ``add`` is registered in the grunk state and can be used in the feature tree.
+Dynamic Features and Actions
+----------------------------
 
 Notice that in the example above, we have only used the functions in a dynamic context. We did not make use of grunk's dependency tracking. 
 The following example shows how to use grunk's dynamic mode together with the dependency tracking of features and actions.
 
+We can create a parametric environment from our ``grunk::state``. Within this environment, all functions are decorated as a ``grunk::Action``, a function wrapper that tracks the dependency.
+
 .. tabs::
 
    .. code-tab:: cpp 
+
+         #include <grunk/grunk.hpp>
    
          grunk::state grunk;
-
-         // assume that the function "add" is registered in the grunk state, so that it can be used in the feature tree
 
          auto env = grunk.create_parametric_env();
          env.eval(R"(
             x = grunk.feature(2.)
-            y = grunk.feature(1.)
-            z = add(x,y)
+            y = grunk.feature(38.)
+
+            a = x ^ 2
+            b = a + y  
+
+            b1 = b:value()
+
+            x:set_value(1)
+
+            b2 = b:value()
          )");
 
-         auto x = env.get_feature("x");
-         auto y = env.get_feature("y");
-         auto z = env.get_feature("z");
+         // prints 42
+         auto b1 = env.get("b1").as<double>();
+         std::cout << "b1 = " << b1 << std::endl;
 
-         double zv = z.value().as<double>();
+         // prints 39
+         auto b2 = env.get("b2").as<double>();
+         std::cout << "b2 = " << b2 << std::endl;
+
+         auto y = env.get_feature("y"); // short for env.get<grunk::DynamicFeature>("y")
+         y.set_value(41);
+
+         // prints 42
+         auto b3 = env.get_feature("b").value().as<double>();
+         std::cout << "b3 = " << b3 << std::endl;
 
 
    .. code-tab:: python 
    
          import grunk
 
-         # assume that the function "add" is registered in the grunk state, so that it can be used in the feature tree
-
-         env = grunk.create_parametric_env();
+         env = grunk.create_parametric_env()
          env.eval("""
             x = grunk.feature(2.)
-            y = grunk.feature(1.)
-            z = add(x,y)
+            y = grunk.feature(38.)
+
+            a = x ^ 2
+            b = a + y  
+
+            b1 = b:value()
+
+            x:set_value(1)
+
+            b2 = b:value()
          """)
 
-         x = env.get_feature("x")
+         # prints 42
+         b1 = env["b1"].as_float()
+         print(f"b1 = {b1}")
+
+         # prints 39
+         b2 = env["b2"].as_float()
+         print(f"b2 = {b2}")
+
          y = env.get_feature("y")
-         z = env.get_feature("z")
+         y.set_value(41)
 
-         zv = z.value().as_float()
+         # prints 42
+         b3 = env.get_feature("b").value().as_float()
+         print(f"b3 = {b3}")
+
+Observe carefully how the lazy evaluation and automatic invalidation logic works here. The first time ``b:value()`` is called from the LUA script, the value of the feature is queried and the parametric tree is evaluated. The caches of every feature of the underlying parametric tree are filled. Subsequently the value of ``x`` is changed, which invalidates ``a`` and ``b``. The next time ``b:value()`` is called, the parametric tree is reevaluated and the value of ``b`` changes. 
+
+In the following, we are retrieving the feature ``y`` from the ``grunk::state`` and manipulate it in C++/Python. As we change the value, the cache of ``a`` remains intact, but the cache of ``b`` is invalidated. Querying the value of ``b`` again (this time from C++/Python), only part of the feature tree is re-evaluated and the value of ``b`` changes again.
 
 
-TODO: Show again lazy evaluation and caching, show calling from cpp, show mixing static and dynamic mode.
-Show type registration and usage. Show the Feature.as syntax
+TODO: Show example with custom type, show calling from cpp, show mixing static and dynamic mode.
+Show type registration and usage. Show the Feature.as syntax, show std::vector example
 
 .. _using-plugins:
 
