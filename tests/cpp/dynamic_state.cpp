@@ -475,9 +475,6 @@ TEST(state, usertype_nonconst_method_as_action_lua)
 /*
 
 TO DO
-  - add option to grunk::eval to ammend variable names as feature ids after evaluation
-  - add grunk::Recipe class with serialization to mixed yaml and lua
-  - registration syntax as before with reflect
   - test (nested) enums
   - test data member as action (read-only) in LUA and C++
   - idea to prevent non-const member functions:
@@ -495,8 +492,6 @@ TO DO
   - conan test_package and plugin tests in gtest
   - code generator
   - check smart and custom pointer support
-  - python bindings
   - static actions taking dynamic features
-  - parallelization with option to disable
 
 */
