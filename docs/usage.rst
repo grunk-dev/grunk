@@ -9,7 +9,7 @@ Usage
 If you are interested in using grunk as a backend for your C++ code, the :ref:`section on static mode <usage-static-mode>` and 
 the :ref:`section on parallel execution <usage-parallel-execution>` are a good starting point. 
 
-If you plan to use grunk entirely for scripting and manipulating grunk recipes, these sections can be skipped, because the python bindings only support grunk's dynamic mode and the reading and writing of grunk recipes to file.
+If you plan to use grunk entirely for scripting and manipulating grunk recipes, these sections can be skipped, because the python bindings only support grunk's dynamic mode and the reading and writing of grunk recipes to file. However, to fully grasp grunk's caching, lazy evaluation and automatic invalidation logic, it may be beneficial not to do so.
 
 .. _usage-static-mode:
 
@@ -331,8 +331,8 @@ our own state and working with it.
    grnk = grunk.state()
    env2 = grnk.create_env()
 
-Dynamic Features and Actions
-----------------------------
+Dynamic Features and Actions in LUA
+-----------------------------------
 
 Notice that in the example above, we have only used the functions in a dynamic context. We did not make use of grunk's dependency tracking. 
 The following example shows how to use grunk's dynamic mode together with the dependency tracking of features and actions.
@@ -416,9 +416,30 @@ Observe carefully how the lazy evaluation and automatic invalidation logic works
 
 In the following, we are retrieving the feature ``y`` from the ``grunk::state`` and manipulate it in C++/Python. As we change the value, the cache of ``a`` remains intact, but the cache of ``b`` is invalidated. Querying the value of ``b`` again (this time from C++/Python), only part of the feature tree is re-evaluated and the value of ``b`` changes again.
 
+Using Custom Types
+------------------
 
-TODO: Show example with custom type, show calling from cpp, show mixing static and dynamic mode.
-Show type registration and usage. Show the Feature.as syntax, show std::vector example
+TODO. Show the Feature.as syntax
+
+Dynamic Features and Actions in C++/Python
+------------------------------------------
+
+TODO
+
+Mixing static and dynamic mode in C++
+-------------------------------------
+
+TODO
+
+Containers
+----------
+
+TODO. Only ``std::vector`` handled so far
+
+Custom Pointers and Smart Pointers
+----------------------------------
+
+Not yet implemented.
 
 .. _using-plugins:
 
@@ -826,10 +847,7 @@ You have seen in :ref:`the previous section<reading-and-writing-to-file>` how in
 a set of features can be written to a *grunk recipe*. In grunk, there exists a class to model 
 such a recipe in :ref:`dynamic mode<dynamic-mode>`, namely ``grunk::Recipe``. 
 
-In a certain sense, a ``grunk::Recipe`` is just a container of features. You can 
- * construct a recipe from from one or more features
- * create an empty recipe and add features to it via ``Recipe::insert_feature``, or 
- * you can create the features directly within the recipe using ``Recipe::feature``.
+In a certain sense, a ``grunk::Recipe`` is just a container of features. You can construct a recipe from from a ``grunk::state`` and add features to it.
 
 .. tabs::
 
