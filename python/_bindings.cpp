@@ -16,8 +16,8 @@ using namespace nb::literals;
 
 namespace {
 
-    template <typename T>
-    void add_feature_base_methods(auto&& nbclass) {
+    template <typename T, typename nbclass_t>
+    void add_feature_base_methods(nbclass_t& nbclass) {
         nbclass.def("id", &T::id)
             .def("set_id", &T::set_id, "id"_a)
             .def("is_valid", &T::is_valid)
