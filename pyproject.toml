@@ -70,6 +70,22 @@ pip = "*"
 nanobind = "*"
 pytest = "*"
 
+[tool.pixi.feature.docs.dependencies]
+doxygen = "*"
+
+
+[tool.pixi.feature.docs.pypi-dependencies]
+sphinx = "*"
+sphinx_rtd_theme = "*"
+breathe = "*"
+m2r = "*"
+mistune = "*"
+jinja2 = "<3.1"
+standard-imghdr = "*"
+docutils = "<0.21"
+setuptools = "*"
+sphinx-tabs = "*"
+
 [tool.pixi.feature.tools]
 dependencies = { python = "*" }
 pypi-dependencies = { reuse = "*" }
@@ -77,6 +93,7 @@ pypi-dependencies = { reuse = "*" }
 [tool.pixi.environments]
 "default" = ["default"]
 "tools" = ["tools"]
+"docs" = ["default", "docs"]
 
 [tool.pixi.activation.env]
 TF_ENABLE_PROFILER="simple.json"
@@ -90,10 +107,12 @@ configure = { cmd = [
     "-D", "CMAKE_INSTALL_PREFIX=build/install",
     "-D", "CMAKE_BUILD_TYPE={{ config }}",
     "-D", "GRUNK_TESTS=ON",
+    "-D", "GRUNK_BUILD_DOCS={{ docs }}",
     "-D", "LUA_INCLUDE_DIR=$CONDA_PREFIX/include"#,
     #"-D", "parametric_DIR=/localdata2/klei_j0/code/parametric/build/install/lib/cmake/parametric/",
 ], args = [
     { "arg" = "config", "default"="Release"},
+    { "arg" = "docs", "default"="OFF"}
 ], description = "Configure the CMake build system. The 'config' argument sets the CMAKE_BUILD_TYPE (e.g., Release or Debug)."}
 
 build = { cmd = "cmake --build . {{ extra_args }}", cwd = "build", args= [ { "arg" = "extra_args", "default" = "-j"}], description = "Build the project using CMake. The 'extra_args' argument allows you to pass additional flags to the build command (e.g., -j for parallel builds)."}
