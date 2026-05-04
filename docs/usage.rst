@@ -250,7 +250,7 @@ our own state and working with it.
 
    # create a new state and use it
    grnk = grunk.state()
-   env2 = grunk.create_env()
+   env2 = grnk.create_env()
 
 In practice, custom types and functions are registered in the `grunk::state` via 
 grunk plugins, see the next section. For simplicity, assume for now that the function ``add`` is registered in the grunk state and can be used in the feature tree.
@@ -284,7 +284,7 @@ The following example shows how to use grunk's dynamic mode together with the de
    
          import grunk
 
-         // assume that the function "add" is registered in the grunk state, so that it can be used in the feature tree
+         # assume that the function "add" is registered in the grunk state, so that it can be used in the feature tree
 
          env = grunk.create_parametric_env();
          env.eval("""
