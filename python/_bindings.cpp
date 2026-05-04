@@ -164,7 +164,7 @@ NB_MODULE(_bindings, m) {
         .def(
             "__getitem__", 
             [](grunk::environment& env, std::string const& key) {
-                grunk::object obj = env[key];
+                grunk::object obj = env.get(key); // use get() to get better error messages when key is not found
                 return obj;
             },
             "key"_a

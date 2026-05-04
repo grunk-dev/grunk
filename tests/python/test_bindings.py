@@ -8,16 +8,33 @@ import grunk
 
 def test_local_state():
 
+    # use a local state
     grnk = grunk.state()
-    e = grnk.create_env()
-    e.eval("""
+    e1 = grnk.create_env()
+    e1.eval("""
         x = 1.2
         y = 3.4
     """)
-    x = e["x"]
-    y = e["y"]
+
+    # use the default state
+    e2 = grunk.create_env()
+    e2.eval("z = 5.6")
+
+    x = e1["x"]
+    y = e1["y"]
     assert pytest.approx(x.as_float()) == 1.2
     assert pytest.approx(y.as_float()) == 3.4
+
+    with pytest.raises(RuntimeError):
+        z = e1["z"]
+    
+    z = e2["z"]
+    assert pytest.approx(z.as_float()) == 5.6
+
+    with pytest.raises(RuntimeError):
+        x = e2["x"]
+    with pytest.raises(RuntimeError):
+        y = e2["y"]
 
 
 def test_operators_python():
