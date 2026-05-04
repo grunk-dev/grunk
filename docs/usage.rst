@@ -80,6 +80,9 @@ We have created three independent features ``x,y,z``. The feature
 ``a`` is the result of adding ``x`` and ``y`` and the feature ``b`` is the 
 result of adding ``a`` and ``z``.
 
+.. image:: images/example_simple_add.png
+   :alt: Simple parametric tree
+
 If we would now query the value of ``a``, ``b`` would 
 not be computed, because ``a`` does not depend on ``b``. If instead,
 we were to query the value of ``b``, ``a`` would have to be computed first. 
@@ -167,6 +170,9 @@ Consider the following grunk recipe:
    auto z = grunk::action([](double a, double b){ return a + b; }, x2, y2).output();
    z.set_id("z");
 
+.. image:: images/parallel_execution_example1.png
+   :alt: parallel execution example 1
+
 Setting aside that parallel execution is not reasonable for this example, note that ``x2`` and ``y2`` can be computed in parallel, because they do not depend on each other.
 
 Since grunk tracks parametric dependencies, it can use this information to deduce which parts of a parametric tree 
@@ -183,7 +189,7 @@ You can also specify the number of threads to use for the parallel execution:
 
 .. code-block:: cpp
 
-   int nthreads = 4;
+   int nthreads = 2;
    grunk::ParallelExecutor executor(nthreads, z);
    executor.run();
 
@@ -212,6 +218,9 @@ The class ``ParallelExecutor`` takes a set of features as input and executes all
    auto y2 = grunk::action([](double v){ return v * 3.; }, y).output().with_id("y2");
    
    grunk::ParallelExecutor executor(y1, y2);
+
+.. image:: images/parallel_execution_example2.png
+   :alt: parallel execution example 2
 
 Note, that parallel execution is only possible in static mode. 
 Dynamic mode relies on LUA. Like most scripting languages, LUA is single-threaded 
@@ -411,6 +420,9 @@ We can create a parametric environment from our ``grunk::state``. Within this en
          # prints 42
          b3 = env.get_feature("b").value().as_float()
          print(f"b3 = {b3}")
+
+.. image:: images/dynamic_mode_example1.png
+   :alt: dynamic mode example 1
 
 Observe carefully how the lazy evaluation and automatic invalidation logic works here. The first time ``b:value()`` is called from the LUA script, the value of the feature is queried and the parametric tree is evaluated. The caches of every feature of the underlying parametric tree are filled. Subsequently the value of ``x`` is changed, which invalidates ``a`` and ``b``. The next time ``b:value()`` is called, the parametric tree is reevaluated and the value of ``b`` changes. 
 
