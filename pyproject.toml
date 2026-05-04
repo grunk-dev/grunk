@@ -2,6 +2,135 @@
 #
 # SPDX-License-Identifier: MPL-2.0
 
+[project]
+name = "grunk"
+version = "0.5.0"
+description = "A parametric modeling backend for Python, C++ and Lua."
+readme = "README.md"
+license = { text = "MPL-2.0" }
+urls = { "homepage" = "https://github.com/grunk-dev/grunk" }
+authors = [
+    { name = "Kleinert Jan", email = "jan.kleinert@dlr.de" },
+]
+requires-python = ">=3.9"
+
+##############################################################
+# The following sections are for scikit-build-core and cibuildwheel configuration.
+##############################################################
+
 [build-system]
-requires = ['setuptools', 'cmake', 'conan >= 1.58, <2.0.0']
-build-backend = 'setuptools.build_meta'
+requires = ["scikit-build-core >=0.10", "nanobind >=1.3.2"]
+build-backend = "scikit_build_core.build"
+
+[tool.scikit-build]
+# Protect the configuration against future changes in scikit-build-core
+minimum-version = "build-system.requires"
+
+# Setuptools-style build caching in a local directory
+build-dir = "build/{wheel_tag}"
+
+# Build stable ABI wheels for CPython 3.12+
+wheel.py-api = "cp312"
+
+[tool.cibuildwheel]
+# Necessary to see build output from the actual compilation
+build-verbosity = 1
+
+# Run pytest to ensure that the package was correctly built
+test-command = "pytest {project}/tests"
+test-requires = "pytest"
+
+# Don't test Python 3.8 wheels on macOS/arm64
+test-skip="cp38-macosx_*:arm64"
+
+# Needed for full C++17 support
+[tool.cibuildwheel.macos.environment]
+MACOSX_DEPLOYMENT_TARGET = "10.14"
+
+
+##############################################################
+# Pixi configuration for dependency management and task execution.
+##############################################################
+
+
+[tool.pixi.workspace]
+platforms = ["win-64", "linux-64", "osx-64"]
+channels = ["conda-forge"]
+
+[tool.pixi.dependencies]
+cmake = "*"
+ninja = "*"
+#TODO: parametric
+lua = "*"
+sol2 = "*"
+taskflow = "*"
+yaml-cpp = "*"
+python = ">=3.9"
+pip = "*"
+nanobind = "*"
+pytest = "*"
+
+[tool.pixi.feature.tools]
+dependencies = { python = "*" }
+pypi-dependencies = { reuse = "*" }
+
+[tool.pixi.environments]
+"default" = ["default"]
+"tools" = ["tools"]
+
+[tool.pixi.activation.env]
+TF_ENABLE_PROFILER="simple.json"
+
+[tool.pixi.tasks]
+configure = { cmd = [
+    "cmake",
+    "-G", "Ninja",
+    "-S", ".",
+    "-B", "build",
+    "-D", "CMAKE_INSTALL_PREFIX=build/install",
+    "-D", "CMAKE_BUILD_TYPE={{ config }}",
+    "-D", "GRUNK_TESTS=ON",
+    "-D", "LUA_INCLUDE_DIR=$CONDA_PREFIX/include"#,
+    #"-D", "parametric_DIR=/localdata2/klei_j0/code/parametric/build/install/lib/cmake/parametric/",
+], args = [
+    { "arg" = "config", "default"="Release"},
+], description = "Configure the CMake build system. The 'config' argument sets the CMAKE_BUILD_TYPE (e.g., Release or Debug)."}
+
+build = { cmd = "cmake --build . {{ extra_args }}", cwd = "build", args= [ { "arg" = "extra_args", "default" = "-j"}], description = "Build the project using CMake. The 'extra_args' argument allows you to pass additional flags to the build command (e.g., -j for parallel builds)."}
+
+install_cpp = { cmd = "cmake --build . --target install {{ extra_args }}", cwd = "build", args= [ { "arg" = "extra_args", "default" = "-j"}], description = "Install the built project to the specified prefix. The 'extra_args' argument allows you to pass additional flags to the install command (e.g., -j for parallel installation)."}
+install_python = { cmd = "pip install -e .", description = "Install the Python package in development mode." }
+
+test_cpp = { cmd = "./runUnitTests", cwd = "build/tests/cpp", description = "Run the unit tests for the C++ code."}
+test_python = { cmd = "pytest -xvs tests", description = "Run the unit tests for the Python bindings." }
+
+_reuse = { cmd = "reuse {{ sub_cmd }}",args = [ { "arg" = "sub_cmd", "default" = "lint"} ]}
+
+
+[tool.pixi.tasks.reuse]
+args = [ { "arg" = "sub_cmd", "default" = "lint"} ]
+depends-on = [{ task = "_reuse", environment="tools", args = ["{{sub_cmd}}"] }]
+description = "Run the REUSE tool with the specified sub-command. The 'sub_cmd' argument allows you to specify which REUSE command to run (e.g., lint, spdx, etc.). By default, it runs 'reuse lint' in the 'tools' environment."
+
+[tool.pixi.tasks.install]
+depends-on = [
+    { task = "install_cpp", environment="default" },
+    { task = "install_python", environment="default" }
+]
+description = "Install both the C++ components and the Python package."
+
+[tool.pixi.tasks.test]
+depends-on = [
+    { task = "test_cpp", environment="default" },
+    { task = "test_python", environment="default" }
+]
+description = "Run both C++ and Python tests."
+
+[tool.pixi.target.linux-64.activation.env]
+CMAKE_PREFIX_PATH = "$CONDA_PREFIX"
+
+[tool.pixi.target.osx-64.activation.env]
+CMAKE_PREFIX_PATH = "$CONDA_PREFIX"
+
+[tool.pixi.target.win-64.activation.env]
+CMAKE_PREFIX_PATH = "%CONDA_PREFIX%/Library"

@@ -31,6 +31,16 @@ TEST(state, free_function_registration)
     ASSERT_NEAR(z, 42, 1e-14);
 }
 
+TEST(state, environment_get)
+{
+    grunk::state grunk;
+    auto env = grunk.create_env();
+    env.eval("x = 17");
+    double x = env.get<double>("x");
+    ASSERT_NEAR(x, 17, 1e-14);
+    ASSERT_THROW(env.get<double>("y"), std::runtime_error);
+}
+
 TEST(state, free_function_cpp)
 {
     grunk::state grunk;

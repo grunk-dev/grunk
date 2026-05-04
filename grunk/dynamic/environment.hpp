@@ -32,13 +32,21 @@ public:
     template <typename T=sol::object>
     T get(std::string const& key)
     {
-        return m_environment[key];
+        auto ret = m_environment[key];
+        if (!ret.valid()) {
+            throw std::runtime_error("Key '" + key + "' not found in environment");
+        }
+        return ret;
     }
 
     template <typename T=sol::object>
     T get(std::string const& key) const
     {
-        return m_environment[key];
+        auto ret = m_environment[key];
+        if (!ret.valid()) {
+            throw std::runtime_error("Key '" + key + "' not found in environment");
+        }
+        return ret;
     }
 
     /**
