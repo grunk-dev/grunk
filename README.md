@@ -72,7 +72,7 @@ int main()
     // that represents the dependency of the features. Now let's trigger
     // evaluation by querying the value of e.
 
-    assert(e.value() == 6);
+    assert(e.value().as<int>() == 6);
 
     // After evaluation all results, including intermediate results are
     // cached. A second query of e would just retrieve the value from
@@ -84,7 +84,7 @@ int main()
     c.set_value(4);
 
     // A new query of e will trigger evaluation of all invalid nodes.
-    assert(e.value() == 7);
+    assert(e.value().as<int> == 7);
 
     return 0;
 }
@@ -155,6 +155,26 @@ int main() {
     return 0;
 }
 ```
+
+### grunk::recipe
+
+The parametric tree constructed above can be written to and read from a *grunk recipe* with the following contents:
+
+```yaml
+uses:
+  grunk: 0.5.0
+parameters:
+  a: 1
+  b: 2
+  c: 3
+steps: |
+  d = a + b
+  e = c + d
+```
+
+### grunk::plugin
+
+Any type and any function can be registered in the dynamic type system of grunk in a runtime plugin. Using plugins provides the possibility to create, share and reuse parametric models *(WIP)*
 
 ## Documentation
 

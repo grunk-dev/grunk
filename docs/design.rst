@@ -2,9 +2,9 @@
 ..
 .. SPDX-License-Identifier: MPL-2.0
 
-=================
+*****************
 Design Principles
-=================
+*****************
 
 grunk's core functionality is designed around two key concepts :
  * :ref:`dynamic typing<design-dynamic-sublanguage>`

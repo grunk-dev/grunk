@@ -16,6 +16,9 @@ If you plan to use grunk entirely for scripting and manipulating grunk recipes, 
 Static Mode
 ===========
 
+Lazy evaluation and Caching
+---------------------------
+
 As an introductory example, consider the following function
 that adds two ``double``\s and is a bit talkative about it.
 
@@ -64,6 +67,9 @@ is called. At this time, the function must be evaluated and the result, ``42``, 
 stored in ``o``. The next time the value is queried, the compuation is not repeated,
 the cached result is returned. This is called **lazy evaluation**, because computations 
 are delayed until the last point possible and only necessary calculations are performed.
+
+Automatic invalidation
+----------------------
 
 Let's modify the above code example a bit. 
 
@@ -148,10 +154,36 @@ by retaining parent-child relations in the ``Feature<T>`` instances.
 This mode of operation is also called **static mode**, because all types and functions are known at compile time.
 If you want to use types and functions provided by plugins which are loaded at run time, you have to use grunk's **dynamic mode**, see the section on :ref:`dynamic mode<_usage-dynamic-mode>`.
 
+Classes and Member Functions
+----------------------------
+
+The concept works with any kind of type and function. The only requirement for the functions is, that they are **referentially transparent**, which means they may not alter their inputs.
+
+.. code-block:: cpp
+
+   #include <grunk/grunk.hpp>
+
+   struct MyScalar {
+         double get() const { return v; }
+         double v;
+   };
+
+   auto x = grunk::feature(MyScalar{17.}).with_id("x");
+   auto y = grunk::action(&MyScalar::get, x).output().with_id("y");
+
+   // prints 17
+   std::cout << y.value().v << std::endl;
+
+   x.change_value().v = 25.;
+
+   // prints 25
+   std::cout << y.value().v << std::endl;
+
+
 .. _usage-parallel-execution:
 
 Parallel Execution
-==================
+------------------
 
 Consider the following grunk recipe:
 
@@ -230,6 +262,8 @@ and does not support parallel execution.
 
 Dynamic Mode
 ============
+
+grunk's dynamic mode uses LUA as a dynamic scripting language to work with types and functions provided by plugins. The implementation is based on the `sol2 <https://github.com/ThePhD/sol2>`_ library and a ``grunk::object`` is just an alias for a ``sol::object``.
 
 Before we dive into the parametric trees of grunk's dynamic mode, let's first see how to interact with the underlying LUA state.
 
@@ -333,12 +367,14 @@ our own state and working with it.
 
    import grunk
 
-   # use the default stae
+   # use the default state
    env = grunk.create_env()
 
    # or create a new state called grnk and use it
    grnk = grunk.state()
    env2 = grnk.create_env()
+
+``env`` and ``env2`` are independent environments with a shared LUA state. They share the same registered types and functions.
 
 Dynamic Features and Actions in LUA
 -----------------------------------
@@ -431,22 +467,182 @@ In the following, we are retrieving the feature ``y`` from the ``grunk::state`` 
 Using Custom Types
 ------------------
 
-TODO. Show the Feature.as syntax
+Let us examine how a parametric tree with custom types from plugins would look like. Assume that we have a plugin that registers the type ``MyScalar`` and a function ``add`` that takes two ``MyScalar``\s and returns their sum.
+
+For brevity, we will only show the LUA script that can be executed in a grunk parametric environment.
+
+When we want to construct a custom type as part of the feature tree, we have two options. We can either use the constructor of the type as an action, which means that the constructed object depends on the input features. Or we can forward the constructor arguments to ``grunk::feature`` by using the ``new_feature`` method, which means that the constructed object is an independent feature.
+
+.. code-block:: LUA
+
+   local a = grunk.feature(1.)
+
+   x = MyScalar.new(a)             -- ctor as action: x depends on a
+   y = MyScalar.new(2.)            -- ctor as action with argument conversion from constant: y depends on unnamed Feature(2.)
+   z = MyScalar.new_feature(3.)    -- forwards ctor args to grunk::feature: z is independent feature
+
+
+LUA does not know about the member functions that can be invoked on a ``grunk::DynamicFeature``, which is an alias for ``grunk::Feature<grunk::object>``. Therefore, we can not directly call member functions of the underlying type using the ``:`` operator. 
+
+We have two options for this:
+
+1. We can use the method ``as`` to obtain a LUA usertype that exposes the member functions as actions. 
+2. We can call the metatable method `MyScalar.val` and pass the feature as an argument. 
+
+The following code snippet shows both options.
+
+.. code-block:: LUA 
+
+   local b = x:as(MyScalar).val() - MyScalar.val(y)
+   print(b:value())  -- prints -1, because x has the value 1 and y has the value 2
 
 Dynamic Features and Actions in C++/Python
 ------------------------------------------
 
-TODO
+In the examples so far, the dynamic mode was used from within a LUA script. There are two kinds of environments. ``grunk::create_env`` returns an environment where all registered functions and methods are exposed as is, ``grunk::create_parametric_env`` returns an environment where all registered functions and methods are exposed as `actions`, meaning they are decorated functions that register the parametric dependency and delay the function evaluation. Tere is no need to explicitly wrap the method in a ``grunk::action`` as in static mode. 
+
+However, this syntax is available for dynamic mode as well, without using LUA environments.
+
+Instead of passing a function or function pointer to ``grunk::action``, we can 
+pass a string identifier. We can choose between ``.`` and ``:`` as seperator.
+
+.. tabs::
+
+   .. code-tab:: cpp 
+
+      #include <grunk/grunk/hpp>
+
+      auto grunk = grunk::state;
+
+      /* type and function registration omitted here */
+
+      auto a = grunk.feature(1.);
+
+      auto x = grunk.action("MyScalar:new", a);       // ctor as action: x depends on a
+      auto y = grunk.action("MyScalar.new", 2.);      // ctor as action with argument conversion from contant: y depends on Feature(2.)
+      auto z = grunk.feature("MyScalar", 3.);         // forwards ctor args to grunk::feature: z is independent feature
+
+      auto b = grunk.action("MyScalar.val", x) - grunk.action("MyScalar:val", y);
+
+      // prints -1
+      std::cout << b.value().as<double>() << std::endl;
+
+   .. code-tab:: python
+
+      import grunk
+
+      # type and function registration omitted here
+
+      a = grunk.feature(1.)
+
+      x = grunk.action("MyScalar:new", a)       # ctor as action: x depends on a
+      y = grunk.action("MyScalar.new", 2.)      # ctor as action with argument conversion from contant: y depends on Feature(2.)
+      z = grunk.feature("MyScalar", 3.)         # 3 forwards ctor args to grunk::feature: z is independent feature
+
+      b = grunk.action("MyScalar.val", x) - grunk.action("MyScalar:val", y)
+
+      # prints -1
+      print(b.value().as_float())
+
 
 Mixing static and dynamic mode in C++
 -------------------------------------
 
-TODO
+Remember, that static mode is only available in C++.
+
+In C++ we can pass static features to dynamic functions.
+The conversion is handled under the hood. 
+
+.. code-block:: cpp
+
+   grunk::state grunk;
+
+   auto add = [](int l, int r){ return l+r; };
+   grunk.register_function("add", &add);
+
+   auto a = grunk::feature(1);          // type of a: Feature<int>
+   auto b = grunk.feature(2);           // type of b: Feature<object>
+   auto c = grunk.action("add", a, b);  // type of d: Feature<int>
+
+   // Until here, add has not been called, but only the DAG assembled, 
+   // that represents the dependency of the features. Now let's trigger
+   // evaluation by querying the value of e.
+
+   assert(c.value().as<int> == 3);
+
+   // After evaluation all results, including intermediate results are
+   // cached. A second query of e would just retrieve the value from
+   // cache
+
+   // resetting an independent input feature invalidates all dependent
+   // nodes. Resetting c will invalidate e, but the cache of d remains
+   // valid
+   b.set_value(4);
+
+   // A new query of e will trigger evaluation of all invalid nodes.
+   assert(c.value() == 5);
 
 Containers
 ----------
 
-TODO. Only ``std::vector`` handled so far
+Imagine you have a function that expects an ``std::vector``.
+
+.. code-block:: cpp
+
+   struct Foo {
+      int i;
+   };
+
+   Foo add(std::vector<Foo> const& v) {
+      return std::accumulate(
+         v.begin(), 
+         v.end(), 
+         Foo{0.}, 
+         [](auto const& l, auto const& r){ return Foo{l.i + r.i}; }
+      );
+   }
+
+
+If we have several ``grunk::DynamicFeature``s, each wrapping a ``Foo`` instance, we can create a vector ``std::vector<grunk::DynamicFeature>``. 
+But the action decorator for ``add`` expects a single `grunk::DynamicFeature`` wrapping an ``std::vector<Foo>``.
+
+To perform the conversion, the type ``Foo`` has to be registered with the 
+``with_std_vector`` method. This adds a method ``as_vec`` to the metatable of the usertype of ``Foo``, which is an action that unwraps the input features, then inserts them in an ``std::vector`` and wraps it in a ``grunk::DynamicFeature``, all the while properly registering the parametric dependency of the inputs to the output vector.
+
+.. code-block:: cpp
+
+   #include <grunk/grunk.hpp>
+
+   auto grunk = grunk::state();
+
+   grunk.register_type<Foo>("Foo")
+   .add_constructors([](int i){ return Foo{i}; })
+   .with_std_vector();
+
+   grunk.register_function("add", &add);
+
+   auto env = grunk.create_parametric_env();
+   env.eval(R"(
+      x1 = Foo.new_feature(5)
+      x2 = Foo.new_feature(7)
+      x3 = Foo.new_feature(9)
+
+      res = add(Foo.as_vec(x1, x2, x3))
+   )");
+
+   auto res = env.get_feature("res");
+
+   // prints 21
+   std::cout << res.value().as<Foo>().i << std::endl;
+
+   auto x1 = env.get_feature("x1");
+   x1.set_value(Foo{26});
+
+   // prints 42
+   std::cout << res.value().as<Foo>().i << std::endl;
+
+Currently, ``std::vector`` is the only C++ container supported by grunk. 
+
 
 Custom Pointers and Smart Pointers
 ----------------------------------
