@@ -6,6 +6,8 @@
 Usage 
 *************
 
+Target audience: C++ developers who want static features, and Python users using dynamic features via the Python bindings. Assumes basic familiarity with C++/Python, templates, and Lua for dynamic mode.
+
 If you are interested in using grunk as a backend for your C++ code, the :ref:`section on static mode <usage-static-mode>` and 
 the :ref:`section on parallel execution <usage-parallel-execution>` are a good starting point. 
 
@@ -54,14 +56,13 @@ grunk lets you delay the evaluation of the function until the result is queried.
 In the first line no computation takes place, the function ``add`` is not evaluated.
 Instead, 
 a new ``Action`` instance ``o`` is created using ``grunk::action``.
-The arguments are the label ``"o"``, a function pointer ``&add`` and two arguments
+The arguments are a function pointer ``&add`` and two arguments
 that shall be passed into the function. With ``.output()`` we retrieve a handle
 to the first (and in this case only) output of the action, which is of
-type ``Feature<double>``. 
+type ``Feature<double>``. With ``set_id("o")`` we add an id to the feature.
 
 Internally, ``o`` depends on the action created
-by ``grunk::action``, which in turn depends on two ``Feature<double>`` instances, 
-one holding the value ``1.2`` and the other the value ``40.8``. With this dependency 
+by ``grunk::action``; that action in turn depends on two ``Feature<double>`` inputs holding the values ``1.2`` and ``40.8``. With this dependency 
 information, grunk can delay the computation to the point when ``o.value()`` 
 is called. At this time, the function must be evaluated and the result, ``42``, is 
 stored in ``o``. The next time the value is queried, the compuation is not repeated,
@@ -138,8 +139,7 @@ grunk knows this:
    Adding 17.8 and 24.2
    42
 
-This functionality of only invalidating those features, that depend 
-on a changed feature is called **automatic invalidation**. 
+This functionality is called **automatic invalidation**: Only features that depend on a changed feature are invalidated. 
 
 Lazy evaluation and automatic invalidation come with the trade-off of having to 
 store dependency information, but it pays off
@@ -157,7 +157,7 @@ If you want to use types and functions provided by plugins which are loaded at r
 Classes and Member Functions
 ----------------------------
 
-The concept works with any kind of type and function. The only requirement for the functions is, that they are **referentially transparent**, which means they may not alter their inputs.
+The concept works with any kind of type and function. The only requirement for the functions is, that they are **referentially transparent**, which means they may not alter their inputs *(in other words: no functions that mutate their arguments or rely on hidden global state)*.
 
 .. code-block:: cpp
 
@@ -225,6 +225,8 @@ You can also specify the number of threads to use for the parallel execution:
    grunk::ParallelExecutor executor(nthreads, z);
    executor.run();
 
+Parallel execution will use multiple threads to evaluate independent parts of the tree; any exceptions thrown during evaluation will propagate to the calling thread.
+
 The parallel executor uses the `taskflow <https://github.com/taskflow/taskflow>`_ library under the hood. If you want to see the actual task graph that gets executed, you can dump it to a file:
 
 .. code-block:: cpp 
@@ -255,7 +257,7 @@ The class ``ParallelExecutor`` takes a set of features as input and executes all
    :alt: parallel execution example 2
 
 Note, that parallel execution is only possible in static mode. 
-Dynamic mode relies on LUA. Like most scripting languages, LUA is single-threaded 
+Dynamic mode relies on Lua. Like most scripting languages, Lua is single-threaded 
 and does not support parallel execution.
 
 .. _usage-dynamic-mode:
@@ -263,16 +265,16 @@ and does not support parallel execution.
 Dynamic Mode
 ============
 
-grunk's dynamic mode uses LUA as a dynamic scripting language to work with types and functions provided by plugins. The implementation is based on the `sol2 <https://github.com/ThePhD/sol2>`_ library and a ``grunk::object`` is just an alias for a ``sol::object``.
+grunk's dynamic mode uses Lua as a dynamic scripting language to work with types and functions provided by plugins. The implementation is based on the `sol2 <https://github.com/ThePhD/sol2>`_ library and a ``grunk::object`` is just an alias for a ``sol::object``.
 
-Before we dive into the parametric trees of grunk's dynamic mode, let's first see how to interact with the underlying LUA state.
+Before we dive into the parametric trees of grunk's dynamic mode, let's first see how to interact with the underlying Lua state.
 
-Interacting with the LUA state
+Interacting with the Lua state
 ------------------------------
 
 Grunk's dynamic mode is the basis for using grunk with plugins. It relies on a runtime reflection system and a type-erased object called ``grunk::object``. This allows grunk to work with any kind of type and function provided by plugins, without the need to know about them at compile time.
 
-An instance of ``grunk::state`` is used to manage the dynamic state and register types and functions in an internal LUA state.
+An instance of ``grunk::state`` is used to manage the dynamic state and register types and functions in an internal Lua state.
 
 In practice, functions and types are registered in a ``grunk::state`` via grunk plugins, see the :ref:`next section <using-plugins>` section. For simplicity, assume for now that the type ``MyScalar`` and a function ``add`` are registered in the grunk state and can be used in the feature tree.
 
@@ -293,12 +295,12 @@ In practice, functions and types are registered in a ``grunk::state`` via grunk 
 
    grunk.register_function(
       "add", 
-      [](MyScalar const& l, Myscalar const& r){ 
+      [](MyScalar const& l, MyScalar const& r){ 
          return l + r; 
       }
    );
 
-Now, we can use the registered type and function in a LUA script. 
+Now, we can use the registered type and function in a Lua script. 
 
 .. tabs:: 
 
@@ -335,9 +337,9 @@ Now, we can use the registered type and function in a LUA script.
          print(env.get("result").as_float())
 
 
-The script passed to ``env.eval`` can be any valid LUA code. The function ``env.get`` can be used to retrieve any variable from the LUA state and cast it to a type that we can deal with in C++ or Python.
+The script passed to ``env.eval`` can be any valid Lua code. The function ``env.get`` can be used to retrieve any variable from the Lua state and cast it to a type that we can deal with in C++ or Python.
 We can retrieve the variable as a grunk::object and then use the ``as`` function to cast it back to the actual type.
-Conversely, we can also create a grunk::object from a C++ type and pass it to the LUA state.
+Conversely, we can also create a grunk::object from a C++ type and pass it to the Lua state.
 
 .. code-block:: cpp
 
@@ -355,9 +357,9 @@ Conversely, we can also create a grunk::object from a C++ type and pass it to th
    std::cout << env.get<double>("result") << std::endl;
 
 
-The usage from Python is very similiar, with a few minor caveats. 
+The usage from Python is very similar, with a few minor caveats. 
 
-Firstly, python types cannot be registered in the grunk state, because they are not known to C++. Instead, we can only work with native LUA types and types that are registered in the grunk state via plugins.
+Firstly, python types cannot be registered in the grunk state, because they are not known to C++. Instead, we can only work with native Lua types and types that are registered in the grunk state via plugins.
 
 Secondly, for convenience, the `grunk` module comes with a default `grunk::state` instance and
 the member functions of `grunk::state` are exposed as free functions. So from python we have the choice of working with the default state or creating 
@@ -374,9 +376,9 @@ our own state and working with it.
    grnk = grunk.state()
    env2 = grnk.create_env()
 
-``env`` and ``env2`` are independent environments with a shared LUA state. They share the same registered types and functions.
+``env`` and ``env2`` are independent environments with a shared Lua state. They share the same registered types and functions.
 
-Dynamic Features and Actions in LUA
+Dynamic Features and Actions in Lua
 -----------------------------------
 
 Notice that in the example above, we have only used the functions in a dynamic context. We did not make use of grunk's dependency tracking. 
@@ -460,7 +462,9 @@ We can create a parametric environment from our ``grunk::state``. Within this en
 .. image:: images/dynamic_mode_example1.png
    :alt: dynamic mode example 1
 
-Observe carefully how the lazy evaluation and automatic invalidation logic works here. The first time ``b:value()`` is called from the LUA script, the value of the feature is queried and the parametric tree is evaluated. The caches of every feature of the underlying parametric tree are filled. Subsequently the value of ``x`` is changed, which invalidates ``a`` and ``b``. The next time ``b:value()`` is called, the parametric tree is reevaluated and the value of ``b`` changes. 
+Observe carefully how the lazy evaluation and automatic invalidation logic works here. The first time ``b:value()`` is called from the Lua script, the value of the feature is queried and the parametric tree is evaluated. The caches of every feature of the underlying parametric tree are filled. Subsequently the value of ``x`` is changed, which invalidates ``a`` and ``b``. The next time ``b:value()`` is called, the parametric tree is reevaluated and the value of ``b`` changes. 
+
+Short summary: calling ``:value()`` inside the running Lua script triggers evaluation and fills caches for that parametric tree; later changes to inputs will invalidate dependent caches and cause recomputation on the next ``:value()`` call.
 
 In the following, we are retrieving the feature ``y`` from the ``grunk::state`` and manipulate it in C++/Python. As we change the value, the cache of ``a`` remains intact, but the cache of ``b`` is invalidated. Querying the value of ``b`` again (this time from C++/Python), only part of the feature tree is re-evaluated and the value of ``b`` changes again.
 
@@ -469,7 +473,7 @@ Using Custom Types
 
 Let us examine how a parametric tree with custom types from plugins would look like. Assume that we have a plugin that registers the type ``MyScalar`` and a function ``add`` that takes two ``MyScalar``\s and returns their sum.
 
-For brevity, we will only show the LUA script that can be executed in a grunk parametric environment.
+For brevity, we will only show the Lua script that can be executed in a grunk parametric environment.
 
 When we want to construct a custom type as part of the feature tree, we have two options. We can either use the constructor of the type as an action, which means that the constructed object depends on the input features. Or we can forward the constructor arguments to ``grunk::feature`` by using the ``new_feature`` method, which means that the constructed object is an independent feature.
 
@@ -482,11 +486,11 @@ When we want to construct a custom type as part of the feature tree, we have two
    z = MyScalar.new_feature(3.)    -- forwards ctor args to grunk::feature: z is independent feature
 
 
-LUA does not know about the member functions that can be invoked on a ``grunk::DynamicFeature``, which is an alias for ``grunk::Feature<grunk::object>``. Therefore, we can not directly call member functions of the underlying type using the ``:`` operator. 
+Lua does not know about the member functions that can be invoked on a ``grunk::DynamicFeature``, which is an alias for ``grunk::Feature<grunk::object>``. Therefore, we can not directly call member functions of the underlying type using the ``:`` operator. 
 
 We have two options for this:
 
-1. We can use the method ``as`` to obtain a LUA usertype that exposes the member functions as actions. 
+1. We can use the method ``as`` to obtain a Lua usertype that exposes the member functions as actions. 
 2. We can call the metatable method `MyScalar.val` and pass the feature as an argument. 
 
 The following code snippet shows both options.
@@ -499,12 +503,12 @@ The following code snippet shows both options.
 Dynamic Features and Actions in C++/Python
 ------------------------------------------
 
-In the examples so far, the dynamic mode was used from within a LUA script. There are two kinds of environments. ``grunk::create_env`` returns an environment where all registered functions and methods are exposed as is, ``grunk::create_parametric_env`` returns an environment where all registered functions and methods are exposed as `actions`, meaning they are decorated functions that register the parametric dependency and delay the function evaluation. Tere is no need to explicitly wrap the method in a ``grunk::action`` as in static mode. 
+In the examples so far, the dynamic mode was used from within a Lua script. There are two kinds of environments. ``grunk::create_env`` returns an environment where all registered functions and methods are exposed as is, ``grunk::create_parametric_env`` returns an environment where all registered functions and methods are exposed as `actions`, meaning they are decorated functions that register the parametric dependency and delay the function evaluation. There is no need to explicitly wrap the method in a ``grunk::action`` as in static mode. 
 
-However, this syntax is available for dynamic mode as well, without using LUA environments.
+However, this syntax is available for dynamic mode as well, without using Lua environments.
 
 Instead of passing a function or function pointer to ``grunk::action``, we can 
-pass a string identifier. We can choose between ``.`` and ``:`` as seperator.
+pass a string identifier. We can choose between ``.`` and ``:`` as separator.
 
 .. tabs::
 
@@ -707,7 +711,7 @@ TODO
 .. This is useful in two scenarios. Firstly, you can disable caching and lazy evaluation for a sequence 
 .. of steps. Secondly, you can use it to instantiate new objects and modify them using non-const setters.
 
-.. grunk dissallows any function, that can potentially alter its inputs. This includes any function that
+.. grunk disallows any function, that can potentially alter its inputs. This includes any function that
 .. takes a non-const reference as argument and in consequence, all non-const member functions. This is an 
 .. important safeguard against dependency cycles in the feature tree: As part of the philosophy of grunk, 
 .. information flows from inputs to outputs only and any feature in the tree is influenced only by predecessors.
@@ -786,7 +790,7 @@ TODO
 .. In the above example, you define a script as a sequence of three steps, where each step is defined using
 .. three parts. The first is the function name, the second is a list of names of the outputs of the function and 
 .. the third is a list of inputs. The inputs can either be a ``DynamicFeature`` defined previously outside of the script
-.. or the id of an intermediate variable created within the same script in a preceeding step. 
+.. or the id of an intermediate variable created within the same script in a preceding step. 
 
 .. The second argument of ``grunk::script`` is a vector of output ids. These are any intermediate variables of 
 .. the script that shall be passed as return features of the compute node. 
@@ -832,7 +836,7 @@ TODO
 
 .. Let's assume that we have both plugins ``libSomePluginA.so`` and ``libSomePluginB.so`` in the 
 .. directory ``/home/jan/grunk_plugins/`` *(Note that on Windows the file extension would be .dll)*. 
-.. In the simpleste scenario, we can load the plugins using the ``PluginRegistry``. 
+.. In the simplest scenario, we can load the plugins using the ``PluginRegistry``. 
 
 .. .. tabs::
 
@@ -889,7 +893,7 @@ TODO
 .. the plugin locally. The latter can take some time. Have a coffee.
 
 .. If grunk *(resp. conan)* claim that the plugin cannot be found, 
-.. it is likely that the authentification token has expired and we must authenticate with grunkcenter again: 
+.. it is likely that the authentication token has expired and we must authenticate with grunkcenter again: 
 
 .. .. code:: console
 
@@ -900,7 +904,7 @@ TODO
 .. environment ``cad```. Type ``grunk env --help`` for details.
 
 .. Note that you can have any number of environments. This can also help with managing different 
-.. versions of the same plugin in their respecitve isolated environments. 
+.. versions of the same plugin in their respective isolated environments. 
 
 .. ``PluginRegistry::activate_env(std::string const& env_name)`` can be used to prepend grunk's 
 .. search path based on the environment. Then we can load any plugin within this environment using
@@ -1209,7 +1213,7 @@ The grunk recipe will have the following contents:
       b = SomePluginB.multiply(a, z)
 
 All information needed to reproduce the output of ``b`` gets written into the file in 
-yaml format. The steps are a LUA script. The function ``grunk::write`` accepts any number of ``Feature`` 
+yaml format. The steps are a Lua script. The function ``grunk::write`` accepts any number of ``Feature`` 
 instances or an instance of ``grunk::Recipe``, see :ref:`the section on grunk recipes<grunk-recipes>`. The following commands all 
 yield the same file *(except for the order of independent parameters)*:
 
