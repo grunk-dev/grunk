@@ -18,6 +18,8 @@ If you plan to use grunk entirely for scripting and manipulating grunk recipes, 
 Static Mode
 ===========
 
+Static mode summary: compile-time type knowledge and function bindings. Use static mode when all types and functions are known at compile time and you need lazy evaluation, caching, and the option for parallel execution (C++ only).
+
 Lazy evaluation and Caching
 ---------------------------
 
@@ -141,6 +143,12 @@ grunk knows this:
 
 This functionality is called **automatic invalidation**: Only features that depend on a changed feature are invalidated. 
 
+Caching & invalidation (summary)
+
+   - Querying a feature's value triggers evaluation and fills caches for that feature and all computed ancestors required for the result.
+   - Changing an independent input invalidates only those features that depend (directly or transitively) on that input.
+   - Re-querying a feature after an invalidation recomputes only the invalidated portions of the tree.
+
 Lazy evaluation and automatic invalidation come with the trade-off of having to 
 store dependency information, but it pays off
 for big workflows with many computationally expensive functions. This becomes especially 
@@ -210,6 +218,10 @@ Setting aside that parallel execution is not reasonable for this example, note t
 Since grunk tracks parametric dependencies, it can use this information to deduce which parts of a parametric tree 
 can be executed in parallel - provided that the functions themselves are thread-safe.
 
+.. admonition:: Thread-safety
+
+   Parallel execution requires that all user functions invoked are thread-safe and side-effect free. Exceptions thrown during parallel evaluation may be propagated to the caller; consult the API for exact exception semantics.
+
 To do so, we can use the ``ParallelExecutor``:
 
 .. code-block:: cpp
@@ -264,6 +276,8 @@ and does not support parallel execution.
 
 Dynamic Mode
 ============
+
+Dynamic mode summary: runtime (Lua-based) typing and plugin-driven behavior. Use dynamic mode when types or functions are provided by plugins or when scripting from Python/Lua; note that Lua-based dynamic mode is single-threaded and does not support the `ParallelExecutor`.
 
 grunk's dynamic mode uses Lua as a dynamic scripting language to work with types and functions provided by plugins. The implementation is based on the `sol2 <https://github.com/ThePhD/sol2>`_ library and a ``grunk::object`` is just an alias for a ``sol::object``.
 
@@ -340,6 +354,10 @@ Now, we can use the registered type and function in a Lua script.
 The script passed to ``env.eval`` can be any valid Lua code. The function ``env.get`` can be used to retrieve any variable from the Lua state and cast it to a type that we can deal with in C++ or Python.
 We can retrieve the variable as a grunk::object and then use the ``as`` function to cast it back to the actual type.
 Conversely, we can also create a grunk::object from a C++ type and pass it to the Lua state.
+
+Short note on evaluation and caching
+
+   Calling ``env.eval`` and invoking ``:value()`` inside the parametric environment triggers evaluation and fills caches for the parametric sub-tree used to compute that value. Subsequent changes to input features (from Lua or from C++/Python via ``get_feature``/``set_value``) will invalidate dependent caches and cause recomputation at the next ``:value()`` call.
 
 .. code-block:: cpp
 
