@@ -1199,22 +1199,19 @@ Notice that features can be queried by their id:
 Reading and writing to file
 ---------------------------
 
-TODO: This is outdated.
-
-We can write the feature tree from the :ref:`previous section<using-plugins>` to a file, 
-the *grunk recipe*, with the command
+We can read and write recipes to a yaml file. 
 
 .. tabs::
 
    .. code-tab:: cpp 
-   
-      grunk.write("/home/jan/my_grunk_files/simple.grr.yml", b);
+
+      grunk.write("/home/threepwood_guy/my_grunk_files/simple.grr.yml", recipe);
 
    .. code-tab:: python 
-   
-      grunk.write("/home/jan/my_grunk_files/simple.grr.yml", b)
 
-The grunk recipe will have the following contents:
+      grunk.write("/home/threepwood_guy/my_grunk_files/simple.grr.yml", recipe)
+
+The structure of the yaml file looks like this:
 
 .. code-block:: yaml 
    
@@ -1228,37 +1225,25 @@ The grunk recipe will have the following contents:
      z: SomePluginA.MyDouble.new(2.0)
     steps: |
       a = SomePluginA.add(x, y)
-      b = SomePluginB.multiply(a, z)
+      b = SomePluginB.multiply(a, 2)
+      c = b:val() + z:val
 
 All information needed to reproduce the output of ``b`` gets written into the file in 
-yaml format. The steps are a Lua script. The function ``grunk::write`` accepts any number of ``Feature`` 
-instances or an instance of ``grunk::Recipe``, see :ref:`the section on grunk recipes<grunk-recipes>`. The following commands all 
-yield the same file *(except for the order of independent parameters)*:
+yaml format.
+
+* The block ``uses`` lists the grunk version as well as any used plugin together with its version
+* The block ``parameters`` lists all independent named features that have an id. 
+* The block ``steps`` is a Lua script as a single string. It contains a topologically ordered list of steps needed to re-create the parametric tree. Each line corresponds to an ``action`` in the parametric tree.
+
+The file can then be read by grunk and the feature tree can be reconstructed, as long as all used plugins can be loaded:
 
 .. tabs::
 
    .. code-tab:: cpp 
    
-         grunk.write("/home/jan/my_grunk_files/simple.grr.yml", b);
-         grunk.write("/home/jan/my_grunk_files/simple.grr.yml", b, a, x, y, z);
-         grunk.write("/home/jan/my_grunk_files/simple.grr.yml", z, b);
+         grunk::get_plugin_registry().set_dir("/home/threepwood_guy/grunk_plugins/"); // WIP
 
-   .. code-tab:: python 
-   
-         grunk.write("/home/jan/my_grunk_files/simple.grr.yml", b)
-         grunk.write("/home/jan/my_grunk_files/simple.grr.yml", b, a, x, y, z)
-         grunk.write("/home/jan/my_grunk_files/simple.grr.yml", z, b)
-
-The file can then be read by grunk and the feature tree can be 
-reconstructed, as long as the two plugins have been loaded:
-
-.. tabs::
-
-   .. code-tab:: cpp 
-   
-         grunk::get_plugin_registry().load_env("my_env");
-
-         auto recipe = grunk.read("/home/jan/my_grunk_files/simple.grr.yml")
+         auto recipe = grunk.read("/home/threepwood_guy/my_grunk_files/simple.grr.yml")
          auto b = recipe.at("b");
          auto b_result = b.value().get("value").as<double>();
          std::cout << b_result << std::endl;
@@ -1266,6 +1251,7 @@ reconstructed, as long as the two plugins have been loaded:
    .. code-tab:: python 
 
          grunk.get_plugin_registry().load_env("my_env")
+         grunk.get_plugin_registry().set_dir("/home/threepwood_guy/grunk_plugins/")  # WIP
 
          recipe = grunk.read("/home/jan/my_grunk_files/simple.grr.yml")
          b = recipe["b"]
@@ -1277,7 +1263,7 @@ reconstructed, as long as the two plugins have been loaded:
    15.2
 
 The function ``grunk::state::read`` returns a ``Recipe`` instances, which stores the re-constructed
-features, see :ref:`the next section<grunk-recipes>`. Retrieval is based on the string ids of the features. 
+features. Retrieval is based on the string ids of the features. 
 
 Plugins enable experts to create and use domain specific building blocks to model 
 complex systems. grunk files enable experts to share workflows in a collaborative and 
@@ -1361,7 +1347,7 @@ Exporting the recipe will result in the following yaml-representation:
 .. code-block:: yaml 
    
    uses:
-     grunk: 0.2.1
+     grunk: 0.5.0
      PluginA: 0.1.0
    parameters:
      a: PluginA.Scalar(17)
