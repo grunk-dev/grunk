@@ -17,8 +17,8 @@ Grunk is a C++ library for dataflow/incremental programming.Use it to create gen
 
  - grunk is targeted at - but not limited to - geometric modeling
  - header-only C++17 library with Python bindings
- - Dynamic typing and scripting interface based on LUA
- - Reproducible exchange file format based on mixed YAML and LUA
+ - Dynamic typing and scripting interface based on Lua
+ - Reproducible exchange file format based on mixed YAML and Lua
  - Plugin-interface to add custom types and functions as building blocks at runtime *(WIP)*
  - Package manager for grunk plugins *(WIP)*
 
@@ -28,10 +28,10 @@ Models built with grunk are highly modular and extendable. Users can share plugi
 
 | Library | Description | Dependencies |
 | -- | -- | -- |
-| `grunk::core` | Backend for tracking parametric dependencies. Lazy evaluation and automatic invalidation with minimal overhead. Header-only, thin wrapper for parametric | parametric, *optional: taskflow for multithreading support. Build with `GRUNK_WITH_TASKFLOW=ON` cmake option/precompiler definition to enable multithreading.* |
-| `grunk::dynamic` | Dynamic scripting support (LUA). Write scripts without boilerplate that are automatically parametric. Simple serialization and deserialization of parametric trees to and from LUA. Header-only. | `grunk::core` |
-| `grunk::recipe` | YAML-based recipes: A human-readable structured exchange format for parametric models | `grunk::dynamic`, yaml-cpp | 
-| `grunk::plugins` | Plugin support for sharing re-usable functions and data types. Plugins can be written in C++ for maximum performance or in LUA for ease-of-use | `grunk::recipe`
+| `grunk::core` | Backend for tracking parametric dependencies. Lazy evaluation and automatic invalidation with minimal overhead. Header-only, thin wrapper for parametric | [parametric](https://github.com/grunk-dev/parametric), *optional: [taskflow](https://github.com/taskflow/taskflow) for multithreading support. Build with `GRUNK_WITH_TASKFLOW=ON` cmake option/precompiler definition to enable multithreading.* |
+| `grunk::dynamic` | Dynamic scripting support (Lua). Write scripts without boilerplate that are automatically parametric. Simple serialization and deserialization of parametric trees to and from Lua. Header-only. | `grunk::core`, [Lua](https://www.lua.org/), [sol2](https://github.com/ThePhd/sol2) |
+| `grunk::recipe` | YAML-based recipes: A human-readable structured exchange format for parametric models | `grunk::dynamic`, [yaml-cpp](https://github.com/jbeder/yaml-cpp) | 
+| `grunk::plugins` | Plugin support for sharing re-usable functions and data types. Plugins can be written in C++ for maximum performance or in Lua for ease-of-use | `grunk::recipe`
 
 ## Sneak Peak
 
@@ -41,7 +41,7 @@ In grunk, features are data nodes and actions are calculation nodes that are con
 
 grunk comes with a static and dynamic mode, where the static mode does not entail the small overhead of the dynamic type system.
 
-The following example shows the core principle behind lazy evaluation and caching. It also shows how static mode and dynamic mode can be mixed *(dynamic mode requires grunk::dynamic)*:
+The following example shows the core principle behind lazy evaluation and caching. It also shows how static mode and dynamic mode can be mixed *(dynamic mode requires  `grunk::dynamic`)*:
 
 ```cpp
 #include <grunk/state.hpp>
@@ -63,9 +63,9 @@ int main()
     */
 
     auto a = grunk::feature(1);          // type of a: Feature<int>
-    auto b = grunk.feature(2);           // type of b: Feature<object>
+    auto b = grunk::feature(2);          // type of b: Feature<int>
     auto c = grunk.feature(3);           // type of c: Feature<object>
-    auto d = grunk::action(add, a, b);   // type of d: Feature<int>
+    auto d = grunk.action(add, a, b);    // type of d: Feature<int>
     auto e = grunk.action("add", c, d);  // type of e: Feature<object>
 
     // Until here, add has not been called, but only the DAG assembled, 
@@ -92,7 +92,7 @@ int main()
 
 ### grunk::dynamic
 
-The same model can be built using the LUA scripting interface enterily in dynamic mode.
+The same model can be built using the Lua scripting interface enterily in dynamic mode.
 
 ```cpp
 #include <grunk/state.hpp>
@@ -105,7 +105,8 @@ int main() {
     auto add = [](int l, int r){ return l+r; };
     grunk.register_function("add", add);
 
-    grunk.eval(R"(
+    env = grunk.create_env();
+    env.eval(R"(
         local a = grunk.feature(1)
         local b = grunk.feature(2)
         local c = grunk.feature(3)
@@ -124,37 +125,32 @@ int main() {
 }
 ```
 
-Note, that for convenience, grunk provides mathematical operators
+Note, that for convenience, grunk provides python bindings and mathematical operators.
 
-```cpp
-#include <grunk/state.hpp>
+```python
+import grunk
 
-int main() {
+# ...
 
-    grunk::state grunk;
+env = grunk.create_env()
+env.eval("""
+  local a = grunk.feature(1)
+  local b = grunk.feature(2)
+  local c = grunk.feature(3)
+  local d = a + b
+  local e = c + d
 
-    // register a function in the dynamic grunk state
-    auto add = [](int l, int r){ return l+r; };
-    grunk.register_function("add", add);
+  e1 = e:value()
+  c:set_value(4)
+  e2 = e:value()
+""")
 
-    grunk.eval(R"(
-        local a = grunk.feature(1)
-        local b = grunk.feature(2)
-        local c = grunk.feature(3)
-        local d = a + b
-        local e = c + d
+assert grunk.get("e1").as_int() == 6
+assert grunk.get("e2").as_int() == 7
 
-        e1 = e:value()
-        c:set_value(4)
-        e2 = e:value()
-    )");
-
-    assert(grunk.get("e1").as<int>() == 6);
-    assert(grunk.get("e2").as<int>() == 7);
-
-    return 0;
-}
 ```
+
+Function and type registration in the dynamic scripting backend only works in C++ or Lua. Typically functions and types are imported as part of a grunk runtime plugin.
 
 ### grunk::recipe
 
@@ -163,6 +159,7 @@ The parametric tree constructed above can be written to and read from a *grunk r
 ```yaml
 uses:
   grunk: 0.5.0
+  # additionally used plugins here, if any
 parameters:
   a: 1
   b: 2
