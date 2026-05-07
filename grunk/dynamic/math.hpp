@@ -49,7 +49,7 @@ decltype(auto) operator+(grunk::Feature<L> const& l, grunk::Feature<R> const& r)
         return grunk::action(fun, l, r);
     } else {
         // static action
-        return grunk::action([](L const& lhs, R const& rhs){ return lhs+rhs; }, l, r).output();
+        return grunk::action([](L const& lhs, R const& rhs){ return lhs+rhs; }, l, r);
     }
 }
 
@@ -83,7 +83,7 @@ decltype(auto) operator-(grunk::Feature<L> const& l, grunk::Feature<R> const& r)
         return grunk::action(fun, l, r);
     } else {
         // static action
-        return grunk::action([](L const& lhs, R const& rhs){ return lhs-rhs; }, l, r).output();
+        return grunk::action([](L const& lhs, R const& rhs){ return lhs-rhs; }, l, r);
     }
 }
 
@@ -117,7 +117,7 @@ decltype(auto) operator*(grunk::Feature<L> const& l, grunk::Feature<R> const& r)
         return grunk::action(fun, l, r);
     } else {
         // static action
-        return grunk::action([](L const& lhs, R const& rhs){ return lhs*rhs; }, l, r).output();
+        return grunk::action([](L const& lhs, R const& rhs){ return lhs*rhs; }, l, r);
     }
 }
 
@@ -151,7 +151,7 @@ decltype(auto) operator/(grunk::Feature<L> const& l, grunk::Feature<R> const& r)
         return grunk::action(fun, l, r);
     } else {
         // static action
-        return grunk::action([](L const& lhs, R const& rhs){ return lhs/rhs; }, l, r).output();
+        return grunk::action([](L const& lhs, R const& rhs){ return lhs/rhs; }, l, r);
     }
 }
 
@@ -189,7 +189,7 @@ decltype(auto) pow(grunk::Feature<L> const& l, grunk::Feature<R> const& r) {
         return grunk::action(fun, l, r);
     } else {
         // static action
-        return grunk::action([](L const& lhs, R const& rhs){ return pow(lhs, rhs); }, l, r).output();
+        return grunk::action([](L const& lhs, R const& rhs){ return pow(lhs, rhs); }, l, r);
     }
 }
 
@@ -225,7 +225,7 @@ decltype(auto) operator%(grunk::Feature<L> const& l, grunk::Feature<R> const& r)
         return grunk::action(fun, l, r);
     } else {
         // static action
-        return grunk::action([](L const& lhs, R const& rhs){ return lhs%rhs; }, l, r).output();
+        return grunk::action([](L const& lhs, R const& rhs){ return lhs%rhs; }, l, r);
     }
 }
 
@@ -254,7 +254,7 @@ grunk::Feature<L> operator-(grunk::Feature<L> const& l) {
         return grunk::action(fun, l);
     } else {
         // static action
-        return grunk::action([](L const& lhs){ return -lhs; }, l).output();
+        return grunk::action([](L const& lhs){ return -lhs; }, l);
     }
 }
 

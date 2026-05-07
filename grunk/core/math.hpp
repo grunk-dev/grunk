@@ -12,7 +12,7 @@
 
 template <typename L, typename R>
 decltype(auto) operator+(grunk::Feature<L> const& l, grunk::Feature<R> const& r) {
-    return grunk::action([](L const& lhs, R const& rhs){ return lhs+rhs; }, l, r).output();
+    return grunk::action([](L const& lhs, R const& rhs){ return lhs+rhs; }, l, r);
 }
 
 template <typename L, typename R>
@@ -31,7 +31,7 @@ decltype(auto) operator+(L const& l, grunk::Feature<R> const& r) {
 
 template <typename L, typename R>
 decltype(auto) operator-(grunk::Feature<L> const& l, grunk::Feature<R> const& r) {
-    return grunk::action([](L const& lhs, R const& rhs){ return lhs-rhs; }, l, r).output();
+    return grunk::action([](L const& lhs, R const& rhs){ return lhs-rhs; }, l, r);
 }
 
 template <typename L, typename R>
@@ -50,7 +50,7 @@ decltype(auto) operator-(L const& l, grunk::Feature<R> const& r) {
 
 template <typename L, typename R>
 decltype(auto) operator*(grunk::Feature<L> const& l, grunk::Feature<R> const& r) {
-    return grunk::action([](L const& lhs, R const& rhs){ return lhs*rhs; }, l, r).output();
+    return grunk::action([](L const& lhs, R const& rhs){ return lhs*rhs; }, l, r);
 }
 
 template <typename L, typename R>
@@ -69,7 +69,7 @@ decltype(auto) operator*(L const& l, grunk::Feature<R> const& r) {
 
 template <typename L, typename R>
 decltype(auto) operator/(grunk::Feature<L> const& l, grunk::Feature<R> const& r) {
-    return grunk::action([](L const& lhs, R const& rhs){ return lhs/rhs; }, l, r).output();
+    return grunk::action([](L const& lhs, R const& rhs){ return lhs/rhs; }, l, r);
 }
 
 template <typename L, typename R>
@@ -92,7 +92,7 @@ using std::pow;
 
 template <typename L, typename R>
 decltype(auto) pow(grunk::Feature<L> const& l, grunk::Feature<R> const& r) {
-    return grunk::action([](L const& lhs, R const& rhs){ return pow(lhs, rhs); }, l, r).output();
+    return grunk::action([](L const& lhs, R const& rhs){ return pow(lhs, rhs); }, l, r);
 }
 
 template <typename L, typename R>
@@ -113,7 +113,7 @@ decltype(auto) pow(L const& l, grunk::Feature<R> const& r) {
 
 template <typename L, typename R>
 decltype(auto) operator%(grunk::Feature<L> const& l, grunk::Feature<R> const& r) {
-    return grunk::action([](L const& lhs, R const& rhs){ return lhs%rhs; }, l, r).output();
+    return grunk::action([](L const& lhs, R const& rhs){ return lhs%rhs; }, l, r);
 }
 
 template <typename L, typename R>
@@ -132,7 +132,7 @@ decltype(auto) operator%(L const& l, grunk::Feature<R> const& r) {
 
 template <typename L>
 grunk::Feature<L> operator-(grunk::Feature<L> const& l) {
-    return grunk::action([](L const& lhs){ return -lhs; }, l).output();
+    return grunk::action([](L const& lhs){ return -lhs; }, l);
 }
 
 #endif // not GRUNK_WITH_DYNAMIC

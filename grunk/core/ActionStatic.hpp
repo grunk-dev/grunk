@@ -191,9 +191,9 @@ struct ActionFactory
  */
 template <typename F,
           typename... Args>
-ResultHolder<Action<F, Args...>> action(F const& fun, Feature<Args> const&... args)
+Feature<std::invoke_result_t<F, Args const&...>> action(F const& fun, Feature<Args> const&... args)
 {
-    return ActionFactory::new_action(fun, args...);
+    return ActionFactory::new_action(fun, args...).output();
 }
 
 } // namespace details
@@ -221,7 +221,7 @@ template <typename F,
           typename... Args>
 inline decltype(auto) action(F const& fun, Args&&... args)
 {
-    return details::ActionFactory::new_action(fun, details::to_feature(std::forward<Args>(args))...);
+    return details::ActionFactory::new_action(fun, details::to_feature(std::forward<Args>(args))...).output();
 }
 
 } // namespace grunk
