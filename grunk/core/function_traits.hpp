@@ -83,6 +83,8 @@ namespace grunk {
 			* @brief The return type of the function
 			*/
 			using return_type = R;
+
+			/// @brief The arguments of the member function
 			using arguments_tuple = std::tuple<Args...>;
 
 			/**
@@ -91,14 +93,16 @@ namespace grunk {
 			static constexpr std::size_t arity = sizeof...(Args);
 
 			/**
-			* @brief represents the ith argument of the function
+			* @brief represents the Nth argument of the function
 			* 
-			* @tparam N 
+			* @tparam N The index of the argument
 			*/
 			template <std::size_t N>
 			struct argument
 			{
 				static_assert(N < arity, "error: invalid parameter index.");
+
+				/// @brief the type of the Nth argument
 				using type = typename std::tuple_element<N,arguments_tuple>::type;
 			};
 		};
@@ -129,6 +133,13 @@ namespace grunk {
 		struct function_traits<R(C::*)(Args...) const> : public function_traits<R(C const&,Args...)>
 		{};
 
+		/**
+		* @brief template specialization of function_traits for const member function pointers
+		* 
+		* @tparam C The parent class
+		* @tparam R The return type
+		* @tparam Args The arguments of the member function
+		*/
 		template<class C, class R, class... Args>
 		struct function_traits<R(C::* const)(Args...) const> : public function_traits<R(C const&,Args...)>
 		{};
@@ -143,17 +154,36 @@ namespace grunk {
         struct function_traits<R(C::*)> : public function_traits<R&(C&)>
         {};
 
+		/**
+		 * @brief template specialization of function_traits for const data member pointers
+		 * 
+		 * @tparam C The parent class
+		 * @tparam R The type of the data member
+		 */
         template<class C, class R>
         struct function_traits<R const (C::*)> : public function_traits<R const& (C const&)>
         {};
 
+		/**
+		 * @brief A meta-programming function to query the tail of a tuple, stripping the first element type
+		 * 
+		 * @tparam T the tuple type
+		 */
 		template <typename T>
 		struct tail_tuple;
 
+		/**
+		 * @brief template specialization of tail_tuple for std::tuple
+		 * 
+		 * @tparam Arg The first element type
+		 * @tparam Args The remaining element types
+		 */
 		template <typename Arg, typename... Args>
 		struct tail_tuple<std::tuple<Arg, Args...>> {
+			/// @brief the actual tail of the tuple, without the first element type
 			using type = std::tuple<Args...>;
 		};
+
 		template <typename T>
 		using tail_tuple_t = typename tail_tuple<T>::type;
 
@@ -179,6 +209,8 @@ namespace grunk {
 				* 
 				*/
 				using return_type = typename call_type::return_type;
+
+				/// @brief a tuple containing the arguments, with a stripped implicit this argument, if this is a member function
 				using arguments_tuple = tail_tuple_t<typename call_type::arguments_tuple>;
 
 				/**
@@ -195,6 +227,8 @@ namespace grunk {
 				struct argument
 				{
 					static_assert(N < arity, "error: invalid parameter index.");
+
+					/// @brief the type of the Nth argument
 					using type = typename call_type::template argument<N+1>::type;
 				};
 		};

@@ -23,6 +23,8 @@ namespace details {
  *
  * @note This function assumes the table contains only sol::table elements at each nested level except for the final key.
  * If any key is invalid or does not exist, an exception is thrown.
+ *
+ * @ingroup advanced_dynamic
  */
 inline sol::object lookup_nested(sol::table const& table, std::string const& str) {
     sol::object current = table;

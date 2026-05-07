@@ -1,6 +1,12 @@
-// SPDX-FileCopyrightText: 2026 Jan Kleinert <jan.kleinert@dlr.de>
-//
-// SPDX-License-Identifier: MPL-2.0
+/**
+ *
+ * SPDX-FileCopyrightText: 2026 Jan Kleinert <jan.kleinert@dlr.de>
+ *
+ * SPDX-License-Identifier: MPL-2.0
+ *
+ * @defgroup dynamic API of grunk::dynamic
+ * @defgroup advanced_dynamic Advanced API of grunk::dynamic
+ */
 
 #pragma once
 

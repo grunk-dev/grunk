@@ -32,7 +32,7 @@ namespace details {
  * is interpreted as an output of the function and each element can be retrieved
  * individually as a feature.
  * 
- * @ingroup dynamic_advanced
+ * @ingroup advanced_dynamic
  */
 class ActionDynamic : public parametric::ComputeNode<ActionDynamic>
 {
@@ -45,24 +45,35 @@ private:
      * @brief Construct a new DynamicAction given a DynamicFunction<F> and 
      * an std::vector of DynamicFeatures.
      * 
-     * @param fun A const pointer to a reflect::Function
-     * @param in The input DynamicFeatures
+     * @param fun a function with meta data to be wrapped as an action
      */
     ActionDynamic(function_meta const& fun)
      : function(fun)
     {}
 
+    /**
+     * @brief returns the result of this action
+     */
     inline decltype(auto) result() const {
         return this->template res<object>(0);
     }
 
+    /**
+     * @brief returns the ith argument of this action
+     * 
+     * @param i the index of the argument
+     */
     inline decltype(auto) argument(int i) const {
         return this->template arg<object>(i);
     }
 
 public:
 
-
+    /**
+     * @brief connect the inputs to the compute node represented by this action
+     *
+     * @param args the input features
+     */
     void connect_inputs(std::vector<DynamicFeature> const& args)
     {
         for (auto const& arg : args) {
@@ -71,17 +82,29 @@ public:
         }
     }
 
+    /**
+     * @brief connect the inputs to the compute node represented by this action
+     *
+     * @tparam Args the types of the inputs features
+     * @param args the input features
+     */
     template <typename... Args>
     void connect_inputs(Feature<Args> const&... args){
         (depends_on(args), ...);
         (evaluators.push_back(make_evaluator(args)), ...);
     }
 
+    /**
+     * @brief initializes an empty feature for the output of this action
+     */
     DynamicFeature initialize_results() const
     {
         return feature<object>({});
     }
 
+    /**
+     * @brief connects this compute node with the inputs and outputs
+     */
     void connect_results(DynamicFeature const& res)
     {
         computes(res);
@@ -232,7 +255,7 @@ private:
 };
 
 /**
- * @ingroup dynamic_advanced
+ * @ingroup advanced_dynamic
  * @brief Specialization of the ResultHolder class template for DynamicActions. It is a proxy for holding the 
  * result of a ::grunk::DynamicAction instance. The results is an std::vector of DynamicFeatures. 
  * In addition to storing the result, it stores a const reference to the compute_node so that void functions
@@ -245,12 +268,17 @@ class ResultHolder<ActionDynamic> {
 
 public:
 
+    /**
+     * @brief construct a new ResultHolder instance connecting an output dynamic feature to a compute node
+     *
+     * @param res the output dynamic feature
+     * @param c the compute node
+     */
     ResultHolder(result_type const& res, std::shared_ptr<parametric::DAGNode> const& c) : result(res), m_compute_node(c) {}
 
     /**
      * @brief returns the i-th output 
      * 
-     * @param i index of the queried output
      * @return decltype(auto) the -ith output DynamicFeature
      */
     decltype(auto) output() const {
@@ -258,7 +286,7 @@ public:
     }
 
     /**
-     * @brief retunrs a const reference to the DynamicAction
+     * @brief returns a const reference to the DynamicAction
      * 
      * @return DynamicAction const& the DynamicAction instance
      */
@@ -295,6 +323,8 @@ namespace details {
  * The proxy factory is needed, because the factory functions action must be templated, and
  * templated friend functions are a pain in the ass. This way we have a non-templated friend
  * struct with templated member functions.
+ *
+ * @ingroup advanced_dynamic
  */
 struct DynamicActionFactory
 {
@@ -321,6 +351,14 @@ struct DynamicActionFactory
 
     }
 
+    /**
+     * @brief Returns a new DynamicActionPtr given a DynamicFunction and an
+     * vector of DynamicFeatures
+     * 
+     * @param fun The reflect::DynamicFunction to be wrapped
+     * @param args The input features
+     * @return ResultHolder<DynamicAction> The returned ResultHolder wrapping the outputs
+     */
     template <typename... Args>
     static ResultHolder<ActionDynamic> new_action(
         function_meta const& fun, 
@@ -346,7 +384,7 @@ struct DynamicActionFactory
  * passed the input features.
  *
  * @tparam Args The types of the arguments expected by the registered function
- * @param name The string identifier of the registered function
+ * @param function The function with metadata
  * @param args The input Features
  * @return ResultHolder<DynamicAction> The returned ResultHolder wrapping the outputs
  *
@@ -365,6 +403,14 @@ inline ResultHolder<ActionDynamic> action(function_meta const& function, Args&&.
 
 namespace details {
 
+/**
+ * @brief make_dynamic_action is a helper function to create a lambda function that can be registered in the grunk state as a DynamicFunction. The returned lambda takes variadic arguments, converts them to DynamicFeatures and calls the action factory to create a DynamicAction.
+ * 
+ * @param func the function_meta of the function to be wrapped in the lambda
+ * @return auto a lambda function that can be registered as a DynamicFunction in the grunk state
+ *
+ * @ingroup advanced_dynamic
+ */
 inline auto make_dynamic_action(function_meta const& func)
 {
     auto decorated_function = [func](sol::variadic_args va) -> grunk::DynamicFeature

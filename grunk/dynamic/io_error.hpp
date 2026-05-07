@@ -13,6 +13,8 @@ using namespace std::string_literals;
 
 /**
  * @brief An exception representing errors with grunk's file I/O system
+ *
+ * @ingroup advanced_dynamic
  */
 class io_error : public std::exception
 {

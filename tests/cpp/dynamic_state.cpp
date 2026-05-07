@@ -14,6 +14,38 @@ namespace {
 
 } // anonymous namespace
 
+TEST(state, simple_parametric)
+{
+    grunk::state grunk;
+
+    auto env = grunk.create_parametric_env();
+    env.eval(R"(
+        x = grunk.feature(2.)
+        y = grunk.feature(38.)
+
+        a = x ^ 2
+        b = a + y  
+
+        b1 = b:value()
+
+        x:set_value(1)
+
+        b2 = b:value()
+    )");
+
+    auto b1 = env.get("b1").as<double>();
+    EXPECT_NEAR(b1, 42, 1e-15);
+
+    auto b2 = env.get("b2").as<double>();
+    EXPECT_NEAR(b2, 39, 1e-15);
+
+    auto y = env.get_feature("y"); // short for env.get<grunk::DynamicFeature>("y")
+    y.set_value(41);
+
+    auto b3 = env.get_feature("b").value().as<double>();
+    EXPECT_NEAR(b3, 42, 1e-15);
+}
+
 TEST(state, free_function_registration)
 {
     grunk::state grunk;
@@ -29,6 +61,15 @@ TEST(state, free_function_registration)
     );
     double z = env.get<double>("z");
     ASSERT_NEAR(z, 42, 1e-14);
+}
+
+TEST(state, object)
+{
+    grunk::state grunk;
+    auto x = grunk.create_object(2.);
+    auto y = grunk.create_object(3.);
+    auto z = x + y;
+    ASSERT_NEAR(z.as<double>(), 5., 1e-14);
 }
 
 TEST(state, environment_get)
@@ -475,9 +516,6 @@ TEST(state, usertype_nonconst_method_as_action_lua)
 /*
 
 TO DO
-  - add option to grunk::eval to ammend variable names as feature ids after evaluation
-  - add grunk::Recipe class with serialization to mixed yaml and lua
-  - registration syntax as before with reflect
   - test (nested) enums
   - test data member as action (read-only) in LUA and C++
   - idea to prevent non-const member functions:
@@ -495,8 +533,6 @@ TO DO
   - conan test_package and plugin tests in gtest
   - code generator
   - check smart and custom pointer support
-  - python bindings
   - static actions taking dynamic features
-  - parallelization with option to disable
 
 */

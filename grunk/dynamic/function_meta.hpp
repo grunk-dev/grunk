@@ -6,17 +6,39 @@
 
 namespace grunk {
 
+/**
+ * @brief Represents a parameter for a dynamic function.
+ *
+ * @ingroup advanced_dynamic
+ */
 struct Parameter 
 {
+    /// @brief the name of the function parameter
     std::optional<std::string> name {std::nullopt};
+    
     //TODO: type information?
     //TODO: default value?
+
+    /// @brief wether the parameter is passed by const reference. Only meaningful for C++ types.
     bool is_const_reference {false};
 };
 
+/**
+ * @brief Represents metadata for a dynamic function.
+ *
+ * @ingroup advanced_dynamic
+ */
 class function_meta
 {
 public:
+
+    /**
+     * @brief construct a function_meta isntance
+     *
+     * @param name_ The name of the function
+     * @param params_ The parameters of the function
+     * @param func_ The Lua function
+     */
     function_meta(
         std::string const& name_,
         std::optional<std::vector<Parameter>> const& params_,
@@ -26,37 +48,69 @@ public:
      , func(func_)
     {}
 
+    /**
+     * @brief getter for the name of the function
+     */
     std::string const& get_name() const {
         return name;
     }
 
+    /**
+     * @brief getter for the parameters of the function
+     */
     std::optional<std::vector<Parameter>> const& get_params() const {
         return params;
     }
 
+    /**
+     * @brief getter for the wrapped Lua function
+     */
     sol::protected_function const& get_function() const {
         return func;
     }
 
+    /**
+     * @brief call the function
+     * 
+     * @tparam Args the arguments passed as parameters
+     */
     template <typename... Args>
     sol::protected_function_result call(Args&&... args) const {
         return func(std::forward<Args>(args)...);
     }
 
+    /**
+     * @brief call the function
+     * 
+     * @param va the arguments passed as parameters
+     */
     decltype(auto) operator()(sol::variadic_args va) const {
         return func(va);
     }
 
+    /**
+     * @brief a getter for the underlying lua state of the wrapped Lua function
+     */
     decltype(auto) lua_state() const {
         return func.lua_state();
     }
 
 private:
+    ///@brief the name of the function
     std::string name;
+
+    ///@brief the parameters of the function
     std::optional<std::vector<Parameter>> params;
+
+    ///@brief the wrapped Lua function
     sol::protected_function func;
 };
 
+/**
+ * @brief Creates a function_meta instance from a function and its metadata.
+ *
+ * @ingroup advanced_dynamic
+ */
 template <typename F>
 sol::object create_function_meta(
     sol::state_view lua,
@@ -69,6 +123,11 @@ sol::object create_function_meta(
     return sol::make_object(lua, meta);
 }
 
+/**
+ * @brief Creates a function_meta instance from a function and its name, without parameter metadata.
+ *
+ * @ingroup advanced_dynamic
+ */
 template <typename F>
 sol::object create_function_meta(
     sol::state_view lua,

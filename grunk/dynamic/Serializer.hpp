@@ -9,8 +9,17 @@
 namespace grunk {
 
 namespace details {
+
     class ToStringVisitor;
 
+    /**
+     * @brief Converts a constructor syntax string to a new feature syntax string.
+     *
+     * This function checks if the input string contains ".new", which indicates that it is a userdata type. If it does, it modifies the string to use ".new_feature" instead. If it does not, it assumes the value is a primitive and wraps it with "grunk.feature()".
+     *
+     * @param s The input constructor syntax string.
+     * @return A string in the new feature syntax format.
+     */
     inline std::string ctor_syntax_to_new_feature_syntax(std::string const& s) {
         // we need to check if the value is userdata or a primitive. userdata contains .new somewhere in the 
         // serialized string.
@@ -30,18 +39,37 @@ namespace details {
     }
 } // namespace details
 
+/**
+ * @brief The Serializer class is responsible for converting a feature DAG into a YAML string representation. It traverses the DAG in a depth-first manner, visiting each node and serializing it according to its type (parameter or compute node). The resulting YAML string can be used to save recipes to file or to display them in a human-readable format.
+ *
+ * @ingroup advanced_dynamic
+ */
 class Serializer
 {
 public:
+    /// @brief A typedef for an unordered map of boolean flags for every node. This is used to keep track of the nodes that have already been visited
     using Visited = std::unordered_map<parametric::DAGNode const*, bool>;
     friend class details::ToStringVisitor;
 
+    /**
+     * @brief Construct a new Serializer object
+     */
     Serializer() = default;
 
+    /**
+     * @brief Get the parameters of the serialized feature tree. This is a map from parameter names to their serialized values. The parameters are the root nodes of the feature tree that have no parents and are not compute nodes. They are listed in the "parameters" block of the YAML representation of the recipe.
+     *
+     * @return std::map<std::string, std::string> const& A map from parameter names to their serialized values.
+     */
     inline std::map<std::string, std::string> const& get_parameters() const {
         return parameters;
     }
 
+    /**
+     * @brief Get the steps of the serialized feature tree. This is a vector of strings, where each string is a serialized compute node in the feature tree. The steps are the compute nodes of the feature tree that are not root nodes and are not placeholders. They are listed in the "steps" block of the YAML representation of the recipe.
+     *
+     * @return std::vector<std::string> A vector of strings, where each string is a serialized compute node in the feature tree.
+     */
     inline std::vector<std::string> get_steps() const {
         std::vector<std::string> ret;
         std::stack<std::string> temp_steps = steps;
@@ -52,6 +80,12 @@ public:
         return ret;
     }
 
+    /**
+     * @brief Get the string representation of the serialized feature tree. This is a single string that contains the serialized compute nodes in the feature tree, separated by newlines. The string can be used as the value of the "steps" block in the YAML representation of the recipe. If with_root_nodes is true, the string also includes the root nodes of the feature tree as parameter assignments at the beginning of the string.
+     *
+     * @param with_root_nodes If true, include the root nodes of the feature tree as parameter assignments at the beginning of the string.
+     * @return std::string A string representation of the serialized feature tree.
+     */
     inline std::string get_string(bool with_root_nodes = false) const {
         std::vector<std::string> step_list = get_steps();
         std::string ret = "";
@@ -73,6 +107,12 @@ public:
         return ret;
     }
 
+    /**
+     * @brief Parses a feature and its underlying DAG into the Serializer. This function takes a feature as input and traverses its DAG in a depth-first manner, visiting each node and serializing it according to its type (parameter or compute node). The resulting serialized nodes are stored in the "parameters" and "steps" members of the Serializer, which can be accessed using the corresponding getter functions.
+     *
+     * @tparam Arg The type of the feature value, e.g. double, std::string or even a user defined type.
+     * @param f The feature to be parsed into the Serializer.
+     */
     template <typename Arg>
     void parse(Feature<Arg> const& f);
 
@@ -87,6 +127,12 @@ private:
 
 namespace details {
 
+/**
+ * @brief Trims leading and trailing whitespace from a string. This function is used to clean up the serialized strings of compute nodes and parameters before storing them in the Serializer. It removes any whitespace characters (space, tab, newline, carriage return, form feed, vertical tab) from the beginning and end of the input string.
+ *
+ * @param s The string to be trimmed. The function modifies the input string in place.
+ * @ingroup advanced_dynamic
+ */
 inline void trim(std::string& s)
 {
     const char* whitespace = " \t\n\r\f\v";
@@ -94,6 +140,11 @@ inline void trim(std::string& s)
     s.erase(s.find_last_not_of(whitespace) + 1);
 }
 
+/**
+ * @brief The ToStringVisitor class is a visitor for traversing the DAG of a feature and serializing its nodes into a YAML string representation. It is used internally by the Serializer class to convert a feature DAG into a YAML string. The visitor uses a depth-first traversal of the DAG, starting from the given node and visiting its children recursively. It keeps track of visited nodes to avoid redundant work and to ensure that each node is serialized only once.
+ *
+ * @ingroup advanced_dynamic
+ */
 class ToStringVisitor
 {
 public:

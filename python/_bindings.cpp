@@ -195,6 +195,16 @@ NB_MODULE(_bindings, m) {
         .def("create_recipe", &grunk::state::create_recipe)
         .def("write", &grunk::state::write, "filename"_a, "recipe"_a)
         .def("read", &grunk::state::read, "filename"_a)
+        .def("create_object", [](grunk::state const& grunk, nb::object obj) {
+            if (nb::isinstance<nb::int_>(obj))
+                return grunk.create_object(nb::cast<int>(obj));
+            else if (nb::isinstance<nb::float_>(obj))
+                return grunk.create_object(nb::cast<double>(obj));
+            else if (nb::isinstance<nb::str>(obj))
+                return grunk.create_object(nb::cast<std::string>(obj));
+            else
+                throw nb::type_error("Unsupported type");
+        }, "obj"_a)
         .def("feature", [](grunk::state const& grunk, nb::object obj) {
             if (nb::isinstance<nb::int_>(obj))
                 return grunk.feature(nb::cast<int>(obj));
@@ -230,6 +240,16 @@ NB_MODULE(_bindings, m) {
     m.def("read", [=](std::string const& filename) {
         return default_state().read(filename);
     }, "filename"_a);
+    m.def("create_object", [=](nb::object obj) {
+        if (nb::isinstance<nb::int_>(obj))
+            return default_state().create_object(nb::cast<int>(obj));
+        else if (nb::isinstance<nb::float_>(obj))
+            return default_state().create_object(nb::cast<double>(obj));
+        else if (nb::isinstance<nb::str>(obj))
+            return default_state().create_object(nb::cast<std::string>(obj));
+        else
+            throw nb::type_error("Unsupported type");
+    }, "obj"_a);
     m.def("feature", [=](nb::object obj) {
         if (nb::isinstance<nb::int_>(obj))
             return default_state().feature(nb::cast<int>(obj));

@@ -15,6 +15,13 @@ struct ActionFactory;
 
 } // namespace details
 
+/**
+ * @ingroup advanced_core
+ * @brief The Action class template is a compute node in the feature tree that wraps a referentially transparent function and its arguments. It evaluates the function for the given arguments and caches the output as features. The function can return either a single value, a tuple of values or void. The Action class template inherits from parametric::ComputeNode and implements the eval method to perform the evaluation and caching of the outputs.
+ * 
+ * @tparam F The type of the wrapped function, e.g. a lambda, a function pointer or a std::function
+ * @tparam Args The types of the arguments expected by the wrapped function, e.g. double, std::string or even user defined types
+ */
 template <typename F, typename... Args>
 class Action : public ::parametric::ComputeNode<
                           Action<F, Args...>,
@@ -34,6 +41,9 @@ public:
 
     friend struct details::ActionFactory;
 
+    /**
+     * @brief The number of outputs of the wrapped function. This is 0 for void functions, 1 for functions that return a single value and n for functions that return a tuple of n values.
+     */
     static constexpr size_t nresults = std::tuple_size_v<parametric::Results<ReturnType>>;
 
     /**
@@ -61,7 +71,6 @@ private:
      * @brief Construct a new Action object
      * 
      * @param f  the function to be wrapped
-     * @param args The arguments of the function wrapped in Feature instances
      */
     Action(F const& f)
      : function(f)
@@ -129,6 +138,8 @@ namespace details {
  * The proxy factory is needed, because the factory functions action must be templated, and
  * templated friend functions are a pain in the ass. This way we have a non-templated friend
  * struct with templated member functions.
+ *
+ * @ingroup advanced_core
  */
 struct ActionFactory
 {
@@ -158,6 +169,26 @@ struct ActionFactory
 
 };
 
+
+/**
+ * @brief Given a function and some features in the feature tree, this
+ * function creates an Action instance representing the evaluation
+ * of the input function for the input features.
+ *
+ * This function accepts features as arguments for the functions, as well
+ * as instances that are not wrapped in features. Internally, the latter will
+ * be wrapped in an unnamed/anonymous feature
+ *
+ * @tparam F The type of the function to be wrapped. This can be any referentially transparent function,
+             In particular, the function must be invokable on const
+             references.
+ * @tparam Args The types of the arguments expected by the input function
+ * @param fun The input function
+ * @param args The input features of the feature tree
+ * @return ResultHolder wrapping the outputs of the Action
+ *
+ * @ingroup advanced_core
+ */
 template <typename F,
           typename... Args>
 ResultHolder<Action<F, Args...>> action(F const& fun, Feature<Args> const&... args)
@@ -184,7 +215,7 @@ ResultHolder<Action<F, Args...>> action(F const& fun, Feature<Args> const&... ar
  * @param args The input features of the feature tree
  * @return ResultHolder wrapping the outputs of the Action
  *
- * @ingroup static
+ * @ingroup core
  */
 template <typename F,
           typename... Args>
