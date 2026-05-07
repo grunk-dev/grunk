@@ -386,18 +386,18 @@ struct DynamicActionFactory
  * @tparam Args The types of the arguments expected by the registered function
  * @param function The function with metadata
  * @param args The input Features
- * @return ResultHolder<DynamicAction> The returned ResultHolder wrapping the outputs
+ * @return DynamicFeature the result
  *
  * @ingroup dynamic
  */
 template <typename... Args>
-inline ResultHolder<ActionDynamic> action(function_meta const& function, Args&&... args)
+inline DynamicFeature action(function_meta const& function, Args&&... args)
 {
     using FirstArg = std::tuple_element<0, std::tuple<Args...>>;
     if constexpr (sizeof...(Args) == 1 && (std::is_same_v<std::decay_t<Args>, std::vector<DynamicFeature>> || ...)) {
-        return details::DynamicActionFactory::new_action(function, args...);
+        return details::DynamicActionFactory::new_action(function, args...).output();
     } else {
-        return details::DynamicActionFactory::new_action(function, details::to_feature(std::forward<Args>(args))...);
+        return details::DynamicActionFactory::new_action(function, details::to_feature(std::forward<Args>(args))...).output();
     }
 }
 
@@ -441,7 +441,7 @@ inline auto make_dynamic_action(function_meta const& func)
             }
             );
 
-        return grunk::action(func, args).output();
+        return grunk::action(func, args);
     };
     return decorated_function;
 }

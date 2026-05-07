@@ -330,7 +330,7 @@ public:
         if (!f.is<function_meta>()) {
             throw std::logic_error("Function \"" + function + "\" is not registered in the dynamic function registry.");
         }
-        return grunk::action(f.as<function_meta>(), std::forward<Args>(args)...).output();
+        return grunk::action(f.as<function_meta>(), std::forward<Args>(args)...);
     }
 
     /**
@@ -347,7 +347,7 @@ public:
     template <typename... Args>
     DynamicFeature action(function_meta const& function, Args&&... args) const
     {
-        return grunk::action(function, std::forward<Args>(args)...).output();
+        return grunk::action(function, std::forward<Args>(args)...);
     }
 
     /**

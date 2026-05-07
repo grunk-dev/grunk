@@ -46,7 +46,7 @@ decltype(auto) operator+(grunk::Feature<L> const& l, grunk::Feature<R> const& r)
         }
         sol::state_view lua(lua_state);
         grunk::function_meta fun = lua["grunk"]["_dynamic_add"];
-        return grunk::action(fun, l, r).output();
+        return grunk::action(fun, l, r);
     } else {
         // static action
         return grunk::action([](L const& lhs, R const& rhs){ return lhs+rhs; }, l, r).output();
@@ -80,7 +80,7 @@ decltype(auto) operator-(grunk::Feature<L> const& l, grunk::Feature<R> const& r)
         }
         sol::state_view lua(lua_state);
         grunk::function_meta fun = lua["grunk"]["_dynamic_sub"];
-        return grunk::action(fun, l, r).output();
+        return grunk::action(fun, l, r);
     } else {
         // static action
         return grunk::action([](L const& lhs, R const& rhs){ return lhs-rhs; }, l, r).output();
@@ -114,7 +114,7 @@ decltype(auto) operator*(grunk::Feature<L> const& l, grunk::Feature<R> const& r)
         }
         sol::state_view lua(lua_state);
         grunk::function_meta fun = lua["grunk"]["_dynamic_mul"];
-        return grunk::action(fun, l, r).output();
+        return grunk::action(fun, l, r);
     } else {
         // static action
         return grunk::action([](L const& lhs, R const& rhs){ return lhs*rhs; }, l, r).output();
@@ -148,7 +148,7 @@ decltype(auto) operator/(grunk::Feature<L> const& l, grunk::Feature<R> const& r)
         }
         sol::state_view lua(lua_state);
         grunk::function_meta fun = lua["grunk"]["_dynamic_div"];
-        return grunk::action(fun, l, r).output();
+        return grunk::action(fun, l, r);
     } else {
         // static action
         return grunk::action([](L const& lhs, R const& rhs){ return lhs/rhs; }, l, r).output();
@@ -186,7 +186,7 @@ decltype(auto) pow(grunk::Feature<L> const& l, grunk::Feature<R> const& r) {
         }
         sol::state_view lua(lua_state);
         grunk::function_meta fun = lua["grunk"]["_dynamic_pow"];
-        return grunk::action(fun, l, r).output();
+        return grunk::action(fun, l, r);
     } else {
         // static action
         return grunk::action([](L const& lhs, R const& rhs){ return pow(lhs, rhs); }, l, r).output();
@@ -222,7 +222,7 @@ decltype(auto) operator%(grunk::Feature<L> const& l, grunk::Feature<R> const& r)
         }
         sol::state_view lua(lua_state);
         grunk::function_meta fun = lua["grunk"]["_dynamic_mod"];
-        return grunk::action(fun, l, r).output();
+        return grunk::action(fun, l, r);
     } else {
         // static action
         return grunk::action([](L const& lhs, R const& rhs){ return lhs%rhs; }, l, r).output();
@@ -251,7 +251,7 @@ grunk::Feature<L> operator-(grunk::Feature<L> const& l) {
         lua_State* lua_state = grunk::details::get_state(l);
         sol::state_view lua(lua_state);
         grunk::function_meta fun = lua["grunk"]["_dynamic_unm"];
-        return grunk::action(fun, l).output();
+        return grunk::action(fun, l);
     } else {
         // static action
         return grunk::action([](L const& lhs){ return -lhs; }, l).output();
