@@ -4,8 +4,8 @@
  *
  * SPDX-License-Identifier: MPL-2.0
  *
- * @defgroup dynamic
- * @defgroup advanced_dynamic
+ * @defgroup dynamic API of grunk::dynamic
+ * @defgroup advanced_dynamic Advanced API of grunk::dynamic
  */
 
 #pragma once

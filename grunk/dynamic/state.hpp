@@ -108,6 +108,7 @@ public:
      * @param name Name of the function
      * @param fun The function to be registered. This can be a function pointer, a functor or a
      *            lambda expression
+     * @param params optional metadata for the function parameters
      * @param table optional table as a "namespace", where the type shall be registered.
      */
     template <typename Func>

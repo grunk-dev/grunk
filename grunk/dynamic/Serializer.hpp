@@ -47,6 +47,7 @@ namespace details {
 class Serializer
 {
 public:
+    /// @brief A typedef for an unordered map of boolean flags for every node. This is used to keep track of the nodes that have already been visited
     using Visited = std::unordered_map<parametric::DAGNode const*, bool>;
     friend class details::ToStringVisitor;
 

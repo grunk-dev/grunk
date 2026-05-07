@@ -86,7 +86,7 @@ struct usertype_proxy {
      *
      * @tparam Key The type of the key used to access the data member in Lua, e.g. std::string or const char*.
      * @tparam F The type of the data member to be added.
-     * @param key The key used to access the data member in Lua.
+     * @param memfun_name The key used to access the data member in Lua.
      * @param fun The data member to be added.
      * @return A reference to the usertype_proxy for chaining.
      */
@@ -149,7 +149,10 @@ struct usertype_proxy {
         return *this;
     }
 
+    /// @brief the name of the type
     std::string name;
+
+    /// @brief the wrapped sol::usertype instance
     sol::usertype<T> ut;
 };
 

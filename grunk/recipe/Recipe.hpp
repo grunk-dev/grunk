@@ -28,21 +28,33 @@ namespace grunk {
      */
     class Recipe : public environment 
     {
-        friend grunk::state;
+        friend class grunk::state;
         
     public:
 
     /**
-     * @name Special member functions
-     * These are declared explicitly to manage internal state and
-     * Lua bindings when recipes are copied or moved.
+     * @brief copy constructor
+     * @param other the copied-from object
      */
-    //@{
-    Recipe(Recipe const&);
-    Recipe& operator=(Recipe&& other); 
-    Recipe(Recipe&&);
+    Recipe(Recipe const& other);
+
+    /**
+     * @brief copy assignment operator
+     * @param other the copied-from object
+     */
     Recipe& operator=(Recipe const& other);
-    //@}
+
+    /**
+     * @brief move constructor
+     * @param other the moved-from object
+     */
+    Recipe(Recipe&&);
+
+    /**
+     * @brief move assignment operator
+     * @param other the moved-from object
+     */
+    Recipe& operator=(Recipe&& other); 
 
     /**
      * @brief Serialize the recipe to a YAML string.
@@ -106,8 +118,6 @@ namespace grunk {
          *
          * A SubRecipe bundles the stored recipe feature together with the
          * Lua state used for its bindings and a human-readable name.
-         *
-         * @ingroup recipe
          */
         struct SubRecipe {
 

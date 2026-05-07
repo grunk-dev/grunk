@@ -86,7 +86,7 @@ A `DynamicFeature` wraps a `grunk::object`, which is the main type in grunk's dy
 
 
 The types and functions must be registered from plugins loaded at run time, see also 
-the :ref:`plugin section <plugin-system>` of this documentation or the 
+the :ref:`plugin section <grunk-plugin>` of this documentation or the 
 :ref:`corresponding section<using-plugins>` under Usage.
 
 .. doxygengroup:: dynamic
@@ -110,14 +110,15 @@ to write parametric recipes as a mix of yaml and LUA code.
 ``grunk::plugin``
 =================
 
-This section documents all functions and classes of grunk's plugin system. This
-includes the ``PluginRegistry`` that manages all registered plugins, the plugin 
-interface ``IPlugin``, that plugin authors must use as base class when writing plugins,
-and the ``StdPlugin``, that registers standard C++ types and functions.
+To Do: Not implemented yet
+.. This section documents all functions and classes of grunk's plugin system. This
+.. includes the ``PluginRegistry`` that manages all registered plugins, the plugin 
+.. interface ``IPlugin``, that plugin authors must use as base class when writing plugins,
+.. and the ``StdPlugin``, that registers standard C++ types and functions.
 
-.. doxygengroup:: plugin
-   :content-only:
-   :members:
+.. .. doxygengroup:: plugin
+..    :content-only:
+..    :members:
 
 .. _advanced:
 
@@ -140,9 +141,9 @@ a user of grunk, you should not need to worry about any of these.
    :content-only:
    :members:
 
-.. doxygengroup:: advanced_plugin
-   :content-only:
-   :members:
+.. .. doxygengroup:: advanced_plugin
+..    :content-only:
+..    :members:
    
 
    

@@ -83,8 +83,7 @@ namespace details {
     * 
     * @tparam typename any ol' type
     *
-    * @ingroup core
-    * @ingroup advanced
+    * @ingroup advanced_core
     */
     template<typename> constexpr bool is_feature_v = false;
 
@@ -93,8 +92,7 @@ namespace details {
     * 
     * @tparam T the element type of the Feature
     *
-    * @ingroup core
-    * @ingroup advanced
+    * @ingroup advanced_core
     */
     template<typename T>
     constexpr bool is_feature_v<Feature<T>> = true;
@@ -107,8 +105,7 @@ namespace details {
      * @param arg the input value
      * @return auto a feature representing the input value
      * 
-     * @ingroup core
-     * @ingroup advanced
+     * @ingroup advanced_core
      */
     template <typename T>
     auto to_feature(T const& arg)

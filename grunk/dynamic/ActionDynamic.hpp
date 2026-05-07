@@ -45,24 +45,35 @@ private:
      * @brief Construct a new DynamicAction given a DynamicFunction<F> and 
      * an std::vector of DynamicFeatures.
      * 
-     * @param fun A const pointer to a reflect::Function
-     * @param in The input DynamicFeatures
+     * @param fun a function with meta data to be wrapped as an action
      */
     ActionDynamic(function_meta const& fun)
      : function(fun)
     {}
 
+    /**
+     * @brief returns the result of this action
+     */
     inline decltype(auto) result() const {
         return this->template res<object>(0);
     }
 
+    /**
+     * @brief returns the ith argument of this action
+     * 
+     * @param i the index of the argument
+     */
     inline decltype(auto) argument(int i) const {
         return this->template arg<object>(i);
     }
 
 public:
 
-
+    /**
+     * @brief connect the inputs to the compute node represented by this action
+     *
+     * @param args the input features
+     */
     void connect_inputs(std::vector<DynamicFeature> const& args)
     {
         for (auto const& arg : args) {
@@ -71,17 +82,29 @@ public:
         }
     }
 
+    /**
+     * @brief connect the inputs to the compute node represented by this action
+     *
+     * @tparam Args the types of the inputs features
+     * @param args the input features
+     */
     template <typename... Args>
     void connect_inputs(Feature<Args> const&... args){
         (depends_on(args), ...);
         (evaluators.push_back(make_evaluator(args)), ...);
     }
 
+    /**
+     * @brief initializes an empty feature for the output of this action
+     */
     DynamicFeature initialize_results() const
     {
         return feature<object>({});
     }
 
+    /**
+     * @brief connects this compute node with the inputs and outputs
+     */
     void connect_results(DynamicFeature const& res)
     {
         computes(res);
@@ -245,12 +268,17 @@ class ResultHolder<ActionDynamic> {
 
 public:
 
+    /**
+     * @brief construct a new ResultHolder instance connecting an output dynamic feature to a compute node
+     *
+     * @param res the output dynamic feature
+     * @param c the compute node
+     */
     ResultHolder(result_type const& res, std::shared_ptr<parametric::DAGNode> const& c) : result(res), m_compute_node(c) {}
 
     /**
      * @brief returns the i-th output 
      * 
-     * @param i index of the queried output
      * @return decltype(auto) the -ith output DynamicFeature
      */
     decltype(auto) output() const {
@@ -258,7 +286,7 @@ public:
     }
 
     /**
-     * @brief retunrs a const reference to the DynamicAction
+     * @brief returns a const reference to the DynamicAction
      * 
      * @return DynamicAction const& the DynamicAction instance
      */
@@ -356,7 +384,7 @@ struct DynamicActionFactory
  * passed the input features.
  *
  * @tparam Args The types of the arguments expected by the registered function
- * @param name The string identifier of the registered function
+ * @param function The function with metadata
  * @param args The input Features
  * @return ResultHolder<DynamicAction> The returned ResultHolder wrapping the outputs
  *

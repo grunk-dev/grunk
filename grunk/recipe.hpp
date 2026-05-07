@@ -4,8 +4,8 @@
  *
  * SPDX-License-Identifier: MPL-2.0
  *
- * @defgroup recipe
- * @defgroup advanced_recipe
+ * @defgroup recipe API of grunk::recipe
+ * @defgroup advanced_recipe Advanced API of grunk::recipe
  */
 
 #pragma once

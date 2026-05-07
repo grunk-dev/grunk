@@ -138,6 +138,7 @@ public:
     }
 
 protected:
+    /// @brief The wrapped Lua environment
     sol::environment m_environment;
 };
 

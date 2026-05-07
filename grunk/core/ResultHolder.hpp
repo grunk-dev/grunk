@@ -2,15 +2,6 @@
 //
 // SPDX-License-Identifier: MPL-2.0
 
-/**
- * @file Feature.hpp
- *
- * Declaration and Definition of the Feature class.
- *
- * @defgroup core
- * @defgroup advanced
- */
-
 #pragma once
 
 #include "grunk/core/Feature.hpp"
@@ -31,11 +22,12 @@ namespace {
 } // anonymous namespace
 
 /**
- * @ingroup advanced
  * @brief The ResultHolder class template is a proxy for holding the result of a ::grunk::Action
  * instance. The results can be either a tuple of features, a feature or a shared_ptr<DAGNode> for void functions. 
  * 
  * @tparam C A template realization of ::grunk::Action, i.e. a specific compute node in the feature tree
+ *
+ * @ingroup advanced_core
  */
 template <typename C>
 class ResultHolder

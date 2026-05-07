@@ -46,10 +46,12 @@ public:
      * wrap them into a DynamicFeature and insert them into the caller's
      * input map. Assignment is disallowed once the caller is locked.
      *
-     * @ingroup advanced_recipe
      */
     struct Proxy {
+        /// @brief The key associated with the subrecipe to be called
         std::string key;
+
+        /// @brief The RecipeCaller instance that will be constructed by this proxy
         RecipeCaller& rc;
 
         /**

@@ -1,12 +1,11 @@
 /**
- * @file Feature.hpp
  *
  * SPDX-FileCopyrightText: 2026 Jan Kleinert <jan.kleinert@dlr.de>
  *
  * SPDX-License-Identifier: MPL-2.0
  *
- * @defgroup core
- * @defgroup advanced_core
+ * @defgroup core API of grunk::core
+ * @defgroup advanced_core Advanced API of grunk::core
  */
 
 #pragma once 

@@ -71,7 +71,6 @@ private:
      * @brief Construct a new Action object
      * 
      * @param f  the function to be wrapped
-     * @param args The arguments of the function wrapped in Feature instances
      */
     Action(F const& f)
      : function(f)
