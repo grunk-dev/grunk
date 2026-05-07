@@ -40,7 +40,7 @@ grunk lets you delay the evaluation of the function until the result is queried.
 
    #include <grunk/grunk.hpp>
 
-   auto o = grunk::action(&add, 1.2, 40.8).output();
+   auto o = grunk::action(&add, 1.2, 40.8);
    o.set_id("o");
    
    std::cout << "Until here, nothing has happened" << std::endl;
@@ -59,9 +59,7 @@ In the first line no computation takes place, the function ``add`` is not evalua
 Instead, 
 a new ``Action`` instance ``o`` is created using ``grunk::action``.
 The arguments are a function pointer ``&add`` and two arguments
-that shall be passed into the function. With ``.output()`` we retrieve a handle
-to the first (and in this case only) output of the action, which is of
-type ``Feature<double>``. With ``set_id("o")`` we add an id to the feature.
+that shall be passed into the function. With ``set_id("o")`` we add an id to the output feature.
 
 Internally, ``o`` depends on the action created
 by ``grunk::action``; that action in turn depends on two ``Feature<double>`` inputs holding the values ``1.2`` and ``40.8``. With this dependency 
@@ -82,8 +80,8 @@ Let's modify the above code example a bit.
    grunk::Feature y(15.2).with_id("y");
    grunk::Feature z(25.6).with_id("z");
 
-   auto a = grunk::action("a", &add, x, y).output();
-   auto b = grunk::action("b", &add, a, z).output();
+   auto a = grunk::action("a", &add, x, y);
+   auto b = grunk::action("b", &add, a, z);
 
 We have created three independent features ``x,y,z``. The feature
 ``a`` is the result of adding ``x`` and ``y`` and the feature ``b`` is the 
@@ -177,7 +175,7 @@ The concept works with any kind of type and function. The only requirement for t
    };
 
    auto x = grunk::feature(MyScalar{17.}).with_id("x");
-   auto y = grunk::action(&MyScalar::get, x).output().with_id("y");
+   auto y = grunk::action(&MyScalar::get, x).with_id("y");
 
    // prints 17
    std::cout << y.value().v << std::endl;
@@ -200,14 +198,14 @@ Consider the following grunk recipe:
    #include <grunk/grunk.hpp>
    
    auto x1 = grunk::feature(1.);
-   auto x2 = grunk::action([](double v){ return v + 1.; }, x1).output();
+   auto x2 = grunk::action([](double v){ return v + 1.; }, x1);
    x2.set_id("x2");
 
    auto y1 = grunk::feature(2.);
-   auto y2 = grunk::action([](double v){ return v * 2.; }, y1).output();
+   auto y2 = grunk::action([](double v){ return v * 2.; }, y1);
    y2.set_id("y2");
 
-   auto z = grunk::action([](double a, double b){ return a + b; }, x2, y2).output();
+   auto z = grunk::action([](double a, double b){ return a + b; }, x2, y2);
    z.set_id("z");
 
 .. image:: images/parallel_execution_example1.png
@@ -259,9 +257,9 @@ The class ``ParallelExecutor`` takes a set of features as input and executes all
    #include <grunk/grunk.hpp>
 
    auto x  = grunk::feature(1.).with_id("x");
-   auto y  = grunk::action([](double v){ return v + 1.; }, x).output().with_id("y");
-   auto y1 = grunk::action([](double v){ return v * 2.; }, y).output().with_id("y1");
-   auto y2 = grunk::action([](double v){ return v * 3.; }, y).output().with_id("y2");
+   auto y  = grunk::action([](double v){ return v + 1.; }, x).with_id("y");
+   auto y1 = grunk::action([](double v){ return v * 2.; }, y).with_id("y1");
+   auto y2 = grunk::action([](double v){ return v * 3.; }, y).with_id("y2");
    
    grunk::ParallelExecutor executor(y1, y2);
 
@@ -772,7 +770,7 @@ TODO
 ..                   {"Pnt::set_y", {}, {"p", v}},       // invoke non-const setter
 ..             },
 ..             {"p"}                                   // return new point p
-..          ).output();
+..          );
 
 ..    .. code-tab:: python
 
@@ -786,7 +784,7 @@ TODO
 ..                   grunk.ScriptStep("Pnt::set_y", [], ["p", v])  # invoke non-const setter
 ..             ],
 ..             returns=["p"]                           # return new point 
-..          ).output()
+..          )
 
 ..    .. code-tab:: yaml
 
@@ -946,8 +944,8 @@ Using grunk plugins
 ..          grunk::Feature y("y", "SomePluginA::MyDouble", 3.3);
 ..          grunk::Feature z("z", "SomePluginA::MyDouble", 2.0);
 
-..          auto a = grunk::action("a", "SomePluginA::add", x, y).output();
-..          auto b = grunk::action("b", "SomePluginB::multiply", a, z).output();
+..          auto a = grunk::action("a", "SomePluginA::add", x, y);
+..          auto b = grunk::action("b", "SomePluginB::multiply", a, z);
 
 ..    .. code-tab:: python 
    
@@ -957,8 +955,8 @@ Using grunk plugins
 ..          y = grunk.Feature("y", "SomePluginA::MyDouble", 3.3)
 ..          z = grunk.Feature("z", "SomePluginA::MyDouble", 2.0)
 
-..          a = grunk.action("a", "SomePluginA::add", x, y).output()
-..          b = grunk.action("b", "SomePluginB::multiply", a, z).output()
+..          a = grunk.action("a", "SomePluginA::add", x, y)
+..          b = grunk.action("b", "SomePluginB::multiply", a, z)
 
 .. When working with plugins, we 
 .. have to use grunk's :ref:`dynamic mode<dynamic-mode>`, while the :ref:`first example<getting-started>` used grunk's 

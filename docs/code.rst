@@ -41,16 +41,7 @@ of the given function for the given features as input in the feature tree.
    grunk::Feature<double> l(3.3).with_id("l");
    grunk::Feature<double> r(2.2).with_id("r");
    auto res = grunk::action(std::add, l, r);
-
-
-
-The output features can be queried from the returned ``ResultHolder`` instance, see
-also the :ref:`advanced section <advanced>`.
-
-.. code-block:: cpp
-
-   auto o = res.output(); // retrieve the first (and in this case only) output of the calcuation
-   std::cout<<o.value()<<std::endl; // evaluate the result, thus triggering the calculation
+   std::cout<<res.value()<<std::endl; // evaluate the result, thus triggering the calculation
 
 Using grunk in this way is also called *static mode*, because all types and functions are known at compile time.
 

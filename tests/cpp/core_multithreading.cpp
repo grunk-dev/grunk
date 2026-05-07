@@ -40,14 +40,14 @@ TEST(multithreading, cpp_static_mode_simple_single_threaded)
         y1(2) --> y2(*2) --
     */
     auto x1 = grunk::feature(1.);
-    auto x2 = grunk::action([](double v){ return v + 1.; }, x1).output();
+    auto x2 = grunk::action([](double v){ return v + 1.; }, x1);
     x2.set_id("x2");
 
     auto y1 = grunk::feature(2.);
-    auto y2 = grunk::action([](double v){ return v * 2.; }, y1).output();
+    auto y2 = grunk::action([](double v){ return v * 2.; }, y1);
     y2.set_id("y2");
 
-    auto z = grunk::action([](double a, double b){ return a + b; }, x2, y2).output();
+    auto z = grunk::action([](double a, double b){ return a + b; }, x2, y2);
     z.set_id("z");
 
     // single threaded execution
@@ -72,14 +72,14 @@ TEST(multithreading, cpp_static_mode_simple)
         y1(2) --> y2(*2) --
     */
     auto x1 = grunk::feature(1.);
-    auto x2 = grunk::action([](double v){ return v + 1.; }, x1).output();
+    auto x2 = grunk::action([](double v){ return v + 1.; }, x1);
     x2.set_id("x2");
 
     auto y1 = grunk::feature(2.);
-    auto y2 = grunk::action([](double v){ return v * 2.; }, y1).output();
+    auto y2 = grunk::action([](double v){ return v * 2.; }, y1);
     y2.set_id("y2");
 
-    auto z = grunk::action([](double a, double b){ return a + b; }, x2, y2).output();
+    auto z = grunk::action([](double a, double b){ return a + b; }, x2, y2);
     z.set_id("z");
 
     // multi-threaded execution
@@ -105,10 +105,10 @@ TEST(multithreading, cpp_static_mode_simple_shared_ancestor)
                          --> y2(*3) --
     */
     auto x  = grunk::feature(1.).with_id("x");
-    auto y  = grunk::action([](double v){ return v + 1.; }, x).output().with_id("y");
-    auto y1 = grunk::action([](double v){ return v * 2.; }, y).output().with_id("y1");
-    auto y2 = grunk::action([](double v){ return v * 3.; }, y).output().with_id("y2");
-    auto z  = grunk::action([](double a, double b){ return a + b; }, y1, y2).output().with_id("z");
+    auto y  = grunk::action([](double v){ return v + 1.; }, x).with_id("y");
+    auto y1 = grunk::action([](double v){ return v * 2.; }, y).with_id("y1");
+    auto y2 = grunk::action([](double v){ return v * 3.; }, y).with_id("y2");
+    auto z  = grunk::action([](double a, double b){ return a + b; }, y1, y2).with_id("z");
 
     grunk::ParallelExecutor executor(z);
     dump_dot_file(executor);
@@ -133,9 +133,9 @@ TEST(multithreading, cpp_static_mode_simple_shared_ancestor2)
                          --> y2(*3) --
     */
     auto x  = grunk::feature(1.).with_id("x");
-    auto y  = grunk::action([](double v){ return v + 1.; }, x).output().with_id("y");
-    auto y1 = grunk::action([](double v){ return v * 2.; }, y).output().with_id("y1");
-    auto y2 = grunk::action([](double v){ return v * 3.; }, y).output().with_id("y2");
+    auto y  = grunk::action([](double v){ return v + 1.; }, x).with_id("y");
+    auto y1 = grunk::action([](double v){ return v * 2.; }, y).with_id("y1");
+    auto y2 = grunk::action([](double v){ return v * 3.; }, y).with_id("y2");
 
     grunk::ParallelExecutor executor(y1, y2);
     dump_dot_file(executor);
@@ -159,18 +159,18 @@ TEST(multithreading, cpp_static_mode_complex_graph)
         c1(3) --> c2(^2) --> c3(/3) --
     */
     auto a1 = grunk::feature(1.);
-    auto a2 = grunk::action([](double v){ return v + 1.; }, a1).output();
-    auto a3 = grunk::action([](double v){ return v * 2.; }, a2).output();
+    auto a2 = grunk::action([](double v){ return v + 1.; }, a1);
+    auto a3 = grunk::action([](double v){ return v * 2.; }, a2);
 
     auto b1 = grunk::feature(2.);
-    auto b2 = grunk::action([](double v){ return v * 2.; }, b1).output();
-    auto b3 = grunk::action([](double v){ return v + 3.; }, b2).output();
+    auto b2 = grunk::action([](double v){ return v * 2.; }, b1);
+    auto b3 = grunk::action([](double v){ return v + 3.; }, b2);
 
     auto c1 = grunk::feature(3.);
-    auto c2 = grunk::action([](double v){ return std::pow(v, 2.); }, c1).output();
-    auto c3 = grunk::action([](double v){ return v / 3.; }, c2).output();
+    auto c2 = grunk::action([](double v){ return std::pow(v, 2.); }, c1);
+    auto c3 = grunk::action([](double v){ return v / 3.; }, c2);
 
-    auto z = grunk::action([](double a, double b, double c){ return a + b + c; }, a3, b3, c3).output();
+    auto z = grunk::action([](double a, double b, double c){ return a + b + c; }, a3, b3, c3);
 
     grunk::ParallelExecutor executor(z);
     dump_dot_file(executor);

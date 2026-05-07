@@ -84,6 +84,7 @@ NB_MODULE(_bindings, m) {
             nb::is_operator()
         )
         .def("as_bool", &grunk::object::as<bool>)
+        .def("as_int", &grunk::object::as<int>)
         .def("as_float", &grunk::object::as<double>)
         .def("as_string", &grunk::object::as<std::string>)
         .def("as_feature", &grunk::object::as<grunk::DynamicFeature>);
