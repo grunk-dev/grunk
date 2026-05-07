@@ -167,4 +167,11 @@ The documentation is built using Sphinx. Use the `docs` pixi environment or inst
    # activate docs environment (example)
    pixi run --env docs configure Release ON
 
-This confiugres CMake to include the documentation. The docs environment contains the tools required to generate the documentation (sphinx, breathe, doxygen...)
+This command will build grunk together with the documentation. The docs environment contains the tools required to generate the documentation (sphinx, breathe, doxygen...). The next time you build grunk with cmake or via pixi commands, the documentation will be built as well.
+
+If you only want to build the documentation without grunk, you can use the CMake target ``Sphinx`` with the following command:
+
+.. code-block:: console
+
+   cd build
+   cmake -build . --target Sphinx
