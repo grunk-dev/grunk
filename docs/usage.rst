@@ -712,108 +712,212 @@ If both ``Point`` and ``Curve`` are registered in the dynamic type system using 
            s = my_cad.interpolate(my_cad.Curve.as_vec(c1, c2, c3) )
 
 
-.. _module:
+.. _modules:
 
 Modules
 -------
 
-TODO
+The example below shows how to load a small Lua module into the shared `grunk::state` and how the
+module's functions behave in both a normal Lua environment and a parametric (decorated) environment.
+It demonstrates three common operations: loading a module from a string with ``run_module_script``,
+loading from disk with ``run_module_file``, and removing a module with ``clear_module``. The C++ and
+Python snippets are equivalent in behaviour and only differ in syntax.
 
-.. Outdated
+   .. tabs::
 
-.. Use ``grunk::script`` to create compute nodes representing a sequence of simple function calls. 
-.. Consider it a concatenation of :ref:`actions<action>` in dynamic mode within a single compute node.
+      .. code-tab:: cpp
 
-.. This is useful in two scenarios. Firstly, you can disable caching and lazy evaluation for a sequence 
-.. of steps. Secondly, you can use it to instantiate new objects and modify them using non-const setters.
+          #include <grunk/grunk.hpp>
 
-.. grunk disallows any function, that can potentially alter its inputs. This includes any function that
-.. takes a non-const reference as argument and in consequence, all non-const member functions. This is an 
-.. important safeguard against dependency cycles in the feature tree: As part of the philosophy of grunk, 
-.. information flows from inputs to outputs only and any feature in the tree is influenced only by predecessors.
+          // create a state and load a small module from a string
+          grunk::state grunk;
+          grunk.run_module_script(
+             "mymod",
+             R"(
+                function less_than(l,r)
+                   return l < r
+                end
 
-.. This comes with a heavy restrition, since non-const members, e.g. setters are frequently used in 
-.. object-oriented programs. Consider the following class
+                function if_then_else(cond, i, e)
+                   if cond then
+                      return i
+                   else
+                      return e
+                   end
+                end
+             )"
+          );
 
-.. .. code-block:: cpp
+          // normal environment: functions behave like regular Lua functions
+          auto env = grunk.create_env();
+          env.eval(R"(
+             a = 2
+             b = 3
+             c = mymod.if_then_else(mymod.less_than(a,b), 5, 32)
+          )");
 
-..    struct Pnt
-..     {
-..         Pnt() = default;
+      .. code-tab:: python
 
-..         inline void set_x(double x_) { x = x_; }
-..         inline void set_y(double y_) { y = y_; }
-..         inline void set_z(double z_) { z = z_; }
+          import grunk
 
-..         double x{0.};
-..         double y{0.};
-..         double z{0.};
-..     };
+          # create a state and load a small module from a string
+          grunk.run_module_script(
+             "mymod",
+             """
+             function less_than(l,r)
+                return l < r
+             end
 
-.. Instantiating an instance of ``Pnt`` with grunk and then modifying it using ``set_x`` using 
-.. ``grunk::action`` is not allowed, because ``set_x`` is a non-const member function. 
+             function if_then_else(cond, i, e)
+                if cond then
+                   return i
+                else
+                   return e
+                end
+             end
+             """
+          )
 
-.. Instead, you can create the instance and modify it as part of a script:
+          # normal environment: functions behave like regular Lua functions
+          e = grunk.create_env()
+          e.eval("""
+              a = 2
+              b = 3
+              c = mymod.if_then_else(mymod.less_than(a,b), 5, 32)
+          """)
 
 
-.. .. tabs::
+In a parametric environment the functions exported by a module are automatically decorated into
+actions so they integrate with grunk's dependency tracking. If you need to reload or
+explicitly remove a module, call ``clear_module(name)`` — this removes the module from the original
+Lua environment and from the decorated cache so that subsequent parametric environments will not see
+stale, cached decorated values.
 
-..    .. code-tab:: cpp 
+.. tabs::
 
-..          grunk::Feature u("u", "double", 0.1);
-..          grunk::Feature v("v", "double", 0.2);
+      .. code-tab:: cpp
+
+          /* ... */
+
+          // parametric environment: functions are decorated as actions
+          auto penv = grunk.create_parametric_env();
+          penv.eval(R"(
+             a = grunk.feature(2)
+             b = grunk.feature(3)
+             c = mymod.if_then_else(mymod.less_than(a,b), 5, 32)
+          )");
+
+          auto c = penv.get_featuure("c");
+          std::cout << c.value().as<int>() << std::endl;
+
+          auto a = penv.get_feature("a");
+          a.set_value(4);
+
+          std::cout << c.value().as<int>() << std::endl;
+
+          // clear the module when done
+          grunk.clear_module("mymod");
+
+      .. code-tab:: python
+
+          # ...
+
+          # parametric environment: functions are decorated as actions
+          pe = grunk.create_parametric_env()
+          pe.eval("""
+              a = grunk.feature(2)
+              b = grunk.feature(3)
+              c = mymod.if_then_else(mymod.less_than(a,b), 5, 32)
+          """)
+
+          c = pe.get_feature("c")
+          assert c.value().as_int() == 5
+
+          a = pe.get_feature("a")
+          a.set_value(4)
+          assert c.value().as_int() == 32
+
+          # clear the module when done
+          grunk.clear_module("mymod")
+
+
+Module scripts are particularly useful to instantiate objects and modify them using non-const setters. 
+grunk disallows any function, that can potentially alter its inputs. This includes any function that takes a non-const reference as argument and in consequence, all non-const member functions. This is an important safeguard against dependency cycles in the feature tree: As part of the philosophy of grunk,  information flows from inputs to outputs only and any feature in the tree is influenced only by predecessors.
+
+This comes with a heavy restrition, since non-const members, e.g. setters are frequently used in object-oriented programs. Consider the following class
+
+.. code-block:: cpp
+
+   struct Pnt
+    {
+        Pnt() = default;
+
+        inline void set_x(double x_) { x = x_; }
+        inline void set_y(double y_) { y = y_; }
+        inline void set_z(double z_) { z = z_; }
+
+        double x{0.};
+        double y{0.};
+        double z{0.};
+    };
+
+Instantiating an instance of ``Pnt`` with grunk and then modifying it using ``set_x`` using ``grunk::action`` is not allowed, because ``set_x`` is a non-const member function. 
+
+Instead, you can create the instance and modify it as part of a module function:
+
+
+.. tabs::
+
+   .. code-tab:: cpp 
+
+         #include <grunk/grunk.hpp>
+
+         auto grunk = grunk::state;
+
+         // registration of Pnt omitted here
+
+         grunk.run_module_script(
+            "mymod",
+            R"(
+               function create_pnt(u, v)
+                   p = Pnt.new()
+                   p:set_x(u)
+                   p:set_v(v)
+                   return p
+               end
+            )"
+         );
+
+         auto u = grunk.feature(0.1);
+         auto v = grunk.feature(0.2);
          
-..          auto s = grunk::script(
-..             {
-..                   {"Pnt", {"p"}, {}},                 // create a new point p
-..                   {"Pnt::set_x", {}, {"p", u}},       // invoke non-const setter 
-..                   {"Pnt::set_y", {}, {"p", v}},       // invoke non-const setter
-..             },
-..             {"p"}                                   // return new point p
-..          );
+         auto p = grunk.action("mymod.create_pnt", u, v);
 
-..    .. code-tab:: python
+   .. code-tab:: python
 
-..          u = grunk.Feature("u", "double", 0.1)
-..          v = grunk.Feature("v", "double", 0.2)
+         import grunk
+
+         # registration of Pnt omitted here
+
+         grunk.run_module_script(
+            "mymod",
+            """
+               function create_pnt(u, v)
+                   p = Pnt.new()
+                   p:set_x(u)
+                   p:set_v(v)
+                   return p
+               end
+            """
+         )
+
+         u = grunk.feature(0.1)
+         v = grunk.feature(0.2)
          
-..          s = grunk.script(
-..             [
-..                   grunk.ScriptStep("Pnt", ["p"], []),           # create a new point p
-..                   grunk.ScriptStep("Pnt::set_x", [], ["p", u]), # invoke non-const setter 
-..                   grunk.ScriptStep("Pnt::set_y", [], ["p", v])  # invoke non-const setter
-..             ],
-..             returns=["p"]                           # return new point 
-..          )
-
-..    .. code-tab:: yaml
-
-..          uses:
-..          grunk: 0.2.1
-..          parameters:
-..          u: !<double> 0.1
-..          v: !<double> 0.2
-..          steps:
-..          - !<script>
-..             steps:
-..                - !<Pnt> [[p], ~]
-..                - !<Pnt::set_x> [~, [p, u]]
-..                - !<Pnt::set_y> [~, [p, v]]
-..             returns:
-..                - p
+         p = grunk.action("mymod.create_pnt", u, v)
 
 
-.. In the above example, you define a script as a sequence of three steps, where each step is defined using
-.. three parts. The first is the function name, the second is a list of names of the outputs of the function and 
-.. the third is a list of inputs. The inputs can either be a ``DynamicFeature`` defined previously outside of the script
-.. or the id of an intermediate variable created within the same script in a preceding step. 
-
-.. The second argument of ``grunk::script`` is a vector of output ids. These are any intermediate variables of 
-.. the script that shall be passed as return features of the compute node. 
-
-.. Note that here, no cycles are created because the non-const setters are not called on 
-.. features, but on intermediate variables of the script during the evaluation of a single compute
-.. node. The inputs ``u`` and ``v`` are not altered.
+Note that in the above example, no cycles are created because the non-const setters are not called on features, but on intermediate variables of the function body `mymod.create_pnt` during the evaluation of a single compute node. The inputs ``u`` and ``v`` are not altered.
 
 Custom Pointers and Smart Pointers
 ----------------------------------
