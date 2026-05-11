@@ -21,6 +21,7 @@
 
 #include <stdexcept>
 #include <fstream>
+#include <regex>
 
 namespace grunk {
 
@@ -148,6 +149,67 @@ public:
         sol::environment env(lua, sol::create, lua.globals()); 
         env[sol::metatable_key]["__index"] = decorated_env;
         return environment(env);
+    }
+
+
+public:
+    /**
+     * @brief run_module_script runs the provided Lua script with a module table installed as the environment.
+     * If a module with the given name already exists in `original_env`, the existing table will be reused
+     * and the script executed in its environment so multiple scripts/files can populate the same module.
+     *
+     * @param name name of the module to create or populate in original_env
+     * @param script the Lua source code to execute
+     */
+    inline void run_module_script(std::string const& name, std::string const& script)
+    {
+        // Check if module already exists in original_env
+        sol::object existing = original_env.raw_get_or(name, sol::lua_nil);
+        sol::table module;
+            if (existing.valid() && existing.is<sol::table>()) { 
+            module = existing.as<sol::table>();
+        } else {
+            module = create_module(name);
+        }
+
+        // Create an environment object backed by the module table so that
+        // globals defined by the script are stored in the module table and
+        // lookups fall back to the module's metatable (which in turn points
+        // to `original_env`). sol::script expects either a table of globals
+        // or a sol::environment; constructing an environment from the
+        // existing table ensures correct behavior.
+        sol::environment exec_env(lua, module);
+        // If the module already has a metatable with an __index, preserve it
+        // so the script can read symbols from the original environment.
+        // Ensure lookups fall back to the original environment. Create a
+        // fresh metatable for the execution environment and set its
+        // __index to the `original_env`. This guarantees the script can
+        // read all symbols registered in the original environment.
+        sol::table exec_mt = lua.create_table();
+        exec_mt["__index"] = original_env;
+        exec_env[sol::metatable_key] = exec_mt;
+
+        sol::protected_function_result res = lua.script(script, exec_env);
+        if (!res.valid()) {
+            sol::error err = res;
+            throw std::runtime_error(std::string("Module runtime error: ") + err.what());
+        }
+    }
+
+    /**
+     * @brief run_module_file loads a Lua file from disk and runs it into a module.
+     * If the module already exists, the file is executed in the existing module table.
+     * @param name module name
+     * @param filename path to Lua file
+     */
+    inline void run_module_file(std::string const& name, std::string const& filename)
+    {
+        std::ifstream fin(filename);
+        if (!fin) {
+            throw io_error(std::string("Could not open module file: ") + filename);
+        }
+        std::string content((std::istreambuf_iterator<char>(fin)), std::istreambuf_iterator<char>());
+        run_module_script(name, content);
     }
 
 #ifdef GRUNK_WITH_RECIPE
@@ -608,6 +670,26 @@ private:
 
         // Set the decorated metatable on the new environment
         decorated_env[sol::metatable_key] = mt;
+    }
+
+    /**
+     * @brief create_module creates a named module table in the original environment.
+     *
+     * The created table will have a metatable that falls back to the original_env for
+     * lookups, so the module script can read all symbols from the original environment.
+     * The table itself is stored in `original_env[name]` so it can later be decorated
+     * or looked up like other registered symbols.
+     */
+    inline sol::table create_module(std::string const& name)
+    {
+        sol::table module = lua.create_table();
+        // set metatable so that missing lookups go to original_env
+        sol::table mt = lua.create_table();
+        mt["__index"] = original_env;
+        module[sol::metatable_key] = mt;
+
+        original_env.set(name, module);
+        return module;
     }
 
     sol::state lua;

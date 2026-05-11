@@ -37,6 +37,7 @@ if (GRUNK_WITH_DYNAMIC)
       dynamic_serialization.cpp
       dynamic_state.cpp
       dynamic_std_vector.cpp
+      dynamic_module.cpp
     )
 endif()
 
