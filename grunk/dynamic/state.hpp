@@ -239,6 +239,20 @@ public:
         run_module_script(name, content);
     }
 
+    /**
+     * @brief clear_module removes a module table from the original environment.
+     * This is useful in tests or when reloading modules to ensure that subsequent
+     * lookups from the decorated environment will not find the previous module.
+     * @param name Module name to remove from the original environment
+     */
+    inline void clear_module(std::string const& name)
+    {
+        original_env.set(name, sol::lua_nil);
+        // Also remove any cached decorated entry so subsequent parametric envs
+        // don't return a stale decorated table.
+        decorated_env.set(name, sol::lua_nil);
+    }
+
 #ifdef GRUNK_WITH_RECIPE
 
     /**

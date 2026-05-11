@@ -50,4 +50,57 @@ TEST(module, basic)
     auto pa = penv.get_feature("a");
     pa.set_value(4);
     ASSERT_EQ(pc.value().as<int>(), 32);
+
+    // now clear the module and ensure it's removed from the original environment
+    grunk.clear_module("mymod");
+
+    // new parametric env should no longer find mymod
+    auto penv2 = grunk.create_parametric_env();
+    // accessing mymod should yield nil; evaluate a small snippet and ensure it errors or returns nil
+    penv2.eval(R"(
+        if mymod ~= nil then
+            error("module still present")
+        end
+    )");
+}
+
+TEST(module, run_file)
+{
+    grunk::state grunk;
+
+    // write a small module to a temp file
+    std::string filename = "/tmp/grunk_test_mymod.lua";
+    std::ofstream fout(filename);
+    fout << R"(
+        function add_one(x) return x + 1 end
+        function choose(a,b) if a < b then return a else return b end end
+    )";
+    fout.close();
+
+    // load the module from file
+    grunk.run_module_file("mymod_file", filename);
+
+    // normal env should work
+    auto env = grunk.create_env();
+    env.eval(R"(
+        a = 10
+        b = mymod_file.add_one(a)
+    )");
+    ASSERT_EQ(env.get("b").as<int>(), 11);
+
+    // parametric env should also work
+    auto penv = grunk.create_parametric_env();
+    penv.eval(R"(
+        a = grunk.feature(5)
+        b = mymod_file.add_one(a)
+    )");
+    auto fb = penv.get_feature("b");
+    ASSERT_EQ(fb.value().as<int>(), 6);
+
+    auto fa = penv.get_feature("a");
+    fa.set_value(41);
+    ASSERT_EQ(fb.value().as<int>(), 42);
+
+    // cleanup
+    std::remove(filename.c_str());
 }
