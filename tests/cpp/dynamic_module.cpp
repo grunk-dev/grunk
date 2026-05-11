@@ -104,3 +104,55 @@ TEST(module, run_file)
     // cleanup
     std::remove(filename.c_str());
 }
+
+namespace {
+
+struct Pnt
+{
+    Pnt() = default;
+
+    inline void set_x(double x_) { x = x_; }
+    inline void set_y(double y_) { y = y_; }
+    inline void set_z(double z_) { z = z_; }
+    double x{0.};
+    double y{0.};
+    double z{0.};
+};
+
+} // anonymous namespace
+
+TEST(module, nonconst_setters)
+{
+    auto grunk = grunk::state();
+
+    grunk.register_type<Pnt>("Pnt")
+        .add_constructors<>([](){ return Pnt(); })
+        .add_member_function("set_x", &Pnt::set_x)
+        .add_member_function("set_y", &Pnt::set_y)
+        .add_member_function("set_z", &Pnt::set_z);
+
+    grunk.run_module_script(
+        "mymod",
+        R"(
+            function create_pnt(u,v)
+                p = Pnt.new()
+                p:set_x(u)
+                p:set_y(v)
+                return p
+            end
+        )"
+    );
+
+    auto u = grunk.feature(0.1);
+    auto v = grunk.feature(0.2);
+    auto p = grunk.action("mymod.create_pnt", u, v);
+
+    ASSERT_EQ(p.value().as<Pnt>().x, 0.1);
+    ASSERT_EQ(p.value().as<Pnt>().y, 0.2);
+    ASSERT_EQ(p.value().as<Pnt>().z, 0.0);
+
+    u.set_value(5.0);
+    ASSERT_EQ(p.value().as<Pnt>().x, 5.0);
+    ASSERT_EQ(p.value().as<Pnt>().y, 0.2);
+    ASSERT_EQ(p.value().as<Pnt>().z, 0.0);
+}
