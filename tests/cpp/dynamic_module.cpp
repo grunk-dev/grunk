@@ -36,7 +36,6 @@ TEST(module, basic)
     auto c = env.get("c");
     ASSERT_EQ(c.as<int>(), 5);
 
-/*
     // both functions should be available in parametric env
     auto penv = grunk.create_parametric_env();
     penv.eval(R"(
@@ -51,5 +50,4 @@ TEST(module, basic)
     auto pa = penv.get_feature("a");
     pa.set_value(4);
     ASSERT_EQ(pc.value().as<int>(), 32);
-*/
 }

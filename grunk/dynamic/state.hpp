@@ -194,6 +194,33 @@ public:
             sol::error err = res;
             throw std::runtime_error(std::string("Module runtime error: ") + err.what());
         }
+
+        // After executing the module script, convert any plain Lua functions stored
+        // in the module table (and nested tables) into `function_meta` objects so
+        // they can be decorated when accessed through the decorated environment.
+        std::function<void(sol::table, std::string)> convert_table;
+        convert_table = [&](sol::table tbl, std::string const& prefix) {
+            for (auto& kv : tbl) {
+                sol::object key = kv.first;
+                sol::object value = kv.second;
+
+                // Only handle string keys (module fields)
+                if (!key.is<std::string>()) continue;
+                std::string k = key.as<std::string>();
+                std::string fullname = prefix.empty() ? k : prefix + "." + k;
+
+                if (value.is<sol::table>()) {
+                    convert_table(value.as<sol::table>(), fullname);
+                } else if (value.get_type() == sol::type::function || value.is<sol::protected_function>()) {
+                    // Already a function: wrap into a function_meta
+                    sol::protected_function pf = value.is<sol::protected_function>() ? value.as<sol::protected_function>() : value.as<sol::protected_function>();
+                    auto meta = create_function_meta(lua, fullname, {}, pf);
+                    tbl.set(k, meta);
+                }
+            }
+        };
+
+        convert_table(module, name);
     }
 
     /**
