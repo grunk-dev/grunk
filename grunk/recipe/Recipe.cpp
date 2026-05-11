@@ -91,6 +91,15 @@ namespace grunk {
             );
         }
 
+        for (auto const& [key, script] : module_scripts) {
+            ret.module_scripts.insert(
+                {
+                    key,
+                    script.clone()
+                }
+            );
+        }
+
         return ret;
     }
 
@@ -134,6 +143,13 @@ namespace grunk {
                 );
             }
         }
+        if (yml["modules"]) {
+            for (auto const& kv : yml["modules"]) {
+                std::string key = kv.first.as<std::string>();
+                std::string val = kv.second.as<std::string>();
+                insert_module_script(key, val);
+            }
+        }
         if (yml["parameters"]) {
             for (auto const& kv : yml["parameters"]) {
                 std::string key = kv.first.as<std::string>();
@@ -173,6 +189,15 @@ namespace grunk {
             out << YAML::Key << "steps" 
                 << YAML::Value << YAML::Literal << tree.get_string();
         }
+
+        if (module_scripts.size() > 0) {
+            out << YAML::Key << "modules" << YAML::BeginMap;
+            for (auto const& [key, script] : module_scripts) {
+                out << YAML::Key << key
+                << YAML::Value << YAML::Literal << script.value();
+            }
+            out << YAML::EndMap;
+        }
             
         if (recipes.size() > 0) {
             out << YAML::Key << "recipes";
@@ -194,6 +219,16 @@ namespace grunk {
             { 
                 name, 
                 SubRecipe{name, grunk::feature<Recipe>(recipe), m_environment.lua_state()}
+            }
+        );
+    }
+
+    void Recipe::insert_module_script(std::string const& name, std::string const& script)
+    {
+        module_scripts.insert(
+            {
+                name,
+                grunk::feature<std::string>(script)
             }
         );
     }

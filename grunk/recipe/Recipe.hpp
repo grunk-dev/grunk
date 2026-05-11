@@ -105,6 +105,14 @@ namespace grunk {
     void insert_recipe(std::string const& name, Recipe&& recipe);
 
     /**
+     * @brief Insert a module script into this recipe
+     *
+     * @param name name of the module script
+     * @param script a Lua script as a string, representing the module script
+     */
+     void insert_module_script(std::string const& name, std::string const& script);
+
+    /**
      * @brief Tag this recipe.
      *
      * This iterates over all keys in the recipes environment and sets the 
@@ -156,6 +164,9 @@ namespace grunk {
 
     /// Map of sub-recipes stored by name.
     std::unordered_map<std::string, SubRecipe> recipes;
+
+    /// Map of modules stored by name
+    std::unordered_map<std::string, Feature<std::string>> module_scripts;
 
     private:
     /**

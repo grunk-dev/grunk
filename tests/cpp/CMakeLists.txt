@@ -46,6 +46,7 @@ if (GRUNK_WITH_RECIPE)
       recipe_simple.cpp
       recipe_clone.cpp
       recipe_call.cpp
+      recipe_module.cpp
     )
 endif()
 
