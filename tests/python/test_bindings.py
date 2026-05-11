@@ -321,4 +321,61 @@ def test_placeholder():
     """)
 
     assert pytest.approx(recipe_outer.get_feature("c").value().as_float()) == 13
+
+
+def test_run_module_script_and_clear():
+
+    # run a small module script
+    grunk.run_module_script("pymod", """
+function inc(x)
+    return x + 1
+end
+
+function lt(a,b)
+    return a < b
+end
+""")
+
+    # normal env should work
+    e = grunk.create_env()
+    e.eval("a = 2\nb = pymod.inc(a)")
+    assert e["b"].as_int() == 3
+
+    # parametric env should work
+    pe = grunk.create_parametric_env()
+    pe.eval("a = grunk.feature(4)\nb = pymod.inc(a)")
+    fb = pe.get_feature("b")
+    assert fb.value().as_int() == 5
+    fa = pe.get_feature("a")
+    fa.set_value(5)
+    assert fb.value().as_int() == 6
+
+    # now clear the module and ensure it's removed
+    grunk.clear_module("pymod")
+    pe2 = grunk.create_parametric_env()
+    # if module still present, error will be raised; otherwise get_feature should fail
+    with pytest.raises(RuntimeError):
+        pe2.eval("a = pymod.inc(1)")
+
+
+def test_run_module_file(tmp_path):
     
+    lua_file = tmp_path / "mymod.lua"
+    lua_file.write_text("""
+        function add(x) return x + 2 end
+        function smaller(a,b) return a < b end
+    """)
+
+    grunk.run_module_file("filemod", lua_file.as_posix())
+
+    e = grunk.create_env()
+    e.eval("x = filemod.add(3)")
+    assert e["x"].as_int() == 5
+
+    pe = grunk.create_parametric_env()
+    pe.eval("x = grunk.feature(7)\ny = filemod.add(x)")
+    fy = pe.get_feature("y")
+    assert fy.value().as_int() == 9
+    fx = pe.get_feature("x")
+    fx.set_value(9)
+    assert fy.value().as_int() == 11
