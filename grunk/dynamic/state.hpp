@@ -9,6 +9,9 @@
 #include "sol_helpers.hpp"
 #include "usertype_proxy.hpp"
 #include "function_meta.hpp"
+#include <unordered_map>
+#include <string>
+#include "grunk/dynamic/ActionModule.hpp"
 #include "ActionDynamic.hpp"
 #include "environment.hpp"
 
@@ -251,6 +254,36 @@ public:
         // Also remove any cached decorated entry so subsequent parametric envs
         // don't return a stale decorated table.
         decorated_env.set(name, sol::lua_nil);
+    }
+
+    // Store module source as a tracked feature
+    void set_module_source(std::string const& name, std::string const& script) {
+        auto& feat = module_features_[name];
+        if (!feat) {
+            feat = feature<std::string>(script);
+        } else {
+            feat.set_value(script);
+        }
+        // clear old module table to drop stale functions
+        clear_module(name);
+        // load script (adds dependency on the feature)
+        run_module_script(name, script);
+    }
+
+    std::string const& get_module_source(std::string const& name) const {
+        return module_features_.at(name).value().as<std::string>();
+    }
+
+    // factory for module actions – creates a compute node that depends on the module source feature
+    template <typename... Args>
+    DynamicFeature action_from_module(std::string const& mod, std::string const& func, Args&&... args) {
+        // convert arguments to features (using to_feature helper)
+        std::vector<DynamicFeature> vec = {details::to_feature(std::forward<Args>(args))...};
+        ActionModule node(this, mod, func);
+        node.connect_inputs(vec);
+        DynamicFeature out = node.initialize_results();
+        node.connect_results(out);
+        return out;
     }
 
 #ifdef GRUNK_WITH_RECIPE
@@ -736,6 +769,8 @@ private:
     sol::state lua;
     sol::environment original_env;
     sol::environment decorated_env;
-};
+    // map module name -> feature holding its source script; the feature creates a DAG dependency
+    std::unordered_map<std::string, Feature<std::string>> module_features_;
+}; // end of class state
 
-} // namespace grunk
+
