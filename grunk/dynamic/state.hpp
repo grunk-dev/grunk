@@ -12,6 +12,7 @@
 #include <unordered_map>
 #include <string>
 #include "grunk/dynamic/ActionModule.hpp"
+#include "grunk/dynamic/action.hpp"
 #include "ActionDynamic.hpp"
 #include "environment.hpp"
 
@@ -169,7 +170,7 @@ public:
         // Check if module already exists in original_env
         sol::object existing = original_env.raw_get_or(name, sol::lua_nil);
         sol::table module;
-            if (existing.valid() && existing.is<sol::table>()) { 
+        if (existing.valid() && existing.is<sol::table>()) { 
             module = existing.as<sol::table>();
         } else {
             module = create_module(name);
@@ -227,22 +228,6 @@ public:
     }
 
     /**
-     * @brief run_module_file loads a Lua file from disk and runs it into a module.
-     * If the module already exists, the file is executed in the existing module table.
-     * @param name module name
-     * @param filename path to Lua file
-     */
-    inline void run_module_file(std::string const& name, std::string const& filename)
-    {
-        std::ifstream fin(filename);
-        if (!fin) {
-            throw io_error(std::string("Could not open module file: ") + filename);
-        }
-        std::string content((std::istreambuf_iterator<char>(fin)), std::istreambuf_iterator<char>());
-        run_module_script(name, content);
-    }
-
-    /**
      * @brief clear_module removes a module table from the original environment.
      * This is useful in tests or when reloading modules to ensure that subsequent
      * lookups from the decorated environment will not find the previous module.
@@ -259,10 +244,10 @@ public:
     // Store module source as a tracked feature
     void set_module_source(std::string const& name, std::string const& script) {
         auto& feat = module_features_[name];
-        if (!feat) {
-            feat = feature<std::string>(script);
+        if (feat.is_placeholder()) {
+            feat = grunk::feature<std::string>(script);
         } else {
-            feat.set_value(script);
+            feat.change_value() = script;
         }
         // clear old module table to drop stale functions
         clear_module(name);
@@ -271,19 +256,29 @@ public:
     }
 
     std::string const& get_module_source(std::string const& name) const {
-        return module_features_.at(name).value().as<std::string>();
+        return module_features_.at(name).value();
+    }
+
+    /**
+     * @brief run_module_file loads a Lua file from disk and runs it into a module.
+     * If the module already exists, the file is executed in the existing module table.
+     * @param name module name
+     * @param filename path to Lua file
+     */
+    inline void run_module_file(std::string const& name, std::string const& filename)
+    {
+        std::ifstream fin(filename);
+        if (!fin) {
+            throw io_error(std::string("Could not open module file: ") + filename);
+        }
+        std::string content((std::istreambuf_iterator<char>(fin)), std::istreambuf_iterator<char>());
+        run_module_script(name, content);
     }
 
     // factory for module actions – creates a compute node that depends on the module source feature
     template <typename... Args>
     DynamicFeature action_from_module(std::string const& mod, std::string const& func, Args&&... args) {
-        // convert arguments to features (using to_feature helper)
-        std::vector<DynamicFeature> vec = {details::to_feature(std::forward<Args>(args))...};
-        ActionModule node(this, mod, func);
-        node.connect_inputs(vec);
-        DynamicFeature out = node.initialize_results();
-        node.connect_results(out);
-        return out;
+        return action(mod + "." + func, std::forward<Args>(args)...);
     }
 
 #ifdef GRUNK_WITH_RECIPE
@@ -462,6 +457,25 @@ public:
     template <typename... Args>
     DynamicFeature action(std::string const& function, Args&&... args) const
     {
+        size_t last_dot = function.rfind('.');
+        if (last_dot != std::string::npos) {
+            std::string module_name = function.substr(0, last_dot);
+            std::string func_name = function.substr(last_dot + 1);
+             if (module_features_.count(module_name) > 0) {
+                 // Create a lookup function that depends on the module source
+                 auto lookup = [this, module_name](const std::string& name) -> function_meta {
+                     // Access module_features_ to create dependency on module source
+                     module_features_.at(module_name);
+                     return get_function(name);
+                 };
+                  // Module source feature as first dependency, then user arguments
+                  auto&& module_src = module_features_.at(module_name);
+                  return details::ActionModuleFactory::new_action(
+                      lua.lua_state(), module_name, func_name, lookup,
+                      module_src, details::to_feature(std::forward<Args>(args))...
+                  ).output();
+             }
+        }
         sol::object const f = details::lookup_nested(original_env, function);
         if (!f.is<function_meta>()) {
             throw std::logic_error("Function \"" + function + "\" is not registered in the dynamic function registry.");
@@ -772,5 +786,6 @@ private:
     // map module name -> feature holding its source script; the feature creates a DAG dependency
     std::unordered_map<std::string, Feature<std::string>> module_features_;
 }; // end of class state
+} // namespace grunk
 
 

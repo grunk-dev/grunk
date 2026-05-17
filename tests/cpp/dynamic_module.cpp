@@ -156,3 +156,34 @@ TEST(module, nonconst_setters)
     ASSERT_EQ(p.value().as<Pnt>().y, 0.2);
     ASSERT_EQ(p.value().as<Pnt>().z, 0.0);
 }
+
+TEST(module_action, invalidation)
+{
+    grunk::state gr;
+    gr.set_module_source("mymod", "function f(x) return x+1 end");
+    auto a = gr.feature(2);
+    auto out = gr.action("mymod.f", a);
+    ASSERT_EQ(out.value().as<int>(), 3);
+    gr.set_module_source("mymod", "function f(x) return x*2 end");
+    ASSERT_EQ(out.value().as<int>(), 4);
+}
+
+TEST(module_action, action_auto_detect)
+{
+    grunk::state gr;
+    gr.set_module_source("calc", "function add(a, b) return a + b end");
+    gr.register_function("normal_func", [](int x) { return x * 2; });
+    
+    auto x = gr.feature(5);
+    auto y = gr.feature(3);
+    
+    auto mod_result = gr.action("calc.add", x, y);
+    ASSERT_EQ(mod_result.value().as<int>(), 8);
+    
+    auto reg_result = gr.action("normal_func", x);
+    ASSERT_EQ(reg_result.value().as<int>(), 10);
+    
+    x.set_value(10);
+    ASSERT_EQ(mod_result.value().as<int>(), 13);
+    ASSERT_EQ(reg_result.value().as<int>(), 20);
+}

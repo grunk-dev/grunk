@@ -197,7 +197,6 @@ NB_MODULE(_bindings, m) {
         .def("write", &grunk::state::write, "filename"_a, "recipe"_a)
         .def("read", &grunk::state::read, "filename"_a)
         .def("run_module_script", &grunk::state::run_module_script, "name"_a, "script"_a)
-        .def("run_module_file", &grunk::state::run_module_file, "name"_a, "filename"_a)
         .def("clear_module", &grunk::state::clear_module, "name"_a)
         .def("create_object", [](grunk::state const& grunk, nb::object obj) {
             if (nb::isinstance<nb::int_>(obj))
@@ -241,9 +240,6 @@ NB_MODULE(_bindings, m) {
     m.def("run_module_script", [=](std::string const& name, std::string const& script) {
         default_state().run_module_script(name, script);
     }, "name"_a, "script"_a);
-    m.def("run_module_file", [=](std::string const& name, std::string const& filename) {
-        default_state().run_module_file(name, filename);
-    }, "name"_a, "filename"_a);
     m.def("clear_module", [=](std::string const& name) {
         default_state().clear_module(name);
     }, "name"_a);
@@ -256,9 +252,6 @@ NB_MODULE(_bindings, m) {
     m.def("run_module_script", [=](std::string const& name, std::string const& script){ 
         default_state().run_module_script(name, script);
     }, "name"_a, "script"_a);
-    m.def("run_module_file", [=](std::string const& name, std::string const& filename) {
-        default_state().run_module_file(name, filename);
-    }, "name"_a, "filename"_a);
     m.def("clear_module", [=](std::string const& name){
         default_state().clear_module(name);
     }, "name"_a);
