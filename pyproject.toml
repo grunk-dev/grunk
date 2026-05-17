@@ -60,7 +60,7 @@ channels = ["conda-forge"]
 [tool.pixi.dependencies]
 cmake = "*"
 ninja = "*"
-#TODO: parametric
+libparametric = "*"
 lua = "*"
 sol2 = "*"
 taskflow = "*"
@@ -108,8 +108,7 @@ configure = { cmd = [
     "-D", "CMAKE_BUILD_TYPE={{ config }}",
     "-D", "GRUNK_TESTS=ON",
     "-D", "GRUNK_BUILD_DOCS={{ docs }}",
-    "-D", "LUA_INCLUDE_DIR=$CONDA_PREFIX/include"#,
-    #"-D", "parametric_DIR=/localdata2/klei_j0/code/parametric/build/install/lib/cmake/parametric/",
+    "-D", "LUA_INCLUDE_DIR=$CONDA_PREFIX/include"
 ], args = [
     { "arg" = "config", "default"="Release"},
     { "arg" = "docs", "default"="OFF"}
