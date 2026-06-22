@@ -8,6 +8,7 @@
 #include <TColgp_Array1OfPnt.hxx>
 #include <BRepTools.hxx>
 #include <BRepBuilderAPI_MakeFace.hxx>
+#include <BRepBuilderAPI_MakeEdge.hxx>
 
 #include <geoml/curves/curves.h>
 #include <geoml/surfaces/surfaces.h>
@@ -47,11 +48,11 @@ void register_geoml(grunk::state& grunk)
     )
     .with_std_vector();
 
-    grunk.register_type<Handle(Geom_BezierCurve)>("Handle_Geom_BezierCurve")
+    grunk.register_type<Geom_BezierCurve, sol::automagic_flags::none>("Geom_BezierCurve")
     .with_std_vector();
 
     grunk.register_function(
-        "Geom_BezierCurve",
+        "bezier_curve",
         [](std::vector<gp_Pnt> const& poles) -> Handle(Geom_BezierCurve) {
             TColgp_Array1OfPnt occ_poles = geoml::StdVector_to_TCol(poles);
             return new Geom_BezierCurve(occ_poles);
@@ -70,38 +71,38 @@ int main() {
 
     auto recipe = grunk.create_recipe();
     recipe.eval(R"(
-        X = -4600.
+        X = grunk.feature(-4600.)
 
-        P_1_y = 0.
-        P_1_z = 1950.
+        P_1_y = grunk.feature(0.)
+        P_1_z = grunk.feature(1950.)
         P_1 = gp_Pnt.new(X, P_1_y, P_1_z)
 
-        P_2_y = -1076.95526217
-        P_2_z = 1950.
+        P_2_y = grunk.feature(-1076.95526217)
+        P_2_z = grunk.feature(1950.)
         P_2 = gp_Pnt.new(X, P_2_y, P_2_z)
 
-        P_3_y = -1950.
-        P_3_z = 1076.95526217
+        P_3_y = grunk.feature(-1950.)
+        P_3_z = grunk.feature(1076.95526217)
         P_3 = gp_Pnt.new(X, P_3_y, P_3_z)
 
-        P_4_y = -1950.
-        P_4_z = 0.
+        P_4_y = grunk.feature(-1950.)
+        P_4_z = grunk.feature(0.)
         P_4 = gp_Pnt.new(X, P_4_y, P_4_z)
 
-        P_5_y = -1950.
-        P_5_z = -1076.95526217
+        P_5_y = grunk.feature(-1950.)
+        P_5_z = grunk.feature(-1076.95526217)
         P_5 = gp_Pnt.new(X, P_5_y, P_5_z)
 
-        P_6_y = -1076.95526217
-        P_6_z = -1950.
+        P_6_y = grunk.feature(-1076.95526217)
+        P_6_z = grunk.feature(-1950.)
         P_6 = gp_Pnt.new(X, P_6_y, P_6_z)
 
-        P_7_y = 0.
-        P_7_z = -1950.
+        P_7_y = grunk.feature(0.)
+        P_7_z = grunk.feature(-1950.)
         P_7 = gp_Pnt.new(X, P_7_y, P_7_z)
 
         front_poles = gp_Pnt.as_vec(P_1, P_2, P_3, P_4, P_5, P_6, P_7)
-        front_profile = Geom_BezierCurve(front_poles)
+        front_profile = bezier_curve(front_poles)
 
         P_back_1 = gp_Pnt.new(12500., 0., 1950.)
         P_back_2 = gp_Pnt.new(12500., -1076.95526217, 1950.);
@@ -112,29 +113,47 @@ int main() {
         P_back_7 = gp_Pnt.new(12500., 0., -1950.)
 
         back_poles = gp_Pnt.as_vec(P_back_1, P_back_2, P_back_3, P_back_4, P_back_5, P_back_6, P_back_7)
-        back_profile = Geom_BezierCurve(back_poles)
+        back_profile = bezier_curve(back_poles)
 
         upper_poles = gp_Pnt.as_vec(P_1, P_back_1)
-        upper_guide = Geom_BezierCurve(upper_poles)
+        upper_guide = bezier_curve(upper_poles)
 
         lower_poles = gp_Pnt.as_vec(P_7, P_back_7)
-        lower_guide = Geom_BezierCurve(lower_poles)
+        lower_guide = bezier_curve(lower_poles)
 
-        profiles = Handle_Geom_BezierCurve.as_vec(front_profile, back_profile)
-        -- guides = Handle_Geom_BezierCurve.as_vec(upper_guide, lower_guide)
+        profiles = Geom_BezierCurve.as_vec(front_profile, back_profile)
+        guides = Geom_BezierCurve.as_vec(upper_guide, lower_guide)
 
-        -- middle_fuselage = interpolate_curve_network(profiles, guides, 1.)
+        middle_fuselage = interpolate_curve_network(profiles, guides, 1.)
 
     )");
+    recipe.tag_features();
 
     grunk.write("gordon.grr.yml", recipe);
+
+    auto front_profile = recipe.get_feature("front_profile").value().as<Handle(Geom_BezierCurve)>();
+    BRepTools::Write(BRepBuilderAPI_MakeEdge(front_profile), "front_profile.brep");
+
+    auto back_profile = recipe.get_feature("back_profile").value().as<Handle(Geom_BezierCurve)>();
+    BRepTools::Write(BRepBuilderAPI_MakeEdge(back_profile), "back_profile.brep");
+
+    auto lower_guide = recipe.get_feature("lower_guide").value().as<Handle(Geom_BezierCurve)>();
+    BRepTools::Write(BRepBuilderAPI_MakeEdge(lower_guide), "lower_guide.brep");
+
+    auto upper_guide = recipe.get_feature("upper_guide").value().as<Handle(Geom_BezierCurve)>();
+    BRepTools::Write(BRepBuilderAPI_MakeEdge(upper_guide), "upper_guide.brep");
+
     
-    auto middle_fuselage = recipe.get_feature("middle_fuselage").value().as<Handle(Geom_BSplineSurface)>();
+    auto middle_fuselage_f = recipe.get_feature("middle_fuselage");
+    std::cout << "wtf\n";
+    auto middle_fuselage_obj = middle_fuselage_f.value();
+    std::cout << "shit...\n";
+    auto middle_fuselage = middle_fuselage_obj.as<Handle(Geom_BSplineSurface)>();
+    std::cout << "Handle is Null? " << middle_fuselage.IsNull() << "\n";
     std::string filename = "middle_fuselage.brep";
     BRepTools::Write(BRepBuilderAPI_MakeFace(middle_fuselage, Precision::Confusion()), filename.c_str());
 
 
-    
     std::cout << "Done." << std::endl;
     return 0;
 }

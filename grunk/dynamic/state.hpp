@@ -89,13 +89,42 @@ public:
      * @param table optional table as a "namespace", where the type shall be registered.
      * @returns a usertype_proxy<T> to allow method chaining
      */
-    template <typename T>
+    template <typename T, sol::automagic_flags Flags = sol::automagic_flags::all>
     auto register_type(std::string const& name, std::optional<sol::table> table = std::nullopt)
     {
         if (!table) {
             table = original_env;
         }
-        return usertype_proxy<T>{name, table->new_usertype<T>(name)};
+        return usertype_proxy<T>{name, table->new_usertype<T>(name, sol::constant_automagic_enrollments<Flags>{})};
+    }
+
+    /**
+     * @brief modify_type extends an already-registered usertype with additional members.
+     *
+     * Unlike `register_type`, this does NOT call `sol::new_usertype` — it looks up an
+     * existing usertype table in the Lua state and wraps it in a `sol::usertype<T>`.
+     * This avoids sol2's automagic registration entirely (comparison operators, index
+     * metamethods, etc.), which is useful for types with `unique_usertype_traits` where
+     * the underlying type lacks operators.
+     *
+     * The usertype must already exist in the Lua state (e.g. registered by a plugin
+     * before `modify_type` is called).
+     *
+     * @param name Name of the existing type
+     * @param table optional table as a "namespace" where the type is registered
+     * @returns a usertype_proxy<T> to allow method chaining (e.g. `.with_std_vector()`)
+     */
+    template <typename T>
+    auto modify_type(std::string const& name, std::optional<sol::table> table = std::nullopt)
+    {
+        if (!table) {
+            table = original_env;
+        }
+        lua_State* L = lua;
+        int table_idx = (*table).push(L);
+        sol::usertype<T> ut(L, table_idx);
+        lua_pop(L, 1);
+        return usertype_proxy<T>{name, ut};
     }
 
     /**
