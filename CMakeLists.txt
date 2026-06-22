@@ -15,7 +15,6 @@ option(GRUNK_WITH_DYNAMIC  "Builds the grunk::dynamic library, for dynamic param
 option(GRUNK_WITH_RECIPE   "Builds the grunk::recipe library, for exporting and importing recipes from/to yaml format" ON)
 option(GRUNK_PYTHON        "Build python bindings using pybind11" OFF)
 option(GRUNK_TESTS         "Build unit tests using GTest" OFF)
-option(GRUNK_EXAMPLES      "Build examples" OFF)
 option(GRUNK_BUILD_DOCS    "Build documentation (requires doxygen and sphinx)" OFF)
 
 # If scikit-build (SKBUILD) is driving the build (i.e. when building wheels),
@@ -63,11 +62,6 @@ add_subdirectory(grunk)
 
 if (GRUNK_TESTS)
     add_subdirectory(tests/cpp)
-endif()
-
-if (GRUNK_EXAMPLES)
-    set(GRUNK_EXAMPLES_CPP ON CACHE BOOL "" FORCE)
-    add_subdirectory(examples/cpp)
 endif()
 
 if (GRUNK_PYTHON)

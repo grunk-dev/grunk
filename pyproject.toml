@@ -107,14 +107,12 @@ configure = { cmd = [
     "-D", "CMAKE_INSTALL_PREFIX=build/install",
     "-D", "CMAKE_BUILD_TYPE={{ config }}",
     "-D", "GRUNK_TESTS=ON",
-    "-D", "GRUNK_EXAMPLES={{ examples }}",
     "-D", "GRUNK_BUILD_DOCS={{ docs }}",
     "-D", "LUA_INCLUDE_DIR=$CONDA_PREFIX/include"
 ], args = [
     { "arg" = "config", "default"="Release"},
-    { "arg" = "examples", "default"="OFF"},
     { "arg" = "docs", "default"="OFF"}
-], description = "Configure the CMake build system. The 'config' argument sets the CMAKE_BUILD_TYPE (e.g., Release or Debug). The 'examples' argument enables building examples."}
+], description = "Configure the CMake build system. The 'config' argument sets the CMAKE_BUILD_TYPE (e.g., Release or Debug)."}
 
 build = { cmd = "cmake --build . {{ extra_args }}", cwd = "build", args= [ { "arg" = "extra_args", "default" = "-j"}], description = "Build the project using CMake. The 'extra_args' argument allows you to pass additional flags to the build command (e.g., -j for parallel builds)."}
 

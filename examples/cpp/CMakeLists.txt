@@ -5,6 +5,4 @@
 cmake_minimum_required(VERSION 3.15)
 project(grunk-examples)
 
-if (GRUNK_EXAMPLES_CPP)
-    add_subdirectory(cad_autodiff)
-endif()
+add_subdirectory(cad_autodiff)

@@ -179,31 +179,23 @@ Any type and any function can be registered in the dynamic type system of grunk 
 
 ## Examples
 
-Grunk includes example applications demonstrating the library's capabilities:
+Grunk includes example applications demonstrating the library's capabilities. Each example is standalone with its own dependencies and build configuration.
 
-### Standalone Examples
+### Available Examples
 
-Each example can be built and run independently using pixi:
+| Example | Description |
+| -- | -- |
+| [examples/cpp/cad_autodiff](examples/cpp/cad_autodiff/) | CAD modeling with automatic differentiation using geoml |
+
+### Building Examples
 
 ```bash
-# CAD Autodiff - CAD modeling with automatic differentiation using geoml
+# CAD Autodiff example
 cd examples/cpp/cad_autodiff
 pixi run all
 ```
 
-See [examples/cpp/README.md](examples/cpp/README.md) for the full list of examples and details.
-
-### Building Examples with grunk
-
-Examples can also be built as part of the grunk build:
-
-```bash
-pixi run configure --examples ON
-pixi run build
-./build/examples/cpp/cad_autodiff/cad_autodiff
-```
-
-For more details, see [examples/cpp/README.md](examples/cpp/README.md).
+See individual example README files for details.
 
 ## License
 

@@ -19,6 +19,11 @@ FetchContent_Declare(geoml
     GIT_TAG main
 )
 
+FetchContent_Declare(grunk
+    GIT_REPOSITORY https://github.com/grunk-dev/grunk.git
+    GIT_TAG main
+)
+
 FetchContent_GetProperties(geoml)
 if(NOT geoml_POPULATED)
     cmake_policy(SET CMP0169 OLD)
@@ -33,30 +38,25 @@ if(NOT geoml_POPULATED)
     add_subdirectory(${geoml_SOURCE_DIR} ${geoml_BINARY_DIR} EXCLUDE_FROM_ALL)
 endif()
 
-if(NOT TARGET grunk)
-    FetchContent_Declare(grunk
-        GIT_REPOSITORY https://github.com/grunk-dev/grunk.git
-        GIT_TAG main
-    )
+FetchContent_GetProperties(grunk)
+if(NOT grunk_POPULATED)
+    cmake_policy(SET CMP0169 OLD)
+    FetchContent_Populate(grunk)
 
-    FetchContent_GetProperties(grunk)
-    if(NOT grunk_POPULATED)
-        cmake_policy(SET CMP0169 OLD)
-        FetchContent_Populate(grunk)
-
-        if(EXISTS "${grunk_SOURCE_DIR}/cmake/grunkConfig.cmake.in")
-            file(COPY "${grunk_SOURCE_DIR}/cmake/grunkConfig.cmake.in"
-                 DESTINATION "${CMAKE_SOURCE_DIR}/cmake"
-                 NO_SOURCE_PERMISSIONS)
-        endif()
-
-        set(GRUNK_WITH_TASKFLOW OFF CACHE BOOL "" FORCE)
-        set(GRUNK_WITH_DYNAMIC ON CACHE BOOL "" FORCE)
-        set(GRUNK_WITH_RECIPE ON CACHE BOOL "" FORCE)
-
-        include_directories(${grunk_BINARY_DIR})
-        add_subdirectory(${grunk_SOURCE_DIR} ${grunk_BINARY_DIR} EXCLUDE_FROM_ALL)
+    if(EXISTS "${grunk_SOURCE_DIR}/cmake/grunkConfig.cmake.in")
+        file(COPY "${grunk_SOURCE_DIR}/cmake/grunkConfig.cmake.in"
+             DESTINATION "${CMAKE_SOURCE_DIR}/cmake"
+             NO_SOURCE_PERMISSIONS)
     endif()
+
+    set(GRUNK_WITH_TASKFLOW OFF CACHE BOOL "" FORCE)
+    set(GRUNK_WITH_DYNAMIC ON CACHE BOOL "" FORCE)
+    set(GRUNK_WITH_RECIPE ON CACHE BOOL "" FORCE)
+    set(GRUNK_TESTS OFF CACHE BOOL "" FORCE)
+    set(GRUNK_PYTHON OFF CACHE BOOL "" FORCE)
+
+    include_directories(${grunk_BINARY_DIR})
+    add_subdirectory(${grunk_SOURCE_DIR} ${grunk_BINARY_DIR} EXCLUDE_FROM_ALL)
 endif()
 
 add_executable(cad_autodiff src/main.cpp)
