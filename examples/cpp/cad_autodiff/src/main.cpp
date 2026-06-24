@@ -14,6 +14,8 @@
 #include <geoml/surfaces/surfaces.h>
 #include "geoml/data_structures/conversions.h"
 
+#include <adolc/adtl.h>
+
 #include <sol/types.hpp>
 #include <grunk/grunk.hpp>
 
@@ -68,6 +70,55 @@ void register_geoml(grunk::state& grunk)
     );
 
     grunk.register_function("interpolate_curve_network", geoml::interpolate_curve_network);
+}
+
+void register_adolc(grunk::state& grunk)
+{
+    using namespace adtl;
+    grunk.register_type<adouble>("adouble")
+	.add_constructors(
+		[](double x) {return adouble(x);}
+	)
+	.add_member_function(
+		"setADValue", [](adouble& self, const unsigned int idx, const double ad_value){ self.setADValue(idx, ad_value); }
+	)
+	.add_member_function(
+		"getADValue", [](adouble& self, const unsigned int idx){ return self.getADValue(idx); }
+	)
+	.add_member_function(
+                "__mul", [](adouble const& l, double const&r){ return l * r; }
+	);
+
+    grunk.register_function("initialize_adouble", [](double v) { 
+		    adouble res(v);
+		    res.setADValue(0, 1.);
+		    return res;
+    });
+
+	
+}
+
+void write_recipe_ad()
+{
+    auto grunk = grunk::state();
+    register_adolc(grunk);
+
+    auto recipe = grunk.create_recipe();
+    recipe.eval(R"(
+        y = grunk.feature(5.)
+	-- x = adouble.new(y)
+	-- x:as(adouble).setADValue(0, 1.) -- TODO: Jan check why this syntax does not work
+        -- adouble.setADValue(x, 0, 1.)
+
+        x = initialize_adouble(y)
+
+	a = 6.
+	output = x * a
+	resultAD = adouble.getADValue(output, 0)
+    )");
+    recipe.tag_features();
+
+    grunk.write("test_adolc.grr.yml", recipe);
 }
 
 void write_recipe()
@@ -138,6 +189,21 @@ void write_recipe()
     grunk.write("gordon.grr.yml", recipe);
 }
 
+void read_recipe_ad()
+{
+    using namespace adtl;
+    auto grunk = grunk::state();
+    register_adolc(grunk);
+
+    auto recipe = grunk.read("test_adolc.grr.yml");
+
+    //auto front_profile = recipe.get_feature("x").value().as<adouble>().getValue();
+    auto front_profile = recipe.get_feature("resultAD").value().as<double>();
+
+    std::cout << "AD value: " << front_profile << std::endl;
+}
+
+
 void read_recipe()
 {
     auto grunk = grunk::state();
@@ -157,6 +223,16 @@ void read_recipe()
     auto upper_guide = recipe.get_feature("upper_guide").value().as<Handle(Geom_BezierCurve)>();
     BRepTools::Write(BRepBuilderAPI_MakeEdge(upper_guide), "upper_guide.brep");
 
+
+    /*
+    my_func = [&recipe](auto const& x) {
+        recipe.get_feature("X").set_value(x);
+	gp_Pnt pnt;
+	return recipe.get_feature("front_profile").value().as<Handle(Geom_BezierCurve)>()->D0(0., pnt);
+	return pnt.X();
+    };
+    */
+
     /*
     auto middle_fuselage_f = recipe.get_feature("middle_fuselage");
     std::cout << "wtf\n";
@@ -175,10 +251,10 @@ int main() {
 
     // create a new grunk state, "load" occt and geoml plugins and write
     // a recipe for gordon surface creation.
-    write_recipe();
+    write_recipe_ad();
 
     // read the recipe from file and execute the steps
-    read_recipe();
+    read_recipe_ad();
 
     std::cout << "Done." << std::endl;
     return 0;
