@@ -48,8 +48,16 @@ void register_geoml(grunk::state& grunk)
     )
     .with_std_vector();
 
-    grunk.register_type<Geom_BezierCurve, sol::automagic_flags::none>("Geom_BezierCurve")
-    .with_std_vector();
+    //grunk.register_type<Geom_Curve, sol::automagic_flags::none>("Geom_Curve")
+    //.with_std_vector();
+
+    //grunk.register_type<Geom_BezierCurve, sol::automagic_flags::none>("Geom_BezierCurve")
+    //.add_bases<Geom_Curve>();
+
+    //grunk.register_type<Geom_Surface>("Geom_Surface");
+
+    //grunk.register_type<Geom_BSplineSurface>("Geom_BSplineSurface")
+    //.add_bases<Geom_Surface>();
 
     grunk.register_function(
         "bezier_curve",
@@ -62,10 +70,8 @@ void register_geoml(grunk::state& grunk)
     grunk.register_function("interpolate_curve_network", geoml::interpolate_curve_network);
 }
 
-int main() {
-
-    std::cout << "Hello from cad_autodiff example!" << std::endl;
-
+void write_recipe()
+{
     auto grunk = grunk::state();
     register_geoml(grunk);
 
@@ -121,15 +127,23 @@ int main() {
         lower_poles = gp_Pnt.as_vec(P_7, P_back_7)
         lower_guide = bezier_curve(lower_poles)
 
-        profiles = Geom_BezierCurve.as_vec(front_profile, back_profile)
-        guides = Geom_BezierCurve.as_vec(upper_guide, lower_guide)
+        -- profiles = Geom_Curve.as_vec(front_profile, back_profile)
+        -- guides = Geom_BezierCurve.as_vec(upper_guide, lower_guide)
 
-        middle_fuselage = interpolate_curve_network(profiles, guides, 1.)
+        -- middle_fuselage = interpolate_curve_network(profiles, guides, 1.)
 
     )");
     recipe.tag_features();
 
     grunk.write("gordon.grr.yml", recipe);
+}
+
+void read_recipe()
+{
+    auto grunk = grunk::state();
+    register_geoml(grunk);
+
+    auto recipe = grunk.read("gordon.grr.yml");
 
     auto front_profile = recipe.get_feature("front_profile").value().as<Handle(Geom_BezierCurve)>();
     BRepTools::Write(BRepBuilderAPI_MakeEdge(front_profile), "front_profile.brep");
@@ -143,7 +157,7 @@ int main() {
     auto upper_guide = recipe.get_feature("upper_guide").value().as<Handle(Geom_BezierCurve)>();
     BRepTools::Write(BRepBuilderAPI_MakeEdge(upper_guide), "upper_guide.brep");
 
-    
+    /*
     auto middle_fuselage_f = recipe.get_feature("middle_fuselage");
     std::cout << "wtf\n";
     auto middle_fuselage_obj = middle_fuselage_f.value();
@@ -152,7 +166,19 @@ int main() {
     std::cout << "Handle is Null? " << middle_fuselage.IsNull() << "\n";
     std::string filename = "middle_fuselage.brep";
     BRepTools::Write(BRepBuilderAPI_MakeFace(middle_fuselage, Precision::Confusion()), filename.c_str());
+    */
+}
 
+int main() {
+
+    std::cout << "Hello from cad_autodiff example!" << std::endl;
+
+    // create a new grunk state, "load" occt and geoml plugins and write
+    // a recipe for gordon surface creation.
+    write_recipe();
+
+    // read the recipe from file and execute the steps
+    read_recipe();
 
     std::cout << "Done." << std::endl;
     return 0;
