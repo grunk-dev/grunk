@@ -26,7 +26,8 @@ configure = { cmd = [
     "-S", ".",
     "-B", "build",
     "-D", "CMAKE_INSTALL_PREFIX=build/install",
-    "-D", "CMAKE_BUILD_TYPE={{ config }}"
+    "-D", "CMAKE_BUILD_TYPE={{ config }}",
+    "-D", "ADOLC_BASE_DIR=build/_deps/ADOL-C/adolc_base"
 ], args = [
     { "arg" = "config", "default" = "Release" }
 ], description = "Configure the CMake build." }
