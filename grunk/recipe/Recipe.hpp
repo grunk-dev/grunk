@@ -105,6 +105,21 @@ namespace grunk {
     void insert_recipe(std::string const& name, Recipe&& recipe);
 
     /**
+     * @brief Insert a module script into this recipe.
+     *
+     * The script is stored as a Feature<std::string> so that it participates in the
+     * recipe's deep-clone semantics, and installs a callable Lua proxy under @p name in
+     * this recipe's environment. Calling a function through that proxy (e.g. `name.foo(...)`
+     * from a `steps:` script) creates a ModuleAction that depends on the stored script
+     * feature: editing the script's value invalidates and recomputes every call made into
+     * this module.
+     *
+     * @param name name under which the module is accessible from `steps:`
+     * @param script a Lua script as a string, defining the functions of the module
+     */
+    void insert_module_script(std::string const& name, std::string const& script);
+
+    /**
      * @brief Tag this recipe.
      *
      * This iterates over all keys in the recipes environment and sets the 
@@ -157,6 +172,9 @@ namespace grunk {
     /// Map of sub-recipes stored by name.
     std::unordered_map<std::string, SubRecipe> recipes;
 
+    /// Map of module scripts stored by name.
+    std::unordered_map<std::string, Feature<std::string>> module_scripts;
+
     private:
     /**
      * @brief Construct a recipe from an existing environment.
@@ -187,6 +205,19 @@ namespace grunk {
      * @param node Parsed YAML node to read from.
      */
     void populate_from_node(YAML::Node const& node);
+
+    /**
+     * @brief Install a callable Lua proxy for a module in this recipe's environment.
+     *
+     * Sets `m_environment[name]` to a table whose `__index` metamethod lazily creates a
+     * ModuleAction bound to @p script for every function name accessed on it. This does not
+     * touch `module_scripts`; callers are responsible for keeping that map in sync (see
+     * insert_module_script and clone).
+     *
+     * @param name name under which the module is accessible from `steps:`
+     * @param script the module's script feature the created ModuleActions will depend on
+     */
+    void install_module_proxy(std::string const& name, Feature<std::string> const& script);
 
         /**
          * @brief Re-register the __index metamethod for the Lua "recipes" table.

@@ -8,6 +8,7 @@ set(grunk_recipe_src
     RecipeAction.hpp RecipeAction.cpp
     RecipeGetValAction.hpp RecipeGetValAction.cpp
     RecipeCaller.hpp RecipeCaller.cpp
+    ModuleAction.hpp ModuleAction.cpp
 )
 
 add_library(grunk_recipe ${grunk_recipe_src})

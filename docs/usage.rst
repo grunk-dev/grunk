@@ -717,103 +717,210 @@ If both ``Point`` and ``Curve`` are registered in the dynamic type system using 
 Modules
 -------
 
-TODO
+A grunk module is a named table of Lua functions, backed by a plain Lua script, that is registered
+directly on a ``grunk::state`` - the same place that ``register_type`` and ``register_function`` put
+their symbols. Use ``run_module_script`` (or ``run_module_file``, to load from disk) to define a
+module:
 
-.. Outdated
+.. tabs::
 
-.. Use ``grunk::script`` to create compute nodes representing a sequence of simple function calls. 
-.. Consider it a concatenation of :ref:`actions<action>` in dynamic mode within a single compute node.
+   .. code-tab:: cpp
 
-.. This is useful in two scenarios. Firstly, you can disable caching and lazy evaluation for a sequence 
-.. of steps. Secondly, you can use it to instantiate new objects and modify them using non-const setters.
+       #include <grunk/grunk.hpp>
 
-.. grunk disallows any function, that can potentially alter its inputs. This includes any function that
-.. takes a non-const reference as argument and in consequence, all non-const member functions. This is an 
-.. important safeguard against dependency cycles in the feature tree: As part of the philosophy of grunk, 
-.. information flows from inputs to outputs only and any feature in the tree is influenced only by predecessors.
+       grunk::state grunk;
+       grunk.run_module_script(
+          "mymod",
+          R"(
+             function less_than(l,r)
+                return l < r
+             end
 
-.. This comes with a heavy restrition, since non-const members, e.g. setters are frequently used in 
-.. object-oriented programs. Consider the following class
+             function if_then_else(cond, i, e)
+                if cond then
+                   return i
+                else
+                   return e
+                end
+             end
+          )"
+       );
 
-.. .. code-block:: cpp
+       // a plain environment sees plain, uninstrumented functions
+       auto env = grunk.create_env();
+       env.eval(R"(
+          a = 2
+          b = 3
+          c = mymod.if_then_else(mymod.less_than(a,b), 5, 32)
+       )");
 
-..    struct Pnt
-..     {
-..         Pnt() = default;
+   .. code-tab:: python
 
-..         inline void set_x(double x_) { x = x_; }
-..         inline void set_y(double y_) { y = y_; }
-..         inline void set_z(double z_) { z = z_; }
+       import grunk
 
-..         double x{0.};
-..         double y{0.};
-..         double z{0.};
-..     };
+       grunk.run_module_script(
+          "mymod",
+          """
+          function less_than(l,r)
+             return l < r
+          end
 
-.. Instantiating an instance of ``Pnt`` with grunk and then modifying it using ``set_x`` using 
-.. ``grunk::action`` is not allowed, because ``set_x`` is a non-const member function. 
+          function if_then_else(cond, i, e)
+             if cond then
+                return i
+             else
+                return e
+             end
+          end
+          """
+       )
 
-.. Instead, you can create the instance and modify it as part of a script:
+       # a plain environment sees plain, uninstrumented functions
+       e = grunk.create_env()
+       e.eval("""
+           a = 2
+           b = 3
+           c = mymod.if_then_else(mymod.less_than(a,b), 5, 32)
+       """)
 
+In a parametric environment, every function exported by a module is decorated into an action, just
+like any other symbol registered on the state, so calls into the module integrate with grunk's
+dependency tracking:
 
-.. .. tabs::
+.. tabs::
 
-..    .. code-tab:: cpp 
+   .. code-tab:: cpp
 
-..          grunk::Feature u("u", "double", 0.1);
-..          grunk::Feature v("v", "double", 0.2);
-         
-..          auto s = grunk::script(
-..             {
-..                   {"Pnt", {"p"}, {}},                 // create a new point p
-..                   {"Pnt::set_x", {}, {"p", u}},       // invoke non-const setter 
-..                   {"Pnt::set_y", {}, {"p", v}},       // invoke non-const setter
-..             },
-..             {"p"}                                   // return new point p
-..          );
+       auto penv = grunk.create_parametric_env();
+       penv.eval(R"(
+          a = grunk.feature(2)
+          b = grunk.feature(3)
+          c = mymod.if_then_else(mymod.less_than(a,b), 5, 32)
+       )");
 
-..    .. code-tab:: python
+       auto c = penv.get_feature("c");
+       std::cout << c.value().as<int>() << std::endl;
 
-..          u = grunk.Feature("u", "double", 0.1)
-..          v = grunk.Feature("v", "double", 0.2)
-         
-..          s = grunk.script(
-..             [
-..                   grunk.ScriptStep("Pnt", ["p"], []),           # create a new point p
-..                   grunk.ScriptStep("Pnt::set_x", [], ["p", u]), # invoke non-const setter 
-..                   grunk.ScriptStep("Pnt::set_y", [], ["p", v])  # invoke non-const setter
-..             ],
-..             returns=["p"]                           # return new point 
-..          )
+       auto a = penv.get_feature("a");
+       a.set_value(4);
 
-..    .. code-tab:: yaml
+       std::cout << c.value().as<int>() << std::endl;
 
-..          uses:
-..          grunk: 0.2.1
-..          parameters:
-..          u: !<double> 0.1
-..          v: !<double> 0.2
-..          steps:
-..          - !<script>
-..             steps:
-..                - !<Pnt> [[p], ~]
-..                - !<Pnt::set_x> [~, [p, u]]
-..                - !<Pnt::set_y> [~, [p, v]]
-..             returns:
-..                - p
+       // remove the module once done with it
+       grunk.clear_module("mymod");
 
+   .. code-tab:: python
 
-.. In the above example, you define a script as a sequence of three steps, where each step is defined using
-.. three parts. The first is the function name, the second is a list of names of the outputs of the function and 
-.. the third is a list of inputs. The inputs can either be a ``DynamicFeature`` defined previously outside of the script
-.. or the id of an intermediate variable created within the same script in a preceding step. 
+       pe = grunk.create_parametric_env()
+       pe.eval("""
+           a = grunk.feature(2)
+           b = grunk.feature(3)
+           c = mymod.if_then_else(mymod.less_than(a,b), 5, 32)
+       """)
 
-.. The second argument of ``grunk::script`` is a vector of output ids. These are any intermediate variables of 
-.. the script that shall be passed as return features of the compute node. 
+       c = pe.get_feature("c")
+       assert c.value().as_int() == 5
 
-.. Note that here, no cycles are created because the non-const setters are not called on 
-.. features, but on intermediate variables of the script during the evaluation of a single compute
-.. node. The inputs ``u`` and ``v`` are not altered.
+       a = pe.get_feature("a")
+       a.set_value(4)
+       assert c.value().as_int() == 32
+
+       # remove the module once done with it
+       grunk.clear_module("mymod")
+
+If you need to reload a module or replace its contents, call ``clear_module(name)`` first - this
+removes the module from the original Lua environment as well as from the decorated cache, so that
+subsequent parametric environments will not see stale, cached decorated values. Calling
+``run_module_script``/``run_module_file`` on a module that already exists reuses the existing table
+instead, so several scripts or files can incrementally populate the same module.
+
+Module functions are particularly useful to instantiate objects and modify them using non-const
+setters. grunk disallows any function that can potentially alter its inputs. This includes any
+function that takes a non-const reference as argument and, in consequence, all non-const member
+functions. This is an important safeguard against dependency cycles in the feature tree: as part of
+the philosophy of grunk, information flows from inputs to outputs only, and any feature in the tree
+is influenced only by its predecessors.
+
+This comes with a heavy restriction, since non-const members, e.g. setters, are frequently used in
+object-oriented programs. Consider the following class:
+
+.. code-block:: cpp
+
+   struct Pnt
+   {
+       Pnt() = default;
+
+       inline void set_x(double x_) { x = x_; }
+       inline void set_y(double y_) { y = y_; }
+       inline void set_z(double z_) { z = z_; }
+
+       double x{0.};
+       double y{0.};
+       double z{0.};
+   };
+
+Instantiating an instance of ``Pnt`` with grunk and then modifying it using ``set_x`` via
+``grunk::action`` is not allowed, because ``set_x`` is a non-const member function. Instead, you can
+create the instance and modify it as part of a module function:
+
+.. tabs::
+
+   .. code-tab:: cpp
+
+         #include <grunk/grunk.hpp>
+
+         grunk::state grunk;
+
+         // registration of Pnt omitted here
+
+         grunk.run_module_script(
+            "mymod",
+            R"(
+               function create_pnt(u, v)
+                   p = Pnt.new()
+                   p:set_x(u)
+                   p:set_y(v)
+                   return p
+               end
+            )"
+         );
+
+         auto u = grunk.feature(0.1);
+         auto v = grunk.feature(0.2);
+
+         auto p = grunk.action("mymod.create_pnt", u, v);
+
+   .. code-tab:: python
+
+         import grunk
+
+         # registration of Pnt omitted here
+
+         grunk.run_module_script(
+            "mymod",
+            """
+               function create_pnt(u, v)
+                   p = Pnt.new()
+                   p:set_x(u)
+                   p:set_y(v)
+                   return p
+               end
+            """
+         )
+
+         u = grunk.feature(0.1)
+         v = grunk.feature(0.2)
+
+         p = grunk.action("mymod.create_pnt", u, v)
+
+Note that in the above example, no cycles are created because the non-const setters are not called on
+features, but on intermediate variables of the function body ``mymod.create_pnt`` during the
+evaluation of a single compute node. The inputs ``u`` and ``v`` are not altered.
+
+The modules shown so far are registered directly on a ``grunk::state`` and are shared by every
+recipe built from it, exactly like a registered type or function. :ref:`Recipes<subrecipes>` support a
+second, reactive flavor of modules that are private to a single recipe - see
+:ref:`Modules in recipes<recipe_modules>`.
 
 Custom Pointers and Smart Pointers
 ----------------------------------
@@ -1268,10 +1375,12 @@ complex systems. grunk files enable experts to share workflows in a collaborativ
 multidisciplinary environment.
 
 
+.. _subrecipes:
+
 Subrecipes
 ----------
 
-In addition to storing features, recipes can store recipes. Think of them as building-blocks for your model. 
+In addition to storing features, recipes can store recipes. Think of them as building-blocks for your model.
 For instance, a recipe for an aircraft may have recipes for modeling wings, fuselages or a landing gear.
 Continuing our above example, we can insert ``recipe2`` as a subrecipe of ``recipe1`` and assign a label to it:
 
@@ -1467,5 +1576,87 @@ the inputs as arguments and generates a new ``grunk::Feature<grunk::Recipe>``, w
    :alt: Dependency of subrecipe call
 
 This way we guarantee that changes to the inner recipe will invalidate any nodes in the outer recipe that use it.
+
+
+.. _recipe_modules:
+
+Modules in Recipes
+-------------------
+
+The :ref:`grunk modules<module>` shown earlier are registered on a ``grunk::state`` and shared by
+every recipe built from it. Recipes support a second, complementary flavor of modules that is
+private to a single recipe and, unlike a state-level module, is stored as part of the recipe itself:
+``Recipe::insert_module_script`` and the YAML ``modules:`` block.
+
+.. tabs::
+
+   .. code-tab:: cpp
+
+      auto recipe = grunk.create_recipe();
+      recipe["x"] = grunk.feature(1.).with_id("x");
+
+      recipe.insert_module_script(
+         "mymod",
+         "function inc(a) return a + 1 end"
+      );
+
+      recipe.eval("y = mymod.inc(x)");
+
+   .. code-tab:: python
+
+      recipe = grunk.create_recipe()
+      recipe["x"] = grunk.feature(1.0).with_id("x")
+
+      recipe.insert_module_script("mymod", "function inc(a) return a + 1 end")
+      recipe.eval("y = mymod.inc(x)")
+
+   .. code-tab:: yaml
+
+      uses:
+        grunk: 0.5.0
+      parameters:
+        x: 1.0
+      modules:
+        mymod: |
+          function inc(a)
+              return a + 1
+          end
+      steps: |
+        y = mymod.inc(x)
+
+A module inserted this way behaves exactly like a state-level module from the perspective of
+``steps:`` - ``mymod.inc(x)`` still produces a single, non-parametric compute node, so non-const
+setters can be used inside a module function exactly as described above. The difference is what the
+module is *made of*: its source code is stored as a ``grunk::Feature<std::string>`` in
+``Recipe::module_scripts``, the same way a :ref:`subrecipe<subrecipes>` is stored as a
+``grunk::Feature<grunk::Recipe>``. Every call made into the module depends on that feature, so editing
+it invalidates and recomputes every node that called into the module - just like editing any other
+feature in the recipe:
+
+.. tabs::
+
+   .. code-tab:: cpp
+
+      auto y = recipe.get_feature("y");
+      std::cout << y.value().as<double>() << std::endl; // 2
+
+      recipe.module_scripts.at("mymod").set_value("function inc(a) return a + 100 end");
+      std::cout << y.value().as<double>() << std::endl; // 102
+
+   .. code-tab:: python
+
+      y = recipe.get_feature("y")
+      print(y.value().as_float()) # 2
+
+      recipe.module_scripts["mymod"].set_value("function inc(a) return a + 100 end")
+      print(y.value().as_float()) # 102
+
+This is what makes recipe modules a good fit for editable, reproducible workflows: a hypothetical GUI
+that lets a user tweak a module's code only needs to call ``set_value`` on the corresponding
+``module_scripts`` entry, and every downstream feature that relied on it recomputes automatically.
+Because the module's script is deep-cloned along with the rest of the recipe, ``Recipe::clone()``
+produces a fully independent copy, and two recipes built from the same ``grunk::state`` can each
+define a module with the same name without interfering with one another - unlike state-level modules,
+which share a single, global namespace.
 
 

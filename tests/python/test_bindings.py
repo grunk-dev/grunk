@@ -321,4 +321,86 @@ def test_placeholder():
     """)
 
     assert pytest.approx(recipe_outer.get_feature("c").value().as_float()) == 13
+
+
+def test_run_module_script_and_clear():
+
+    grunk.run_module_script("pymod", """
+function inc(x)
+    return x + 1
+end
+
+function lt(a,b)
+    return a < b
+end
+""")
+
+    # a plain environment sees plain, uninstrumented functions
+    e = grunk.create_env()
+    e.eval("a = 2\nb = pymod.inc(a)")
+    assert e["b"].as_int() == 3
+
+    # a parametric environment sees the functions decorated as actions
+    pe = grunk.create_parametric_env()
+    pe.eval("a = grunk.feature(4)\nb = pymod.inc(a)")
+    fb = pe.get_feature("b")
+    assert fb.value().as_int() == 5
+    fa = pe.get_feature("a")
+    fa.set_value(5)
+    assert fb.value().as_int() == 6
+
+    # clearing removes it from both environments
+    grunk.clear_module("pymod")
+    pe2 = grunk.create_parametric_env()
+    with pytest.raises(RuntimeError):
+        pe2.eval("a = pymod.inc(1)")
+
+
+def test_run_module_file(tmp_path):
+
+    lua_file = tmp_path / "mymod.lua"
+    lua_file.write_text("""
+        function add(x) return x + 2 end
+        function smaller(a,b) return a < b end
+    """)
+
+    grunk.run_module_file("filemod", lua_file.as_posix())
+
+    e = grunk.create_env()
+    e.eval("x = filemod.add(3)")
+    assert e["x"].as_int() == 5
+
+    pe = grunk.create_parametric_env()
+    pe.eval("x = grunk.feature(7)\ny = filemod.add(x)")
+    fy = pe.get_feature("y")
+    assert fy.value().as_int() == 9
+    fx = pe.get_feature("x")
+    fx.set_value(9)
+    assert fy.value().as_int() == 11
+
+
+def test_recipe_module_reactive_invalidation():
+
+    # use a local state so this module doesn't leak into other tests
+    grnk = grunk.state()
+
+    recipe = grnk.create_recipe()
+    x = grnk.feature(1.0).with_id("x")
+    recipe["x"] = x
+
+    recipe.insert_module_script("mymod", "function inc(a) return a + 1 end")
+    recipe.eval("y = mymod.inc(x)")
+
+    y = recipe.get_feature("y")
+    assert pytest.approx(y.value().as_float()) == 2.0
+
+    # editing the parameter invalidates the module call
+    x.set_value(10.0)
+    assert not y.is_valid()
+    assert pytest.approx(y.value().as_float()) == 11.0
+
+    # editing the module's source code also invalidates every call made into it
+    recipe.module_scripts["mymod"].set_value("function inc(a) return a + 100 end")
+    assert not y.is_valid()
+    assert pytest.approx(y.value().as_float()) == 110.0
     

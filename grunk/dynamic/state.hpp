@@ -145,9 +145,81 @@ public:
      * @return A new parametric environment instance.
      */
     inline environment create_parametric_env() const {
-        sol::environment env(lua, sol::create, lua.globals()); 
+        sol::environment env(lua, sol::create, lua.globals());
         env[sol::metatable_key]["__index"] = decorated_env;
         return environment(env);
+    }
+
+    /**
+     * @brief run_module_script executes a Lua script, storing every symbol it defines in a
+     * named module table in the original environment.
+     *
+     * If a module with the given @p name already exists, the existing table is reused and the
+     * script is executed against it, so multiple scripts/files can incrementally populate the
+     * same module. The module table's lookups fall back to the original environment, so the
+     * script can reference any other registered type, function or module.
+     *
+     * Functions defined by the script become available both in a plain environment (as regular,
+     * uninstrumented Lua functions - see create_env) and in a parametric environment, where they
+     * are decorated into actions like any other symbol registered in the original environment
+     * (see create_parametric_env). Statements *within* a module function are not themselves
+     * parametric, which is what allows module functions to use non-const setters to build up
+     * objects - see the "Modules" section of the documentation.
+     *
+     * @param name name of the module to create or populate in the original environment
+     * @param script the Lua source code to execute
+     */
+    inline void run_module_script(std::string const& name, std::string const& script)
+    {
+        sol::object existing = original_env[name];
+        sol::table module = (existing.valid() && existing.is<sol::table>())
+            ? existing.as<sol::table>()
+            : create_module(name);
+
+        // Wrap the module table itself as the execution environment, so that symbols defined
+        // by the script are stored directly in the module table. Its metatable's __index
+        // (set up in create_module) makes the original environment available as a fallback.
+        sol::environment exec_env(lua, module);
+
+        sol::protected_function_result res = lua.script(script, exec_env);
+        if (!res.valid()) {
+            sol::error err = res;
+            throw std::runtime_error(std::string("Error running module script \"") + name + "\": " + err.what());
+        }
+
+        decorate_module_functions(module);
+    }
+
+    /**
+     * @brief run_module_file loads a Lua file from disk and runs it into a module, following
+     * the same semantics as run_module_script.
+     *
+     * @param name name of the module to create or populate
+     * @param filename path to a Lua file
+     */
+    inline void run_module_file(std::string const& name, std::string const& filename)
+    {
+        std::ifstream fin(filename);
+        if (!fin) {
+            throw io_error("Could not open module file: " + filename);
+        }
+        std::string content((std::istreambuf_iterator<char>(fin)), std::istreambuf_iterator<char>());
+        run_module_script(name, content);
+    }
+
+    /**
+     * @brief clear_module removes a module table from the original and decorated environments.
+     *
+     * Use this to force a clean reload of a module, e.g. `clear_module(name)` followed by
+     * `run_module_script(name, new_script)`, rather than relying on run_module_script's
+     * incremental-augmentation behavior.
+     *
+     * @param name name of the module to remove
+     */
+    inline void clear_module(std::string const& name)
+    {
+        original_env.set(name, sol::lua_nil);
+        decorated_env.set(name, sol::lua_nil);
     }
 
 #ifdef GRUNK_WITH_RECIPE
@@ -608,6 +680,51 @@ private:
 
         // Set the decorated metatable on the new environment
         decorated_env[sol::metatable_key] = mt;
+    }
+
+    /**
+     * @brief create_module creates a fresh, named module table in the original environment.
+     *
+     * The table's metatable falls back to the original environment for lookups, so module
+     * scripts can reference other registered types, functions and modules.
+     */
+    inline sol::table create_module(std::string const& name)
+    {
+        sol::table module = lua.create_table();
+        sol::table mt = lua.create_table();
+        mt["__index"] = original_env;
+        module[sol::metatable_key] = mt;
+
+        original_env.set(name, module);
+        return module;
+    }
+
+    /**
+     * @brief decorate_module_functions converts every plain Lua function stored in a module
+     * table (recursively, for nested tables) into a function_meta, so that the generic
+     * decoration logic in create_decorated_environment recognizes and wraps them as actions
+     * when the module is accessed through a parametric environment. Already-converted entries
+     * (function_meta userdata) are left untouched, so this is safe to call repeatedly on a
+     * module that is populated incrementally across several run_module_script/file calls.
+     */
+    inline void decorate_module_functions(sol::table table)
+    {
+        for (auto& kv : table) {
+            sol::object key = kv.first;
+            sol::object value = kv.second;
+
+            if (!key.is<std::string>()) {
+                continue;
+            }
+
+            if (value.is<sol::table>()) {
+                decorate_module_functions(value.as<sol::table>());
+            } else if (value.get_type() == sol::type::function) {
+                std::string const function_name = key.as<std::string>();
+                sol::protected_function func = value.as<sol::protected_function>();
+                table.set(function_name, create_function_meta(lua, function_name, {}, func));
+            }
+        }
     }
 
     sol::state lua;
