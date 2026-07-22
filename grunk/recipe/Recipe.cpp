@@ -141,19 +141,19 @@ namespace grunk {
                 );
             }
         }
-        if (yml["modules"]) {
-            for (auto const& kv : yml["modules"]) {
-                std::string key = kv.first.as<std::string>();
-                std::string val = kv.second.as<std::string>();
-                insert_module_script(key, val);
-            }
-        }
         if (yml["parameters"]) {
             for (auto const& kv : yml["parameters"]) {
                 std::string key = kv.first.as<std::string>();
                 std::string val = kv.second.as<std::string>();
                 std::string val_f = details::ctor_syntax_to_new_feature_syntax(val);
                 eval(key + " = " + val_f);
+            }
+        }
+        if (yml["modules"]) {
+            for (auto const& kv : yml["modules"]) {
+                std::string key = kv.first.as<std::string>();
+                std::string val = kv.second.as<std::string>();
+                insert_module_script(key, val);
             }
         }
         if (yml["steps"]) {
