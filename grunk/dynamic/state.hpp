@@ -168,6 +168,11 @@ public:
      *
      * @param name name of the module to create or populate in the original environment
      * @param script the Lua source code to execute
+     * @note Lua syntax errors in the script are not detected at registration time.
+     *       They surface the first time a function from the module is executed
+     *       (e.g. via ``env.eval(...)`` or ``grunk.action(...)``).  This is intentional:
+     *       the script is stored as a ``Feature<std::string>`` so that editing it
+     *       invalidates every downstream compute node that calls into the module.
      */
     inline void run_module_script(std::string const& name, std::string const& script)
     {
