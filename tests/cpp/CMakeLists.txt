@@ -37,6 +37,7 @@ if (GRUNK_WITH_DYNAMIC)
       dynamic_serialization.cpp
       dynamic_state.cpp
       dynamic_std_vector.cpp
+      dynamic_module.cpp
     )
 endif()
 
@@ -45,6 +46,7 @@ if (GRUNK_WITH_RECIPE)
       recipe_simple.cpp
       recipe_clone.cpp
       recipe_call.cpp
+      recipe_module.cpp
     )
 endif()
 

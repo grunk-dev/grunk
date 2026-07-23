@@ -196,6 +196,9 @@ NB_MODULE(_bindings, m) {
         .def("create_recipe", &grunk::state::create_recipe)
         .def("write", &grunk::state::write, "filename"_a, "recipe"_a)
         .def("read", &grunk::state::read, "filename"_a)
+        .def("run_module_script", &grunk::state::run_module_script, "name"_a, "script"_a)
+        .def("run_module_file", &grunk::state::run_module_file, "name"_a, "filename"_a)
+        .def("clear_module", &grunk::state::clear_module, "name"_a)
         .def("create_object", [](grunk::state const& grunk, nb::object obj) {
             if (nb::isinstance<nb::int_>(obj))
                 return grunk.create_object(nb::cast<int>(obj));
@@ -241,6 +244,15 @@ NB_MODULE(_bindings, m) {
     m.def("read", [=](std::string const& filename) {
         return default_state().read(filename);
     }, "filename"_a);
+    m.def("run_module_script", [=](std::string const& name, std::string const& script) {
+        default_state().run_module_script(name, script);
+    }, "name"_a, "script"_a);
+    m.def("run_module_file", [=](std::string const& name, std::string const& filename) {
+        default_state().run_module_file(name, filename);
+    }, "name"_a, "filename"_a);
+    m.def("clear_module", [=](std::string const& name) {
+        default_state().clear_module(name);
+    }, "name"_a);
     m.def("create_object", [=](nb::object obj) {
         if (nb::isinstance<nb::int_>(obj))
             return default_state().create_object(nb::cast<int>(obj));
@@ -285,10 +297,18 @@ NB_MODULE(_bindings, m) {
         .def("get_recipe", [](grunk::Recipe& r, std::string const& key) {
             return r.get_recipe(key);
         }, "key"_a)
-        .def_ro("recipes", &grunk::Recipe::recipes);
+        .def("insert_module_script", &grunk::Recipe::insert_module_script, "name"_a, "script"_a)
+        .def_ro("recipes", &grunk::Recipe::recipes)
+        .def_ro("module_scripts", &grunk::Recipe::module_scripts);
 
     auto recipe_feature = nb::class_<grunk::Feature<grunk::Recipe>>(m, "RecipeFeature");
     add_feature_base_methods<grunk::Feature<grunk::Recipe>>(recipe_feature);
+
+    auto string_feature = nb::class_<grunk::Feature<std::string>>(m, "StringFeature")
+        .def("set_value", [](grunk::Feature<std::string>& f, std::string const& v) {
+            f.set_value(v);
+        }, "value"_a);
+    add_feature_base_methods<grunk::Feature<std::string>>(string_feature);
 
     nb::class_<grunk::Recipe::SubRecipe>(recipe, "SubRecipe")
         .def_ro("name", &grunk::Recipe::SubRecipe::name)

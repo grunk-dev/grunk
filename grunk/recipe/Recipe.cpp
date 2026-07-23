@@ -6,6 +6,7 @@
 #include "grunk/version.hpp"
 #include "grunk/dynamic/Serializer.hpp"
 #include "grunk/recipe/RecipeCaller.hpp"
+#include "grunk/recipe/ModuleAction.hpp"
 
 #include <yaml-cpp/yaml.h>
 #include <sol//sol.hpp>
@@ -85,10 +86,16 @@ namespace grunk {
             Recipe recipe = value.recipe.value().clone();
             ret.recipes.insert(
                 {
-                    key, 
+                    key,
                     SubRecipe{key, grunk::feature<Recipe>(std::move(recipe)), m_environment.lua_state()}
                 }
             );
+        }
+
+        for (auto const& [key, script] : module_scripts) {
+            Feature<std::string> cloned_script = script.clone(cloned_nodes);
+            ret.module_scripts.insert({key, cloned_script});
+            ret.install_module_proxy(key, cloned_script);
         }
 
         return ret;
@@ -142,6 +149,13 @@ namespace grunk {
                 eval(key + " = " + val_f);
             }
         }
+        if (yml["modules"]) {
+            for (auto const& kv : yml["modules"]) {
+                std::string key = kv.first.as<std::string>();
+                std::string val = kv.second.as<std::string>();
+                insert_module_script(key, val);
+            }
+        }
         if (yml["steps"]) {
             eval(yml["steps"].as<std::string>());
         }
@@ -167,6 +181,15 @@ namespace grunk {
         if (tree.get_parameters().size() > 0) {
             out << YAML::Key << "parameters"
                 << YAML::Value << tree.get_parameters();
+        }
+
+        if (module_scripts.size() > 0) {
+            out << YAML::Key << "modules" << YAML::BeginMap;
+            for (auto const& [key, script] : module_scripts) {
+                out << YAML::Key << key
+                    << YAML::Value << YAML::Literal << script.value();
+            }
+            out << YAML::EndMap;
         }
 
         if (!tree.get_string().empty()) {
@@ -198,7 +221,53 @@ namespace grunk {
         );
     }
 
-    void Recipe::tag() 
+    void Recipe::insert_module_script(std::string const& name, std::string const& script)
+    {
+        Feature<std::string> feature = grunk::feature(script);
+        module_scripts[name] = feature;
+        install_module_proxy(name, feature);
+    }
+
+    void Recipe::install_module_proxy(std::string const& name, Feature<std::string> const& script)
+    {
+        lua_State* lua_state = m_environment.lua_state();
+        sol::state_view lua(lua_state);
+
+        sol::table proxy_mt = lua.create_table();
+        proxy_mt.set_function(
+            "__index",
+            [lua_state, name, script](sol::table, std::string const& function_name) -> sol::object {
+                sol::state_view lua(lua_state);
+                return sol::make_object(
+                    lua,
+                    sol::as_function(
+                        [lua_state, name, function_name, script](sol::variadic_args va) -> DynamicFeature {
+                            auto raw_args = std::vector<sol::object>(va.begin(), va.end());
+                            std::vector<DynamicFeature> args;
+                            args.reserve(raw_args.size());
+                            for (auto const& raw : raw_args) {
+                                grunk::object obj = raw;
+                                if (obj.is<DynamicFeature>()) {
+                                    args.push_back(obj.as<DynamicFeature>());
+                                } else {
+                                    args.push_back(grunk::feature(obj));
+                                }
+                            }
+                            return details::ModuleActionFactory::new_action(
+                                name, function_name, lua_state, script, args
+                            ).output();
+                        }
+                    )
+                );
+            }
+        );
+
+        sol::table proxy = lua.create_table();
+        proxy[sol::metatable_key] = proxy_mt;
+        m_environment[name] = proxy;
+    }
+
+    void Recipe::tag()
     {
         tag_features();
 
