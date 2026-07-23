@@ -27,16 +27,29 @@ if(CMAKE_VERSION VERSION_LESS 3.11)
     unset(CMAKE_SUPPRESS_DEVELOPER_WARNINGS)
 else()
     include(FetchContent)
+
+    # SYSTEM (CMake >= 3.25) marks GTest headers as system headers, silencing
+    # compiler warnings from them. EXCLUDE_FROM_ALL (CMake >= 3.28) keeps GTest's
+    # targets and install() rules out of the "all"/install set, matching the old
+    # add_subdirectory(... EXCLUDE_FROM_ALL). Both are guarded so older CMake still
+    # configures; on their fallback versions MakeAvailable just adds everything.
+    set(_gtest_declare_opts "")
+    if(NOT CMAKE_VERSION VERSION_LESS 3.25)
+        list(APPEND _gtest_declare_opts SYSTEM)
+    endif()
+    if(NOT CMAKE_VERSION VERSION_LESS 3.28)
+        list(APPEND _gtest_declare_opts EXCLUDE_FROM_ALL)
+    endif()
+
     FetchContent_Declare(googletest
         GIT_REPOSITORY      https://github.com/google/googletest.git
-        GIT_TAG             v1.17.0)
-    FetchContent_GetProperties(googletest)
-    if(NOT googletest_POPULATED)
-        FetchContent_Populate(googletest)
-        set(CMAKE_SUPPRESS_DEVELOPER_WARNINGS 1 CACHE BOOL "")
-        add_subdirectory(${googletest_SOURCE_DIR} ${googletest_BINARY_DIR} EXCLUDE_FROM_ALL)
-        unset(CMAKE_SUPPRESS_DEVELOPER_WARNINGS)
-    endif()
+        GIT_TAG             v1.17.0
+        ${_gtest_declare_opts})
+
+    # Keep suppressing GTest's own configure-time CMake dev-warnings.
+    set(CMAKE_SUPPRESS_DEVELOPER_WARNINGS 1 CACHE BOOL "")
+    FetchContent_MakeAvailable(googletest)
+    unset(CMAKE_SUPPRESS_DEVELOPER_WARNINGS)
 endif()
 
 
