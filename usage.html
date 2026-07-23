@@ -1,0 +1,1516 @@
+<!doctype html>
+<html class="no-js" lang="en" data-content_root="./">
+  <head><meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <meta name="color-scheme" content="light dark"><meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="index" title="Index" href="genindex.html"><link rel="search" title="Search" href="search.html"><link rel="next" title="Design Principles" href="design.html"><link rel="prev" title="Installation" href="installation.html">
+        <link rel="prefetch" href="_static/grunk_logo.png" as="image">
+
+    <!-- Generated with Sphinx 7.3.7 and Furo 2025.12.19 -->
+        <title>Usage - grunk 0.5.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=d111a655" />
+    <link rel="stylesheet" type="text/css" href="_static/styles/furo.css?v=7bdb33bb" />
+    <link rel="stylesheet" type="text/css" href="_static/tabs.css?v=a5c4661c" />
+    <link rel="stylesheet" type="text/css" href="_static/styles/furo-extensions.css?v=8dab3a3b" />
+    
+    
+
+
+<style>
+  body {
+    --color-code-background: #f2f2f2;
+  --color-code-foreground: #1e1e1e;
+  
+  }
+  @media not print {
+    body[data-theme="dark"] {
+      --color-code-background: #202020;
+  --color-code-foreground: #d0d0d0;
+  
+    }
+    @media (prefers-color-scheme: dark) {
+      body:not([data-theme="light"]) {
+        --color-code-background: #202020;
+  --color-code-foreground: #d0d0d0;
+  
+      }
+    }
+  }
+</style></head>
+  <body>
+    
+    <script>
+      document.body.dataset.theme = localStorage.getItem("theme") || "auto";
+    </script>
+    
+
+<svg xmlns="http://www.w3.org/2000/svg" style="display: none;">
+  <symbol id="svg-toc" viewBox="0 0 24 24">
+    <title>Contents</title>
+    <svg stroke="currentColor" fill="currentColor" stroke-width="0" viewBox="0 0 1024 1024">
+      <path d="M408 442h480c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8H408c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8zm-8 204c0 4.4 3.6 8 8 8h480c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8H408c-4.4 0-8 3.6-8 8v56zm504-486H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zm0 632H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zM115.4 518.9L271.7 642c5.8 4.6 14.4.5 14.4-6.9V388.9c0-7.4-8.5-11.5-14.4-6.9L115.4 505.1a8.74 8.74 0 0 0 0 13.8z"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-menu" viewBox="0 0 24 24">
+    <title>Menu</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather-menu">
+      <line x1="3" y1="12" x2="21" y2="12"></line>
+      <line x1="3" y1="6" x2="21" y2="6"></line>
+      <line x1="3" y1="18" x2="21" y2="18"></line>
+    </svg>
+  </symbol>
+  <symbol id="svg-arrow-right" viewBox="0 0 24 24">
+    <title>Expand</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather-chevron-right">
+      <polyline points="9 18 15 12 9 6"></polyline>
+    </svg>
+  </symbol>
+  <symbol id="svg-sun" viewBox="0 0 24 24">
+    <title>Light mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="feather-sun">
+      <circle cx="12" cy="12" r="5"></circle>
+      <line x1="12" y1="1" x2="12" y2="3"></line>
+      <line x1="12" y1="21" x2="12" y2="23"></line>
+      <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+      <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+      <line x1="1" y1="12" x2="3" y2="12"></line>
+      <line x1="21" y1="12" x2="23" y2="12"></line>
+      <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+      <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+    </svg>
+  </symbol>
+  <symbol id="svg-moon" viewBox="0 0 24 24">
+    <title>Dark mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-moon">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+      <path d="M12 3c.132 0 .263 0 .393 0a7.5 7.5 0 0 0 7.92 12.446a9 9 0 1 1 -8.313 -12.454z" />
+    </svg>
+  </symbol>
+  <symbol id="svg-sun-with-moon" viewBox="0 0 24 24">
+    <title>Auto light/dark, in light mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round"
+      class="icon-custom-derived-from-feather-sun-and-tabler-moon">
+      <path style="opacity: 50%" d="M 5.411 14.504 C 5.471 14.504 5.532 14.504 5.591 14.504 C 3.639 16.319 4.383 19.569 6.931 20.352 C 7.693 20.586 8.512 20.551 9.25 20.252 C 8.023 23.207 4.056 23.725 2.11 21.184 C 0.166 18.642 1.702 14.949 4.874 14.536 C 5.051 14.512 5.231 14.5 5.411 14.5 L 5.411 14.504 Z"/>
+      <line x1="14.5" y1="3.25" x2="14.5" y2="1.25"/>
+      <line x1="14.5" y1="15.85" x2="14.5" y2="17.85"/>
+      <line x1="10.044" y1="5.094" x2="8.63" y2="3.68"/>
+      <line x1="19" y1="14.05" x2="20.414" y2="15.464"/>
+      <line x1="8.2" y1="9.55" x2="6.2" y2="9.55"/>
+      <line x1="20.8" y1="9.55" x2="22.8" y2="9.55"/>
+      <line x1="10.044" y1="14.006" x2="8.63" y2="15.42"/>
+      <line x1="19" y1="5.05" x2="20.414" y2="3.636"/>
+      <circle cx="14.5" cy="9.55" r="3.6"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-moon-with-sun" viewBox="0 0 24 24">
+    <title>Auto light/dark, in dark mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round"
+      class="icon-custom-derived-from-feather-sun-and-tabler-moon">
+      <path d="M 8.282 7.007 C 8.385 7.007 8.494 7.007 8.595 7.007 C 5.18 10.184 6.481 15.869 10.942 17.24 C 12.275 17.648 13.706 17.589 15 17.066 C 12.851 22.236 5.91 23.143 2.505 18.696 C -0.897 14.249 1.791 7.786 7.342 7.063 C 7.652 7.021 7.965 7 8.282 7 L 8.282 7.007 Z"/>
+      <line style="opacity: 50%" x1="18" y1="3.705" x2="18" y2="2.5"/>
+      <line style="opacity: 50%" x1="18" y1="11.295" x2="18" y2="12.5"/>
+      <line style="opacity: 50%" x1="15.316" y1="4.816" x2="14.464" y2="3.964"/>
+      <line style="opacity: 50%" x1="20.711" y1="10.212" x2="21.563" y2="11.063"/>
+      <line style="opacity: 50%" x1="14.205" y1="7.5" x2="13.001" y2="7.5"/>
+      <line style="opacity: 50%" x1="21.795" y1="7.5" x2="23" y2="7.5"/>
+      <line style="opacity: 50%" x1="15.316" y1="10.184" x2="14.464" y2="11.036"/>
+      <line style="opacity: 50%" x1="20.711" y1="4.789" x2="21.563" y2="3.937"/>
+      <circle style="opacity: 50%" cx="18" cy="7.5" r="2.169"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-pencil" viewBox="0 0 24 24">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-pencil-code">
+      <path d="M4 20h4l10.5 -10.5a2.828 2.828 0 1 0 -4 -4l-10.5 10.5v4" />
+      <path d="M13.5 6.5l4 4" />
+      <path d="M20 21l2 -2l-2 -2" />
+      <path d="M17 17l-2 2l2 2" />
+    </svg>
+  </symbol>
+  <symbol id="svg-eye" viewBox="0 0 24 24">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-eye-code">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+      <path d="M10 12a2 2 0 1 0 4 0a2 2 0 0 0 -4 0" />
+      <path
+        d="M11.11 17.958c-3.209 -.307 -5.91 -2.293 -8.11 -5.958c2.4 -4 5.4 -6 9 -6c3.6 0 6.6 2 9 6c-.21 .352 -.427 .688 -.647 1.008" />
+      <path d="M20 21l2 -2l-2 -2" />
+      <path d="M17 17l-2 2l2 2" />
+    </svg>
+  </symbol>
+</svg>
+
+<input type="checkbox" class="sidebar-toggle" name="__navigation" id="__navigation" aria-label="Toggle site navigation sidebar">
+<input type="checkbox" class="sidebar-toggle" name="__toc" id="__toc" aria-label="Toggle table of contents sidebar">
+<label class="overlay sidebar-overlay" for="__navigation"></label>
+<label class="overlay toc-overlay" for="__toc"></label>
+
+<a class="skip-to-content muted-link" href="#furo-main-content">Skip to content</a>
+
+
+
+<div class="page">
+  <header class="mobile-header">
+    <div class="header-left">
+      <label class="nav-overlay-icon" for="__navigation">
+        <span class="icon"><svg><use href="#svg-menu"></use></svg></span>
+      </label>
+    </div>
+    <div class="header-center">
+      <a href="index.html"><div class="brand">grunk 0.5.0 documentation</div></a>
+    </div>
+    <div class="header-right">
+      <div class="theme-toggle-container theme-toggle-header">
+        <button class="theme-toggle" aria-label="Toggle Light / Dark / Auto color theme">
+          <svg class="theme-icon-when-auto-light"><use href="#svg-sun-with-moon"></use></svg>
+          <svg class="theme-icon-when-auto-dark"><use href="#svg-moon-with-sun"></use></svg>
+          <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
+          <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
+        </button>
+      </div>
+      <label class="toc-overlay-icon toc-header-icon" for="__toc">
+        <span class="icon"><svg><use href="#svg-toc"></use></svg></span>
+      </label>
+    </div>
+  </header>
+  <aside class="sidebar-drawer">
+    <div class="sidebar-container">
+      
+      <div class="sidebar-sticky"><a class="sidebar-brand" href="index.html">
+  <div class="sidebar-logo-container">
+    <img class="sidebar-logo" src="_static/grunk_logo.png" alt="Logo"/>
+  </div>
+  
+  <span class="sidebar-brand-text">grunk 0.5.0 documentation</span>
+  
+</a><form class="sidebar-search-container" method="get" action="search.html" role="search">
+  <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
+  <input type="hidden" name="check_keywords" value="yes">
+  <input type="hidden" name="area" value="default">
+</form>
+<div id="searchbox"></div><div class="sidebar-scroll"><div class="sidebar-tree">
+  <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a></li>
+<li class="toctree-l1 current current-page"><a class="current reference internal" href="#">Usage</a></li>
+<li class="toctree-l1"><a class="reference internal" href="design.html">Design Principles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="code.html">C++ API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="genindex.html">Index</a></li>
+</ul>
+
+</div>
+</div>
+
+      </div>
+      
+    </div>
+  </aside>
+  <div class="main">
+    <div class="content">
+      <div class="article-container">
+        <a href="#" class="back-to-top muted-link">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+            <path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12z"></path>
+          </svg>
+          <span>Back to top</span>
+        </a>
+        <div class="content-icon-container">
+          <div class="view-this-page">
+  <a class="muted-link" href="_sources/usage.rst.txt" title="View this page">
+    <svg><use href="#svg-eye"></use></svg>
+    <span class="visually-hidden">View this page</span>
+  </a>
+</div>
+<div class="theme-toggle-container theme-toggle-content">
+            <button class="theme-toggle" aria-label="Toggle Light / Dark / Auto color theme">
+              <svg class="theme-icon-when-auto-light"><use href="#svg-sun-with-moon"></use></svg>
+              <svg class="theme-icon-when-auto-dark"><use href="#svg-moon-with-sun"></use></svg>
+              <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
+              <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
+            </button>
+          </div>
+          <label class="toc-overlay-icon toc-content-icon" for="__toc">
+            <span class="icon"><svg><use href="#svg-toc"></use></svg></span>
+          </label>
+        </div>
+        <article role="main" id="furo-main-content">
+          <section id="usage">
+<h1>Usage<a class="headerlink" href="#usage" title="Link to this heading">¶</a></h1>
+<p>Target audience: C++ developers who want static features, and Python users using dynamic features via the Python bindings. Assumes basic familiarity with C++/Python, templates, and Lua for dynamic mode.</p>
+<p>If you are interested in using grunk as a backend for your C++ code, the <a class="reference internal" href="#usage-static-mode"><span class="std std-ref">section on static mode</span></a> and
+the <a class="reference internal" href="#usage-parallel-execution"><span class="std std-ref">section on parallel execution</span></a> are a good starting point.</p>
+<p>If you plan to use grunk entirely for scripting and manipulating grunk recipes, these sections can be skipped, because the python bindings only support grunk’s dynamic mode and the reading and writing of grunk recipes to file. However, to fully grasp grunk’s caching, lazy evaluation and automatic invalidation logic, it may be beneficial not to do so.</p>
+<section id="static-mode">
+<span id="usage-static-mode"></span><h2>Static Mode<a class="headerlink" href="#static-mode" title="Link to this heading">¶</a></h2>
+<p>Static mode summary: compile-time type knowledge and function bindings. Use static mode when all types and functions are known at compile time and you need lazy evaluation, caching, and the option for parallel execution (C++ only).</p>
+<section id="lazy-evaluation-and-caching">
+<h3>Lazy evaluation and Caching<a class="headerlink" href="#lazy-evaluation-and-caching" title="Link to this heading">¶</a></h3>
+<p>As an introductory example, consider the following function
+that adds two <code class="docutils literal notranslate"><span class="pre">double</span></code>s and is a bit talkative about it.</p>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="kt">double</span><span class="w"> </span><span class="nf">add</span><span class="p">(</span><span class="kt">double</span><span class="w"> </span><span class="k">const</span><span class="o">&amp;</span><span class="w"> </span><span class="n">l</span><span class="p">,</span><span class="w"> </span><span class="kt">double</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">r</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="n">std</span><span class="o">::</span><span class="n">cout</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="s">&quot;Adding &quot;</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">l</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="s">&quot; and &quot;</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">r</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">endl</span><span class="p">;</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">l</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">r</span><span class="p">;</span>
+<span class="p">};</span>
+</pre></div>
+</div>
+<p>grunk lets you delay the evaluation of the function until the result is queried.</p>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;grunk/grunk.hpp&gt;</span>
+
+<span class="k">auto</span><span class="w"> </span><span class="n">o</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">grunk</span><span class="o">::</span><span class="n">action</span><span class="p">(</span><span class="o">&amp;</span><span class="n">add</span><span class="p">,</span><span class="w"> </span><span class="mf">1.2</span><span class="p">,</span><span class="w"> </span><span class="mf">40.8</span><span class="p">);</span>
+<span class="n">o</span><span class="p">.</span><span class="n">set_id</span><span class="p">(</span><span class="s">&quot;o&quot;</span><span class="p">);</span>
+
+<span class="n">std</span><span class="o">::</span><span class="n">cout</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="s">&quot;Until here, nothing has happened&quot;</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">endl</span><span class="p">;</span>
+
+<span class="n">std</span><span class="o">::</span><span class="n">cout</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">o</span><span class="p">.</span><span class="n">value</span><span class="p">()</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">endl</span><span class="p">;</span>
+<span class="n">std</span><span class="o">::</span><span class="n">cout</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">o</span><span class="p">.</span><span class="n">value</span><span class="p">()</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">endl</span><span class="p">;</span>
+</pre></div>
+</div>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="go">Until here, nothing has happened</span>
+<span class="go">Adding 1.2 and 40.8</span>
+<span class="go">42</span>
+<span class="go">42</span>
+</pre></div>
+</div>
+<p>In the first line no computation takes place, the function <code class="docutils literal notranslate"><span class="pre">add</span></code> is not evaluated.
+Instead,
+a new <code class="docutils literal notranslate"><span class="pre">Action</span></code> instance <code class="docutils literal notranslate"><span class="pre">o</span></code> is created using <code class="docutils literal notranslate"><span class="pre">grunk::action</span></code>.
+The arguments are a function pointer <code class="docutils literal notranslate"><span class="pre">&amp;add</span></code> and two arguments
+that shall be passed into the function. With <code class="docutils literal notranslate"><span class="pre">set_id(&quot;o&quot;)</span></code> we add an id to the output feature.</p>
+<p>Internally, <code class="docutils literal notranslate"><span class="pre">o</span></code> depends on the action created
+by <code class="docutils literal notranslate"><span class="pre">grunk::action</span></code>; that action in turn depends on two <code class="docutils literal notranslate"><span class="pre">Feature&lt;double&gt;</span></code> inputs holding the values <code class="docutils literal notranslate"><span class="pre">1.2</span></code> and <code class="docutils literal notranslate"><span class="pre">40.8</span></code>. With this dependency
+information, grunk can delay the computation to the point when <code class="docutils literal notranslate"><span class="pre">o.value()</span></code>
+is called. At this time, the function must be evaluated and the result, <code class="docutils literal notranslate"><span class="pre">42</span></code>, is
+stored in <code class="docutils literal notranslate"><span class="pre">o</span></code>. The next time the value is queried, the compuation is not repeated,
+the cached result is returned. This is called <strong>lazy evaluation</strong>, because computations
+are delayed until the last point possible and only necessary calculations are performed.</p>
+</section>
+<section id="automatic-invalidation">
+<h3>Automatic invalidation<a class="headerlink" href="#automatic-invalidation" title="Link to this heading">¶</a></h3>
+<p>Let’s modify the above code example a bit.</p>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="n">grunk</span><span class="o">::</span><span class="n">Feature</span><span class="w"> </span><span class="n">x</span><span class="p">(</span><span class="mf">1.2</span><span class="p">).</span><span class="n">with_id</span><span class="p">(</span><span class="s">&quot;x&quot;</span><span class="p">);</span>
+<span class="n">grunk</span><span class="o">::</span><span class="n">Feature</span><span class="w"> </span><span class="n">y</span><span class="p">(</span><span class="mf">15.2</span><span class="p">).</span><span class="n">with_id</span><span class="p">(</span><span class="s">&quot;y&quot;</span><span class="p">);</span>
+<span class="n">grunk</span><span class="o">::</span><span class="n">Feature</span><span class="w"> </span><span class="n">z</span><span class="p">(</span><span class="mf">25.6</span><span class="p">).</span><span class="n">with_id</span><span class="p">(</span><span class="s">&quot;z&quot;</span><span class="p">);</span>
+
+<span class="k">auto</span><span class="w"> </span><span class="n">a</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">grunk</span><span class="o">::</span><span class="n">action</span><span class="p">(</span><span class="s">&quot;a&quot;</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">add</span><span class="p">,</span><span class="w"> </span><span class="n">x</span><span class="p">,</span><span class="w"> </span><span class="n">y</span><span class="p">);</span>
+<span class="k">auto</span><span class="w"> </span><span class="n">b</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">grunk</span><span class="o">::</span><span class="n">action</span><span class="p">(</span><span class="s">&quot;b&quot;</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">add</span><span class="p">,</span><span class="w"> </span><span class="n">a</span><span class="p">,</span><span class="w"> </span><span class="n">z</span><span class="p">);</span>
+</pre></div>
+</div>
+<p>We have created three independent features <code class="docutils literal notranslate"><span class="pre">x,y,z</span></code>. The feature
+<code class="docutils literal notranslate"><span class="pre">a</span></code> is the result of adding <code class="docutils literal notranslate"><span class="pre">x</span></code> and <code class="docutils literal notranslate"><span class="pre">y</span></code> and the feature <code class="docutils literal notranslate"><span class="pre">b</span></code> is the
+result of adding <code class="docutils literal notranslate"><span class="pre">a</span></code> and <code class="docutils literal notranslate"><span class="pre">z</span></code>.</p>
+<img alt="Simple parametric tree" src="_images/example_simple_add.png" />
+<p>If we would now query the value of <code class="docutils literal notranslate"><span class="pre">a</span></code>, <code class="docutils literal notranslate"><span class="pre">b</span></code> would
+not be computed, because <code class="docutils literal notranslate"><span class="pre">a</span></code> does not depend on <code class="docutils literal notranslate"><span class="pre">b</span></code>. If instead,
+we were to query the value of <code class="docutils literal notranslate"><span class="pre">b</span></code>, <code class="docutils literal notranslate"><span class="pre">a</span></code> would have to be computed first.
+Let’s try this:</p>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="n">std</span><span class="o">::</span><span class="n">cout</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">b</span><span class="p">.</span><span class="n">value</span><span class="p">()</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">endl</span><span class="p">;</span>
+</pre></div>
+</div>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="go">Adding 1.2 and 15.2</span>
+<span class="go">Adding 16.4 and 25.6</span>
+<span class="go">42</span>
+</pre></div>
+</div>
+<p>If we now were to change <code class="docutils literal notranslate"><span class="pre">z</span></code>, <code class="docutils literal notranslate"><span class="pre">b</span></code> would have to be recomputed the
+next time its value is queried. <code class="docutils literal notranslate"><span class="pre">a</span></code> which does not depend on <code class="docutils literal notranslate"><span class="pre">z</span></code>
+does not need to be recomputed.</p>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="n">z</span><span class="p">.</span><span class="n">change_value</span><span class="p">()</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">24.2</span><span class="p">;</span>
+
+<span class="n">std</span><span class="o">::</span><span class="n">cout</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="s">&quot;No calculations done until this point&quot;</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">endl</span><span class="p">;</span>
+<span class="n">std</span><span class="o">::</span><span class="n">cout</span><span class="w">  </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">b</span><span class="p">.</span><span class="n">value</span><span class="p">()</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">endl</span><span class="p">;</span>
+</pre></div>
+</div>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="go">No calculations done until this point</span>
+<span class="go">Adding 16.4 and 24.2</span>
+<span class="go">40.6</span>
+</pre></div>
+</div>
+<p>If we were to change <code class="docutils literal notranslate"><span class="pre">x</span></code>, both <code class="docutils literal notranslate"><span class="pre">a</span></code> and <code class="docutils literal notranslate"><span class="pre">b</span></code> have to be re-computed and
+grunk knows this:</p>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="n">x</span><span class="p">.</span><span class="n">change_value</span><span class="p">()</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">2.6</span><span class="p">;</span>
+
+<span class="n">std</span><span class="o">::</span><span class="n">cout</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="s">&quot;No calculations done until this point&quot;</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">endl</span><span class="p">;</span>
+<span class="n">std</span><span class="o">::</span><span class="n">cout</span><span class="w">  </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">b</span><span class="p">.</span><span class="n">value</span><span class="p">()</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">endl</span><span class="p">;</span>
+</pre></div>
+</div>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="go">No calculations done until this point</span>
+<span class="go">Adding 2.6 and 15.2</span>
+<span class="go">Adding 17.8 and 24.2</span>
+<span class="go">42</span>
+</pre></div>
+</div>
+<p>This functionality is called <strong>automatic invalidation</strong>: Only features that depend on a changed feature are invalidated.</p>
+<p>Caching &amp; invalidation (summary)</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>Querying a feature’s value triggers evaluation and fills caches for that feature and all computed ancestors required for the result.</p></li>
+<li><p>Changing an independent input invalidates only those features that depend (directly or transitively) on that input.</p></li>
+<li><p>Re-querying a feature after an invalidation recomputes only the invalidated portions of the tree.</p></li>
+</ul>
+</div></blockquote>
+<p>Lazy evaluation and automatic invalidation come with the trade-off of having to
+store dependency information, but it pays off
+for big workflows with many computationally expensive functions. This becomes especially
+apparent in explorative design or automated optimization workflows, where input parameters
+can be expected to be altered frequently.</p>
+<p>Conceptually, the <code class="docutils literal notranslate"><span class="pre">Feature&lt;double&gt;</span></code> correspond to a node in a <em>directed acyclic graph</em>
+(DAG). This graph is often called a <strong>feature tree</strong>. grunk retains these feature trees
+by retaining parent-child relations in the <code class="docutils literal notranslate"><span class="pre">Feature&lt;T&gt;</span></code> instances.</p>
+<p>This mode of operation is also called <strong>static mode</strong>, because all types and functions are known at compile time.
+If you want to use types and functions provided by plugins which are loaded at run time, you have to use grunk’s <strong>dynamic mode</strong>, see the section on <span class="xref std std-ref">dynamic mode</span>.</p>
+</section>
+<section id="classes-and-member-functions">
+<h3>Classes and Member Functions<a class="headerlink" href="#classes-and-member-functions" title="Link to this heading">¶</a></h3>
+<p>The concept works with any kind of type and function. The only requirement for the functions is, that they are <strong>referentially transparent</strong>, which means they may not alter their inputs <em>(in other words: no functions that mutate their arguments or rely on hidden global state)</em>.</p>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;grunk/grunk.hpp&gt;</span>
+
+<span class="k">struct</span><span class="w"> </span><span class="nc">MyScalar</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="kt">double</span><span class="w"> </span><span class="nf">get</span><span class="p">()</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="k">return</span><span class="w"> </span><span class="n">v</span><span class="p">;</span><span class="w"> </span><span class="p">}</span>
+<span class="w">      </span><span class="kt">double</span><span class="w"> </span><span class="n">v</span><span class="p">;</span>
+<span class="p">};</span>
+
+<span class="k">auto</span><span class="w"> </span><span class="n">x</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">grunk</span><span class="o">::</span><span class="n">feature</span><span class="p">(</span><span class="n">MyScalar</span><span class="p">{</span><span class="mf">17.</span><span class="p">}).</span><span class="n">with_id</span><span class="p">(</span><span class="s">&quot;x&quot;</span><span class="p">);</span>
+<span class="k">auto</span><span class="w"> </span><span class="n">y</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">grunk</span><span class="o">::</span><span class="n">action</span><span class="p">(</span><span class="o">&amp;</span><span class="n">MyScalar</span><span class="o">::</span><span class="n">get</span><span class="p">,</span><span class="w"> </span><span class="n">x</span><span class="p">).</span><span class="n">with_id</span><span class="p">(</span><span class="s">&quot;y&quot;</span><span class="p">);</span>
+
+<span class="c1">// prints 17</span>
+<span class="n">std</span><span class="o">::</span><span class="n">cout</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">y</span><span class="p">.</span><span class="n">value</span><span class="p">().</span><span class="n">v</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">endl</span><span class="p">;</span>
+
+<span class="n">x</span><span class="p">.</span><span class="n">change_value</span><span class="p">().</span><span class="n">v</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">25.</span><span class="p">;</span>
+
+<span class="c1">// prints 25</span>
+<span class="n">std</span><span class="o">::</span><span class="n">cout</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">y</span><span class="p">.</span><span class="n">value</span><span class="p">().</span><span class="n">v</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">endl</span><span class="p">;</span>
+</pre></div>
+</div>
+</section>
+<section id="parallel-execution">
+<span id="usage-parallel-execution"></span><h3>Parallel Execution<a class="headerlink" href="#parallel-execution" title="Link to this heading">¶</a></h3>
+<p>Consider the following grunk recipe:</p>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;grunk/grunk.hpp&gt;</span>
+
+<span class="k">auto</span><span class="w"> </span><span class="n">x1</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">grunk</span><span class="o">::</span><span class="n">feature</span><span class="p">(</span><span class="mf">1.</span><span class="p">);</span>
+<span class="k">auto</span><span class="w"> </span><span class="n">x2</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">grunk</span><span class="o">::</span><span class="n">action</span><span class="p">([](</span><span class="kt">double</span><span class="w"> </span><span class="n">v</span><span class="p">){</span><span class="w"> </span><span class="k">return</span><span class="w"> </span><span class="n">v</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mf">1.</span><span class="p">;</span><span class="w"> </span><span class="p">},</span><span class="w"> </span><span class="n">x1</span><span class="p">);</span>
+<span class="n">x2</span><span class="p">.</span><span class="n">set_id</span><span class="p">(</span><span class="s">&quot;x2&quot;</span><span class="p">);</span>
+
+<span class="k">auto</span><span class="w"> </span><span class="n">y1</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">grunk</span><span class="o">::</span><span class="n">feature</span><span class="p">(</span><span class="mf">2.</span><span class="p">);</span>
+<span class="k">auto</span><span class="w"> </span><span class="n">y2</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">grunk</span><span class="o">::</span><span class="n">action</span><span class="p">([](</span><span class="kt">double</span><span class="w"> </span><span class="n">v</span><span class="p">){</span><span class="w"> </span><span class="k">return</span><span class="w"> </span><span class="n">v</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="mf">2.</span><span class="p">;</span><span class="w"> </span><span class="p">},</span><span class="w"> </span><span class="n">y1</span><span class="p">);</span>
+<span class="n">y2</span><span class="p">.</span><span class="n">set_id</span><span class="p">(</span><span class="s">&quot;y2&quot;</span><span class="p">);</span>
+
+<span class="k">auto</span><span class="w"> </span><span class="n">z</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">grunk</span><span class="o">::</span><span class="n">action</span><span class="p">([](</span><span class="kt">double</span><span class="w"> </span><span class="n">a</span><span class="p">,</span><span class="w"> </span><span class="kt">double</span><span class="w"> </span><span class="n">b</span><span class="p">){</span><span class="w"> </span><span class="k">return</span><span class="w"> </span><span class="n">a</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">b</span><span class="p">;</span><span class="w"> </span><span class="p">},</span><span class="w"> </span><span class="n">x2</span><span class="p">,</span><span class="w"> </span><span class="n">y2</span><span class="p">);</span>
+<span class="n">z</span><span class="p">.</span><span class="n">set_id</span><span class="p">(</span><span class="s">&quot;z&quot;</span><span class="p">);</span>
+</pre></div>
+</div>
+<img alt="parallel execution example 1" src="_images/parallel_execution_example1.png" />
+<p>Setting aside that parallel execution is not reasonable for this example, note that <code class="docutils literal notranslate"><span class="pre">x2</span></code> and <code class="docutils literal notranslate"><span class="pre">y2</span></code> can be computed in parallel, because they do not depend on each other.</p>
+<p>Since grunk tracks parametric dependencies, it can use this information to deduce which parts of a parametric tree
+can be executed in parallel - provided that the functions themselves are thread-safe.</p>
+<div class="admonition-thread-safety admonition">
+<p class="admonition-title">Thread-safety</p>
+<p>Parallel execution requires that all user functions invoked are thread-safe and side-effect free. Exceptions thrown during parallel evaluation may be propagated to the caller; consult the API for exact exception semantics.</p>
+</div>
+<p>To do so, we can use the <code class="docutils literal notranslate"><span class="pre">ParallelExecutor</span></code>:</p>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="n">grunk</span><span class="o">::</span><span class="n">ParallelExecutor</span><span class="w"> </span><span class="nf">executor</span><span class="p">(</span><span class="n">z</span><span class="p">);</span>
+<span class="n">executor</span><span class="p">.</span><span class="n">run</span><span class="p">();</span>
+</pre></div>
+</div>
+<p>You can also specify the number of threads to use for the parallel execution:</p>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="kt">int</span><span class="w"> </span><span class="n">nthreads</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">2</span><span class="p">;</span>
+<span class="n">grunk</span><span class="o">::</span><span class="n">ParallelExecutor</span><span class="w"> </span><span class="nf">executor</span><span class="p">(</span><span class="n">nthreads</span><span class="p">,</span><span class="w"> </span><span class="n">z</span><span class="p">);</span>
+<span class="n">executor</span><span class="p">.</span><span class="n">run</span><span class="p">();</span>
+</pre></div>
+</div>
+<p>Parallel execution will use multiple threads to evaluate independent parts of the tree; any exceptions thrown during evaluation will propagate to the calling thread.</p>
+<p>The parallel executor uses the <a class="reference external" href="https://github.com/taskflow/taskflow">taskflow</a> library under the hood. If you want to see the actual task graph that gets executed, you can dump it to a file:</p>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="n">std</span><span class="o">::</span><span class="n">string</span><span class="w"> </span><span class="n">graphviz</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">executor</span><span class="p">.</span><span class="n">get_taskflow</span><span class="p">().</span><span class="n">dump</span><span class="p">();</span>
+
+<span class="n">std</span><span class="o">::</span><span class="n">ofstream</span><span class="w"> </span><span class="n">fout</span><span class="p">(</span><span class="s">&quot;my_taskflow.dot&quot;</span><span class="p">);</span>
+<span class="n">fout</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">graphviz</span><span class="p">;</span>
+</pre></div>
+</div>
+<img alt="Parallel execution of a feature tree" src="_images/parallel_execution_graphviz.png" />
+<p>The class <code class="docutils literal notranslate"><span class="pre">ParallelExecutor</span></code> takes a set of features as input and executes all computations necessary to evaluate these features in parallel, if possible.</p>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;grunk/grunk.hpp&gt;</span>
+
+<span class="k">auto</span><span class="w"> </span><span class="n">x</span><span class="w">  </span><span class="o">=</span><span class="w"> </span><span class="n">grunk</span><span class="o">::</span><span class="n">feature</span><span class="p">(</span><span class="mf">1.</span><span class="p">).</span><span class="n">with_id</span><span class="p">(</span><span class="s">&quot;x&quot;</span><span class="p">);</span>
+<span class="k">auto</span><span class="w"> </span><span class="n">y</span><span class="w">  </span><span class="o">=</span><span class="w"> </span><span class="n">grunk</span><span class="o">::</span><span class="n">action</span><span class="p">([](</span><span class="kt">double</span><span class="w"> </span><span class="n">v</span><span class="p">){</span><span class="w"> </span><span class="k">return</span><span class="w"> </span><span class="n">v</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mf">1.</span><span class="p">;</span><span class="w"> </span><span class="p">},</span><span class="w"> </span><span class="n">x</span><span class="p">).</span><span class="n">with_id</span><span class="p">(</span><span class="s">&quot;y&quot;</span><span class="p">);</span>
+<span class="k">auto</span><span class="w"> </span><span class="n">y1</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">grunk</span><span class="o">::</span><span class="n">action</span><span class="p">([](</span><span class="kt">double</span><span class="w"> </span><span class="n">v</span><span class="p">){</span><span class="w"> </span><span class="k">return</span><span class="w"> </span><span class="n">v</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="mf">2.</span><span class="p">;</span><span class="w"> </span><span class="p">},</span><span class="w"> </span><span class="n">y</span><span class="p">).</span><span class="n">with_id</span><span class="p">(</span><span class="s">&quot;y1&quot;</span><span class="p">);</span>
+<span class="k">auto</span><span class="w"> </span><span class="n">y2</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">grunk</span><span class="o">::</span><span class="n">action</span><span class="p">([](</span><span class="kt">double</span><span class="w"> </span><span class="n">v</span><span class="p">){</span><span class="w"> </span><span class="k">return</span><span class="w"> </span><span class="n">v</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="mf">3.</span><span class="p">;</span><span class="w"> </span><span class="p">},</span><span class="w"> </span><span class="n">y</span><span class="p">).</span><span class="n">with_id</span><span class="p">(</span><span class="s">&quot;y2&quot;</span><span class="p">);</span>
+
+<span class="n">grunk</span><span class="o">::</span><span class="n">ParallelExecutor</span><span class="w"> </span><span class="nf">executor</span><span class="p">(</span><span class="n">y1</span><span class="p">,</span><span class="w"> </span><span class="n">y2</span><span class="p">);</span>
+</pre></div>
+</div>
+<img alt="parallel execution example 2" src="_images/parallel_execution_example2.png" />
+<p>Note, that parallel execution is only possible in static mode.
+Dynamic mode relies on Lua. Like most scripting languages, Lua is single-threaded
+and does not support parallel execution.</p>
+</section>
+</section>
+<section id="dynamic-mode">
+<span id="usage-dynamic-mode"></span><h2>Dynamic Mode<a class="headerlink" href="#dynamic-mode" title="Link to this heading">¶</a></h2>
+<p>Dynamic mode summary: runtime (Lua-based) typing and plugin-driven behavior. Use dynamic mode when types or functions are provided by plugins or when scripting from Python/Lua; note that Lua-based dynamic mode is single-threaded and does not support the <cite>ParallelExecutor</cite>.</p>
+<p>grunk’s dynamic mode uses Lua as a dynamic scripting language to work with types and functions provided by plugins. The implementation is based on the <a class="reference external" href="https://github.com/ThePhD/sol2">sol2</a> library and a <code class="docutils literal notranslate"><span class="pre">grunk::object</span></code> is just an alias for a <code class="docutils literal notranslate"><span class="pre">sol::object</span></code>.</p>
+<p>Before we dive into the parametric trees of grunk’s dynamic mode, let’s first see how to interact with the underlying Lua state.</p>
+<section id="interacting-with-the-lua-state">
+<h3>Interacting with the Lua state<a class="headerlink" href="#interacting-with-the-lua-state" title="Link to this heading">¶</a></h3>
+<p>Grunk’s dynamic mode is the basis for using grunk with plugins. It relies on a runtime reflection system and a type-erased object called <code class="docutils literal notranslate"><span class="pre">grunk::object</span></code>. This allows grunk to work with any kind of type and function provided by plugins, without the need to know about them at compile time.</p>
+<p>An instance of <code class="docutils literal notranslate"><span class="pre">grunk::state</span></code> is used to manage the dynamic state and register types and functions in an internal Lua state.</p>
+<p>In practice, functions and types are registered in a <code class="docutils literal notranslate"><span class="pre">grunk::state</span></code> via grunk plugins, see the <a class="reference internal" href="#using-plugins"><span class="std std-ref">next section</span></a> section. For simplicity, assume for now that the type <code class="docutils literal notranslate"><span class="pre">MyScalar</span></code> and a function <code class="docutils literal notranslate"><span class="pre">add</span></code> are registered in the grunk state and can be used in the feature tree.</p>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;grunk/grunk.hpp&gt;</span>
+
+<span class="k">struct</span><span class="w"> </span><span class="nc">MyScalar</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="kt">double</span><span class="w"> </span><span class="nf">get</span><span class="p">()</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="k">return</span><span class="w"> </span><span class="n">v</span><span class="p">;</span><span class="w"> </span><span class="p">}</span>
+<span class="w">    </span><span class="kt">double</span><span class="w"> </span><span class="n">v</span><span class="p">;</span>
+<span class="p">};</span>
+
+<span class="n">grunk</span><span class="o">::</span><span class="n">state</span><span class="w"> </span><span class="n">grunk</span><span class="p">;</span>
+<span class="n">grunk</span><span class="p">.</span><span class="n">register_type</span><span class="o">&lt;</span><span class="n">MyScalar</span><span class="o">&gt;</span><span class="p">(</span><span class="s">&quot;MyScalar&quot;</span><span class="p">)</span>
+<span class="p">.</span><span class="n">add_constructor</span><span class="o">&lt;</span><span class="kt">double</span><span class="o">&gt;</span><span class="p">()</span>
+<span class="p">.</span><span class="n">add_member_function</span><span class="p">(</span><span class="s">&quot;get&quot;</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">MyScalar</span><span class="o">::</span><span class="n">get</span><span class="p">);</span>
+
+<span class="n">grunk</span><span class="p">.</span><span class="n">register_function</span><span class="p">(</span>
+<span class="w">   </span><span class="s">&quot;add&quot;</span><span class="p">,</span>
+<span class="w">   </span><span class="p">[](</span><span class="n">MyScalar</span><span class="w"> </span><span class="k">const</span><span class="o">&amp;</span><span class="w"> </span><span class="n">l</span><span class="p">,</span><span class="w"> </span><span class="n">MyScalar</span><span class="w"> </span><span class="k">const</span><span class="o">&amp;</span><span class="w"> </span><span class="n">r</span><span class="p">){</span>
+<span class="w">      </span><span class="k">return</span><span class="w"> </span><span class="n">l</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">r</span><span class="p">;</span>
+<span class="w">   </span><span class="p">}</span>
+<span class="p">);</span>
+</pre></div>
+</div>
+<p>Now, we can use the registered type and function in a Lua script.</p>
+<div class="sphinx-tabs docutils container">
+<div aria-label="Tabbed content" class="closeable" role="tablist"><button aria-controls="panel-0-Qysr" aria-selected="true" class="sphinx-tabs-tab code-tab group-tab" id="tab-0-Qysr" name="Qysr" role="tab" tabindex="0">C++</button><button aria-controls="panel-0-UHl0aG9u" aria-selected="false" class="sphinx-tabs-tab code-tab group-tab" id="tab-0-UHl0aG9u" name="UHl0aG9u" role="tab" tabindex="-1">Python</button></div><div aria-labelledby="tab-0-Qysr" class="sphinx-tabs-panel code-tab group-tab" id="panel-0-Qysr" name="Qysr" role="tabpanel" tabindex="0"><div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;grunk/grunk.hpp&gt;</span>
+
+<span class="n">grunk</span><span class="o">::</span><span class="n">state</span><span class="w"> </span><span class="n">grunk</span><span class="p">;</span>
+
+<span class="cm">/* type and function registration omitted here */</span>
+
+<span class="k">auto</span><span class="w"> </span><span class="n">env</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">grunk</span><span class="p">.</span><span class="n">create_env</span><span class="p">();</span>
+<span class="n">env</span><span class="p">.</span><span class="n">eval</span><span class="p">(</span><span class="sa">R</span><span class="s">&quot;</span><span class="dl">(</span>
+<span class="s">   local x = MyScalar.new(17.)</span>
+<span class="s">   local y = MyScalar.new(25.)</span>
+<span class="s">   local z = add(x,y)</span>
+<span class="s">   result = z:get() ^ 2 + 5</span>
+<span class="dl">)</span><span class="s">&quot;</span><span class="p">);</span>
+<span class="n">std</span><span class="o">::</span><span class="n">cout</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">env</span><span class="p">.</span><span class="n">get</span><span class="o">&lt;</span><span class="kt">double</span><span class="o">&gt;</span><span class="p">(</span><span class="s">&quot;result&quot;</span><span class="p">)</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">endl</span><span class="p">;</span>
+</pre></div>
+</div>
+</div><div aria-labelledby="tab-0-UHl0aG9u" class="sphinx-tabs-panel code-tab group-tab" hidden="true" id="panel-0-UHl0aG9u" name="UHl0aG9u" role="tabpanel" tabindex="0"><div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">grunk</span>
+
+<span class="c1"># type and function registration omitted here</span>
+
+<span class="n">env</span> <span class="o">=</span> <span class="n">grunk</span><span class="o">.</span><span class="n">create_env</span><span class="p">()</span>
+<span class="n">env</span><span class="o">.</span><span class="n">eval</span><span class="p">(</span><span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">   local x = MyScalar(17.)</span>
+<span class="s2">   local y = MyScalar(25.)</span>
+<span class="s2">   local z = add(x,y)</span>
+<span class="s2">   result = z:get() ^ 2 + 5</span>
+<span class="s2">&quot;&quot;&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">env</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;result&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">as_float</span><span class="p">())</span>
+</pre></div>
+</div>
+</div></div>
+<p>The script passed to <code class="docutils literal notranslate"><span class="pre">env.eval</span></code> can be any valid Lua code. The function <code class="docutils literal notranslate"><span class="pre">env.get</span></code> can be used to retrieve any variable from the Lua state and cast it to a type that we can deal with in C++ or Python.
+We can retrieve the variable as a grunk::object and then use the <code class="docutils literal notranslate"><span class="pre">as</span></code> function to cast it back to the actual type.
+Conversely, we can also create a grunk::object from a C++ type and pass it to the Lua state.</p>
+<p>Short note on evaluation and caching</p>
+<blockquote>
+<div><p>Calling <code class="docutils literal notranslate"><span class="pre">env.eval</span></code> and invoking <code class="docutils literal notranslate"><span class="pre">:value()</span></code> inside the parametric environment triggers evaluation and fills caches for the parametric sub-tree used to compute that value. Subsequent changes to input features (from Lua or from C++/Python via <code class="docutils literal notranslate"><span class="pre">get_feature</span></code>/<code class="docutils literal notranslate"><span class="pre">set_value</span></code>) will invalidate dependent caches and cause recomputation at the next <code class="docutils literal notranslate"><span class="pre">:value()</span></code> call.</p>
+</div></blockquote>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;grunk/grunk.hpp&gt;</span>
+
+<span class="n">grunk</span><span class="o">::</span><span class="n">state</span><span class="w"> </span><span class="n">grunk</span><span class="p">;</span>
+
+<span class="cm">/* type and function registration omitted here */</span>
+
+<span class="k">auto</span><span class="w"> </span><span class="n">env</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">grunk</span><span class="p">.</span><span class="n">create_env</span><span class="p">();</span>
+
+<span class="n">env</span><span class="p">[</span><span class="s">&quot;x&quot;</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">MyScalar</span><span class="p">(</span><span class="mf">17.</span><span class="p">);</span>
+<span class="n">env</span><span class="p">[</span><span class="s">&quot;y&quot;</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">MyScalar</span><span class="p">(</span><span class="mf">25.</span><span class="p">);</span>
+<span class="n">env</span><span class="p">.</span><span class="n">eval</span><span class="p">(</span><span class="s">&quot;result = add(x,y):get()&quot;</span><span class="p">);</span>
+<span class="n">std</span><span class="o">::</span><span class="n">cout</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">env</span><span class="p">.</span><span class="n">get</span><span class="o">&lt;</span><span class="kt">double</span><span class="o">&gt;</span><span class="p">(</span><span class="s">&quot;result&quot;</span><span class="p">)</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">endl</span><span class="p">;</span>
+</pre></div>
+</div>
+<p>The usage from Python is very similar, with a few minor caveats.</p>
+<p>Firstly, python types cannot be registered in the grunk state, because they are not known to C++. Instead, we can only work with native Lua types and types that are registered in the grunk state via plugins.</p>
+<p>Secondly, for convenience, the <cite>grunk</cite> module comes with a default <cite>grunk::state</cite> instance and
+the member functions of <cite>grunk::state</cite> are exposed as free functions. So from python we have the choice of working with the default state or creating
+our own state and working with it.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">grunk</span>
+
+<span class="c1"># use the default state</span>
+<span class="n">env</span> <span class="o">=</span> <span class="n">grunk</span><span class="o">.</span><span class="n">create_env</span><span class="p">()</span>
+
+<span class="c1"># or create a new state called grnk and use it</span>
+<span class="n">grnk</span> <span class="o">=</span> <span class="n">grunk</span><span class="o">.</span><span class="n">state</span><span class="p">()</span>
+<span class="n">env2</span> <span class="o">=</span> <span class="n">grnk</span><span class="o">.</span><span class="n">create_env</span><span class="p">()</span>
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">env</span></code> and <code class="docutils literal notranslate"><span class="pre">env2</span></code> are independent environments with a shared Lua state. They share the same registered types and functions.</p>
+</section>
+<section id="dynamic-features-and-actions-in-lua">
+<h3>Dynamic Features and Actions in Lua<a class="headerlink" href="#dynamic-features-and-actions-in-lua" title="Link to this heading">¶</a></h3>
+<p>Notice that in the example above, we have only used the functions in a dynamic context. We did not make use of grunk’s dependency tracking.
+The following example shows how to use grunk’s dynamic mode together with the dependency tracking of features and actions.</p>
+<p>We can create a parametric environment from our <code class="docutils literal notranslate"><span class="pre">grunk::state</span></code>. Within this environment, all functions are decorated as a <code class="docutils literal notranslate"><span class="pre">grunk::Action</span></code>, a function wrapper that tracks the dependency.</p>
+<div class="sphinx-tabs docutils container">
+<div aria-label="Tabbed content" class="closeable" role="tablist"><button aria-controls="panel-1-Qysr" aria-selected="true" class="sphinx-tabs-tab code-tab group-tab" id="tab-1-Qysr" name="Qysr" role="tab" tabindex="0">C++</button><button aria-controls="panel-1-UHl0aG9u" aria-selected="false" class="sphinx-tabs-tab code-tab group-tab" id="tab-1-UHl0aG9u" name="UHl0aG9u" role="tab" tabindex="-1">Python</button></div><div aria-labelledby="tab-1-Qysr" class="sphinx-tabs-panel code-tab group-tab" id="panel-1-Qysr" name="Qysr" role="tabpanel" tabindex="0"><div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;grunk/grunk.hpp&gt;</span>
+
+<span class="n">grunk</span><span class="o">::</span><span class="n">state</span><span class="w"> </span><span class="n">grunk</span><span class="p">;</span>
+
+<span class="k">auto</span><span class="w"> </span><span class="n">env</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">grunk</span><span class="p">.</span><span class="n">create_parametric_env</span><span class="p">();</span>
+<span class="n">env</span><span class="p">.</span><span class="n">eval</span><span class="p">(</span><span class="sa">R</span><span class="s">&quot;</span><span class="dl">(</span>
+<span class="s">   x = grunk.feature(2.)</span>
+<span class="s">   y = grunk.feature(38.)</span>
+
+<span class="s">   a = x ^ 2</span>
+<span class="s">   b = a + y</span>
+
+<span class="s">   b1 = b:value()</span>
+
+<span class="s">   x:set_value(1)</span>
+
+<span class="s">   b2 = b:value()</span>
+<span class="dl">)</span><span class="s">&quot;</span><span class="p">);</span>
+
+<span class="c1">// prints 42</span>
+<span class="k">auto</span><span class="w"> </span><span class="n">b1</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">env</span><span class="p">.</span><span class="n">get</span><span class="p">(</span><span class="s">&quot;b1&quot;</span><span class="p">).</span><span class="n">as</span><span class="o">&lt;</span><span class="kt">double</span><span class="o">&gt;</span><span class="p">();</span>
+<span class="n">std</span><span class="o">::</span><span class="n">cout</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="s">&quot;b1 = &quot;</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">b1</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">endl</span><span class="p">;</span>
+
+<span class="c1">// prints 39</span>
+<span class="k">auto</span><span class="w"> </span><span class="n">b2</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">env</span><span class="p">.</span><span class="n">get</span><span class="p">(</span><span class="s">&quot;b2&quot;</span><span class="p">).</span><span class="n">as</span><span class="o">&lt;</span><span class="kt">double</span><span class="o">&gt;</span><span class="p">();</span>
+<span class="n">std</span><span class="o">::</span><span class="n">cout</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="s">&quot;b2 = &quot;</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">b2</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">endl</span><span class="p">;</span>
+
+<span class="k">auto</span><span class="w"> </span><span class="n">y</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">env</span><span class="p">.</span><span class="n">get_feature</span><span class="p">(</span><span class="s">&quot;y&quot;</span><span class="p">);</span><span class="w"> </span><span class="c1">// short for env.get&lt;grunk::DynamicFeature&gt;(&quot;y&quot;)</span>
+<span class="n">y</span><span class="p">.</span><span class="n">set_value</span><span class="p">(</span><span class="mi">41</span><span class="p">);</span>
+
+<span class="c1">// prints 42</span>
+<span class="k">auto</span><span class="w"> </span><span class="n">b3</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">env</span><span class="p">.</span><span class="n">get_feature</span><span class="p">(</span><span class="s">&quot;b&quot;</span><span class="p">).</span><span class="n">value</span><span class="p">().</span><span class="n">as</span><span class="o">&lt;</span><span class="kt">double</span><span class="o">&gt;</span><span class="p">();</span>
+<span class="n">std</span><span class="o">::</span><span class="n">cout</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="s">&quot;b3 = &quot;</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">b3</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">endl</span><span class="p">;</span>
+</pre></div>
+</div>
+</div><div aria-labelledby="tab-1-UHl0aG9u" class="sphinx-tabs-panel code-tab group-tab" hidden="true" id="panel-1-UHl0aG9u" name="UHl0aG9u" role="tabpanel" tabindex="0"><div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">grunk</span>
+
+<span class="n">env</span> <span class="o">=</span> <span class="n">grunk</span><span class="o">.</span><span class="n">create_parametric_env</span><span class="p">()</span>
+<span class="n">env</span><span class="o">.</span><span class="n">eval</span><span class="p">(</span><span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">   x = grunk.feature(2.)</span>
+<span class="s2">   y = grunk.feature(38.)</span>
+
+<span class="s2">   a = x ^ 2</span>
+<span class="s2">   b = a + y</span>
+
+<span class="s2">   b1 = b:value()</span>
+
+<span class="s2">   x:set_value(1)</span>
+
+<span class="s2">   b2 = b:value()</span>
+<span class="s2">&quot;&quot;&quot;</span><span class="p">)</span>
+
+<span class="c1"># prints 42</span>
+<span class="n">b1</span> <span class="o">=</span> <span class="n">env</span><span class="p">[</span><span class="s2">&quot;b1&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">as_float</span><span class="p">()</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;b1 = </span><span class="si">{</span><span class="n">b1</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+<span class="c1"># prints 39</span>
+<span class="n">b2</span> <span class="o">=</span> <span class="n">env</span><span class="p">[</span><span class="s2">&quot;b2&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">as_float</span><span class="p">()</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;b2 = </span><span class="si">{</span><span class="n">b2</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+<span class="n">y</span> <span class="o">=</span> <span class="n">env</span><span class="o">.</span><span class="n">get_feature</span><span class="p">(</span><span class="s2">&quot;y&quot;</span><span class="p">)</span>
+<span class="n">y</span><span class="o">.</span><span class="n">set_value</span><span class="p">(</span><span class="mi">41</span><span class="p">)</span>
+
+<span class="c1"># prints 42</span>
+<span class="n">b3</span> <span class="o">=</span> <span class="n">env</span><span class="o">.</span><span class="n">get_feature</span><span class="p">(</span><span class="s2">&quot;b&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">value</span><span class="p">()</span><span class="o">.</span><span class="n">as_float</span><span class="p">()</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;b3 = </span><span class="si">{</span><span class="n">b3</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div></div>
+<img alt="dynamic mode example 1" src="_images/dynamic_mode_example1.png" />
+<p>Observe carefully how the lazy evaluation and automatic invalidation logic works here. The first time <code class="docutils literal notranslate"><span class="pre">b:value()</span></code> is called from the Lua script, the value of the feature is queried and the parametric tree is evaluated. The caches of every feature of the underlying parametric tree are filled. Subsequently the value of <code class="docutils literal notranslate"><span class="pre">x</span></code> is changed, which invalidates <code class="docutils literal notranslate"><span class="pre">a</span></code> and <code class="docutils literal notranslate"><span class="pre">b</span></code>. The next time <code class="docutils literal notranslate"><span class="pre">b:value()</span></code> is called, the parametric tree is reevaluated and the value of <code class="docutils literal notranslate"><span class="pre">b</span></code> changes.</p>
+<p>Short summary: calling <code class="docutils literal notranslate"><span class="pre">:value()</span></code> inside the running Lua script triggers evaluation and fills caches for that parametric tree; later changes to inputs will invalidate dependent caches and cause recomputation on the next <code class="docutils literal notranslate"><span class="pre">:value()</span></code> call.</p>
+<p>In the following, we are retrieving the feature <code class="docutils literal notranslate"><span class="pre">y</span></code> from the <code class="docutils literal notranslate"><span class="pre">grunk::state</span></code> and manipulate it in C++/Python. As we change the value, the cache of <code class="docutils literal notranslate"><span class="pre">a</span></code> remains intact, but the cache of <code class="docutils literal notranslate"><span class="pre">b</span></code> is invalidated. Querying the value of <code class="docutils literal notranslate"><span class="pre">b</span></code> again (this time from C++/Python), only part of the feature tree is re-evaluated and the value of <code class="docutils literal notranslate"><span class="pre">b</span></code> changes again.</p>
+</section>
+<section id="using-custom-types">
+<h3>Using Custom Types<a class="headerlink" href="#using-custom-types" title="Link to this heading">¶</a></h3>
+<p>Let us examine how a parametric tree with custom types from plugins would look like. Assume that we have a plugin that registers the type <code class="docutils literal notranslate"><span class="pre">MyScalar</span></code> and a function <code class="docutils literal notranslate"><span class="pre">add</span></code> that takes two <code class="docutils literal notranslate"><span class="pre">MyScalar</span></code>s and returns their sum.</p>
+<p>For brevity, we will only show the Lua script that can be executed in a grunk parametric environment.</p>
+<p>When we want to construct a custom type as part of the feature tree, we have two options. We can either use the constructor of the type as an action, which means that the constructed object depends on the input features. Or we can forward the constructor arguments to <code class="docutils literal notranslate"><span class="pre">grunk::feature</span></code> by using the <code class="docutils literal notranslate"><span class="pre">new_feature</span></code> method, which means that the constructed object is an independent feature.</p>
+<div class="highlight-LUA notranslate"><div class="highlight"><pre><span></span><span class="kd">local</span><span class="w"> </span><span class="nv">a</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nv">grunk</span><span class="p">.</span><span class="nf">feature</span><span class="p">(</span><span class="mf">1.</span><span class="p">)</span>
+
+<span class="nv">x</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nv">MyScalar</span><span class="p">.</span><span class="nf">new</span><span class="p">(</span><span class="nv">a</span><span class="p">)</span><span class="w">             </span><span class="c1">-- ctor as action: x depends on a</span>
+<span class="nv">y</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nv">MyScalar</span><span class="p">.</span><span class="nf">new</span><span class="p">(</span><span class="mf">2.</span><span class="p">)</span><span class="w">            </span><span class="c1">-- ctor as action with argument conversion from constant: y depends on unnamed Feature(2.)</span>
+<span class="nv">z</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nv">MyScalar</span><span class="p">.</span><span class="nf">new_feature</span><span class="p">(</span><span class="mf">3.</span><span class="p">)</span><span class="w">    </span><span class="c1">-- forwards ctor args to grunk::feature: z is independent feature</span>
+</pre></div>
+</div>
+<p>Lua does not know about the member functions that can be invoked on a <code class="docutils literal notranslate"><span class="pre">grunk::DynamicFeature</span></code>, which is an alias for <code class="docutils literal notranslate"><span class="pre">grunk::Feature&lt;grunk::object&gt;</span></code>. Therefore, we can not directly call member functions of the underlying type using the <code class="docutils literal notranslate"><span class="pre">:</span></code> operator.</p>
+<p>We have two options for this:</p>
+<ol class="arabic simple">
+<li><p>We can use the method <code class="docutils literal notranslate"><span class="pre">as</span></code> to obtain a Lua usertype that exposes the member functions as actions.</p></li>
+<li><p>We can call the metatable method <cite>MyScalar.val</cite> and pass the feature as an argument.</p></li>
+</ol>
+<p>The following code snippet shows both options.</p>
+<div class="highlight-LUA notranslate"><div class="highlight"><pre><span></span><span class="kd">local</span><span class="w"> </span><span class="nv">b</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nv">x</span><span class="p">:</span><span class="nf">as</span><span class="p">(</span><span class="nv">MyScalar</span><span class="p">).</span><span class="nf">val</span><span class="p">()</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="nv">MyScalar</span><span class="p">.</span><span class="nf">val</span><span class="p">(</span><span class="nv">y</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="nv">b</span><span class="p">:</span><span class="nf">value</span><span class="p">())</span><span class="w">  </span><span class="c1">-- prints -1, because x has the value 1 and y has the value 2</span>
+</pre></div>
+</div>
+</section>
+<section id="dynamic-features-and-actions-in-c-python">
+<h3>Dynamic Features and Actions in C++/Python<a class="headerlink" href="#dynamic-features-and-actions-in-c-python" title="Link to this heading">¶</a></h3>
+<p>In the examples so far, the dynamic mode was used from within a Lua script. There are two kinds of environments. <code class="docutils literal notranslate"><span class="pre">grunk::create_env</span></code> returns an environment where all registered functions and methods are exposed as is, <code class="docutils literal notranslate"><span class="pre">grunk::create_parametric_env</span></code> returns an environment where all registered functions and methods are exposed as <cite>actions</cite>, meaning they are decorated functions that register the parametric dependency and delay the function evaluation. There is no need to explicitly wrap the method in a <code class="docutils literal notranslate"><span class="pre">grunk::action</span></code> as in static mode.</p>
+<p>However, this syntax is available for dynamic mode as well, without using Lua environments.</p>
+<p>Instead of passing a function or function pointer to <code class="docutils literal notranslate"><span class="pre">grunk::action</span></code>, we can
+pass a string identifier. We can choose between <code class="docutils literal notranslate"><span class="pre">.</span></code> and <code class="docutils literal notranslate"><span class="pre">:</span></code> as separator.</p>
+<div class="sphinx-tabs docutils container">
+<div aria-label="Tabbed content" class="closeable" role="tablist"><button aria-controls="panel-2-Qysr" aria-selected="true" class="sphinx-tabs-tab code-tab group-tab" id="tab-2-Qysr" name="Qysr" role="tab" tabindex="0">C++</button><button aria-controls="panel-2-UHl0aG9u" aria-selected="false" class="sphinx-tabs-tab code-tab group-tab" id="tab-2-UHl0aG9u" name="UHl0aG9u" role="tab" tabindex="-1">Python</button></div><div aria-labelledby="tab-2-Qysr" class="sphinx-tabs-panel code-tab group-tab" id="panel-2-Qysr" name="Qysr" role="tabpanel" tabindex="0"><div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;grunk/grunk/hpp&gt;</span>
+
+<span class="k">auto</span><span class="w"> </span><span class="n">grunk</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">grunk</span><span class="o">::</span><span class="n">state</span><span class="p">;</span>
+
+<span class="cm">/* type and function registration omitted here */</span>
+
+<span class="k">auto</span><span class="w"> </span><span class="n">a</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">grunk</span><span class="p">.</span><span class="n">feature</span><span class="p">(</span><span class="mf">1.</span><span class="p">);</span>
+
+<span class="k">auto</span><span class="w"> </span><span class="n">x</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">grunk</span><span class="p">.</span><span class="n">action</span><span class="p">(</span><span class="s">&quot;MyScalar:new&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">a</span><span class="p">);</span><span class="w">       </span><span class="c1">// ctor as action: x depends on a</span>
+<span class="k">auto</span><span class="w"> </span><span class="n">y</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">grunk</span><span class="p">.</span><span class="n">action</span><span class="p">(</span><span class="s">&quot;MyScalar.new&quot;</span><span class="p">,</span><span class="w"> </span><span class="mf">2.</span><span class="p">);</span><span class="w">      </span><span class="c1">// ctor as action with argument conversion from contant: y depends on Feature(2.)</span>
+<span class="k">auto</span><span class="w"> </span><span class="n">z</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">grunk</span><span class="p">.</span><span class="n">feature</span><span class="p">(</span><span class="s">&quot;MyScalar&quot;</span><span class="p">,</span><span class="w"> </span><span class="mf">3.</span><span class="p">);</span><span class="w">         </span><span class="c1">// forwards ctor args to grunk::feature: z is independent feature</span>
+
+<span class="k">auto</span><span class="w"> </span><span class="n">b</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">grunk</span><span class="p">.</span><span class="n">action</span><span class="p">(</span><span class="s">&quot;MyScalar.val&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">x</span><span class="p">)</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">grunk</span><span class="p">.</span><span class="n">action</span><span class="p">(</span><span class="s">&quot;MyScalar:val&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">y</span><span class="p">);</span>
+
+<span class="c1">// prints -1</span>
+<span class="n">std</span><span class="o">::</span><span class="n">cout</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">b</span><span class="p">.</span><span class="n">value</span><span class="p">().</span><span class="n">as</span><span class="o">&lt;</span><span class="kt">double</span><span class="o">&gt;</span><span class="p">()</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">endl</span><span class="p">;</span>
+</pre></div>
+</div>
+</div><div aria-labelledby="tab-2-UHl0aG9u" class="sphinx-tabs-panel code-tab group-tab" hidden="true" id="panel-2-UHl0aG9u" name="UHl0aG9u" role="tabpanel" tabindex="0"><div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">grunk</span>
+
+<span class="c1"># type and function registration omitted here</span>
+
+<span class="n">a</span> <span class="o">=</span> <span class="n">grunk</span><span class="o">.</span><span class="n">feature</span><span class="p">(</span><span class="mf">1.</span><span class="p">)</span>
+
+<span class="n">x</span> <span class="o">=</span> <span class="n">grunk</span><span class="o">.</span><span class="n">action</span><span class="p">(</span><span class="s2">&quot;MyScalar:new&quot;</span><span class="p">,</span> <span class="n">a</span><span class="p">)</span>       <span class="c1"># ctor as action: x depends on a</span>
+<span class="n">y</span> <span class="o">=</span> <span class="n">grunk</span><span class="o">.</span><span class="n">action</span><span class="p">(</span><span class="s2">&quot;MyScalar.new&quot;</span><span class="p">,</span> <span class="mf">2.</span><span class="p">)</span>      <span class="c1"># ctor as action with argument conversion from contant: y depends on Feature(2.)</span>
+<span class="n">z</span> <span class="o">=</span> <span class="n">grunk</span><span class="o">.</span><span class="n">feature</span><span class="p">(</span><span class="s2">&quot;MyScalar&quot;</span><span class="p">,</span> <span class="mf">3.</span><span class="p">)</span>         <span class="c1"># 3 forwards ctor args to grunk::feature: z is independent feature</span>
+
+<span class="n">b</span> <span class="o">=</span> <span class="n">grunk</span><span class="o">.</span><span class="n">action</span><span class="p">(</span><span class="s2">&quot;MyScalar.val&quot;</span><span class="p">,</span> <span class="n">x</span><span class="p">)</span> <span class="o">-</span> <span class="n">grunk</span><span class="o">.</span><span class="n">action</span><span class="p">(</span><span class="s2">&quot;MyScalar:val&quot;</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
+
+<span class="c1"># prints -1</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">b</span><span class="o">.</span><span class="n">value</span><span class="p">()</span><span class="o">.</span><span class="n">as_float</span><span class="p">())</span>
+</pre></div>
+</div>
+</div></div>
+</section>
+<section id="mixing-static-and-dynamic-mode-in-c">
+<h3>Mixing static and dynamic mode in C++<a class="headerlink" href="#mixing-static-and-dynamic-mode-in-c" title="Link to this heading">¶</a></h3>
+<p>Remember, that static mode is only available in C++.</p>
+<p>In C++ we can pass static features to dynamic functions.
+The conversion is handled under the hood.</p>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="n">grunk</span><span class="o">::</span><span class="n">state</span><span class="w"> </span><span class="n">grunk</span><span class="p">;</span>
+
+<span class="k">auto</span><span class="w"> </span><span class="n">add</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[](</span><span class="kt">int</span><span class="w"> </span><span class="n">l</span><span class="p">,</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">r</span><span class="p">){</span><span class="w"> </span><span class="k">return</span><span class="w"> </span><span class="n">l</span><span class="o">+</span><span class="n">r</span><span class="p">;</span><span class="w"> </span><span class="p">};</span>
+<span class="n">grunk</span><span class="p">.</span><span class="n">register_function</span><span class="p">(</span><span class="s">&quot;add&quot;</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">add</span><span class="p">);</span>
+
+<span class="k">auto</span><span class="w"> </span><span class="n">a</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">grunk</span><span class="o">::</span><span class="n">feature</span><span class="p">(</span><span class="mi">1</span><span class="p">);</span><span class="w">          </span><span class="c1">// type of a: Feature&lt;int&gt;</span>
+<span class="k">auto</span><span class="w"> </span><span class="n">b</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">grunk</span><span class="p">.</span><span class="n">feature</span><span class="p">(</span><span class="mi">2</span><span class="p">);</span><span class="w">           </span><span class="c1">// type of b: Feature&lt;object&gt;</span>
+<span class="k">auto</span><span class="w"> </span><span class="n">c</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">grunk</span><span class="p">.</span><span class="n">action</span><span class="p">(</span><span class="s">&quot;add&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">a</span><span class="p">,</span><span class="w"> </span><span class="n">b</span><span class="p">);</span><span class="w">  </span><span class="c1">// type of d: Feature&lt;int&gt;</span>
+
+<span class="c1">// Until here, add has not been called, but only the DAG assembled,</span>
+<span class="c1">// that represents the dependency of the features. Now let&#39;s trigger</span>
+<span class="c1">// evaluation by querying the value of e.</span>
+
+<span class="n">assert</span><span class="p">(</span><span class="n">c</span><span class="p">.</span><span class="n">value</span><span class="p">().</span><span class="n">as</span><span class="o">&lt;</span><span class="kt">int</span><span class="o">&gt;</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="mi">3</span><span class="p">);</span>
+
+<span class="c1">// After evaluation all results, including intermediate results are</span>
+<span class="c1">// cached. A second query of e would just retrieve the value from</span>
+<span class="c1">// cache</span>
+
+<span class="c1">// resetting an independent input feature invalidates all dependent</span>
+<span class="c1">// nodes. Resetting c will invalidate e, but the cache of d remains</span>
+<span class="c1">// valid</span>
+<span class="n">b</span><span class="p">.</span><span class="n">set_value</span><span class="p">(</span><span class="mi">4</span><span class="p">);</span>
+
+<span class="c1">// A new query of e will trigger evaluation of all invalid nodes.</span>
+<span class="n">assert</span><span class="p">(</span><span class="n">c</span><span class="p">.</span><span class="n">value</span><span class="p">()</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="mi">5</span><span class="p">);</span>
+</pre></div>
+</div>
+</section>
+<section id="containers">
+<h3>Containers<a class="headerlink" href="#containers" title="Link to this heading">¶</a></h3>
+<p>Imagine you have a function that expects an <code class="docutils literal notranslate"><span class="pre">std::vector</span></code>.</p>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="k">struct</span><span class="w"> </span><span class="nc">Foo</span><span class="w"> </span><span class="p">{</span>
+<span class="w">   </span><span class="kt">int</span><span class="w"> </span><span class="n">i</span><span class="p">;</span>
+<span class="p">};</span>
+
+<span class="n">Foo</span><span class="w"> </span><span class="nf">add</span><span class="p">(</span><span class="n">std</span><span class="o">::</span><span class="n">vector</span><span class="o">&lt;</span><span class="n">Foo</span><span class="o">&gt;</span><span class="w"> </span><span class="k">const</span><span class="o">&amp;</span><span class="w"> </span><span class="n">v</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">   </span><span class="k">return</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">accumulate</span><span class="p">(</span>
+<span class="w">      </span><span class="n">v</span><span class="p">.</span><span class="n">begin</span><span class="p">(),</span>
+<span class="w">      </span><span class="n">v</span><span class="p">.</span><span class="n">end</span><span class="p">(),</span>
+<span class="w">      </span><span class="n">Foo</span><span class="p">{</span><span class="mf">0.</span><span class="p">},</span>
+<span class="w">      </span><span class="p">[](</span><span class="k">auto</span><span class="w"> </span><span class="k">const</span><span class="o">&amp;</span><span class="w"> </span><span class="n">l</span><span class="p">,</span><span class="w"> </span><span class="k">auto</span><span class="w"> </span><span class="k">const</span><span class="o">&amp;</span><span class="w"> </span><span class="n">r</span><span class="p">){</span><span class="w"> </span><span class="k">return</span><span class="w"> </span><span class="n">Foo</span><span class="p">{</span><span class="n">l</span><span class="p">.</span><span class="n">i</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">r</span><span class="p">.</span><span class="n">i</span><span class="p">};</span><span class="w"> </span><span class="p">}</span>
+<span class="w">   </span><span class="p">);</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>If we have several <code class="docutils literal notranslate"><span class="pre">grunk::DynamicFeature</span></code>s, each wrapping a <code class="docutils literal notranslate"><span class="pre">Foo</span></code> instance, we can create a vector <code class="docutils literal notranslate"><span class="pre">std::vector&lt;grunk::DynamicFeature&gt;</span></code>.
+But the action decorator for <code class="docutils literal notranslate"><span class="pre">add</span></code> expects a single <cite>grunk::DynamicFeature`</cite> wrapping an <code class="docutils literal notranslate"><span class="pre">std::vector&lt;Foo&gt;</span></code>.</p>
+<p>To perform the conversion, the type <code class="docutils literal notranslate"><span class="pre">Foo</span></code> has to be registered with the
+<code class="docutils literal notranslate"><span class="pre">with_std_vector</span></code> method. This adds a method <code class="docutils literal notranslate"><span class="pre">as_vec</span></code> to the metatable of the usertype of <code class="docutils literal notranslate"><span class="pre">Foo</span></code>, which is an action that unwraps the input features, then inserts them in an <code class="docutils literal notranslate"><span class="pre">std::vector</span></code> and wraps it in a <code class="docutils literal notranslate"><span class="pre">grunk::DynamicFeature</span></code>, all the while properly registering the parametric dependency of the inputs to the output vector.</p>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;grunk/grunk.hpp&gt;</span>
+
+<span class="k">auto</span><span class="w"> </span><span class="n">grunk</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">grunk</span><span class="o">::</span><span class="n">state</span><span class="p">();</span>
+
+<span class="n">grunk</span><span class="p">.</span><span class="n">register_type</span><span class="o">&lt;</span><span class="n">Foo</span><span class="o">&gt;</span><span class="p">(</span><span class="s">&quot;Foo&quot;</span><span class="p">)</span>
+<span class="p">.</span><span class="n">add_constructors</span><span class="p">([](</span><span class="kt">int</span><span class="w"> </span><span class="n">i</span><span class="p">){</span><span class="w"> </span><span class="k">return</span><span class="w"> </span><span class="n">Foo</span><span class="p">{</span><span class="n">i</span><span class="p">};</span><span class="w"> </span><span class="p">})</span>
+<span class="p">.</span><span class="n">with_std_vector</span><span class="p">();</span>
+
+<span class="n">grunk</span><span class="p">.</span><span class="n">register_function</span><span class="p">(</span><span class="s">&quot;add&quot;</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">add</span><span class="p">);</span>
+
+<span class="k">auto</span><span class="w"> </span><span class="n">env</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">grunk</span><span class="p">.</span><span class="n">create_parametric_env</span><span class="p">();</span>
+<span class="n">env</span><span class="p">.</span><span class="n">eval</span><span class="p">(</span><span class="sa">R</span><span class="s">&quot;</span><span class="dl">(</span>
+<span class="s">   x1 = Foo.new_feature(5)</span>
+<span class="s">   x2 = Foo.new_feature(7)</span>
+<span class="s">   x3 = Foo.new_feature(9)</span>
+
+<span class="s">   res = add(Foo.as_vec(x1, x2, x3))</span>
+<span class="dl">)</span><span class="s">&quot;</span><span class="p">);</span>
+
+<span class="k">auto</span><span class="w"> </span><span class="n">res</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">env</span><span class="p">.</span><span class="n">get_feature</span><span class="p">(</span><span class="s">&quot;res&quot;</span><span class="p">);</span>
+
+<span class="c1">// prints 21</span>
+<span class="n">std</span><span class="o">::</span><span class="n">cout</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">res</span><span class="p">.</span><span class="n">value</span><span class="p">().</span><span class="n">as</span><span class="o">&lt;</span><span class="n">Foo</span><span class="o">&gt;</span><span class="p">().</span><span class="n">i</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">endl</span><span class="p">;</span>
+
+<span class="k">auto</span><span class="w"> </span><span class="n">x1</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">env</span><span class="p">.</span><span class="n">get_feature</span><span class="p">(</span><span class="s">&quot;x1&quot;</span><span class="p">);</span>
+<span class="n">x1</span><span class="p">.</span><span class="n">set_value</span><span class="p">(</span><span class="n">Foo</span><span class="p">{</span><span class="mi">26</span><span class="p">});</span>
+
+<span class="c1">// prints 42</span>
+<span class="n">std</span><span class="o">::</span><span class="n">cout</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">res</span><span class="p">.</span><span class="n">value</span><span class="p">().</span><span class="n">as</span><span class="o">&lt;</span><span class="n">Foo</span><span class="o">&gt;</span><span class="p">().</span><span class="n">i</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">endl</span><span class="p">;</span>
+</pre></div>
+</div>
+<p>Currently, <code class="docutils literal notranslate"><span class="pre">std::vector</span></code> is the only C++ container supported by grunk.</p>
+<p>Consider a CAD plugin providing the following functions:</p>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="n">Curve</span><span class="w"> </span><span class="nf">interpolate</span><span class="p">(</span><span class="n">std</span><span class="o">::</span><span class="n">vector</span><span class="o">&lt;</span><span class="n">Point</span><span class="o">&gt;</span><span class="w"> </span><span class="k">const</span><span class="o">&amp;</span><span class="p">);</span>
+<span class="n">Surface</span><span class="w"> </span><span class="nf">interpolate</span><span class="p">(</span><span class="n">std</span><span class="o">::</span><span class="n">vector</span><span class="o">&lt;</span><span class="n">Curve</span><span class="o">&gt;</span><span class="w"> </span><span class="k">const</span><span class="o">&amp;</span><span class="p">);</span>
+</pre></div>
+</div>
+<p>If both <code class="docutils literal notranslate"><span class="pre">Point</span></code> and <code class="docutils literal notranslate"><span class="pre">Curve</span></code> are registered in the dynamic type system using the <code class="docutils literal notranslate"><span class="pre">with_std_vector</span></code> method, we can generate parametric models that look like the following.</p>
+<div class="sphinx-tabs docutils container">
+<div aria-label="Tabbed content" class="closeable" role="tablist"><button aria-controls="panel-3-Qysr" aria-selected="true" class="sphinx-tabs-tab code-tab group-tab" id="tab-3-Qysr" name="Qysr" role="tab" tabindex="0">C++</button><button aria-controls="panel-3-UHl0aG9u" aria-selected="false" class="sphinx-tabs-tab code-tab group-tab" id="tab-3-UHl0aG9u" name="UHl0aG9u" role="tab" tabindex="-1">Python</button><button aria-controls="panel-3-WUFNTA==" aria-selected="false" class="sphinx-tabs-tab code-tab group-tab" id="tab-3-WUFNTA==" name="WUFNTA==" role="tab" tabindex="-1">YAML</button></div><div aria-labelledby="tab-3-Qysr" class="sphinx-tabs-panel code-tab group-tab" id="panel-3-Qysr" name="Qysr" role="tabpanel" tabindex="0"><div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="c1">// ... omitted</span>
+<span class="k">auto</span><span class="w"> </span><span class="n">points3</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">grunk</span><span class="p">.</span><span class="n">action</span><span class="p">(</span><span class="s">&quot;my_cad.Point.as_vec&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">pnt31</span><span class="p">,</span><span class="w"> </span><span class="n">pnt32</span><span class="p">,</span><span class="w"> </span><span class="n">pnt33</span><span class="p">,</span><span class="w"> </span><span class="n">pnt34</span><span class="p">).</span><span class="n">with_id</span><span class="p">(</span><span class="s">&quot;points3&quot;</span><span class="p">);</span>
+
+<span class="k">auto</span><span class="w"> </span><span class="n">curve1</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">grunk</span><span class="p">.</span><span class="n">action</span><span class="p">(</span><span class="s">&quot;my_cad.interpolate&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">points1</span><span class="p">).</span><span class="n">with_id</span><span class="p">(</span><span class="s">&quot;c1&quot;</span><span class="p">);</span>
+<span class="k">auto</span><span class="w"> </span><span class="n">curve2</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">grunk</span><span class="p">.</span><span class="n">action</span><span class="p">(</span><span class="s">&quot;my_cad.interpolate&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">points2</span><span class="p">).</span><span class="n">with_id</span><span class="p">(</span><span class="s">&quot;c2&quot;</span><span class="p">);</span>
+<span class="k">auto</span><span class="w"> </span><span class="n">curve3</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">grunk</span><span class="p">.</span><span class="n">action</span><span class="p">(</span><span class="s">&quot;my_cad.interpolate&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">points3</span><span class="p">).</span><span class="n">with_id</span><span class="p">(</span><span class="s">&quot;c3&quot;</span><span class="p">);</span>
+<span class="k">auto</span><span class="w"> </span><span class="n">curves</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">grunk</span><span class="p">.</span><span class="n">action</span><span class="p">(</span><span class="s">&quot;my_cad.Curve.as_vec&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">curve1</span><span class="p">,</span><span class="w"> </span><span class="n">curve2</span><span class="p">,</span><span class="w"> </span><span class="n">curve2</span><span class="p">)</span>
+<span class="k">auto</span><span class="w"> </span><span class="n">surface</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">grunk</span><span class="p">.</span><span class="n">action</span><span class="p">(</span><span class="s">&quot;my_cad:interpolate&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">curves</span><span class="p">).</span><span class="n">with_id</span><span class="p">(</span><span class="s">&quot;s&quot;</span><span class="p">);</span>
+</pre></div>
+</div>
+</div><div aria-labelledby="tab-3-UHl0aG9u" class="sphinx-tabs-panel code-tab group-tab" hidden="true" id="panel-3-UHl0aG9u" name="UHl0aG9u" role="tabpanel" tabindex="0"><div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># ... omitted</span>
+<span class="n">points3</span> <span class="o">=</span> <span class="n">grunk</span><span class="o">.</span><span class="n">action</span><span class="p">(</span><span class="s2">&quot;my_cad.Point.as_vec&quot;</span><span class="p">,</span> <span class="n">pnt31</span><span class="p">,</span> <span class="n">pnt32</span><span class="p">,</span> <span class="n">pnt33</span><span class="p">,</span> <span class="n">pnt34</span><span class="p">)</span><span class="o">.</span><span class="n">with_id</span><span class="p">(</span><span class="s2">&quot;points3&quot;</span><span class="p">)</span>
+
+<span class="n">curve1</span> <span class="o">=</span> <span class="n">grunk</span><span class="o">.</span><span class="n">action</span><span class="p">(</span><span class="s2">&quot;my_cad.interpolate&quot;</span><span class="p">,</span> <span class="n">points1</span><span class="p">)</span><span class="o">.</span><span class="n">with_id</span><span class="p">(</span><span class="s2">&quot;c1&quot;</span><span class="p">)</span>
+<span class="n">curve2</span> <span class="o">=</span> <span class="n">grunk</span><span class="o">.</span><span class="n">action</span><span class="p">(</span><span class="s2">&quot;my_cad.interpolate&quot;</span><span class="p">,</span> <span class="n">points2</span><span class="p">)</span><span class="o">.</span><span class="n">with_id</span><span class="p">(</span><span class="s2">&quot;c2&quot;</span><span class="p">)</span>
+<span class="n">curve3</span> <span class="o">=</span> <span class="n">grunk</span><span class="o">.</span><span class="n">action</span><span class="p">(</span><span class="s2">&quot;my_cad.interpolate&quot;</span><span class="p">,</span> <span class="n">points3</span><span class="p">)</span><span class="o">.</span><span class="n">with_id</span><span class="p">(</span><span class="s2">&quot;c3&quot;</span><span class="p">)</span>
+<span class="n">curves</span> <span class="o">=</span> <span class="n">grunk</span><span class="o">.</span><span class="n">action</span><span class="p">(</span><span class="s2">&quot;my_cad.Curve.as_vec&quot;</span><span class="p">,</span> <span class="n">curve1</span><span class="p">,</span> <span class="n">curve2</span><span class="p">,</span> <span class="n">curve2</span><span class="p">)</span>
+<span class="n">surface</span> <span class="o">=</span> <span class="n">grunk</span><span class="o">.</span><span class="n">action</span><span class="p">(</span><span class="s2">&quot;my_cad:interpolate&quot;</span><span class="p">,</span> <span class="n">curves</span><span class="p">)</span><span class="o">.</span><span class="n">with_id</span><span class="p">(</span><span class="s2">&quot;s&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div><div aria-labelledby="tab-3-WUFNTA==" class="sphinx-tabs-panel code-tab group-tab" hidden="true" id="panel-3-WUFNTA==" name="WUFNTA==" role="tabpanel" tabindex="0"><div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">uses</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">grunk</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.5.0</span>
+<span class="w">  </span><span class="nt">my_cad</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">1.0.0</span>
+<span class="nt">parameters</span><span class="p">:</span>
+<span class="w">  </span><span class="c1"># ... omitted</span>
+<span class="nt">steps</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">|</span>
+<span class="w">  </span><span class="no">-- ... omitted</span>
+<span class="w">  </span><span class="no">points3 = my_cad.Point.as_vec(pnt31, pnt32, pnt33, pnt34)</span>
+<span class="w">  </span><span class="no">c1 = my_cad.interpolate(points1)</span>
+<span class="w">  </span><span class="no">c2 = my_cad.interpolate(points2)</span>
+<span class="w">  </span><span class="no">c3 = my_cad.interpolate(points3)</span>
+<span class="w">  </span><span class="no">s = my_cad.interpolate(my_cad.Curve.as_vec(c1, c2, c3) )</span>
+</pre></div>
+</div>
+</div></div>
+</section>
+<section id="modules">
+<span id="module"></span><h3>Modules<a class="headerlink" href="#modules" title="Link to this heading">¶</a></h3>
+<p>A grunk module is a named table of Lua functions, backed by a plain Lua script, that is registered
+directly on a <code class="docutils literal notranslate"><span class="pre">grunk::state</span></code> - the same place that <code class="docutils literal notranslate"><span class="pre">register_type</span></code> and <code class="docutils literal notranslate"><span class="pre">register_function</span></code> put
+their symbols. Use <code class="docutils literal notranslate"><span class="pre">run_module_script</span></code> (or <code class="docutils literal notranslate"><span class="pre">run_module_file</span></code>, to load from disk) to define a
+module:</p>
+<div class="sphinx-tabs docutils container">
+<div aria-label="Tabbed content" class="closeable" role="tablist"><button aria-controls="panel-4-Qysr" aria-selected="true" class="sphinx-tabs-tab code-tab group-tab" id="tab-4-Qysr" name="Qysr" role="tab" tabindex="0">C++</button><button aria-controls="panel-4-UHl0aG9u" aria-selected="false" class="sphinx-tabs-tab code-tab group-tab" id="tab-4-UHl0aG9u" name="UHl0aG9u" role="tab" tabindex="-1">Python</button></div><div aria-labelledby="tab-4-Qysr" class="sphinx-tabs-panel code-tab group-tab" id="panel-4-Qysr" name="Qysr" role="tabpanel" tabindex="0"><div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;grunk/grunk.hpp&gt;</span>
+
+<span class="n">grunk</span><span class="o">::</span><span class="n">state</span><span class="w"> </span><span class="n">grunk</span><span class="p">;</span>
+<span class="n">grunk</span><span class="p">.</span><span class="n">run_module_script</span><span class="p">(</span>
+<span class="w">   </span><span class="s">&quot;mymod&quot;</span><span class="p">,</span>
+<span class="w">   </span><span class="sa">R</span><span class="s">&quot;</span><span class="dl">(</span>
+<span class="s">      function less_than(l,r)</span>
+<span class="s">         return l &lt; r</span>
+<span class="s">      end</span>
+
+<span class="s">      function if_then_else(cond, i, e)</span>
+<span class="s">         if cond then</span>
+<span class="s">            return i</span>
+<span class="s">         else</span>
+<span class="s">            return e</span>
+<span class="s">         end</span>
+<span class="s">      end</span>
+<span class="s">   </span><span class="dl">)</span><span class="s">&quot;</span>
+<span class="p">);</span>
+
+<span class="c1">// a plain environment sees plain, uninstrumented functions</span>
+<span class="k">auto</span><span class="w"> </span><span class="n">env</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">grunk</span><span class="p">.</span><span class="n">create_env</span><span class="p">();</span>
+<span class="n">env</span><span class="p">.</span><span class="n">eval</span><span class="p">(</span><span class="sa">R</span><span class="s">&quot;</span><span class="dl">(</span>
+<span class="s">   a = 2</span>
+<span class="s">   b = 3</span>
+<span class="s">   c = mymod.if_then_else(mymod.less_than(a,b), 5, 32)</span>
+<span class="dl">)</span><span class="s">&quot;</span><span class="p">);</span>
+</pre></div>
+</div>
+</div><div aria-labelledby="tab-4-UHl0aG9u" class="sphinx-tabs-panel code-tab group-tab" hidden="true" id="panel-4-UHl0aG9u" name="UHl0aG9u" role="tabpanel" tabindex="0"><div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">grunk</span>
+
+<span class="n">grunk</span><span class="o">.</span><span class="n">run_module_script</span><span class="p">(</span>
+   <span class="s2">&quot;mymod&quot;</span><span class="p">,</span>
+<span class="w">   </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">   function less_than(l,r)</span>
+<span class="sd">      return l &lt; r</span>
+<span class="sd">   end</span>
+
+<span class="sd">   function if_then_else(cond, i, e)</span>
+<span class="sd">      if cond then</span>
+<span class="sd">         return i</span>
+<span class="sd">      else</span>
+<span class="sd">         return e</span>
+<span class="sd">      end</span>
+<span class="sd">   end</span>
+<span class="sd">   &quot;&quot;&quot;</span>
+<span class="p">)</span>
+
+<span class="c1"># a plain environment sees plain, uninstrumented functions</span>
+<span class="n">e</span> <span class="o">=</span> <span class="n">grunk</span><span class="o">.</span><span class="n">create_env</span><span class="p">()</span>
+<span class="n">e</span><span class="o">.</span><span class="n">eval</span><span class="p">(</span><span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">    a = 2</span>
+<span class="s2">    b = 3</span>
+<span class="s2">    c = mymod.if_then_else(mymod.less_than(a,b), 5, 32)</span>
+<span class="s2">&quot;&quot;&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div></div>
+<p>In a parametric environment, every function exported by a module is decorated into an action, just
+like any other symbol registered on the state, so calls into the module integrate with grunk’s
+dependency tracking:</p>
+<div class="sphinx-tabs docutils container">
+<div aria-label="Tabbed content" class="closeable" role="tablist"><button aria-controls="panel-5-Qysr" aria-selected="true" class="sphinx-tabs-tab code-tab group-tab" id="tab-5-Qysr" name="Qysr" role="tab" tabindex="0">C++</button><button aria-controls="panel-5-UHl0aG9u" aria-selected="false" class="sphinx-tabs-tab code-tab group-tab" id="tab-5-UHl0aG9u" name="UHl0aG9u" role="tab" tabindex="-1">Python</button></div><div aria-labelledby="tab-5-Qysr" class="sphinx-tabs-panel code-tab group-tab" id="panel-5-Qysr" name="Qysr" role="tabpanel" tabindex="0"><div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="k">auto</span><span class="w"> </span><span class="n">penv</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">grunk</span><span class="p">.</span><span class="n">create_parametric_env</span><span class="p">();</span>
+<span class="n">penv</span><span class="p">.</span><span class="n">eval</span><span class="p">(</span><span class="sa">R</span><span class="s">&quot;</span><span class="dl">(</span>
+<span class="s">   a = grunk.feature(2)</span>
+<span class="s">   b = grunk.feature(3)</span>
+<span class="s">   c = mymod.if_then_else(mymod.less_than(a,b), 5, 32)</span>
+<span class="dl">)</span><span class="s">&quot;</span><span class="p">);</span>
+
+<span class="k">auto</span><span class="w"> </span><span class="n">c</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">penv</span><span class="p">.</span><span class="n">get_feature</span><span class="p">(</span><span class="s">&quot;c&quot;</span><span class="p">);</span>
+<span class="n">std</span><span class="o">::</span><span class="n">cout</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">c</span><span class="p">.</span><span class="n">value</span><span class="p">().</span><span class="n">as</span><span class="o">&lt;</span><span class="kt">int</span><span class="o">&gt;</span><span class="p">()</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">endl</span><span class="p">;</span>
+
+<span class="k">auto</span><span class="w"> </span><span class="n">a</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">penv</span><span class="p">.</span><span class="n">get_feature</span><span class="p">(</span><span class="s">&quot;a&quot;</span><span class="p">);</span>
+<span class="n">a</span><span class="p">.</span><span class="n">set_value</span><span class="p">(</span><span class="mi">4</span><span class="p">);</span>
+
+<span class="n">std</span><span class="o">::</span><span class="n">cout</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">c</span><span class="p">.</span><span class="n">value</span><span class="p">().</span><span class="n">as</span><span class="o">&lt;</span><span class="kt">int</span><span class="o">&gt;</span><span class="p">()</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">endl</span><span class="p">;</span>
+
+<span class="c1">// remove the module once done with it</span>
+<span class="n">grunk</span><span class="p">.</span><span class="n">clear_module</span><span class="p">(</span><span class="s">&quot;mymod&quot;</span><span class="p">);</span>
+</pre></div>
+</div>
+</div><div aria-labelledby="tab-5-UHl0aG9u" class="sphinx-tabs-panel code-tab group-tab" hidden="true" id="panel-5-UHl0aG9u" name="UHl0aG9u" role="tabpanel" tabindex="0"><div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">pe</span> <span class="o">=</span> <span class="n">grunk</span><span class="o">.</span><span class="n">create_parametric_env</span><span class="p">()</span>
+<span class="n">pe</span><span class="o">.</span><span class="n">eval</span><span class="p">(</span><span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">    a = grunk.feature(2)</span>
+<span class="s2">    b = grunk.feature(3)</span>
+<span class="s2">    c = mymod.if_then_else(mymod.less_than(a,b), 5, 32)</span>
+<span class="s2">&quot;&quot;&quot;</span><span class="p">)</span>
+
+<span class="n">c</span> <span class="o">=</span> <span class="n">pe</span><span class="o">.</span><span class="n">get_feature</span><span class="p">(</span><span class="s2">&quot;c&quot;</span><span class="p">)</span>
+<span class="k">assert</span> <span class="n">c</span><span class="o">.</span><span class="n">value</span><span class="p">()</span><span class="o">.</span><span class="n">as_int</span><span class="p">()</span> <span class="o">==</span> <span class="mi">5</span>
+
+<span class="n">a</span> <span class="o">=</span> <span class="n">pe</span><span class="o">.</span><span class="n">get_feature</span><span class="p">(</span><span class="s2">&quot;a&quot;</span><span class="p">)</span>
+<span class="n">a</span><span class="o">.</span><span class="n">set_value</span><span class="p">(</span><span class="mi">4</span><span class="p">)</span>
+<span class="k">assert</span> <span class="n">c</span><span class="o">.</span><span class="n">value</span><span class="p">()</span><span class="o">.</span><span class="n">as_int</span><span class="p">()</span> <span class="o">==</span> <span class="mi">32</span>
+
+<span class="c1"># remove the module once done with it</span>
+<span class="n">grunk</span><span class="o">.</span><span class="n">clear_module</span><span class="p">(</span><span class="s2">&quot;mymod&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div></div>
+<p>If you need to reload a module or replace its contents, call <code class="docutils literal notranslate"><span class="pre">clear_module(name)</span></code> first - this
+removes the module from the original Lua environment as well as from the decorated cache, so that
+subsequent parametric environments will not see stale, cached decorated values. Calling
+<code class="docutils literal notranslate"><span class="pre">run_module_script</span></code>/<code class="docutils literal notranslate"><span class="pre">run_module_file</span></code> on a module that already exists reuses the existing table
+instead, so several scripts or files can incrementally populate the same module.</p>
+<p>Module functions are particularly useful to instantiate objects and modify them using non-const
+setters. grunk disallows any function that can potentially alter its inputs. This includes any
+function that takes a non-const reference as argument and, in consequence, all non-const member
+functions. This is an important safeguard against dependency cycles in the feature tree: as part of
+the philosophy of grunk, information flows from inputs to outputs only, and any feature in the tree
+is influenced only by its predecessors.</p>
+<p>This comes with a heavy restriction, since non-const members, e.g. setters, are frequently used in
+object-oriented programs. Consider the following class:</p>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="k">struct</span><span class="w"> </span><span class="nc">Pnt</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="n">Pnt</span><span class="p">()</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">default</span><span class="p">;</span>
+
+<span class="w">    </span><span class="kr">inline</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="nf">set_x</span><span class="p">(</span><span class="kt">double</span><span class="w"> </span><span class="n">x_</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">x</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">x_</span><span class="p">;</span><span class="w"> </span><span class="p">}</span>
+<span class="w">    </span><span class="kr">inline</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="nf">set_y</span><span class="p">(</span><span class="kt">double</span><span class="w"> </span><span class="n">y_</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">y</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">y_</span><span class="p">;</span><span class="w"> </span><span class="p">}</span>
+<span class="w">    </span><span class="kr">inline</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="nf">set_z</span><span class="p">(</span><span class="kt">double</span><span class="w"> </span><span class="n">z_</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">z</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">z_</span><span class="p">;</span><span class="w"> </span><span class="p">}</span>
+
+<span class="w">    </span><span class="kt">double</span><span class="w"> </span><span class="n">x</span><span class="p">{</span><span class="mf">0.</span><span class="p">};</span>
+<span class="w">    </span><span class="kt">double</span><span class="w"> </span><span class="n">y</span><span class="p">{</span><span class="mf">0.</span><span class="p">};</span>
+<span class="w">    </span><span class="kt">double</span><span class="w"> </span><span class="n">z</span><span class="p">{</span><span class="mf">0.</span><span class="p">};</span>
+<span class="p">};</span>
+</pre></div>
+</div>
+<p>Instantiating an instance of <code class="docutils literal notranslate"><span class="pre">Pnt</span></code> with grunk and then modifying it using <code class="docutils literal notranslate"><span class="pre">set_x</span></code> via
+<code class="docutils literal notranslate"><span class="pre">grunk::action</span></code> is not allowed, because <code class="docutils literal notranslate"><span class="pre">set_x</span></code> is a non-const member function. Instead, you can
+create the instance and modify it as part of a module function:</p>
+<div class="sphinx-tabs docutils container">
+<div aria-label="Tabbed content" class="closeable" role="tablist"><button aria-controls="panel-6-Qysr" aria-selected="true" class="sphinx-tabs-tab code-tab group-tab" id="tab-6-Qysr" name="Qysr" role="tab" tabindex="0">C++</button><button aria-controls="panel-6-UHl0aG9u" aria-selected="false" class="sphinx-tabs-tab code-tab group-tab" id="tab-6-UHl0aG9u" name="UHl0aG9u" role="tab" tabindex="-1">Python</button></div><div aria-labelledby="tab-6-Qysr" class="sphinx-tabs-panel code-tab group-tab" id="panel-6-Qysr" name="Qysr" role="tabpanel" tabindex="0"><div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;grunk/grunk.hpp&gt;</span>
+
+<span class="n">grunk</span><span class="o">::</span><span class="n">state</span><span class="w"> </span><span class="n">grunk</span><span class="p">;</span>
+
+<span class="c1">// registration of Pnt omitted here</span>
+
+<span class="n">grunk</span><span class="p">.</span><span class="n">run_module_script</span><span class="p">(</span>
+<span class="w">   </span><span class="s">&quot;mymod&quot;</span><span class="p">,</span>
+<span class="w">   </span><span class="sa">R</span><span class="s">&quot;</span><span class="dl">(</span>
+<span class="s">      function create_pnt(u, v)</span>
+<span class="s">          p = Pnt.new()</span>
+<span class="s">          p:set_x(u)</span>
+<span class="s">          p:set_y(v)</span>
+<span class="s">          return p</span>
+<span class="s">      end</span>
+<span class="s">   </span><span class="dl">)</span><span class="s">&quot;</span>
+<span class="p">);</span>
+
+<span class="k">auto</span><span class="w"> </span><span class="n">u</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">grunk</span><span class="p">.</span><span class="n">feature</span><span class="p">(</span><span class="mf">0.1</span><span class="p">);</span>
+<span class="k">auto</span><span class="w"> </span><span class="n">v</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">grunk</span><span class="p">.</span><span class="n">feature</span><span class="p">(</span><span class="mf">0.2</span><span class="p">);</span>
+
+<span class="k">auto</span><span class="w"> </span><span class="n">p</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">grunk</span><span class="p">.</span><span class="n">action</span><span class="p">(</span><span class="s">&quot;mymod.create_pnt&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">u</span><span class="p">,</span><span class="w"> </span><span class="n">v</span><span class="p">);</span>
+</pre></div>
+</div>
+</div><div aria-labelledby="tab-6-UHl0aG9u" class="sphinx-tabs-panel code-tab group-tab" hidden="true" id="panel-6-UHl0aG9u" name="UHl0aG9u" role="tabpanel" tabindex="0"><div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">grunk</span>
+
+<span class="c1"># registration of Pnt omitted here</span>
+
+<span class="n">grunk</span><span class="o">.</span><span class="n">run_module_script</span><span class="p">(</span>
+   <span class="s2">&quot;mymod&quot;</span><span class="p">,</span>
+<span class="w">   </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">      function create_pnt(u, v)</span>
+<span class="sd">          p = Pnt.new()</span>
+<span class="sd">          p:set_x(u)</span>
+<span class="sd">          p:set_y(v)</span>
+<span class="sd">          return p</span>
+<span class="sd">      end</span>
+<span class="sd">   &quot;&quot;&quot;</span>
+<span class="p">)</span>
+
+<span class="n">u</span> <span class="o">=</span> <span class="n">grunk</span><span class="o">.</span><span class="n">feature</span><span class="p">(</span><span class="mf">0.1</span><span class="p">)</span>
+<span class="n">v</span> <span class="o">=</span> <span class="n">grunk</span><span class="o">.</span><span class="n">feature</span><span class="p">(</span><span class="mf">0.2</span><span class="p">)</span>
+
+<span class="n">p</span> <span class="o">=</span> <span class="n">grunk</span><span class="o">.</span><span class="n">action</span><span class="p">(</span><span class="s2">&quot;mymod.create_pnt&quot;</span><span class="p">,</span> <span class="n">u</span><span class="p">,</span> <span class="n">v</span><span class="p">)</span>
+</pre></div>
+</div>
+</div></div>
+<p>Note that in the above example, no cycles are created because the non-const setters are not called on
+features, but on intermediate variables of the function body <code class="docutils literal notranslate"><span class="pre">mymod.create_pnt</span></code> during the
+evaluation of a single compute node. The inputs <code class="docutils literal notranslate"><span class="pre">u</span></code> and <code class="docutils literal notranslate"><span class="pre">v</span></code> are not altered.</p>
+<p>The modules shown so far are registered directly on a <code class="docutils literal notranslate"><span class="pre">grunk::state</span></code> and are shared by every
+recipe built from it, exactly like a registered type or function. <a class="reference internal" href="#subrecipes"><span class="std std-ref">Recipes</span></a> support a
+second, reactive flavor of modules that are private to a single recipe - see
+<a class="reference internal" href="#recipe-modules"><span class="std std-ref">Modules in recipes</span></a>.</p>
+</section>
+<section id="custom-pointers-and-smart-pointers">
+<h3>Custom Pointers and Smart Pointers<a class="headerlink" href="#custom-pointers-and-smart-pointers" title="Link to this heading">¶</a></h3>
+<p>Not yet implemented.</p>
+</section>
+</section>
+<section id="grunk-plugins">
+<span id="using-plugins"></span><h2>Grunk plugins<a class="headerlink" href="#grunk-plugins" title="Link to this heading">¶</a></h2>
+<p>TODO</p>
+<section id="using-grunk-plugins">
+<h3>Using grunk plugins<a class="headerlink" href="#using-grunk-plugins" title="Link to this heading">¶</a></h3>
+</section>
+<section id="writing-plugins">
+<span id="id1"></span><h3>Writing Plugins<a class="headerlink" href="#writing-plugins" title="Link to this heading">¶</a></h3>
+<p>TODO</p>
+</section>
+<section id="sharing-plugins">
+<span id="id2"></span><h3>Sharing Plugins<a class="headerlink" href="#sharing-plugins" title="Link to this heading">¶</a></h3>
+<p>To Do</p>
+</section>
+</section>
+<section id="grunk-recipes">
+<span id="id3"></span><h2>Grunk Recipes<a class="headerlink" href="#grunk-recipes" title="Link to this heading">¶</a></h2>
+<p>In a certain sense, a <code class="docutils literal notranslate"><span class="pre">grunk::Recipe</span></code> is just a container of features. You can construct a recipe from from a <code class="docutils literal notranslate"><span class="pre">grunk::state</span></code> and add features to it.</p>
+<p><a href="#id4"><span class="problematic" id="id5">``</span></a>grunk::Recipe``_s exist only in dynamic mode.</p>
+<div class="sphinx-tabs docutils container">
+<div aria-label="Tabbed content" class="closeable" role="tablist"><button aria-controls="panel-7-Qysr" aria-selected="true" class="sphinx-tabs-tab code-tab group-tab" id="tab-7-Qysr" name="Qysr" role="tab" tabindex="0">C++</button><button aria-controls="panel-7-UHl0aG9u" aria-selected="false" class="sphinx-tabs-tab code-tab group-tab" id="tab-7-UHl0aG9u" name="UHl0aG9u" role="tab" tabindex="-1">Python</button></div><div aria-labelledby="tab-7-Qysr" class="sphinx-tabs-panel code-tab group-tab" id="panel-7-Qysr" name="Qysr" role="tabpanel" tabindex="0"><div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="k">auto</span><span class="w"> </span><span class="n">grunk</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">grunk</span><span class="o">::</span><span class="n">state</span><span class="p">();</span>
+
+<span class="k">auto</span><span class="w"> </span><span class="n">a</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">grunk</span><span class="p">.</span><span class="n">feature</span><span class="p">(</span><span class="s">&quot;PluginA.Scalar&quot;</span><span class="p">,</span><span class="w"> </span><span class="mf">17.</span><span class="p">);</span>
+<span class="k">auto</span><span class="w"> </span><span class="n">b</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">grunk</span><span class="p">.</span><span class="n">feature</span><span class="p">(</span><span class="s">&quot;PluginA.Scalar&quot;</span><span class="p">,</span><span class="w"> </span><span class="mf">15.</span><span class="p">);</span>
+<span class="k">auto</span><span class="w"> </span><span class="n">c</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">grunk</span><span class="p">.</span><span class="n">action</span><span class="p">(</span><span class="s">&quot;PluginA.add&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">a</span><span class="p">,</span><span class="w"> </span><span class="n">b</span><span class="p">);</span>
+
+<span class="k">auto</span><span class="w"> </span><span class="n">recipe1</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">grunk</span><span class="p">.</span><span class="n">create_recipe</span><span class="p">();</span>
+<span class="n">recipe1</span><span class="p">[</span><span class="s">&quot;a&quot;</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">a</span><span class="p">;</span>
+<span class="n">recipe1</span><span class="p">[</span><span class="s">&quot;b&quot;</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">b</span><span class="p">;</span>
+<span class="n">recipe1</span><span class="p">[</span><span class="s">&quot;c&quot;</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">c</span><span class="p">;</span>
+<span class="n">recipe1</span><span class="p">.</span><span class="n">tag</span><span class="p">();</span><span class="w"> </span><span class="c1">// adds the labels &quot;a&quot;, &quot;b&quot; and &quot;c&quot; to the features</span>
+
+<span class="k">auto</span><span class="w"> </span><span class="n">recipe2</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">grunk</span><span class="p">.</span><span class="n">create_recipe</span><span class="p">();</span>
+<span class="n">recipe2</span><span class="p">[</span><span class="s">&quot;x&quot;</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">grunk</span><span class="p">.</span><span class="n">feature</span><span class="p">(</span><span class="s">&quot;PluginA.Scalar&quot;</span><span class="p">,</span><span class="w"> </span><span class="mf">2.</span><span class="p">);</span>
+<span class="n">recipe2</span><span class="p">[</span><span class="s">&quot;y&quot;</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">grunk</span><span class="p">.</span><span class="n">feature</span><span class="p">(</span><span class="s">&quot;PluginA.Scalar&quot;</span><span class="p">,</span><span class="w"> </span><span class="mf">5.</span><span class="p">);</span>
+<span class="n">recipe2</span><span class="p">[</span><span class="s">&quot;z&quot;</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">grunk</span><span class="p">.</span><span class="n">action</span><span class="p">(</span><span class="s">&quot;PluginB.multiply&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">recipe2</span><span class="p">[</span><span class="s">&quot;x&quot;</span><span class="p">],</span><span class="w"> </span><span class="n">recipe2</span><span class="p">[</span><span class="s">&quot;y&quot;</span><span class="p">]);</span>
+<span class="n">recipe2</span><span class="p">.</span><span class="n">tag</span><span class="p">();</span><span class="w"> </span><span class="c1">// adds the labels &quot;x&quot;, &quot;y&quot; and &quot;z&quot; to the features</span>
+</pre></div>
+</div>
+</div><div aria-labelledby="tab-7-UHl0aG9u" class="sphinx-tabs-panel code-tab group-tab" hidden="true" id="panel-7-UHl0aG9u" name="UHl0aG9u" role="tabpanel" tabindex="0"><div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">a</span> <span class="o">=</span> <span class="n">grunk</span><span class="o">.</span><span class="n">feature</span><span class="p">(</span><span class="s2">&quot;PluginA.Scalar&quot;</span><span class="p">,</span> <span class="mf">17.</span><span class="p">)</span>
+<span class="n">b</span> <span class="o">=</span> <span class="n">grunk</span><span class="o">.</span><span class="n">feature</span><span class="p">(</span><span class="s2">&quot;PluginA.Scalar&quot;</span><span class="p">,</span> <span class="mf">15.</span><span class="p">)</span>
+<span class="n">c</span> <span class="o">=</span> <span class="n">grunk</span><span class="o">.</span><span class="n">action</span><span class="p">(</span><span class="s2">&quot;c&quot;</span><span class="p">,</span> <span class="s2">&quot;PluginA::add&quot;</span><span class="p">,</span> <span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">)</span>
+<span class="n">recipe1</span> <span class="o">=</span> <span class="n">grunk</span><span class="o">.</span><span class="n">create_recipe</span><span class="p">()</span>
+<span class="n">recipe1</span><span class="p">[</span><span class="s2">&quot;a&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">a</span>
+<span class="n">recipe1</span><span class="p">[</span><span class="s2">&quot;b&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">b</span>
+<span class="n">recipe1</span><span class="p">[</span><span class="s2">&quot;c&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">c</span>
+<span class="n">recipe1</span><span class="o">.</span><span class="n">tag</span><span class="p">()</span> <span class="c1"># adds the labels &quot;a&quot;, &quot;b&quot; and &quot;c&quot;</span>
+
+<span class="n">recipe2</span> <span class="o">=</span> <span class="n">grunk</span><span class="o">.</span><span class="n">create_recipe</span><span class="p">()</span>
+<span class="n">recipe2</span><span class="p">[</span><span class="s2">&quot;x&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">grunk</span><span class="o">.</span><span class="n">feature</span><span class="p">(</span><span class="s2">&quot;PluginA.Scalar&quot;</span><span class="p">,</span> <span class="mf">2.</span><span class="p">)</span>
+<span class="n">recipe2</span><span class="p">[</span><span class="s2">&quot;y&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">grunk</span><span class="o">.</span><span class="n">feature</span><span class="p">(</span><span class="s2">&quot;PluginA.Scalar&quot;</span><span class="p">,</span> <span class="mf">5.</span><span class="p">)</span>
+<span class="n">recipe2</span><span class="p">[</span><span class="s2">&quot;z&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">grunk</span><span class="o">.</span><span class="n">action</span><span class="p">(</span><span class="s2">&quot;PluginB.multiply&quot;</span><span class="p">,</span> <span class="n">recipe2</span><span class="p">[</span><span class="s2">&quot;x&quot;</span><span class="p">],</span> <span class="n">recipe2</span><span class="p">[</span><span class="s2">&quot;y&quot;</span><span class="p">])</span>
+<span class="n">recipe2</span><span class="o">.</span><span class="n">tag</span><span class="p">()</span> <span class="c1"># adds the labels &quot;x&quot;, &quot;y&quot; and &quot;z&quot; to the features</span>
+</pre></div>
+</div>
+</div></div>
+<p>Notice that features can be queried by their id:</p>
+<div class="sphinx-tabs docutils container">
+<div aria-label="Tabbed content" class="closeable" role="tablist"><button aria-controls="panel-8-Qysr" aria-selected="true" class="sphinx-tabs-tab code-tab group-tab" id="tab-8-Qysr" name="Qysr" role="tab" tabindex="0">C++</button><button aria-controls="panel-8-UHl0aG9u" aria-selected="false" class="sphinx-tabs-tab code-tab group-tab" id="tab-8-UHl0aG9u" name="UHl0aG9u" role="tab" tabindex="-1">Python</button></div><div aria-labelledby="tab-8-Qysr" class="sphinx-tabs-panel code-tab group-tab" id="panel-8-Qysr" name="Qysr" role="tabpanel" tabindex="0"><div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="k">auto</span><span class="w"> </span><span class="n">x</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">recipe2</span><span class="p">[</span><span class="s">&quot;x&quot;</span><span class="p">];</span>
+</pre></div>
+</div>
+</div><div aria-labelledby="tab-8-UHl0aG9u" class="sphinx-tabs-panel code-tab group-tab" hidden="true" id="panel-8-UHl0aG9u" name="UHl0aG9u" role="tabpanel" tabindex="0"><div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">x</span> <span class="o">=</span> <span class="n">recipe2</span><span class="p">[</span><span class="s2">&quot;x&quot;</span><span class="p">]</span>
+</pre></div>
+</div>
+</div></div>
+<section id="reading-and-writing-to-file">
+<h3>Reading and writing to file<a class="headerlink" href="#reading-and-writing-to-file" title="Link to this heading">¶</a></h3>
+<p>We can read and write recipes to a yaml file.</p>
+<div class="sphinx-tabs docutils container">
+<div aria-label="Tabbed content" class="closeable" role="tablist"><button aria-controls="panel-9-Qysr" aria-selected="true" class="sphinx-tabs-tab code-tab group-tab" id="tab-9-Qysr" name="Qysr" role="tab" tabindex="0">C++</button><button aria-controls="panel-9-UHl0aG9u" aria-selected="false" class="sphinx-tabs-tab code-tab group-tab" id="tab-9-UHl0aG9u" name="UHl0aG9u" role="tab" tabindex="-1">Python</button></div><div aria-labelledby="tab-9-Qysr" class="sphinx-tabs-panel code-tab group-tab" id="panel-9-Qysr" name="Qysr" role="tabpanel" tabindex="0"><div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="n">grunk</span><span class="p">.</span><span class="n">write</span><span class="p">(</span><span class="s">&quot;/home/threepwood_guy/my_grunk_files/simple.grr.yml&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">recipe</span><span class="p">);</span>
+</pre></div>
+</div>
+</div><div aria-labelledby="tab-9-UHl0aG9u" class="sphinx-tabs-panel code-tab group-tab" hidden="true" id="panel-9-UHl0aG9u" name="UHl0aG9u" role="tabpanel" tabindex="0"><div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">grunk</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">&quot;/home/threepwood_guy/my_grunk_files/simple.grr.yml&quot;</span><span class="p">,</span> <span class="n">recipe</span><span class="p">)</span>
+</pre></div>
+</div>
+</div></div>
+<p>The structure of the yaml file looks like this:</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">uses</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">grunk</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.1.0</span>
+<span class="w">  </span><span class="nt">SomePluginA</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">2.4.19</span>
+<span class="w">  </span><span class="nt">SomePluginB</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">1.3.0</span>
+<span class="nt">parameters</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">x</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">SomePluginA.MyDouble.new(4.3)</span>
+<span class="w">  </span><span class="nt">y</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">SomePluginA.MyDouble.new(3.3)</span>
+<span class="w">  </span><span class="nt">z</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">SomePluginA.MyDouble.new(2.0)</span>
+<span class="w w-Error"> </span><span class="nt">steps</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">|</span>
+<span class="w">   </span><span class="no">a = SomePluginA.add(x, y)</span>
+<span class="w">   </span><span class="no">b = SomePluginB.multiply(a, 2)</span>
+<span class="w">   </span><span class="no">c = b:val() + z:val</span>
+</pre></div>
+</div>
+<p>All information needed to reproduce the output of <code class="docutils literal notranslate"><span class="pre">b</span></code> gets written into the file in
+yaml format.</p>
+<ul class="simple">
+<li><p>The block <code class="docutils literal notranslate"><span class="pre">uses</span></code> lists the grunk version as well as any used plugin together with its version</p></li>
+<li><p>The block <code class="docutils literal notranslate"><span class="pre">parameters</span></code> lists all independent named features that have an id.</p></li>
+<li><p>The block <code class="docutils literal notranslate"><span class="pre">steps</span></code> is a Lua script as a single string. It contains a topologically ordered list of steps needed to re-create the parametric tree. Each line corresponds to an <code class="docutils literal notranslate"><span class="pre">action</span></code> in the parametric tree.</p></li>
+</ul>
+<p>The file can then be read by grunk and the feature tree can be reconstructed, as long as all used plugins can be loaded:</p>
+<div class="sphinx-tabs docutils container">
+<div aria-label="Tabbed content" class="closeable" role="tablist"><button aria-controls="panel-10-Qysr" aria-selected="true" class="sphinx-tabs-tab code-tab group-tab" id="tab-10-Qysr" name="Qysr" role="tab" tabindex="0">C++</button><button aria-controls="panel-10-UHl0aG9u" aria-selected="false" class="sphinx-tabs-tab code-tab group-tab" id="tab-10-UHl0aG9u" name="UHl0aG9u" role="tab" tabindex="-1">Python</button></div><div aria-labelledby="tab-10-Qysr" class="sphinx-tabs-panel code-tab group-tab" id="panel-10-Qysr" name="Qysr" role="tabpanel" tabindex="0"><div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="n">grunk</span><span class="o">::</span><span class="n">get_plugin_registry</span><span class="p">().</span><span class="n">set_dir</span><span class="p">(</span><span class="s">&quot;/home/threepwood_guy/grunk_plugins/&quot;</span><span class="p">);</span><span class="w"> </span><span class="c1">// WIP</span>
+
+<span class="k">auto</span><span class="w"> </span><span class="n">recipe</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">grunk</span><span class="p">.</span><span class="n">read</span><span class="p">(</span><span class="s">&quot;/home/threepwood_guy/my_grunk_files/simple.grr.yml&quot;</span><span class="p">)</span>
+<span class="k">auto</span><span class="w"> </span><span class="n">b</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">recipe</span><span class="p">.</span><span class="n">at</span><span class="p">(</span><span class="s">&quot;b&quot;</span><span class="p">);</span>
+<span class="k">auto</span><span class="w"> </span><span class="n">b_result</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">b</span><span class="p">.</span><span class="n">value</span><span class="p">().</span><span class="n">get</span><span class="p">(</span><span class="s">&quot;value&quot;</span><span class="p">).</span><span class="n">as</span><span class="o">&lt;</span><span class="kt">double</span><span class="o">&gt;</span><span class="p">();</span>
+<span class="n">std</span><span class="o">::</span><span class="n">cout</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">b_result</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">endl</span><span class="p">;</span>
+</pre></div>
+</div>
+</div><div aria-labelledby="tab-10-UHl0aG9u" class="sphinx-tabs-panel code-tab group-tab" hidden="true" id="panel-10-UHl0aG9u" name="UHl0aG9u" role="tabpanel" tabindex="0"><div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">grunk</span><span class="o">.</span><span class="n">get_plugin_registry</span><span class="p">()</span><span class="o">.</span><span class="n">load_env</span><span class="p">(</span><span class="s2">&quot;my_env&quot;</span><span class="p">)</span>
+<span class="n">grunk</span><span class="o">.</span><span class="n">get_plugin_registry</span><span class="p">()</span><span class="o">.</span><span class="n">set_dir</span><span class="p">(</span><span class="s2">&quot;/home/threepwood_guy/grunk_plugins/&quot;</span><span class="p">)</span>  <span class="c1"># WIP</span>
+
+<span class="n">recipe</span> <span class="o">=</span> <span class="n">grunk</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="s2">&quot;/home/jan/my_grunk_files/simple.grr.yml&quot;</span><span class="p">)</span>
+<span class="n">b</span> <span class="o">=</span> <span class="n">recipe</span><span class="p">[</span><span class="s2">&quot;b&quot;</span><span class="p">]</span>
+<span class="n">b_result</span> <span class="o">=</span> <span class="n">b</span><span class="o">.</span><span class="n">value</span><span class="p">()</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;value&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">as_float</span><span class="p">();</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">b_result</span><span class="p">)</span>
+</pre></div>
+</div>
+</div></div>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="go">15.2</span>
+</pre></div>
+</div>
+<p>The function <code class="docutils literal notranslate"><span class="pre">grunk::state::read</span></code> returns a <code class="docutils literal notranslate"><span class="pre">Recipe</span></code> instances, which stores the re-constructed
+features. Retrieval is based on the string ids of the features.</p>
+<p>Plugins enable experts to create and use domain specific building blocks to model
+complex systems. grunk files enable experts to share workflows in a collaborative and
+multidisciplinary environment.</p>
+</section>
+<section id="subrecipes">
+<span id="id6"></span><h3>Subrecipes<a class="headerlink" href="#subrecipes" title="Link to this heading">¶</a></h3>
+<p>In addition to storing features, recipes can store recipes. Think of them as building-blocks for your model.
+For instance, a recipe for an aircraft may have recipes for modeling wings, fuselages or a landing gear.
+Continuing our above example, we can insert <code class="docutils literal notranslate"><span class="pre">recipe2</span></code> as a subrecipe of <code class="docutils literal notranslate"><span class="pre">recipe1</span></code> and assign a label to it:</p>
+<div class="sphinx-tabs docutils container">
+<div aria-label="Tabbed content" class="closeable" role="tablist"><button aria-controls="panel-11-Qysr" aria-selected="true" class="sphinx-tabs-tab code-tab group-tab" id="tab-11-Qysr" name="Qysr" role="tab" tabindex="0">C++</button><button aria-controls="panel-11-UHl0aG9u" aria-selected="false" class="sphinx-tabs-tab code-tab group-tab" id="tab-11-UHl0aG9u" name="UHl0aG9u" role="tab" tabindex="-1">Python</button></div><div aria-labelledby="tab-11-Qysr" class="sphinx-tabs-panel code-tab group-tab" id="panel-11-Qysr" name="Qysr" role="tabpanel" tabindex="0"><div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="n">recipe1</span><span class="p">.</span><span class="n">insert_recipe</span><span class="p">(</span><span class="s">&quot;multiplication&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">move</span><span class="p">(</span><span class="n">recipe2</span><span class="p">));</span>
+</pre></div>
+</div>
+</div><div aria-labelledby="tab-11-UHl0aG9u" class="sphinx-tabs-panel code-tab group-tab" hidden="true" id="panel-11-UHl0aG9u" name="UHl0aG9u" role="tabpanel" tabindex="0"><div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">recipe1</span><span class="o">.</span><span class="n">insert_recipe</span><span class="p">(</span><span class="s2">&quot;multiplication&quot;</span><span class="p">,</span> <span class="n">recipe2</span><span class="p">);</span>
+</pre></div>
+</div>
+</div></div>
+<p><code class="docutils literal notranslate"><span class="pre">::grunk::Recipe</span></code>s can be used like functions in the sense, that we can interpret independent
+features as arguments and any other feature as an output. These functions can in turn be treated like a new
+compute node in a feature tree. This helps us with encapsulation: We can build complex recipes using a set of
+smaller recipes.</p>
+<p>The difference between a subrecipe and a <code class="docutils literal notranslate"><span class="pre">grunk::module</span></code> is that the
+calculations within a <code class="docutils literal notranslate"><span class="pre">grunk::module</span></code> are not parametric and we are allowed to use functions that alter their inputs, such as setters. A subrecipe on the other hand is a fully parametric model, where all intermediate calculations are cached.</p>
+<p>Let us invoke the new subrecipe <code class="docutils literal notranslate"><span class="pre">multiplication</span></code> of <code class="docutils literal notranslate"><span class="pre">recipe1</span></code> on <code class="docutils literal notranslate"><span class="pre">a</span></code> and <code class="docutils literal notranslate"><span class="pre">b</span></code>.</p>
+<div class="sphinx-tabs docutils container">
+<div aria-label="Tabbed content" class="closeable" role="tablist"><button aria-controls="panel-12-Qysr" aria-selected="true" class="sphinx-tabs-tab code-tab group-tab" id="tab-12-Qysr" name="Qysr" role="tab" tabindex="0">C++</button><button aria-controls="panel-12-UHl0aG9u" aria-selected="false" class="sphinx-tabs-tab code-tab group-tab" id="tab-12-UHl0aG9u" name="UHl0aG9u" role="tab" tabindex="-1">Python</button></div><div aria-labelledby="tab-12-Qysr" class="sphinx-tabs-panel code-tab group-tab" id="panel-12-Qysr" name="Qysr" role="tabpanel" tabindex="0"><div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="c1">// Retrieve a proxy to the inner recipe</span>
+<span class="k">auto</span><span class="w"> </span><span class="n">multiplication</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">recipe1</span><span class="p">.</span><span class="n">recipes</span><span class="p">[</span><span class="s">&quot;multiplication&quot;</span><span class="p">];</span>
+
+<span class="c1">// Map the independent features of the inner recipe to features of the outer recipe</span>
+<span class="n">multiplication</span><span class="p">[</span><span class="s">&quot;x&quot;</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">a</span><span class="p">;</span>
+<span class="n">multiplication</span><span class="p">[</span><span class="s">&quot;y&quot;</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">b</span><span class="p">;</span>
+
+<span class="c1">// Map the output feature of the inner recipe to a new feature in the outer recipe and assign a label to it</span>
+<span class="k">auto</span><span class="w"> </span><span class="n">d</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">multiplication</span><span class="p">.</span><span class="n">get</span><span class="p">(</span><span class="s">&quot;z&quot;</span><span class="p">).</span><span class="n">with_id</span><span class="p">(</span><span class="s">&quot;d&quot;</span><span class="p">);</span>
+
+<span class="c1">// Add the new feature to the outer recipe</span>
+<span class="n">recipe1</span><span class="p">[</span><span class="s">&quot;d&quot;</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">d</span><span class="p">;</span>
+</pre></div>
+</div>
+</div><div aria-labelledby="tab-12-UHl0aG9u" class="sphinx-tabs-panel code-tab group-tab" hidden="true" id="panel-12-UHl0aG9u" name="UHl0aG9u" role="tabpanel" tabindex="0"><div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Retrieve a proxy to the inner recipe</span>
+<span class="n">multiplication</span> <span class="o">=</span> <span class="n">recipe1</span><span class="o">.</span><span class="n">recipes</span><span class="p">[</span><span class="s2">&quot;multiplication&quot;</span><span class="p">]</span>
+
+<span class="c1"># Map the independent features of the inner recipe to features of the outer recipe</span>
+<span class="n">multiplication</span><span class="p">[</span><span class="s2">&quot;x&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">a</span>
+<span class="n">multiplication</span><span class="p">[</span><span class="s2">&quot;y&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">b</span>
+
+<span class="c1"># Map the output feature of the inner recipe to a new feature in the outer recipe and assign a label to it</span>
+<span class="n">d</span> <span class="o">=</span> <span class="n">multiplication</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;z&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">with_id</span><span class="p">(</span><span class="s2">&quot;d&quot;</span><span class="p">)</span>
+
+<span class="c1"># Add the new feature to the outer recipe</span>
+<span class="n">recipe1</span><span class="p">[</span><span class="s2">&quot;d&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">d</span>
+</pre></div>
+</div>
+</div></div>
+<p>Basically, we retrieve a proxy to the inner recipe and then we can treat the inner recipe like a function. We can
+assign features from the outer recipe to the independent features of the inner recipe and we can retrieve the output feature of the inner recipe and assign it to a new feature in the outer recipe. In our example, we do the following:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>Take feature <code class="docutils literal notranslate"><span class="pre">a</span></code> as input for the inner independent feature with id <code class="docutils literal notranslate"><span class="pre">x</span></code>.</p></li>
+<li><p>Take feature <code class="docutils literal notranslate"><span class="pre">b</span></code> as input for the inner independent feature with id <code class="docutils literal notranslate"><span class="pre">y</span></code>.</p></li>
+<li><p>Map the inner output feature <code class="docutils literal notranslate"><span class="pre">z</span></code> to a newly created feature in the outer recipe and assign
+the new feature with the id <code class="docutils literal notranslate"><span class="pre">d</span></code>.</p></li>
+</ul>
+</div></blockquote>
+<p>The inner recipe will be uneffected by this action. Since all inner features have a default value,
+it is not necessary to assign all input features with a feature from the outer recipe. As an example,
+it would also have been okay, to just replace <code class="docutils literal notranslate"><span class="pre">x</span></code> with say <code class="docutils literal notranslate"><span class="pre">c</span></code> and keep <code class="docutils literal notranslate"><span class="pre">y</span></code> as is.</p>
+<p>Exporting the recipe will result in the following yaml-representation:</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">uses</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">grunk</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.5.0</span>
+<span class="w">  </span><span class="nt">PluginA</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.1.0</span>
+<span class="nt">parameters</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">a</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">PluginA.Scalar(17)</span>
+<span class="w">  </span><span class="nt">b</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">PluginA.Scalar(15)</span>
+<span class="nt">steps</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">|</span>
+<span class="w">  </span><span class="no">c = PluginA.add(a, b)</span>
+<span class="w">  </span><span class="no">multiplication = recipes.multiplication</span>
+<span class="w">  </span><span class="no">multiplication.x = a</span>
+<span class="w">  </span><span class="no">multiplication.y = b</span>
+<span class="w">  </span><span class="no">d = multiplication.z</span>
+<span class="nt">recipes</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">multiplication</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">uses</span><span class="p">:</span>
+<span class="w">      </span><span class="nt">PluginB</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.1.0</span>
+<span class="w">      </span><span class="nt">PluginA</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.1.0</span>
+<span class="w">    </span><span class="nt">parameters</span><span class="p">:</span>
+<span class="w">      </span><span class="nt">x</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">PluginA.Scalar(2)</span>
+<span class="w">      </span><span class="nt">y</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">PluginA.Scalar(5)</span>
+<span class="w">    </span><span class="nt">steps</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">|</span>
+<span class="w">      </span><span class="no">z = PluginB.multiply(x, y)</span>
+</pre></div>
+</div>
+<p>A <code class="docutils literal notranslate"><span class="pre">grunk::Feature</span></code> does not have to have a value. The only use-case of this are subrecipes: If we don’t want to use default values for a subrecipe, we can replace any of the inner parameters with a placeholder feature, i.e. a grunk::Feature that has a name, no ancestors and no value.</p>
+<div class="sphinx-tabs docutils container">
+<div aria-label="Tabbed content" class="closeable" role="tablist"><button aria-controls="panel-13-Qysr" aria-selected="true" class="sphinx-tabs-tab code-tab group-tab" id="tab-13-Qysr" name="Qysr" role="tab" tabindex="0">C++</button><button aria-controls="panel-13-UHl0aG9u" aria-selected="false" class="sphinx-tabs-tab code-tab group-tab" id="tab-13-UHl0aG9u" name="UHl0aG9u" role="tab" tabindex="-1">Python</button><button aria-controls="panel-13-WUFNTA==" aria-selected="false" class="sphinx-tabs-tab code-tab group-tab" id="tab-13-WUFNTA==" name="WUFNTA==" role="tab" tabindex="-1">YAML</button></div><div aria-labelledby="tab-13-Qysr" class="sphinx-tabs-panel code-tab group-tab" id="panel-13-Qysr" name="Qysr" role="tabpanel" tabindex="0"><div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="k">auto</span><span class="w"> </span><span class="n">grunk</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">grunk</span><span class="o">::</span><span class="n">state</span><span class="p">();</span>
+
+<span class="k">auto</span><span class="w"> </span><span class="n">a</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">grunk</span><span class="p">.</span><span class="n">feature</span><span class="p">(</span><span class="s">&quot;PluginA.Scalar&quot;</span><span class="p">,</span><span class="w"> </span><span class="mf">17.</span><span class="p">);</span>
+<span class="k">auto</span><span class="w"> </span><span class="n">b</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">grunk</span><span class="p">.</span><span class="n">feature</span><span class="p">(</span><span class="s">&quot;PluginA.Scalar&quot;</span><span class="p">,</span><span class="w"> </span><span class="mf">15.</span><span class="p">);</span>
+<span class="k">auto</span><span class="w"> </span><span class="n">c</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">grunk</span><span class="p">.</span><span class="n">action</span><span class="p">(</span><span class="s">&quot;PluginA.add&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">a</span><span class="p">,</span><span class="w"> </span><span class="n">b</span><span class="p">);</span>
+
+<span class="k">auto</span><span class="w"> </span><span class="n">recipe1</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">grunk</span><span class="p">.</span><span class="n">create_recipe</span><span class="p">();</span>
+<span class="n">recipe1</span><span class="p">[</span><span class="s">&quot;a&quot;</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">a</span><span class="p">;</span>
+<span class="n">recipe1</span><span class="p">[</span><span class="s">&quot;b&quot;</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">b</span><span class="p">;</span>
+<span class="n">recipe1</span><span class="p">[</span><span class="s">&quot;c&quot;</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">c</span><span class="p">;</span>
+<span class="n">recipe1</span><span class="p">.</span><span class="n">tag</span><span class="p">();</span><span class="w"> </span><span class="c1">// adds the labels &quot;a&quot;, &quot;b&quot; and &quot;c&quot; to the features</span>
+
+<span class="k">auto</span><span class="w"> </span><span class="n">recipe2</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">grunk</span><span class="p">.</span><span class="n">create_recipe</span><span class="p">();</span>
+<span class="n">recipe2</span><span class="p">[</span><span class="s">&quot;x&quot;</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">grunk</span><span class="p">.</span><span class="n">feature</span><span class="p">();</span><span class="w"> </span><span class="c1">// a placeholder</span>
+<span class="n">recipe2</span><span class="p">[</span><span class="s">&quot;y&quot;</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">grunk</span><span class="p">.</span><span class="n">feature</span><span class="p">(</span><span class="s">&quot;PluginA.Scalar&quot;</span><span class="p">,</span><span class="w"> </span><span class="mf">5.</span><span class="p">);</span>
+<span class="n">recipe2</span><span class="p">[</span><span class="s">&quot;z&quot;</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">grunk</span><span class="p">.</span><span class="n">action</span><span class="p">(</span><span class="s">&quot;PluginB.multiply&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">recipe2</span><span class="p">[</span><span class="s">&quot;x&quot;</span><span class="p">],</span><span class="w"> </span><span class="n">recipe2</span><span class="p">[</span><span class="s">&quot;y&quot;</span><span class="p">]);</span>
+<span class="n">recipe2</span><span class="p">.</span><span class="n">tag</span><span class="p">();</span><span class="w"> </span><span class="c1">// adds the labels &quot;x&quot;, &quot;y&quot; and &quot;z&quot; to the features</span>
+
+<span class="c1">// Retrieve a proxy to the inner recipe</span>
+<span class="k">auto</span><span class="w"> </span><span class="n">multiplication</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">recipe1</span><span class="p">.</span><span class="n">recipes</span><span class="p">[</span><span class="s">&quot;multiplication&quot;</span><span class="p">];</span>
+
+<span class="c1">// Map the independent features of the inner recipe to features of the outer recipe</span>
+<span class="n">multiplication</span><span class="p">[</span><span class="s">&quot;x&quot;</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">a</span><span class="p">;</span>
+<span class="n">multiplication</span><span class="p">[</span><span class="s">&quot;y&quot;</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">b</span><span class="p">;</span>
+
+<span class="c1">// Map the output feature of the inner recipe to a new feature in the outer recipe and assign a label to it</span>
+<span class="k">auto</span><span class="w"> </span><span class="n">d</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">multiplication</span><span class="p">.</span><span class="n">get</span><span class="p">(</span><span class="s">&quot;z&quot;</span><span class="p">).</span><span class="n">with_id</span><span class="p">(</span><span class="s">&quot;d&quot;</span><span class="p">);</span>
+
+<span class="c1">// Add the new feature to the outer recipe</span>
+<span class="n">recipe1</span><span class="p">[</span><span class="s">&quot;d&quot;</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">d</span><span class="p">;</span>
+</pre></div>
+</div>
+</div><div aria-labelledby="tab-13-UHl0aG9u" class="sphinx-tabs-panel code-tab group-tab" hidden="true" id="panel-13-UHl0aG9u" name="UHl0aG9u" role="tabpanel" tabindex="0"><div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">a</span> <span class="o">=</span> <span class="n">grunk</span><span class="o">.</span><span class="n">feature</span><span class="p">(</span><span class="s2">&quot;PluginA.Scalar&quot;</span><span class="p">,</span> <span class="mf">17.</span><span class="p">)</span>
+<span class="n">b</span> <span class="o">=</span> <span class="n">grunk</span><span class="o">.</span><span class="n">feature</span><span class="p">(</span><span class="s2">&quot;PluginA.Scalar&quot;</span><span class="p">,</span> <span class="mf">15.</span><span class="p">)</span>
+<span class="n">c</span> <span class="o">=</span> <span class="n">grunk</span><span class="o">.</span><span class="n">action</span><span class="p">(</span><span class="s2">&quot;c&quot;</span><span class="p">,</span> <span class="s2">&quot;PluginA::add&quot;</span><span class="p">,</span> <span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">)</span>
+<span class="n">recipe1</span> <span class="o">=</span> <span class="n">grunk</span><span class="o">.</span><span class="n">create_recipe</span><span class="p">()</span>
+<span class="n">recipe1</span><span class="p">[</span><span class="s2">&quot;a&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">a</span>
+<span class="n">recipe1</span><span class="p">[</span><span class="s2">&quot;b&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">b</span>
+<span class="n">recipe1</span><span class="p">[</span><span class="s2">&quot;c&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">c</span>
+<span class="n">recipe1</span><span class="o">.</span><span class="n">tag</span><span class="p">()</span> <span class="c1"># adds the labels &quot;a&quot;, &quot;b&quot; and &quot;c&quot;</span>
+
+<span class="n">recipe2</span> <span class="o">=</span> <span class="n">grunk</span><span class="o">.</span><span class="n">create_recipe</span><span class="p">()</span>
+<span class="n">recipe2</span><span class="p">[</span><span class="s2">&quot;x&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">grunk</span><span class="o">.</span><span class="n">feature</span><span class="p">()</span> <span class="c1"># a placeholder</span>
+<span class="n">recipe2</span><span class="p">[</span><span class="s2">&quot;y&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">grunk</span><span class="o">.</span><span class="n">feature</span><span class="p">(</span><span class="s2">&quot;PluginA.Scalar&quot;</span><span class="p">,</span> <span class="mf">5.</span><span class="p">)</span>
+<span class="n">recipe2</span><span class="p">[</span><span class="s2">&quot;z&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">grunk</span><span class="o">.</span><span class="n">action</span><span class="p">(</span><span class="s2">&quot;PluginB.multiply&quot;</span><span class="p">,</span> <span class="n">recipe2</span><span class="p">[</span><span class="s2">&quot;x&quot;</span><span class="p">],</span> <span class="n">recipe2</span><span class="p">[</span><span class="s2">&quot;y&quot;</span><span class="p">])</span>
+<span class="n">recipe2</span><span class="o">.</span><span class="n">tag</span><span class="p">()</span> <span class="c1"># adds the labels &quot;x&quot;, &quot;y&quot; and &quot;z&quot; to the features</span>
+
+<span class="c1"># Retrieve a proxy to the inner recipe</span>
+<span class="n">multiplication</span> <span class="o">=</span> <span class="n">recipe1</span><span class="o">.</span><span class="n">recipes</span><span class="p">[</span><span class="s2">&quot;multiplication&quot;</span><span class="p">]</span>
+
+<span class="c1"># Map the independent features of the inner recipe to features of the outer recipe</span>
+<span class="n">multiplication</span><span class="p">[</span><span class="s2">&quot;x&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">a</span>
+<span class="n">multiplication</span><span class="p">[</span><span class="s2">&quot;y&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">b</span>
+
+<span class="c1"># Map the output feature of the inner recipe to a new feature in the outer recipe and assign a label to it</span>
+<span class="n">d</span> <span class="o">=</span> <span class="n">multiplication</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;z&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">with_id</span><span class="p">(</span><span class="s2">&quot;d&quot;</span><span class="p">)</span>
+
+<span class="c1"># Add the new feature to the outer recipe</span>
+<span class="n">recipe1</span><span class="p">[</span><span class="s2">&quot;d&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">d</span>
+</pre></div>
+</div>
+</div><div aria-labelledby="tab-13-WUFNTA==" class="sphinx-tabs-panel code-tab group-tab" hidden="true" id="panel-13-WUFNTA==" name="WUFNTA==" role="tabpanel" tabindex="0"><div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">uses</span><span class="p">:</span>
+<span class="w">   </span><span class="nt">grunk</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.2.1</span>
+<span class="w">   </span><span class="nt">PluginA</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.1.0</span>
+<span class="nt">parameters</span><span class="p">:</span>
+<span class="w">   </span><span class="nt">a</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">PluginA.Scalar(17)</span>
+<span class="w">   </span><span class="nt">b</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">PluginA.Scalar(15)</span>
+<span class="nt">steps</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">|</span>
+<span class="w">   </span><span class="no">c = PluginA.add(a, b)</span>
+<span class="w">   </span><span class="no">multiplication = recipes.multiplication</span>
+<span class="w">   </span><span class="no">multiplication.x = a</span>
+<span class="w">   </span><span class="no">multiplication.y = b</span>
+<span class="w">   </span><span class="no">d = multiplication.z</span>
+<span class="nt">recipes</span><span class="p">:</span>
+<span class="w">   </span><span class="nt">multiplication</span><span class="p">:</span>
+<span class="w">      </span><span class="nt">uses</span><span class="p">:</span>
+<span class="w">        </span><span class="nt">PluginB</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.1.0</span>
+<span class="w">        </span><span class="nt">PluginA</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.1.0</span>
+<span class="w">      </span><span class="nt">parameters</span><span class="p">:</span>
+<span class="w">        </span><span class="nt">x</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">nil</span>
+<span class="w">        </span><span class="nt">y</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">PluginA.Scalar(5)</span>
+<span class="w">      </span><span class="nt">steps</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">|</span>
+<span class="w">        </span><span class="no">z = PluginB.multiply(x, y)</span>
+</pre></div>
+</div>
+</div></div>
+<p>When calling a subrecipe, the parametric tree appears complicated at first sight. Internally, when we add a subrecipe, this subrecipe is copied as a <code class="docutils literal notranslate"><span class="pre">grunk::Feature&lt;grunk::Recipe&gt;</span></code> owned by the outer recipe. A <code class="docutils literal notranslate"><span class="pre">grunk::RecipeAction</span></code> takes this inner recipe as well as
+the inputs as arguments and generates a new <code class="docutils literal notranslate"><span class="pre">grunk::Feature&lt;grunk::Recipe&gt;</span></code>, which is essentially a clone of the inner recipe, with the input features replaced by the assigned features from the outer recipe. Then, when we query a result of the inner recipe, this is registered as another compute node in the parametric tree.</p>
+<img alt="Dependency of subrecipe call" src="_images/recipe_dependence.png" />
+<p>This way we guarantee that changes to the inner recipe will invalidate any nodes in the outer recipe that use it.</p>
+</section>
+<section id="modules-in-recipes">
+<span id="recipe-modules"></span><h3>Modules in Recipes<a class="headerlink" href="#modules-in-recipes" title="Link to this heading">¶</a></h3>
+<p>The <a class="reference internal" href="#module"><span class="std std-ref">grunk modules</span></a> shown earlier are registered on a <code class="docutils literal notranslate"><span class="pre">grunk::state</span></code> and shared by
+every recipe built from it. Recipes support a second, complementary flavor of modules that is
+private to a single recipe and, unlike a state-level module, is stored as part of the recipe itself:
+<code class="docutils literal notranslate"><span class="pre">Recipe::insert_module_script</span></code> and the YAML <code class="docutils literal notranslate"><span class="pre">modules:</span></code> block.</p>
+<div class="sphinx-tabs docutils container">
+<div aria-label="Tabbed content" class="closeable" role="tablist"><button aria-controls="panel-14-Qysr" aria-selected="true" class="sphinx-tabs-tab code-tab group-tab" id="tab-14-Qysr" name="Qysr" role="tab" tabindex="0">C++</button><button aria-controls="panel-14-UHl0aG9u" aria-selected="false" class="sphinx-tabs-tab code-tab group-tab" id="tab-14-UHl0aG9u" name="UHl0aG9u" role="tab" tabindex="-1">Python</button><button aria-controls="panel-14-WUFNTA==" aria-selected="false" class="sphinx-tabs-tab code-tab group-tab" id="tab-14-WUFNTA==" name="WUFNTA==" role="tab" tabindex="-1">YAML</button></div><div aria-labelledby="tab-14-Qysr" class="sphinx-tabs-panel code-tab group-tab" id="panel-14-Qysr" name="Qysr" role="tabpanel" tabindex="0"><div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="k">auto</span><span class="w"> </span><span class="n">recipe</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">grunk</span><span class="p">.</span><span class="n">create_recipe</span><span class="p">();</span>
+<span class="n">recipe</span><span class="p">[</span><span class="s">&quot;x&quot;</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">grunk</span><span class="p">.</span><span class="n">feature</span><span class="p">(</span><span class="mf">1.</span><span class="p">).</span><span class="n">with_id</span><span class="p">(</span><span class="s">&quot;x&quot;</span><span class="p">);</span>
+
+<span class="n">recipe</span><span class="p">.</span><span class="n">insert_module_script</span><span class="p">(</span>
+<span class="w">   </span><span class="s">&quot;mymod&quot;</span><span class="p">,</span>
+<span class="w">   </span><span class="s">&quot;function inc(a) return a + 1 end&quot;</span>
+<span class="p">);</span>
+
+<span class="n">recipe</span><span class="p">.</span><span class="n">eval</span><span class="p">(</span><span class="s">&quot;y = mymod.inc(x)&quot;</span><span class="p">);</span>
+</pre></div>
+</div>
+</div><div aria-labelledby="tab-14-UHl0aG9u" class="sphinx-tabs-panel code-tab group-tab" hidden="true" id="panel-14-UHl0aG9u" name="UHl0aG9u" role="tabpanel" tabindex="0"><div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">recipe</span> <span class="o">=</span> <span class="n">grunk</span><span class="o">.</span><span class="n">create_recipe</span><span class="p">()</span>
+<span class="n">recipe</span><span class="p">[</span><span class="s2">&quot;x&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">grunk</span><span class="o">.</span><span class="n">feature</span><span class="p">(</span><span class="mf">1.0</span><span class="p">)</span><span class="o">.</span><span class="n">with_id</span><span class="p">(</span><span class="s2">&quot;x&quot;</span><span class="p">)</span>
+
+<span class="n">recipe</span><span class="o">.</span><span class="n">insert_module_script</span><span class="p">(</span><span class="s2">&quot;mymod&quot;</span><span class="p">,</span> <span class="s2">&quot;function inc(a) return a + 1 end&quot;</span><span class="p">)</span>
+<span class="n">recipe</span><span class="o">.</span><span class="n">eval</span><span class="p">(</span><span class="s2">&quot;y = mymod.inc(x)&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div><div aria-labelledby="tab-14-WUFNTA==" class="sphinx-tabs-panel code-tab group-tab" hidden="true" id="panel-14-WUFNTA==" name="WUFNTA==" role="tabpanel" tabindex="0"><div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">uses</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">grunk</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.5.0</span>
+<span class="nt">parameters</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">x</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">1.0</span>
+<span class="nt">modules</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">mymod</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">|</span>
+<span class="w">    </span><span class="no">function inc(a)</span>
+<span class="w">        </span><span class="no">return a + 1</span>
+<span class="w">    </span><span class="no">end</span>
+<span class="nt">steps</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">|</span>
+<span class="w">  </span><span class="no">y = mymod.inc(x)</span>
+</pre></div>
+</div>
+</div></div>
+<p>A module inserted this way behaves exactly like a state-level module from the perspective of
+<code class="docutils literal notranslate"><span class="pre">steps:</span></code> - <code class="docutils literal notranslate"><span class="pre">mymod.inc(x)</span></code> still produces a single, non-parametric compute node, so non-const
+setters can be used inside a module function exactly as described above. The difference is what the
+module is <em>made of</em>: its source code is stored as a <code class="docutils literal notranslate"><span class="pre">grunk::Feature&lt;std::string&gt;</span></code> in
+<code class="docutils literal notranslate"><span class="pre">Recipe::module_scripts</span></code>, the same way a <a class="reference internal" href="#subrecipes"><span class="std std-ref">subrecipe</span></a> is stored as a
+<code class="docutils literal notranslate"><span class="pre">grunk::Feature&lt;grunk::Recipe&gt;</span></code>. Every call made into the module depends on that feature, so editing
+it invalidates and recomputes every node that called into the module - just like editing any other
+feature in the recipe:</p>
+<div class="sphinx-tabs docutils container">
+<div aria-label="Tabbed content" class="closeable" role="tablist"><button aria-controls="panel-15-Qysr" aria-selected="true" class="sphinx-tabs-tab code-tab group-tab" id="tab-15-Qysr" name="Qysr" role="tab" tabindex="0">C++</button><button aria-controls="panel-15-UHl0aG9u" aria-selected="false" class="sphinx-tabs-tab code-tab group-tab" id="tab-15-UHl0aG9u" name="UHl0aG9u" role="tab" tabindex="-1">Python</button></div><div aria-labelledby="tab-15-Qysr" class="sphinx-tabs-panel code-tab group-tab" id="panel-15-Qysr" name="Qysr" role="tabpanel" tabindex="0"><div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="k">auto</span><span class="w"> </span><span class="n">y</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">recipe</span><span class="p">.</span><span class="n">get_feature</span><span class="p">(</span><span class="s">&quot;y&quot;</span><span class="p">);</span>
+<span class="n">std</span><span class="o">::</span><span class="n">cout</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">y</span><span class="p">.</span><span class="n">value</span><span class="p">().</span><span class="n">as</span><span class="o">&lt;</span><span class="kt">double</span><span class="o">&gt;</span><span class="p">()</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">endl</span><span class="p">;</span><span class="w"> </span><span class="c1">// 2</span>
+
+<span class="n">recipe</span><span class="p">.</span><span class="n">module_scripts</span><span class="p">.</span><span class="n">at</span><span class="p">(</span><span class="s">&quot;mymod&quot;</span><span class="p">).</span><span class="n">set_value</span><span class="p">(</span><span class="s">&quot;function inc(a) return a + 100 end&quot;</span><span class="p">);</span>
+<span class="n">std</span><span class="o">::</span><span class="n">cout</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">y</span><span class="p">.</span><span class="n">value</span><span class="p">().</span><span class="n">as</span><span class="o">&lt;</span><span class="kt">double</span><span class="o">&gt;</span><span class="p">()</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">endl</span><span class="p">;</span><span class="w"> </span><span class="c1">// 102</span>
+</pre></div>
+</div>
+</div><div aria-labelledby="tab-15-UHl0aG9u" class="sphinx-tabs-panel code-tab group-tab" hidden="true" id="panel-15-UHl0aG9u" name="UHl0aG9u" role="tabpanel" tabindex="0"><div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">y</span> <span class="o">=</span> <span class="n">recipe</span><span class="o">.</span><span class="n">get_feature</span><span class="p">(</span><span class="s2">&quot;y&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">y</span><span class="o">.</span><span class="n">value</span><span class="p">()</span><span class="o">.</span><span class="n">as_float</span><span class="p">())</span> <span class="c1"># 2</span>
+
+<span class="n">recipe</span><span class="o">.</span><span class="n">module_scripts</span><span class="p">[</span><span class="s2">&quot;mymod&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">set_value</span><span class="p">(</span><span class="s2">&quot;function inc(a) return a + 100 end&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">y</span><span class="o">.</span><span class="n">value</span><span class="p">()</span><span class="o">.</span><span class="n">as_float</span><span class="p">())</span> <span class="c1"># 102</span>
+</pre></div>
+</div>
+</div></div>
+<p>This is what makes recipe modules a good fit for editable, reproducible workflows: a hypothetical GUI
+that lets a user tweak a module’s code only needs to call <code class="docutils literal notranslate"><span class="pre">set_value</span></code> on the corresponding
+<code class="docutils literal notranslate"><span class="pre">module_scripts</span></code> entry, and every downstream feature that relied on it recomputes automatically.
+Because the module’s script is deep-cloned along with the rest of the recipe, <code class="docutils literal notranslate"><span class="pre">Recipe::clone()</span></code>
+produces a fully independent copy, and two recipes built from the same <code class="docutils literal notranslate"><span class="pre">grunk::state</span></code> can each
+define a module with the same name without interfering with one another - unlike state-level modules,
+which share a single, global namespace.</p>
+</section>
+</section>
+</section>
+
+        </article>
+      </div>
+      <footer>
+        
+        <div class="related-pages">
+          <a class="next-page" href="design.html">
+              <div class="page-info">
+                <div class="context">
+                  <span>Next</span>
+                </div>
+                <div class="title">Design Principles</div>
+              </div>
+              <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
+            </a>
+          <a class="prev-page" href="installation.html">
+              <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
+              <div class="page-info">
+                <div class="context">
+                  <span>Previous</span>
+                </div>
+                
+                <div class="title">Installation</div>
+                
+              </div>
+            </a>
+        </div>
+        <div class="bottom-of-page">
+          <div class="left-details">
+            <div class="copyright">
+                Copyright &#169; 2026, German Aerospace Center
+            </div>
+            Made with <a href="https://www.sphinx-doc.org/">Sphinx</a> and <a class="muted-link" href="https://pradyunsg.me">@pradyunsg</a>'s
+            
+            <a href="https://github.com/pradyunsg/furo">Furo</a>
+            
+          </div>
+          <div class="right-details">
+            
+          </div>
+        </div>
+        
+      </footer>
+    </div>
+    <aside class="toc-drawer">
+      
+      
+      <div class="toc-sticky toc-scroll">
+        <div class="toc-title-container">
+          <span class="toc-title">
+            On this page
+          </span>
+        </div>
+        <div class="toc-tree-container">
+          <div class="toc-tree">
+            <ul>
+<li><a class="reference internal" href="#">Usage</a><ul>
+<li><a class="reference internal" href="#static-mode">Static Mode</a><ul>
+<li><a class="reference internal" href="#lazy-evaluation-and-caching">Lazy evaluation and Caching</a></li>
+<li><a class="reference internal" href="#automatic-invalidation">Automatic invalidation</a></li>
+<li><a class="reference internal" href="#classes-and-member-functions">Classes and Member Functions</a></li>
+<li><a class="reference internal" href="#parallel-execution">Parallel Execution</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#dynamic-mode">Dynamic Mode</a><ul>
+<li><a class="reference internal" href="#interacting-with-the-lua-state">Interacting with the Lua state</a></li>
+<li><a class="reference internal" href="#dynamic-features-and-actions-in-lua">Dynamic Features and Actions in Lua</a></li>
+<li><a class="reference internal" href="#using-custom-types">Using Custom Types</a></li>
+<li><a class="reference internal" href="#dynamic-features-and-actions-in-c-python">Dynamic Features and Actions in C++/Python</a></li>
+<li><a class="reference internal" href="#mixing-static-and-dynamic-mode-in-c">Mixing static and dynamic mode in C++</a></li>
+<li><a class="reference internal" href="#containers">Containers</a></li>
+<li><a class="reference internal" href="#modules">Modules</a></li>
+<li><a class="reference internal" href="#custom-pointers-and-smart-pointers">Custom Pointers and Smart Pointers</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#grunk-plugins">Grunk plugins</a><ul>
+<li><a class="reference internal" href="#using-grunk-plugins">Using grunk plugins</a></li>
+<li><a class="reference internal" href="#writing-plugins">Writing Plugins</a></li>
+<li><a class="reference internal" href="#sharing-plugins">Sharing Plugins</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#grunk-recipes">Grunk Recipes</a><ul>
+<li><a class="reference internal" href="#reading-and-writing-to-file">Reading and writing to file</a></li>
+<li><a class="reference internal" href="#subrecipes">Subrecipes</a></li>
+<li><a class="reference internal" href="#modules-in-recipes">Modules in Recipes</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+          </div>
+        </div>
+      </div>
+      
+      
+    </aside>
+  </div>
+</div><script src="_static/documentation_options.js?v=1dd76d02"></script>
+    <script src="_static/doctools.js?v=9a2dae69"></script>
+    <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/scripts/furo.js?v=46bd48cc"></script>
+    <script src="_static/tabs.js?v=3030b3cb"></script>
+    </body>
+</html>

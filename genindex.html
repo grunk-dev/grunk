@@ -1,0 +1,710 @@
+<!doctype html>
+<html class="no-js" lang="en" data-content_root="./">
+  <head><meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <meta name="color-scheme" content="light dark"><link rel="index" title="Index" href="#"><link rel="search" title="Search" href="search.html">
+        <link rel="prefetch" href="_static/grunk_logo.png" as="image">
+
+    <!-- Generated with Sphinx 7.3.7 and Furo 2025.12.19 --><title>Index - grunk 0.5.0 documentation</title>
+<link rel="stylesheet" type="text/css" href="_static/pygments.css?v=d111a655" />
+    <link rel="stylesheet" type="text/css" href="_static/styles/furo.css?v=7bdb33bb" />
+    <link rel="stylesheet" type="text/css" href="_static/styles/furo-extensions.css?v=8dab3a3b" />
+    
+    
+
+
+<style>
+  body {
+    --color-code-background: #f2f2f2;
+  --color-code-foreground: #1e1e1e;
+  
+  }
+  @media not print {
+    body[data-theme="dark"] {
+      --color-code-background: #202020;
+  --color-code-foreground: #d0d0d0;
+  
+    }
+    @media (prefers-color-scheme: dark) {
+      body:not([data-theme="light"]) {
+        --color-code-background: #202020;
+  --color-code-foreground: #d0d0d0;
+  
+      }
+    }
+  }
+</style></head>
+  <body>
+    
+    <script>
+      document.body.dataset.theme = localStorage.getItem("theme") || "auto";
+    </script>
+    
+
+<svg xmlns="http://www.w3.org/2000/svg" style="display: none;">
+  <symbol id="svg-toc" viewBox="0 0 24 24">
+    <title>Contents</title>
+    <svg stroke="currentColor" fill="currentColor" stroke-width="0" viewBox="0 0 1024 1024">
+      <path d="M408 442h480c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8H408c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8zm-8 204c0 4.4 3.6 8 8 8h480c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8H408c-4.4 0-8 3.6-8 8v56zm504-486H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zm0 632H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zM115.4 518.9L271.7 642c5.8 4.6 14.4.5 14.4-6.9V388.9c0-7.4-8.5-11.5-14.4-6.9L115.4 505.1a8.74 8.74 0 0 0 0 13.8z"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-menu" viewBox="0 0 24 24">
+    <title>Menu</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather-menu">
+      <line x1="3" y1="12" x2="21" y2="12"></line>
+      <line x1="3" y1="6" x2="21" y2="6"></line>
+      <line x1="3" y1="18" x2="21" y2="18"></line>
+    </svg>
+  </symbol>
+  <symbol id="svg-arrow-right" viewBox="0 0 24 24">
+    <title>Expand</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather-chevron-right">
+      <polyline points="9 18 15 12 9 6"></polyline>
+    </svg>
+  </symbol>
+  <symbol id="svg-sun" viewBox="0 0 24 24">
+    <title>Light mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="feather-sun">
+      <circle cx="12" cy="12" r="5"></circle>
+      <line x1="12" y1="1" x2="12" y2="3"></line>
+      <line x1="12" y1="21" x2="12" y2="23"></line>
+      <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+      <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+      <line x1="1" y1="12" x2="3" y2="12"></line>
+      <line x1="21" y1="12" x2="23" y2="12"></line>
+      <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+      <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+    </svg>
+  </symbol>
+  <symbol id="svg-moon" viewBox="0 0 24 24">
+    <title>Dark mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-moon">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+      <path d="M12 3c.132 0 .263 0 .393 0a7.5 7.5 0 0 0 7.92 12.446a9 9 0 1 1 -8.313 -12.454z" />
+    </svg>
+  </symbol>
+  <symbol id="svg-sun-with-moon" viewBox="0 0 24 24">
+    <title>Auto light/dark, in light mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round"
+      class="icon-custom-derived-from-feather-sun-and-tabler-moon">
+      <path style="opacity: 50%" d="M 5.411 14.504 C 5.471 14.504 5.532 14.504 5.591 14.504 C 3.639 16.319 4.383 19.569 6.931 20.352 C 7.693 20.586 8.512 20.551 9.25 20.252 C 8.023 23.207 4.056 23.725 2.11 21.184 C 0.166 18.642 1.702 14.949 4.874 14.536 C 5.051 14.512 5.231 14.5 5.411 14.5 L 5.411 14.504 Z"/>
+      <line x1="14.5" y1="3.25" x2="14.5" y2="1.25"/>
+      <line x1="14.5" y1="15.85" x2="14.5" y2="17.85"/>
+      <line x1="10.044" y1="5.094" x2="8.63" y2="3.68"/>
+      <line x1="19" y1="14.05" x2="20.414" y2="15.464"/>
+      <line x1="8.2" y1="9.55" x2="6.2" y2="9.55"/>
+      <line x1="20.8" y1="9.55" x2="22.8" y2="9.55"/>
+      <line x1="10.044" y1="14.006" x2="8.63" y2="15.42"/>
+      <line x1="19" y1="5.05" x2="20.414" y2="3.636"/>
+      <circle cx="14.5" cy="9.55" r="3.6"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-moon-with-sun" viewBox="0 0 24 24">
+    <title>Auto light/dark, in dark mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round"
+      class="icon-custom-derived-from-feather-sun-and-tabler-moon">
+      <path d="M 8.282 7.007 C 8.385 7.007 8.494 7.007 8.595 7.007 C 5.18 10.184 6.481 15.869 10.942 17.24 C 12.275 17.648 13.706 17.589 15 17.066 C 12.851 22.236 5.91 23.143 2.505 18.696 C -0.897 14.249 1.791 7.786 7.342 7.063 C 7.652 7.021 7.965 7 8.282 7 L 8.282 7.007 Z"/>
+      <line style="opacity: 50%" x1="18" y1="3.705" x2="18" y2="2.5"/>
+      <line style="opacity: 50%" x1="18" y1="11.295" x2="18" y2="12.5"/>
+      <line style="opacity: 50%" x1="15.316" y1="4.816" x2="14.464" y2="3.964"/>
+      <line style="opacity: 50%" x1="20.711" y1="10.212" x2="21.563" y2="11.063"/>
+      <line style="opacity: 50%" x1="14.205" y1="7.5" x2="13.001" y2="7.5"/>
+      <line style="opacity: 50%" x1="21.795" y1="7.5" x2="23" y2="7.5"/>
+      <line style="opacity: 50%" x1="15.316" y1="10.184" x2="14.464" y2="11.036"/>
+      <line style="opacity: 50%" x1="20.711" y1="4.789" x2="21.563" y2="3.937"/>
+      <circle style="opacity: 50%" cx="18" cy="7.5" r="2.169"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-pencil" viewBox="0 0 24 24">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-pencil-code">
+      <path d="M4 20h4l10.5 -10.5a2.828 2.828 0 1 0 -4 -4l-10.5 10.5v4" />
+      <path d="M13.5 6.5l4 4" />
+      <path d="M20 21l2 -2l-2 -2" />
+      <path d="M17 17l-2 2l2 2" />
+    </svg>
+  </symbol>
+  <symbol id="svg-eye" viewBox="0 0 24 24">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-eye-code">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+      <path d="M10 12a2 2 0 1 0 4 0a2 2 0 0 0 -4 0" />
+      <path
+        d="M11.11 17.958c-3.209 -.307 -5.91 -2.293 -8.11 -5.958c2.4 -4 5.4 -6 9 -6c3.6 0 6.6 2 9 6c-.21 .352 -.427 .688 -.647 1.008" />
+      <path d="M20 21l2 -2l-2 -2" />
+      <path d="M17 17l-2 2l2 2" />
+    </svg>
+  </symbol>
+</svg>
+
+<input type="checkbox" class="sidebar-toggle" name="__navigation" id="__navigation" aria-label="Toggle site navigation sidebar">
+<input type="checkbox" class="sidebar-toggle" name="__toc" id="__toc" aria-label="Toggle table of contents sidebar">
+<label class="overlay sidebar-overlay" for="__navigation"></label>
+<label class="overlay toc-overlay" for="__toc"></label>
+
+<a class="skip-to-content muted-link" href="#furo-main-content">Skip to content</a>
+
+
+
+<div class="page">
+  <header class="mobile-header">
+    <div class="header-left">
+      <label class="nav-overlay-icon" for="__navigation">
+        <span class="icon"><svg><use href="#svg-menu"></use></svg></span>
+      </label>
+    </div>
+    <div class="header-center">
+      <a href="index.html"><div class="brand">grunk 0.5.0 documentation</div></a>
+    </div>
+    <div class="header-right">
+      <div class="theme-toggle-container theme-toggle-header">
+        <button class="theme-toggle" aria-label="Toggle Light / Dark / Auto color theme">
+          <svg class="theme-icon-when-auto-light"><use href="#svg-sun-with-moon"></use></svg>
+          <svg class="theme-icon-when-auto-dark"><use href="#svg-moon-with-sun"></use></svg>
+          <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
+          <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
+        </button>
+      </div>
+      <label class="toc-overlay-icon toc-header-icon no-toc" for="__toc">
+        <span class="icon"><svg><use href="#svg-toc"></use></svg></span>
+      </label>
+    </div>
+  </header>
+  <aside class="sidebar-drawer">
+    <div class="sidebar-container">
+      
+      <div class="sidebar-sticky"><a class="sidebar-brand" href="index.html">
+  <div class="sidebar-logo-container">
+    <img class="sidebar-logo" src="_static/grunk_logo.png" alt="Logo"/>
+  </div>
+  
+  <span class="sidebar-brand-text">grunk 0.5.0 documentation</span>
+  
+</a><form class="sidebar-search-container" method="get" action="search.html" role="search">
+  <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
+  <input type="hidden" name="check_keywords" value="yes">
+  <input type="hidden" name="area" value="default">
+</form>
+<div id="searchbox"></div><div class="sidebar-scroll"><div class="sidebar-tree">
+  <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="usage.html">Usage</a></li>
+<li class="toctree-l1"><a class="reference internal" href="design.html">Design Principles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="code.html">C++ API</a></li>
+<li class="toctree-l1 current current-page"><a class="current reference internal" href="#">Index</a></li>
+</ul>
+
+</div>
+</div>
+
+      </div>
+      
+    </div>
+  </aside>
+  <div class="main">
+    <div class="content">
+      <div class="article-container">
+        <a href="#" class="back-to-top muted-link">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+            <path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12z"></path>
+          </svg>
+          <span>Back to top</span>
+        </a>
+        <div class="content-icon-container">
+          <div class="theme-toggle-container theme-toggle-content">
+            <button class="theme-toggle" aria-label="Toggle Light / Dark / Auto color theme">
+              <svg class="theme-icon-when-auto-light"><use href="#svg-sun-with-moon"></use></svg>
+              <svg class="theme-icon-when-auto-dark"><use href="#svg-moon-with-sun"></use></svg>
+              <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
+              <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
+            </button>
+          </div>
+          <label class="toc-overlay-icon toc-content-icon no-toc" for="__toc">
+            <span class="icon"><svg><use href="#svg-toc"></use></svg></span>
+          </label>
+        </div>
+        <article role="main" id="furo-main-content">
+          
+<section class="genindex-section">
+  <h1 id="index">Index</h1>
+  <div class="genindex-jumpbox"><a href="#A"><strong>A</strong></a> | <a href="#C"><strong>C</strong></a> | <a href="#D"><strong>D</strong></a> | <a href="#E"><strong>E</strong></a> | <a href="#F"><strong>F</strong></a> | <a href="#I"><strong>I</strong></a> | <a href="#L"><strong>L</strong></a> | <a href="#M"><strong>M</strong></a> | <a href="#P"><strong>P</strong></a> | <a href="#R"><strong>R</strong></a> | <a href="#S"><strong>S</strong></a> | <a href="#T"><strong>T</strong></a></div>
+</section>
+<section id="A" class="genindex-section">
+  <h2>A</h2>
+  <table style="width: 100%" class="indextable genindextable"><tr>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="code.html#_CPPv4I0DpEN5grunk6ActionE">Action (C++ class)</a>
+</li>
+        <li><a href="code.html#_CPPv4I0DpE6action7FeatureINSt15invoke_result_tI1FDpRK4ArgsEEERK1FDpRK7FeatureI4ArgsE">action (C++ function)</a>, <a href="code.html#_CPPv4I0DpE6actionDcRK1FDpRR4Args">[1]</a>, <a href="code.html#_CPPv4IDpE6action14DynamicFeatureRK13function_metaDpRR4Args">[2]</a>
+</li>
+        <li><a href="code.html#_CPPv4NK5grunk6Action4evalEv">Action::eval (C++ function)</a>
+</li>
+        <li><a href="code.html#_CPPv4N5grunk6Action8nresultsE">Action::nresults (C++ member)</a>
+</li>
+        <li><a href="code.html#_CPPv4N5grunk6Action10ReturnTypeE">Action::ReturnType (C++ type)</a>
+</li>
+    </ul></td>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="code.html#_CPPv4N5grunk13ActionDynamicE">ActionDynamic (C++ class)</a>
+</li>
+        <li><a href="code.html#_CPPv4IDpEN5grunk13ActionDynamic14connect_inputsEvDpRK7FeatureI4ArgsE">ActionDynamic::connect_inputs (C++ function)</a>, <a href="code.html#_CPPv4N5grunk13ActionDynamic14connect_inputsERKNSt6vectorI14DynamicFeatureEE">[1]</a>
+</li>
+        <li><a href="code.html#_CPPv4N5grunk13ActionDynamic15connect_resultsERK14DynamicFeature">ActionDynamic::connect_results (C++ function)</a>
+</li>
+        <li><a href="code.html#_CPPv4NK5grunk13ActionDynamic4evalEv">ActionDynamic::eval (C++ function)</a>
+</li>
+        <li><a href="code.html#_CPPv4NK5grunk13ActionDynamic18initialize_resultsEv">ActionDynamic::initialize_results (C++ function)</a>
+</li>
+        <li><a href="code.html#_CPPv4NK5grunk13ActionDynamic9serializeEv">ActionDynamic::serialize (C++ function)</a>
+</li>
+    </ul></td>
+  </tr></table>
+</section>
+
+<section id="C" class="genindex-section">
+  <h2>C</h2>
+  <table style="width: 100%" class="indextable genindextable"><tr>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="code.html#_CPPv4I0E20create_function_metaN3sol6objectEN3sol10state_viewERKNSt6stringERKNSt6vectorI9ParameterEERR1F">create_function_meta (C++ function)</a>, <a href="code.html#_CPPv4I0E20create_function_metaN3sol6objectEN3sol10state_viewERKNSt6stringERR1F">[1]</a>
+</li>
+    </ul></td>
+  </tr></table>
+</section>
+
+<section id="D" class="genindex-section">
+  <h2>D</h2>
+  <table style="width: 100%" class="indextable genindextable"><tr>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="code.html#_CPPv4N5grunk7details13ActionFactoryE">details::ActionFactory (C++ struct)</a>
+</li>
+        <li><a href="code.html#_CPPv4I0DpEN5grunk7details13ActionFactory10new_actionE12ResultHolderI6ActionI1FDp4ArgsEERK1FDpRK7FeatureI4ArgsE">details::ActionFactory::new_action (C++ function)</a>
+</li>
+        <li><a href="code.html#_CPPv4N5grunk7details20DynamicActionFactoryE">details::DynamicActionFactory (C++ struct)</a>
+</li>
+        <li><a href="code.html#_CPPv4IDpEN5grunk7details20DynamicActionFactory10new_actionE12ResultHolderI13ActionDynamicERK13function_metaDpRK7FeatureI4ArgsE">details::DynamicActionFactory::new_action (C++ function)</a>, <a href="code.html#_CPPv4N5grunk7details20DynamicActionFactory10new_actionERK13function_metaRKNSt6vectorI14DynamicFeatureEE">[1]</a>
+</li>
+        <li><a href="code.html#_CPPv4I0EN5grunk7details15TaskflowVisitorE">details::TaskflowVisitor (C++ class)</a>
+</li>
+    </ul></td>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="code.html#_CPPv4N5grunk7details15TaskflowVisitor15TaskflowVisitorER4Flow">details::TaskflowVisitor::TaskflowVisitor (C++ function)</a>
+</li>
+        <li><a href="code.html#_CPPv4N5grunk7details15TaskflowVisitor5visitERKN10parametric7DAGNodeE6size_t">details::TaskflowVisitor::visit (C++ function)</a>
+</li>
+        <li><a href="code.html#_CPPv4N5grunk7details15ToStringVisitorE">details::ToStringVisitor (C++ class)</a>
+</li>
+        <li><a href="code.html#_CPPv4N5grunk7details15ToStringVisitor15ToStringVisitorER10SerializerRKN10parametric7DAGNodeE">details::ToStringVisitor::ToStringVisitor (C++ function)</a>
+</li>
+        <li><a href="code.html#_CPPv4N5grunk7details15ToStringVisitor5visitERKN10parametric7DAGNodeE6size_t">details::ToStringVisitor::visit (C++ function)</a>
+</li>
+    </ul></td>
+  </tr></table>
+</section>
+
+<section id="E" class="genindex-section">
+  <h2>E</h2>
+  <table style="width: 100%" class="indextable genindextable"><tr>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="code.html#_CPPv4N5grunk11environmentE">environment (C++ class)</a>
+</li>
+        <li><a href="code.html#_CPPv4N5grunk11environment11environmentERKN3sol11environmentE">environment::environment (C++ function)</a>
+</li>
+        <li><a href="code.html#_CPPv4N5grunk11environment4evalERKNSt6stringE">environment::eval (C++ function)</a>
+</li>
+    </ul></td>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="code.html#_CPPv4I0EN5grunk11environment3getE1TRKNSt6stringE">environment::get (C++ function)</a>, <a href="code.html#_CPPv4I0ENK5grunk11environment3getE1TRKNSt6stringE">[1]</a>
+</li>
+        <li><a href="code.html#_CPPv4N5grunk11environment11get_featureERKNSt6stringE">environment::get_feature (C++ function)</a>, <a href="code.html#_CPPv4NK5grunk11environment11get_featureERKNSt6stringE">[1]</a>
+</li>
+        <li><a href="code.html#_CPPv4N5grunk11environmentixERKNSt6stringE">environment::operator[] (C++ function)</a>, <a href="code.html#_CPPv4NK5grunk11environmentixERKNSt6stringE">[1]</a>
+</li>
+        <li><a href="code.html#_CPPv4N5grunk11environment12tag_featuresEv">environment::tag_features (C++ function)</a>
+</li>
+    </ul></td>
+  </tr></table>
+</section>
+
+<section id="F" class="genindex-section">
+  <h2>F</h2>
+  <table style="width: 100%" class="indextable genindextable"><tr>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="code.html#_CPPv4I0E7feature7FeatureI1TERK1T">feature (C++ function)</a>, <a href="code.html#_CPPv4I0E7feature7FeatureI1TEv">[1]</a>
+</li>
+        <li><a href="code.html#_CPPv4I0EN5grunk7FeatureE">Feature (C++ struct)</a>
+</li>
+        <li><a href="code.html#_CPPv4N5grunk7Feature7FeatureERK1T">Feature::Feature (C++ function)</a>, <a href="code.html#_CPPv4N5grunk7Feature7FeatureERKN10parametric5paramI1TEE">[1]</a>, <a href="code.html#_CPPv4N5grunk7Feature7FeatureEv">[2]</a>
+</li>
+        <li><a href="code.html#_CPPv4I00EN5grunk11FeatureBaseE">FeatureBase (C++ struct)</a>
+</li>
+        <li><a href="code.html#_CPPv4NK5grunk11FeatureBase5cloneENSt10shared_ptrIN10parametric7DAGNode13ClonedNodeMapEEE">FeatureBase::clone (C++ function)</a>
+</li>
+        <li><a href="code.html#_CPPv4N5grunk11FeatureBase11FeatureBaseERK1T">FeatureBase::FeatureBase (C++ function)</a>, <a href="code.html#_CPPv4N5grunk11FeatureBase11FeatureBaseERKN10parametric5paramI1TEE">[1]</a>
+</li>
+        <li><a href="code.html#_CPPv4NK5grunk11FeatureBase14is_placeholderEv">FeatureBase::is_placeholder (C++ function)</a>
+</li>
+        <li><a href="code.html#_CPPv4N5grunk11FeatureBaseeqERK7Derived">FeatureBase::operator== (C++ function)</a>
+</li>
+    </ul></td>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="code.html#_CPPv4N5grunk11FeatureBase7with_idERKNSt6stringE">FeatureBase::with_id (C++ function)</a>
+</li>
+        <li><a href="code.html#_CPPv4N5grunk13function_metaE">function_meta (C++ class)</a>
+</li>
+        <li><a href="code.html#_CPPv4IDpENK5grunk13function_meta4callEN3sol25protected_function_resultEDpRR4Args">function_meta::call (C++ function)</a>
+</li>
+        <li><a href="code.html#_CPPv4N5grunk13function_meta13function_metaERKNSt6stringERKNSt8optionalINSt6vectorI9ParameterEEEERKN3sol8functionE">function_meta::function_meta (C++ function)</a>
+</li>
+        <li><a href="code.html#_CPPv4NK5grunk13function_meta12get_functionEv">function_meta::get_function (C++ function)</a>
+</li>
+        <li><a href="code.html#_CPPv4NK5grunk13function_meta8get_nameEv">function_meta::get_name (C++ function)</a>
+</li>
+        <li><a href="code.html#_CPPv4NK5grunk13function_meta10get_paramsEv">function_meta::get_params (C++ function)</a>
+</li>
+        <li><a href="code.html#_CPPv4NK5grunk13function_meta9lua_stateEv">function_meta::lua_state (C++ function)</a>
+</li>
+        <li><a href="code.html#_CPPv4NK5grunk13function_metaclEN3sol13variadic_argsE">function_meta::operator() (C++ function)</a>
+</li>
+    </ul></td>
+  </tr></table>
+</section>
+
+<section id="I" class="genindex-section">
+  <h2>I</h2>
+  <table style="width: 100%" class="indextable genindextable"><tr>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="code.html#_CPPv4N5grunk8io_errorE">io_error (C++ class)</a>
+</li>
+        <li><a href="code.html#_CPPv4NK5grunk8io_error11get_messageEv">io_error::get_message (C++ function)</a>
+</li>
+        <li><a href="code.html#_CPPv4N5grunk8io_error8io_errorERKNSt6stringE">io_error::io_error (C++ function)</a>
+</li>
+    </ul></td>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="code.html#_CPPv4NK5grunk8io_error4whatEv">io_error::what (C++ function)</a>
+</li>
+        <li><a href="code.html#_CPPv4I0E12is_feature_v">is_feature_v (C++ member)</a>
+</li>
+        <li><a href="code.html#_CPPv4I0E12is_feature_vI7FeatureI1TEE">is_feature_v&lt;Feature&lt;T&gt;&gt; (C++ member)</a>
+</li>
+    </ul></td>
+  </tr></table>
+</section>
+
+<section id="L" class="genindex-section">
+  <h2>L</h2>
+  <table style="width: 100%" class="indextable genindextable"><tr>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="code.html#_CPPv413lookup_nestedRKN3sol5tableERKNSt6stringE">lookup_nested (C++ function)</a>
+</li>
+    </ul></td>
+  </tr></table>
+</section>
+
+<section id="M" class="genindex-section">
+  <h2>M</h2>
+  <table style="width: 100%" class="indextable genindextable"><tr>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="code.html#_CPPv419make_dynamic_actionRK13function_meta">make_dynamic_action (C++ function)</a>
+</li>
+        <li><a href="code.html#_CPPv4N5grunk12ModuleActionE">ModuleAction (C++ class)</a>
+</li>
+        <li><a href="code.html#_CPPv4N5grunk12ModuleAction14connect_inputsERK7FeatureINSt6stringEERKNSt6vectorI14DynamicFeatureEE">ModuleAction::connect_inputs (C++ function)</a>
+</li>
+    </ul></td>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="code.html#_CPPv4N5grunk12ModuleAction15connect_resultsERK14DynamicFeature">ModuleAction::connect_results (C++ function)</a>
+</li>
+        <li><a href="code.html#_CPPv4NK5grunk12ModuleAction4evalEv">ModuleAction::eval (C++ function)</a>
+</li>
+        <li><a href="code.html#_CPPv4NK5grunk12ModuleAction18initialize_resultsEv">ModuleAction::initialize_results (C++ function)</a>
+</li>
+        <li><a href="code.html#_CPPv4NK5grunk12ModuleAction9serializeEv">ModuleAction::serialize (C++ function)</a>
+</li>
+    </ul></td>
+  </tr></table>
+</section>
+
+<section id="P" class="genindex-section">
+  <h2>P</h2>
+  <table style="width: 100%" class="indextable genindextable"><tr>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="code.html#_CPPv4N5grunk16ParallelExecutorE">ParallelExecutor (C++ class)</a>
+</li>
+        <li><a href="code.html#_CPPv4N5grunk16ParallelExecutor14build_taskflowEv">ParallelExecutor::build_taskflow (C++ function)</a>
+</li>
+        <li><a href="code.html#_CPPv4NK5grunk16ParallelExecutor12get_taskflowEv">ParallelExecutor::get_taskflow (C++ function)</a>
+</li>
+        <li><a href="code.html#_CPPv4N5grunk16ParallelExecutor4nameERKNSt6stringE">ParallelExecutor::name (C++ function)</a>, <a href="code.html#_CPPv4NK5grunk16ParallelExecutor4nameEv">[1]</a>
+</li>
+        <li><a href="code.html#_CPPv4IDpEN5grunk16ParallelExecutor16ParallelExecutorE6size_tDpRK7FeatureI1TE">ParallelExecutor::ParallelExecutor (C++ function)</a>, <a href="code.html#_CPPv4IDpEN5grunk16ParallelExecutor16ParallelExecutorEDpRK7FeatureI1TE">[1]</a>
+</li>
+    </ul></td>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="code.html#_CPPv4N5grunk16ParallelExecutor5resetEv">ParallelExecutor::reset (C++ function)</a>
+</li>
+        <li><a href="code.html#_CPPv4N5grunk16ParallelExecutor3runEv">ParallelExecutor::run (C++ function)</a>
+</li>
+        <li><a href="code.html#_CPPv4N5grunk9ParameterE">Parameter (C++ struct)</a>
+</li>
+        <li><a href="code.html#_CPPv4N5grunk9Parameter18is_const_referenceE">Parameter::is_const_reference (C++ member)</a>
+</li>
+        <li><a href="code.html#_CPPv4N5grunk9Parameter4nameE">Parameter::name (C++ member)</a>
+</li>
+    </ul></td>
+  </tr></table>
+</section>
+
+<section id="R" class="genindex-section">
+  <h2>R</h2>
+  <table style="width: 100%" class="indextable genindextable"><tr>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="code.html#_CPPv4N5grunk6RecipeE">Recipe (C++ class)</a>
+</li>
+        <li><a href="code.html#_CPPv4NK5grunk6Recipe5cloneEv">Recipe::clone (C++ function)</a>
+</li>
+        <li><a href="code.html#_CPPv4N5grunk6Recipe10get_recipeERKNSt6stringE">Recipe::get_recipe (C++ function)</a>, <a href="code.html#_CPPv4NK5grunk6Recipe10get_recipeERKNSt6stringE">[1]</a>
+</li>
+        <li><a href="code.html#_CPPv4N5grunk6Recipe20insert_module_scriptERKNSt6stringERKNSt6stringE">Recipe::insert_module_script (C++ function)</a>
+</li>
+        <li><a href="code.html#_CPPv4N5grunk6Recipe13insert_recipeERKNSt6stringERR6Recipe">Recipe::insert_recipe (C++ function)</a>
+</li>
+        <li><a href="code.html#_CPPv4N5grunk6Recipe14module_scriptsE">Recipe::module_scripts (C++ member)</a>
+</li>
+        <li><a href="code.html#_CPPv4N5grunk6RecipeaSERK6Recipe">Recipe::operator= (C++ function)</a>, <a href="code.html#_CPPv4N5grunk6RecipeaSERR6Recipe">[1]</a>
+</li>
+        <li><a href="code.html#_CPPv4N5grunk6Recipe18populate_from_fileERKNSt6stringE">Recipe::populate_from_file (C++ function)</a>
+</li>
+        <li><a href="code.html#_CPPv4N5grunk6Recipe20populate_from_stringERKNSt6stringE">Recipe::populate_from_string (C++ function)</a>
+</li>
+        <li><a href="code.html#_CPPv4N5grunk6Recipe6RecipeERK6Recipe">Recipe::Recipe (C++ function)</a>, <a href="code.html#_CPPv4N5grunk6Recipe6RecipeERR6Recipe">[1]</a>
+</li>
+        <li><a href="code.html#_CPPv4N5grunk6Recipe7recipesE">Recipe::recipes (C++ member)</a>
+</li>
+        <li><a href="code.html#_CPPv4N5grunk6Recipe9SubRecipeE">Recipe::SubRecipe (C++ struct)</a>
+</li>
+        <li><a href="code.html#_CPPv4N5grunk6Recipe9SubRecipe9lua_stateE">Recipe::SubRecipe::lua_state (C++ member)</a>
+</li>
+        <li><a href="code.html#_CPPv4N5grunk6Recipe9SubRecipe4nameE">Recipe::SubRecipe::name (C++ member)</a>
+</li>
+        <li><a href="code.html#_CPPv4NK5grunk6Recipe9SubRecipeclEv">Recipe::SubRecipe::operator() (C++ function)</a>
+</li>
+        <li><a href="code.html#_CPPv4N5grunk6Recipe9SubRecipe6recipeE">Recipe::SubRecipe::recipe (C++ member)</a>
+</li>
+        <li><a href="code.html#_CPPv4N5grunk6Recipe3tagEv">Recipe::tag (C++ function)</a>
+</li>
+        <li><a href="code.html#_CPPv4NK5grunk6Recipe9to_stringEv">Recipe::to_string (C++ function)</a>
+</li>
+        <li><a href="code.html#_CPPv4N5grunk12RecipeActionE">RecipeAction (C++ class)</a>
+</li>
+        <li><a href="code.html#_CPPv4N5grunk12RecipeAction14connect_inputsERK7FeatureI6RecipeERKNSt13unordered_mapINSt6stringE14DynamicFeatureEE">RecipeAction::connect_inputs (C++ function)</a>
+</li>
+        <li><a href="code.html#_CPPv4N5grunk12RecipeAction15connect_resultsERK7FeatureI6RecipeE">RecipeAction::connect_results (C++ function)</a>
+</li>
+        <li><a href="code.html#_CPPv4NK5grunk12RecipeAction4evalEv">RecipeAction::eval (C++ function)</a>
+</li>
+        <li><a href="code.html#_CPPv4NK5grunk12RecipeAction18initialize_resultsEv">RecipeAction::initialize_results (C++ function)</a>
+</li>
+        <li><a href="code.html#_CPPv4N5grunk12RecipeAction12RecipeActionERKNSt6stringE">RecipeAction::RecipeAction (C++ function)</a>
+</li>
+        <li><a href="code.html#_CPPv4NK5grunk12RecipeAction9serializeEv">RecipeAction::serialize (C++ function)</a>
+</li>
+        <li><a href="code.html#_CPPv4N5grunk12RecipeCallerE">RecipeCaller (C++ class)</a>
+</li>
+        <li><a href="code.html#_CPPv4N5grunk12RecipeCaller3getERKNSt6stringE">RecipeCaller::get (C++ function)</a>
+</li>
+        <li><a href="code.html#_CPPv4NK5grunk12RecipeCaller6lockedEv">RecipeCaller::locked (C++ function)</a>
+</li>
+        <li><a href="code.html#_CPPv4N5grunk12RecipeCallerixERKNSt6stringE">RecipeCaller::operator[] (C++ function)</a>
+</li>
+        <li><a href="code.html#_CPPv4N5grunk12RecipeCaller5ProxyE">RecipeCaller::Proxy (C++ struct)</a>
+</li>
+    </ul></td>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="code.html#_CPPv4N5grunk12RecipeCaller5Proxy3keyE">RecipeCaller::Proxy::key (C++ member)</a>
+</li>
+        <li><a href="code.html#_CPPv4N5grunk12RecipeCaller5Proxycv14DynamicFeatureEv">RecipeCaller::Proxy::operator DynamicFeature (C++ function)</a>
+</li>
+        <li><a href="code.html#_CPPv4I0EN5grunk12RecipeCaller5ProxyaSEvRR1T">RecipeCaller::Proxy::operator= (C++ function)</a>
+</li>
+        <li><a href="code.html#_CPPv4N5grunk12RecipeCaller5Proxy2rcE">RecipeCaller::Proxy::rc (C++ member)</a>
+</li>
+        <li><a href="code.html#_CPPv4N5grunk12RecipeCaller5Proxy10to_featureEv">RecipeCaller::Proxy::to_feature (C++ function)</a>
+</li>
+        <li><a href="code.html#_CPPv4N5grunk12RecipeCaller12RecipeCallerERKNSt6stringERK7FeatureI6RecipeEP9lua_State">RecipeCaller::RecipeCaller (C++ function)</a>
+</li>
+        <li><a href="code.html#_CPPv4N5grunk12RecipeCaller6set_idERKNSt6stringE">RecipeCaller::set_id (C++ function)</a>
+</li>
+        <li><a href="code.html#_CPPv4N5grunk12RecipeCaller7with_idERKNSt6stringE">RecipeCaller::with_id (C++ function)</a>
+</li>
+        <li><a href="code.html#_CPPv4N5grunk18RecipeGetValActionE">RecipeGetValAction (C++ class)</a>
+</li>
+        <li><a href="code.html#_CPPv4N5grunk18RecipeGetValAction14connect_inputsERK7FeatureI6RecipeERKNSt6stringE">RecipeGetValAction::connect_inputs (C++ function)</a>
+</li>
+        <li><a href="code.html#_CPPv4N5grunk18RecipeGetValAction15connect_resultsERK14DynamicFeature">RecipeGetValAction::connect_results (C++ function)</a>
+</li>
+        <li><a href="code.html#_CPPv4NK5grunk18RecipeGetValAction4evalEv">RecipeGetValAction::eval (C++ function)</a>
+</li>
+        <li><a href="code.html#_CPPv4NK5grunk18RecipeGetValAction18initialize_resultsEv">RecipeGetValAction::initialize_results (C++ function)</a>
+</li>
+        <li><a href="code.html#_CPPv4N5grunk18RecipeGetValAction18RecipeGetValActionERKNSt6stringE">RecipeGetValAction::RecipeGetValAction (C++ function)</a>
+</li>
+        <li><a href="code.html#_CPPv4NK5grunk18RecipeGetValAction9serializeEv">RecipeGetValAction::serialize (C++ function)</a>
+</li>
+        <li><a href="code.html#_CPPv4I0EN5grunk12ResultHolderE">ResultHolder (C++ class)</a>
+</li>
+        <li><a href="code.html#_CPPv4NK5grunk12ResultHolder12compute_nodeEv">ResultHolder::compute_node (C++ function)</a>
+</li>
+        <li><a href="code.html#_CPPv4NK5grunk12ResultHolder4evalEv">ResultHolder::eval (C++ function)</a>
+</li>
+        <li><a href="code.html#_CPPv4I_iENK5grunk12ResultHolder6outputEDcv">ResultHolder::output (C++ function)</a>
+</li>
+        <li><a href="code.html#_CPPv4NK5grunk12ResultHolder4sizeEv">ResultHolder::size (C++ function)</a>
+</li>
+        <li><a href="code.html#_CPPv4IEN5grunk12ResultHolderI13ActionDynamicEE">ResultHolder&lt;ActionDynamic&gt; (C++ class)</a>
+</li>
+        <li><a href="code.html#_CPPv4NK5grunk12ResultHolderI13ActionDynamicE12compute_nodeEv">ResultHolder&lt;ActionDynamic&gt;::compute_node (C++ function)</a>, <a href="code.html#_CPPv4NK5grunk12ResultHolderI13ActionDynamicE12compute_nodeEv">[1]</a>
+</li>
+        <li><a href="code.html#_CPPv4NK5grunk12ResultHolderI13ActionDynamicE4evalEv">ResultHolder&lt;ActionDynamic&gt;::eval (C++ function)</a>, <a href="code.html#_CPPv4NK5grunk12ResultHolderI13ActionDynamicE4evalEv">[1]</a>
+</li>
+        <li><a href="code.html#_CPPv4NK5grunk12ResultHolderI13ActionDynamicE6outputEv">ResultHolder&lt;ActionDynamic&gt;::output (C++ function)</a>, <a href="code.html#_CPPv4NK5grunk12ResultHolderI13ActionDynamicE6outputEv">[1]</a>
+</li>
+        <li><a href="code.html#_CPPv4N5grunk12ResultHolderI13ActionDynamicE12ResultHolderERK11result_typeRKNSt10shared_ptrIN10parametric7DAGNodeEEE">ResultHolder&lt;ActionDynamic&gt;::ResultHolder (C++ function)</a>
+</li>
+        <li><a href="code.html#_CPPv4NK5grunk12ResultHolderI13ActionDynamicE4sizeEv">ResultHolder&lt;ActionDynamic&gt;::size (C++ function)</a>
+</li>
+        <li><a href="code.html#_CPPv4IEN5grunk12ResultHolderI12ModuleActionEE">ResultHolder&lt;ModuleAction&gt; (C++ class)</a>
+</li>
+        <li><a href="code.html#_CPPv4NK5grunk12ResultHolderI12ModuleActionE12compute_nodeEv">ResultHolder&lt;ModuleAction&gt;::compute_node (C++ function)</a>
+</li>
+        <li><a href="code.html#_CPPv4NK5grunk12ResultHolderI12ModuleActionE4evalEv">ResultHolder&lt;ModuleAction&gt;::eval (C++ function)</a>
+</li>
+        <li><a href="code.html#_CPPv4NK5grunk12ResultHolderI12ModuleActionE6outputEv">ResultHolder&lt;ModuleAction&gt;::output (C++ function)</a>
+</li>
+        <li><a href="code.html#_CPPv4NK5grunk12ResultHolderI12ModuleActionE4sizeEv">ResultHolder&lt;ModuleAction&gt;::size (C++ function)</a>
+</li>
+    </ul></td>
+  </tr></table>
+</section>
+
+<section id="S" class="genindex-section">
+  <h2>S</h2>
+  <table style="width: 100%" class="indextable genindextable"><tr>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="code.html#_CPPv4N5grunk10SerializerE">Serializer (C++ class)</a>
+</li>
+        <li><a href="code.html#_CPPv4NK5grunk10Serializer14get_parametersEv">Serializer::get_parameters (C++ function)</a>
+</li>
+        <li><a href="code.html#_CPPv4NK5grunk10Serializer9get_stepsEv">Serializer::get_steps (C++ function)</a>
+</li>
+        <li><a href="code.html#_CPPv4NK5grunk10Serializer10get_stringEb">Serializer::get_string (C++ function)</a>
+</li>
+        <li><a href="code.html#_CPPv4I0EN5grunk10Serializer5parseEvRK7FeatureI3ArgE">Serializer::parse (C++ function)</a>
+</li>
+        <li><a href="code.html#_CPPv4N5grunk10Serializer10SerializerEv">Serializer::Serializer (C++ function)</a>
+</li>
+        <li><a href="code.html#_CPPv4N5grunk10Serializer7VisitedE">Serializer::Visited (C++ type)</a>
+</li>
+        <li><a href="code.html#_CPPv4N5grunk5stateE">state (C++ class)</a>
+</li>
+        <li><a href="code.html#_CPPv4IDpENK5grunk5state6actionE14DynamicFeatureRK13function_metaDpRR4Args">state::action (C++ function)</a>, <a href="code.html#_CPPv4IDpENK5grunk5state6actionE14DynamicFeatureRKNSt6stringEDpRR4Args">[1]</a>
+</li>
+        <li><a href="code.html#_CPPv4N5grunk5state12clear_moduleERKNSt6stringE">state::clear_module (C++ function)</a>
+</li>
+        <li><a href="code.html#_CPPv4NK5grunk5state10create_envEv">state::create_env (C++ function)</a>
+</li>
+        <li><a href="code.html#_CPPv4I0ENK5grunk5state13create_objectEN5grunk6objectERK1T">state::create_object (C++ function)</a>
+</li>
+    </ul></td>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="code.html#_CPPv4NK5grunk5state21create_parametric_envEv">state::create_parametric_env (C++ function)</a>
+</li>
+        <li><a href="code.html#_CPPv4NK5grunk5state13create_recipeEv">state::create_recipe (C++ function)</a>
+</li>
+        <li><a href="code.html#_CPPv4N5grunk5state11deserializeERKNSt6stringE">state::deserialize (C++ function)</a>
+</li>
+        <li><a href="code.html#_CPPv4I0ENK5grunk5state7featureE14DynamicFeatureRK1T">state::feature (C++ function)</a>, <a href="code.html#_CPPv4IDpENK5grunk5state7featureE14DynamicFeatureN3sol5tableEDpRR4Args">[1]</a>, <a href="code.html#_CPPv4IDpENK5grunk5state7featureE14DynamicFeatureRKNSt6stringEDpRR4Args">[2]</a>, <a href="code.html#_CPPv4N5grunk5state7featureERKNSt6stringE19default_construct_t">[3]</a>, <a href="code.html#_CPPv4NK5grunk5state7featureERKN5grunk6objectE">[4]</a>, <a href="code.html#_CPPv4NK5grunk5state7featureEv">[5]</a>
+</li>
+        <li><a href="code.html#_CPPv4NK5grunk5state12get_functionERKNSt6stringE">state::get_function (C++ function)</a>
+</li>
+        <li><a href="code.html#_CPPv4NK5grunk5state8get_typeERKNSt6stringE">state::get_type (C++ function)</a>
+</li>
+        <li><a href="code.html#_CPPv4N5grunk5state4readERKNSt6stringE">state::read (C++ function)</a>
+</li>
+        <li><a href="code.html#_CPPv4I0EN5grunk5state17register_functionEvRKNSt6stringERR4FuncNSt6vectorI9ParameterEENSt8optionalIN3sol5tableEEE">state::register_function (C++ function)</a>
+</li>
+        <li><a href="code.html#_CPPv4I0EN5grunk5state13register_typeEDaRKNSt6stringENSt8optionalIN3sol5tableEEE">state::register_type (C++ function)</a>
+</li>
+        <li><a href="code.html#_CPPv4N5grunk5state15run_module_fileERKNSt6stringERKNSt6stringE">state::run_module_file (C++ function)</a>
+</li>
+        <li><a href="code.html#_CPPv4N5grunk5state17run_module_scriptERKNSt6stringERKNSt6stringE">state::run_module_script (C++ function)</a>
+</li>
+        <li><a href="code.html#_CPPv4N5grunk5state5stateEv">state::state (C++ function)</a>
+</li>
+        <li><a href="code.html#_CPPv4N5grunk5state5writeERKNSt6stringERK6Recipe">state::write (C++ function)</a>
+</li>
+    </ul></td>
+  </tr></table>
+</section>
+
+<section id="T" class="genindex-section">
+  <h2>T</h2>
+  <table style="width: 100%" class="indextable genindextable"><tr>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="code.html#_CPPv4I0E10to_featureDaRK1T">to_feature (C++ function)</a>
+</li>
+    </ul></td>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="code.html#_CPPv411to_taskflowRKNSt6vectorIN10parametric7NodeRefEEE">to_taskflow (C++ function)</a>, <a href="code.html#_CPPv4IDpE11to_taskflowN2tf8TaskflowEDpRK7FeatureI1TE">[1]</a>
+</li>
+        <li><a href="code.html#_CPPv44trimRNSt6stringE">trim (C++ function)</a>
+</li>
+    </ul></td>
+  </tr></table>
+</section>
+
+
+        </article>
+      </div>
+      <footer>
+        
+        <div class="related-pages">
+          
+          
+        </div>
+        <div class="bottom-of-page">
+          <div class="left-details">
+            <div class="copyright">
+                Copyright &#169; 2026, German Aerospace Center
+            </div>
+            Made with <a href="https://www.sphinx-doc.org/">Sphinx</a> and <a class="muted-link" href="https://pradyunsg.me">@pradyunsg</a>'s
+            
+            <a href="https://github.com/pradyunsg/furo">Furo</a>
+            
+          </div>
+          <div class="right-details">
+            
+          </div>
+        </div>
+        
+      </footer>
+    </div>
+    <aside class="toc-drawer no-toc">
+      
+      
+      
+    </aside>
+  </div>
+</div><script src="_static/documentation_options.js?v=1dd76d02"></script>
+    <script src="_static/doctools.js?v=9a2dae69"></script>
+    <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/scripts/furo.js?v=46bd48cc"></script>
+    </body>
+</html>
