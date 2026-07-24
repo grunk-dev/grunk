@@ -83,6 +83,11 @@ TEST(plugin, compiled_plugin_free_functions_are_tracked)
 // This is the scenario create_decorated_environment's recursive decoration exists for:
 // a class nested inside a plugin's own namespace table must still be tracked - both
 // its constructor and its methods - exactly as a flat register_type registration would.
+//
+// Note there is no .add_member_function call for "get_x" here: SWIG-Lua bindings give
+// no way to enumerate a class's method names from Lua, only to look one up once you
+// already know it, so register_external_type's type table auto-discovers methods
+// lazily via a probe instance instead of requiring every one to be listed up front.
 TEST(plugin, compiled_plugin_class_bridged_with_qualified_name_keeps_tracking)
 {
     grunk::state grunk;
@@ -91,9 +96,7 @@ TEST(plugin, compiled_plugin_class_bridged_with_qualified_name_keeps_tracking)
     sol::table ns = grunk.load_compiled_plugin(info, luaopen_testplugin);
 
     sol::table box_ctor = ns["Box"];
-    grunk.register_external_type("testplugin.Box", box_ctor, ns)
-        .add_member_function("set_x")
-        .add_member_function("get_x");
+    grunk.register_external_type("testplugin.Box", box_ctor, ns);
 
     auto u = grunk.feature(4.);
     auto box = grunk.action("testplugin.Box.new", u);
@@ -110,4 +113,30 @@ TEST(plugin, compiled_plugin_class_bridged_with_qualified_name_keeps_tracking)
 
     auto deserialized = grunk.deserialize(serialized);
     EXPECT_NEAR(deserialized.as<double>(), 9., 1e-15);
+}
+
+// The auto-discovery metamethod caches the bridged method as a plain function_meta
+// entry on the type table, shared between original_env and decorated_env alike (see
+// external_type_proxy). A plain, non-parametric environment must therefore be able to
+// call an auto-discovered method directly and get a raw value back - not an action -
+// exactly as it would for a method bridged via add_member_function.
+TEST(plugin, compiled_plugin_class_auto_discovered_method_works_in_plain_environment)
+{
+    grunk::state grunk;
+
+    grunk::PluginInfo info{"testplugin", "1.0"};
+    sol::table ns = grunk.load_compiled_plugin(info, luaopen_testplugin);
+
+    sol::table box_ctor = ns["Box"];
+    grunk.register_external_type("testplugin.Box", box_ctor, ns);
+
+    auto env = grunk.create_env();
+    auto res = env.eval(R"(
+        box = testplugin.Box.new(4.)
+        x = testplugin.Box.get_x(box)
+    )");
+    ASSERT_TRUE(res.valid());
+
+    auto x = env.get("x");
+    EXPECT_NEAR(x.as<double>(), 4., 1e-15);
 }

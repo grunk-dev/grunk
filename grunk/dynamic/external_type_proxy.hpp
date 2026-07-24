@@ -25,13 +25,25 @@ namespace grunk {
  * decorate_module_functions' plain pairs() traversal nor state::register_type's
  * sol::usertype<T> machinery can see those methods, so this proxy bridges them
  * generically instead: it constructs one probe instance of the type (by calling
- * the constructor with no arguments, unless a probe is supplied explicitly) and,
- * for each declared method name, looks up that method on the probe.
+ * the constructor with no arguments, unless a probe is supplied explicitly) and
+ * looks methods up on the probe.
  *
  * The looked-up method reference is unbound (it expects the instance as its first
  * argument, like any Lua "method"), so the same reference obtained from the probe
  * is valid to call on any other instance of the type - the probe is only a vehicle
  * for discovering the method, not a receiver bound into the returned function.
+ *
+ * Methods do not need to be declared up front: the constructor installs a __index
+ * metamethod on the type table that probes for any not-yet-known key the first time
+ * it is looked up, and caches the result as a plain table entry if the probe resolves
+ * it to a callable. SWIG-Lua's generated bindings expose no way to enumerate a
+ * class's method names from Lua, only to look one up once you already know it (see
+ * add_member_function) - this metamethod is what turns that per-name lookup into
+ * "any method just works", so bridging a class costs one register_external_type call
+ * regardless of how many methods it has. add_member_function/add_member_functions
+ * remain available to attach Parameter metadata, restrict to an explicit allowlist,
+ * or bridge a method whose name a probe can't discover on its own (e.g. because
+ * ctor() with no arguments doesn't produce a valid instance and no probe was given).
  *
  * Each bridged member becomes a function_meta stored directly on a plain
  * sol::table (the "type" table, following the shape register_type produces),
@@ -53,7 +65,8 @@ public:
      * @param table_ the table the type is registered into, e.g. original_env
      * @param probe_ an optional pre-built instance of the type, used to discover methods.
      *               If not given, a probe is lazily constructed by calling ctor_ with no
-     *               arguments the first time a method is bridged.
+     *               arguments the first time a method is looked up (explicitly or via
+     *               auto-discovery).
      */
     external_type_proxy(
         std::string const& name_,
@@ -71,6 +84,58 @@ public:
         if (probe_.valid()) {
             scratch["probe"] = probe_;
         }
+
+        // Auto-discovery fallback. This only ever runs for a key `table` doesn't
+        // already raw-contain (Lua only consults __index on a miss), so it can never
+        // shadow "new" above or anything add_member_function bridges explicitly,
+        // whichever runs first.
+        //
+        // Every capture below is a value copy - sol::table/sol::protected_function are
+        // cheap, refcounted handles onto the same underlying Lua objects, so copying
+        // keeps them alive for the closure's lifetime and writes through the copy stay
+        // visible through every other handle to the same table (notably `scratch` and
+        // `table` below, shared with this proxy's own members of the same name).
+        // Deliberately not `this`: external_type_proxy is a chain-returned temporary
+        // that is gone long before this metamethod is ever invoked.
+        sol::table meta = sol::state_view(L_).create_table();
+        meta.set_function(
+            "__index",
+            [type_name = name_, L_, ctor_, target = table_, scratch = scratch](sol::table, std::string const& key) mutable -> sol::object {
+                if (key.size() >= 2 && key[0] == '_' && key[1] == '_') {
+                    // Metamethod-shaped names (__mul, __tostring, ...) are never
+                    // ordinary methods; skip probing for them defensively, even
+                    // though SWIG-Lua's own method dispatch already keeps them out
+                    // of reach of a plain instance[key] lookup.
+                    return sol::lua_nil;
+                }
+
+                sol::object probe = scratch["probe"];
+                if (!probe.valid()) {
+                    sol::protected_function_result res = ctor_();
+                    if (!res.valid()) {
+                        // No default constructor to probe with and none was supplied
+                        // up front - this key simply can't be auto-discovered. Let it
+                        // resolve to nil like any other missing key; the caller can
+                        // still bridge it via add_member_function with an explicit
+                        // probe instance.
+                        return sol::lua_nil;
+                    }
+                    probe = sol::object(res);
+                    scratch["probe"] = probe;
+                }
+
+                sol::object method = scratch["probe"][key];
+                if (!method.valid() || method.get_type() != sol::type::function) {
+                    return sol::lua_nil;
+                }
+
+                sol::protected_function pf = method;
+                sol::object bridged = create_function_meta(L_, type_name + "." + key, {}, pf);
+                target[key] = bridged;
+                return bridged;
+            }
+        );
+        table[sol::metatable_key] = meta;
     }
 
     /**
