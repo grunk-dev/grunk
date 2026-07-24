@@ -18,11 +18,32 @@
 #include <sol/types.hpp>
 #include <grunk/grunk.hpp>
 
+#include <dlfcn.h>
+#include <stdexcept>
+
 // adtl.so is a SWIG-generated Lua module wrapping ADOL-C's tapeless adouble type
 // (see https://gitlab.dlr.de/dlr-sp/occt-differentiation/swig-adol-c, lua_wrapper
-// branch). It is loaded into the grunk::state's Lua interpreter at runtime rather
-// than bound against directly, so grunk never needs to see adolc/adtl.h itself.
-extern "C" int luaopen_adtl(lua_State* L);
+// branch). Proof of concept for runtime plugin loading: rather than linking adtl.so
+// into this executable and forward-declaring its luaopen_adtl entry point, it is
+// dlopen'd from disk at startup and the entry point is looked up by name - the same
+// thing linking + an extern "C" declaration would give us, just resolved at runtime
+// instead of build time. ADTL_SO_PATH is set by CMake to wherever adtl.so was found.
+lua_CFunction load_adtl_entry_point()
+{
+    void* handle = dlopen(ADTL_SO_PATH, RTLD_NOW | RTLD_LOCAL);
+    if (!handle) {
+        throw std::runtime_error(std::string("could not load adtl.so: ") + dlerror());
+    }
+
+    dlerror(); // clear any prior error, per dlsym's own documented idiom for telling a
+               // valid NULL result apart from a real lookup failure
+    void* sym = dlsym(handle, "luaopen_adtl");
+    if (char const* err = dlerror(); err != nullptr) {
+        throw std::runtime_error(std::string("could not find luaopen_adtl in adtl.so: ") + err);
+    }
+
+    return reinterpret_cast<lua_CFunction>(sym);
+}
 
 namespace sol {
     template <typename T>
@@ -83,7 +104,7 @@ void register_adolc(grunk::state& grunk)
     // "adtl" namespace in original_env, its free functions (tan, exp, log, sqrt, pow,
     // ...) are made grunk-tracked, and its identity is recorded in grunk.plugins().
     grunk::PluginInfo info{"adtl", "2.7.2"}; // matches the wrapped ADOL-C release
-    sol::table adtl = grunk.load_compiled_plugin(info, luaopen_adtl);
+    sol::table adtl = grunk.load_compiled_plugin(info, load_adtl_entry_point());
 
     // adtl.adouble's constructor and methods are NOT plain table entries - SWIG's Lua
     // binding puts the constructor behind the class table's __call metamethod and
