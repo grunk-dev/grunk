@@ -276,7 +276,7 @@ public:
      *
      * @param name the module name, used as the registry key so repeated loads of the
      *             same name return the already-loaded module instead of reinitializing it
-     * @param open_fn the module's C entry point (e.g. `luaopen_adtl`)
+     * @param open_fn the module's C entry point (e.g. `luaopen_occt`)
      * @param set_global if true, also assign the module table to a global of the same name
      * @return the module's table, as returned by open_fn
      */

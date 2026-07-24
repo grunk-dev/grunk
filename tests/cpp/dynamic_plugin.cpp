@@ -9,9 +9,9 @@ namespace {
 
 // A tiny stand-in for a compiled Lua C extension (e.g. a SWIG-Lua module): a plain
 // C function matching the lua_CFunction/luaopen_* signature, built with sol2 for
-// convenience but otherwise unaware of grunk. Mirrors the shape swig-adol-c's
-// adtl.so has that actually matters for load_compiled_plugin/register_external_type:
-// - a free function stored directly on the module table (like adtl.tan)
+// convenience but otherwise unaware of grunk. Mirrors the shape SWIG Lua modules
+// have that actually matters for load_compiled_plugin/register_external_type:
+// - a free function stored directly on the module table
 // - a class ("Box") whose constructor lives behind its own table's __call
 //   metamethod rather than a plain "new" entry, and whose instance methods are
 //   only reachable through the instance's own metatable - not through the module
