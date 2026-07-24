@@ -2,10 +2,7 @@
 #
 # SPDX-License-Identifier: MPL-2.0
 
-*__pycache__
-*.egg-info
-python/_grunk.*.so
-.vscode
-CMakeLists.txt.user
-venv
-*.swp
+cmake_minimum_required(VERSION 3.15)
+project(grunk-examples)
+
+add_subdirectory(cad_autodiff)
