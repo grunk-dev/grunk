@@ -40,7 +40,10 @@ int luaopen_testplugin(lua_State* L)
 
     sol::table box_static = lua.create_table();
     sol::table box_meta = lua.create_table();
-    box_meta.set_function("__call", [](sol::table, double x) { return Box(x); });
+    box_meta.set_function("__call", sol::overload(
+    [](sol::table) { return Box(); },
+    [](sol::table, double x) { return Box(x); }
+));
     box_static[sol::metatable_key] = box_meta;
     mod["Box"] = box_static;
 
