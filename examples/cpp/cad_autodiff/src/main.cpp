@@ -93,11 +93,13 @@ void register_adolc(grunk::state& grunk)
     // a usertype_proxy<T> registration would require), and - since it is registered
     // *nested* inside the "adtl" namespace here rather than flat - keeps dependency
     // tracking working via grunk's recursive decoration.
+    //
+    // No .add_member_function calls are needed: adouble's default constructor lets
+    // register_external_type probe an instance and discover setADValue/getADValue/
+    // getValue (and any other method actually used) lazily, the first time each is
+    // looked up - SWIG-Lua gives no way to enumerate them up front.
     sol::table adouble_static = adtl["adouble"];
-    grunk.register_external_type("adtl.adouble", adouble_static, adtl)
-        .add_member_function("setADValue")
-        .add_member_function("getADValue")
-        .add_member_function("getValue");
+    grunk.register_external_type("adtl.adouble", adouble_static, adtl);
 
     // Operators (adouble * adouble, adouble * double, ...) need no bridging at all:
     // adtl's instances already carry native __mul/__add/... metamethods, and once a
