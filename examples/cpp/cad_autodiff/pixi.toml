@@ -1,0 +1,44 @@
+# SPDX-FileCopyrightText: 2026 Jan Kleinert <jan.kleinert@dlr.de>
+#
+# SPDX-License-Identifier: MPL-2.0
+
+[workspace]
+name = "grunk-cad-autodiff-example"
+version = "0.1.0"
+description = "CAD autodiff example for grunk"
+platforms = ["linux-64"]
+channels = ["conda-forge", "https://conda.anaconda.org/dlr-sc"]
+
+[target.linux-64.dependencies]
+cmake = "*"
+ninja = "*"
+libparametric = "*"
+taskflow = "*"
+yaml-cpp = "*"
+sol2 = "*"
+lua = "*"
+opencascade = "==7.6.2"
+
+[tasks]
+configure = { cmd = [
+    "cmake",
+    "-G", "Ninja",
+    "-S", ".",
+    "-B", "build",
+    "-D", "CMAKE_INSTALL_PREFIX=build/install",
+    "-D", "CMAKE_BUILD_TYPE={{ config }}",
+    "-D", "ADOLC_BASE_DIR=build/_deps/ADOL-C/adolc_base",
+    "-D", "ADTL_LIB_DIR=build/_deps/swig-adol-c/build"
+], args = [
+    { "arg" = "config", "default" = "Release" }
+], description = "Configure the CMake build." }
+
+build = { cmd = "cmake --build . --parallel", cwd = "build", description = "Build the example." }
+run = { cmd = "./cad_autodiff", cwd = "build", description = "Run the example." }
+
+[tasks.all]
+depends-on = ["configure", "build", "run"]
+description = "Configure, build, and run the example."
+
+[target.linux-64.activation.env]
+CMAKE_PREFIX_PATH = "$CONDA_PREFIX"
