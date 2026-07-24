@@ -91,9 +91,11 @@ message(STATUS "ADOL-C include directory: ${ADOLC_INCLUDE_DIR}")
 
 # adtl.so is a SWIG-generated Lua module wrapping ADOL-C's tapeless adouble type,
 # built manually from https://gitlab.dlr.de/dlr-sp/occt-differentiation/swig-adol-c.git
-# (branch lua_wrapper) - see README.md for build instructions. It is loaded into the
-# grunk::state's Lua interpreter at runtime (grunk::state::load_module), so main.cpp
-# never includes adolc/adtl.h directly, only ADTL_LIBRARY needs to be linked.
+# (branch lua_wrapper) - see README.md for build instructions. It is dlopen'd from
+# disk at runtime (see main.cpp's load_adtl_entry_point) rather than linked into this
+# executable, as a proof of concept for loading a grunk plugin from a path instead of
+# a compile-time symbol - so only its path needs to be known at build time, not the
+# library itself.
 set(ADTL_LIB_DIR "${CMAKE_SOURCE_DIR}/build/_deps/swig-adol-c/build" CACHE PATH "Directory containing the built adtl Lua module (adtl.so)")
 
 # swig_add_library sets PREFIX "" on the adtl target, so the file is literally named
@@ -112,4 +114,5 @@ endif()
 message(STATUS "Found adtl Lua module: ${ADTL_LIBRARY}")
 
 add_executable(cad_autodiff src/main.cpp)
-target_link_libraries(cad_autodiff PRIVATE grunk geoml ${ADOLC_LIBRARY} ${ADTL_LIBRARY})
+target_link_libraries(cad_autodiff PRIVATE grunk geoml ${ADOLC_LIBRARY} ${CMAKE_DL_LIBS})
+target_compile_definitions(cad_autodiff PRIVATE ADTL_SO_PATH="${ADTL_LIBRARY}")
