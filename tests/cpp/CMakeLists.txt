@@ -38,6 +38,7 @@ if (GRUNK_WITH_DYNAMIC)
       dynamic_state.cpp
       dynamic_std_vector.cpp
       dynamic_module.cpp
+      dynamic_plugin.cpp
     )
 endif()
 

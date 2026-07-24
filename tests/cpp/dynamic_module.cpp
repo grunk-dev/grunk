@@ -173,3 +173,48 @@ TEST(module, nonconst_setters)
     EXPECT_NEAR(p.value().as<Pnt>().y, 0.2, 1e-15);
     EXPECT_NEAR(p.value().as<Pnt>().z, 0.0, 1e-15);
 }
+
+namespace {
+
+struct Length
+{
+    Length() = default;
+    Length(double x_) : x(x_) {}
+    void set_x(double x_) { x = x_; }
+    double get_x() const { return x; }
+    double x{0.};
+};
+
+} // anonymous namespace
+
+// A type registered inside a namespace/module table (one level below original_env),
+// as a plugin contract would, rather than flat at the top level. Method calls and
+// construction on it must still be decorated into tracked actions when accessed
+// through a parametric environment - this is what plugin namespacing depends on.
+TEST(module, nested_type_keeps_dependency_tracking)
+{
+    grunk::state grunk;
+
+    grunk.run_module_script("ns", "");
+    sol::table ns = grunk.get_type("ns");
+
+    grunk.register_type<Length>("Length", ns)
+        .add_constructors([](double x){ return Length(x); })
+        .add_member_function("set_x", &Length::set_x)
+        .add_member_function("get_x", &Length::get_x);
+
+    auto penv = grunk.create_parametric_env();
+    auto res = penv.eval(R"(
+        u = grunk.feature(3.)
+        l = ns.Length.new(u)
+        x = ns.Length.get_x(l)
+    )");
+    ASSERT_TRUE(res.valid());
+
+    auto fx = penv.get_feature("x");
+    EXPECT_NEAR(fx.value().as<double>(), 3.0, 1e-15);
+
+    auto fu = penv.get_feature("u");
+    fu.set_value(7.0);
+    EXPECT_NEAR(fx.value().as<double>(), 7.0, 1e-15);
+}
