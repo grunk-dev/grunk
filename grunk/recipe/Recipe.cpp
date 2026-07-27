@@ -124,6 +124,29 @@ namespace grunk {
 
     void Recipe::populate_from_node(YAML::Node const& yml)
     {
+        if (yml["uses"] && yml["uses"].IsMap()) {
+            sol::state_view lua(m_environment.lua_state());
+            sol::object plugins_obj = lua["grunk"]["plugins"];
+            sol::table plugins_table = (plugins_obj.valid() && plugins_obj.is<sol::table>())
+                ? plugins_obj.as<sol::table>()
+                : lua.create_table();
+
+            for (auto const& kv : yml["uses"]) {
+                std::string key = kv.first.as<std::string>();
+                if (key == "grunk") {
+                    continue;
+                }
+                std::string version = kv.second.as<std::string>();
+
+                sol::object loaded = plugins_table[key];
+                if (!loaded.valid() || !loaded.is<std::string>()) {
+                    throw io_error(
+                        "Recipe requires plugin \"" + key + "\" (version " + version +
+                        "), which is not loaded in this grunk::state."
+                    );
+                }
+            }
+        }
         if (yml["recipes"]) {
             for (auto const& kv : yml["recipes"]) {
                 std::string key = kv.first.as<std::string>();
@@ -168,6 +191,16 @@ namespace grunk {
         
         std::map<std::string, std::string> uses;
         uses["grunk"] = grunk_VERSION;
+
+        sol::state_view lua(m_environment.lua_state());
+        sol::object plugins_obj = lua["grunk"]["plugins"];
+        if (plugins_obj.valid() && plugins_obj.is<sol::table>()) {
+            for (auto const& kv : plugins_obj.as<sol::table>()) {
+                if (kv.first.is<std::string>() && kv.second.is<std::string>()) {
+                    uses[kv.first.as<std::string>()] = kv.second.as<std::string>();
+                }
+            }
+        }
 
         out << YAML::Key << "uses" << YAML::Value << uses;
 
