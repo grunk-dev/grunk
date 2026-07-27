@@ -6,14 +6,9 @@
 
 #include <Geom_BSplineSurface.hxx>
 #include <Geom_BezierCurve.hxx>
-#include <TColgp_Array1OfPnt.hxx>
 #include <BRepTools.hxx>
 #include <BRepBuilderAPI_MakeFace.hxx>
 #include <BRepBuilderAPI_MakeEdge.hxx>
-
-#include <geoml/curves/curves.h>
-#include <geoml/surfaces/surfaces.h>
-#include "geoml/data_structures/conversions.h"
 
 #include <sol/types.hpp>
 #include <grunk/grunk.hpp>
@@ -22,6 +17,7 @@
 #include <stdexcept>
 
 #include "adolc/adtl.h"
+#include "occt_sol_traits.hpp"
 
 // adtl.so is a SWIG-generated Lua module wrapping ADOL-C's tapeless adouble type
 // (see https://gitlab.dlr.de/dlr-sp/occt-differentiation/swig-adol-c, lua_wrapper
@@ -47,57 +43,47 @@ lua_CFunction load_adtl_entry_point()
     return reinterpret_cast<lua_CFunction>(sym);
 }
 
-namespace sol {
-    template <typename T>
-    struct unique_usertype_traits<opencascade::handle<T>> {
-        using type=T;
-        using actual_type=opencascade::handle<T>;
-        static const bool value = true;
+// geoml_plugin.so is a mockup of a genuine C++ grunk plugin (see
+// plugins/geoml/geoml_plugin.cpp): unlike adtl.so, a compiled Lua module loaded via
+// load_compiled_plugin/luaL_requiref, it exposes a plain C++ entry point that
+// registers types/functions directly against a grunk::state (grunk-dev/grunk#235's
+// "C++ plugin" kind). Its signature is this library's own convention, not a Lua one -
+// there is no lua_CFunction involved. It is dlopen'd here for the same reason adtl.so
+// is: only its path needs to be known at build time (see CMakeLists.txt's
+// geoml_plugin target), not the plugin itself. GEOML_PLUGIN_SO_PATH is set by CMake
+// to the built geoml_plugin library's path.
+using geoml_plugin_entry_point_t = void (*)(grunk::state&);
 
-        static bool is_null(const actual_type& ptr) {
-            return ptr.IsNull();
-        }
+geoml_plugin_entry_point_t load_geoml_plugin_entry_point()
+{
+    // RTLD_GLOBAL (unlike adtl.so's RTLD_LOCAL above) is required here: this plugin's
+    // registration code instantiates the same sol2 usertype machinery for OCCT types
+    // (e.g. Geom_BezierCurve, via occt_sol_traits.hpp) as this executable does when
+    // reading a value back out of a recipe (see read_recipe's .as<Handle(...)>() calls).
+    // Those are header-only template instantiations, compiled separately into this
+    // executable and into geoml_plugin.so; without RTLD_GLOBAL (and cad_autodiff's own
+    // ENABLE_EXPORTS, see CMakeLists.txt) the dynamic linker keeps the two copies'
+    // sol2-internal type identities apart, so a Handle built by the plugin silently
+    // fails to convert back to the "same" type on this side. adtl.so needs none of
+    // this, since ADOL-C's adouble crosses the boundary only as an opaque grunk::object.
+    void* handle = dlopen(GEOML_PLUGIN_SO_PATH, RTLD_NOW | RTLD_GLOBAL);
+    if (!handle) {
+        throw std::runtime_error(std::string("could not load geoml_plugin.so: ") + dlerror());
+    }
 
-        static type* get (const actual_type& ptr) {
-            return ptr.get();
-        }
-    };
+    dlerror();
+    void* sym = dlsym(handle, "grunk_geoml_plugin_entry_point");
+    if (char const* err = dlerror(); err != nullptr) {
+        throw std::runtime_error(std::string("could not find grunk_geoml_plugin_entry_point in geoml_plugin.so: ") + err);
+    }
+
+    return reinterpret_cast<geoml_plugin_entry_point_t>(sym);
 }
 
-/**
- * This function mimics the behavior of a future geoml/occt plugin.
- * Function and type registration would be performed in a 
- * grunk plugin src code compiled to a shared object and then 
- * registration is done at plugin load time.
- */
-void register_geoml(grunk::state& grunk)
+void load_geoml_plugin(grunk::state& grunk)
 {
-    grunk.register_type<gp_Pnt>("gp_Pnt")
-    .add_constructors(
-        [](Standard_Real x, Standard_Real y, Standard_Real z) { return gp_Pnt(x,y,z); }
-    )
-    .with_std_vector();
-
-    //grunk.register_type<Geom_Curve, sol::automagic_flags::none>("Geom_Curve")
-    //.with_std_vector();
-
-    //grunk.register_type<Geom_BezierCurve, sol::automagic_flags::none>("Geom_BezierCurve")
-    //.add_bases<Geom_Curve>();
-
-    //grunk.register_type<Geom_Surface>("Geom_Surface");
-
-    //grunk.register_type<Geom_BSplineSurface>("Geom_BSplineSurface")
-    //.add_bases<Geom_Surface>();
-
-    grunk.register_function(
-        "bezier_curve",
-        [](std::vector<gp_Pnt> const& poles) -> Handle(Geom_BezierCurve) {
-            TColgp_Array1OfPnt occ_poles = geoml::StdVector_to_TCol(poles);
-            return new Geom_BezierCurve(occ_poles);
-        }
-    );
-
-    grunk.register_function("interpolate_curve_network", geoml::interpolate_curve_network);
+    auto entry_point = load_geoml_plugin_entry_point();
+    entry_point(grunk);
 }
 
 void load_adolc_plugin(grunk::state& grunk)
@@ -210,7 +196,7 @@ void read_recipe_ad()
 void write_recipe()
 {
     auto grunk = grunk::state();
-    register_geoml(grunk);
+    load_geoml_plugin(grunk);
 
     auto recipe = grunk.create_recipe();
     recipe.eval(R"(
@@ -279,7 +265,7 @@ void write_recipe()
 void read_recipe()
 {
     auto grunk = grunk::state();
-    register_geoml(grunk);
+    load_geoml_plugin(grunk);
 
     auto recipe = grunk.read("gordon.grr.yml");
 
