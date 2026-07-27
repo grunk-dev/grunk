@@ -96,6 +96,7 @@ public:
 
         lua["grunk"]["env"] = original_env;
         lua["grunk"]["parametric_env"] = decorated_env;
+        lua["grunk"]["plugins"] = lua.create_table();
     }
 
     /**
@@ -362,6 +363,15 @@ public:
         decorate_module_functions(ns, info.name);
         original_env.set(info.name, ns);
         m_plugins.push_back(info);
+
+        // Mirror the plugin's identity into the Lua-global "grunk" table (alongside
+        // env/parametric_env), so anything that only has access to this state's
+        // lua_State - like grunk::Recipe, which has no back-reference to the state
+        // that created it - can still discover which plugins are loaded, e.g. to
+        // populate/validate a recipe's "uses" block.
+        sol::table plugins_table = lua["grunk"]["plugins"];
+        plugins_table[info.name] = info.version;
+
         return ns;
     }
 

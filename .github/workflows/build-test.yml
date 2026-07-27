@@ -57,21 +57,6 @@ jobs:
           cache-write: ${{ github.event_name == 'push' && github.ref_name == 'main' }}
           activate-environment: true
 
-      # checkout and install parametric (To Do: conda-forge feedstock)
-      - name: Checkout parametric
-        uses: actions/checkout@v7
-        with:
-          repository: grunk-dev/parametric
-          path: parametric
-          token: ${{ secrets.GH_TOKEN }}
-          ref: main
-      - name: Build and install parametric
-        run: |
-          cd parametric
-          mkdir build && cd build
-          cmake .. -GNinja -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=${{ env.CONDA_PREFIX }}
-          ninja install
-
       # configure, build and install grunk
       - name: Configure grunk (Linux, MacOS)
         run: pixi run configure ${{ inputs.config }}
@@ -128,19 +113,6 @@ jobs:
           cache: true
           cache-write: ${{ github.event_name == 'push' && github.ref_name == 'main' }}
           activate-environment: true
-      - name: Checkout parametric
-        uses: actions/checkout@v7
-        with:
-          repository: grunk-dev/parametric
-          path: parametric
-          token: ${{ secrets.GH_TOKEN }}
-          ref: main
-      - name: Build and install parametric
-        run: |
-          cd parametric
-          mkdir build && cd build
-          cmake .. -GNinja -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=${{ env.CONDA_PREFIX }}
-          ninja install
       - name: Install python bindings of grunk
         run: pixi run install_python
       - name: Run python tests
