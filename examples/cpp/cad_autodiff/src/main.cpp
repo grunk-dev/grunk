@@ -21,6 +21,8 @@
 #include <dlfcn.h>
 #include <stdexcept>
 
+#include "adolc/adtl.h"
+
 // adtl.so is a SWIG-generated Lua module wrapping ADOL-C's tapeless adouble type
 // (see https://gitlab.dlr.de/dlr-sp/occt-differentiation/swig-adol-c, lua_wrapper
 // branch). Proof of concept for runtime plugin loading: rather than linking adtl.so
@@ -98,7 +100,7 @@ void register_geoml(grunk::state& grunk)
     grunk.register_function("interpolate_curve_network", geoml::interpolate_curve_network);
 }
 
-void register_adolc(grunk::state& grunk)
+void load_adolc_plugin(grunk::state& grunk)
 {
     // Load the compiled SWIG-Lua module as a grunk plugin: its own table becomes the
     // "adtl" namespace in original_env, its free functions (tan, exp, log, sqrt, pow,
@@ -106,15 +108,6 @@ void register_adolc(grunk::state& grunk)
     grunk::PluginInfo info{"adtl", "2.7.2"}; // matches the wrapped ADOL-C release
     sol::table adtl = grunk.load_compiled_plugin(info, load_adtl_entry_point());
 
-    // adtl.adouble's constructor and methods are NOT plain table entries - SWIG's Lua
-    // binding puts the constructor behind the class table's __call metamethod and
-    // instance methods behind a separate per-instance metatable, neither of which
-    // load_compiled_plugin's decoration step can see. register_external_type bridges
-    // them generically (no hand-written C++ calling into ADOL-C's API is needed, unlike
-    // a usertype_proxy<T> registration would require), and - since it is registered
-    // *nested* inside the "adtl" namespace here rather than flat - keeps dependency
-    // tracking working via grunk's recursive decoration.
-    //
     // No .add_member_function calls are needed: adouble's default constructor lets
     // register_external_type probe an instance and discover setADValue/getADValue/
     // getValue (and any other method actually used) lazily, the first time each is
@@ -122,51 +115,96 @@ void register_adolc(grunk::state& grunk)
     sol::table adouble_static = adtl["adouble"];
     grunk.register_external_type("adtl.adouble", adouble_static, adtl);
 
-    // Operators (adouble * adouble, adouble * double, ...) need no bridging at all:
-    // adtl's instances already carry native __mul/__add/... metamethods, and once a
-    // value is wrapped in a DynamicFeature, DynamicFeature's own generic operator
-    // overloads invoke Lua's "*"/"+"/... on the unwrapped operands, which dispatches
-    // straight to those native metamethods - with full dependency tracking.
+    // adouble.i explicitly `%ignore`s operator<<, so the SWIG binding gives adouble
+    // instances no __tostring - without one, grunk can't serialize an adouble held
+    // directly by a Feature (e.g. one built via new_feature) into recipe YAML at all.
+    // Bridge one here in ctor syntax, so Serializer's ctor_syntax_to_new_feature_syntax
+    // can turn a written-out parameter back into a "new_feature" call on read-back,
+    // exactly the convention grunk-registered types use (see grunk's own test suite,
+    // where MyScalar's tostring returns "MyScalar.new(...)" for the same reason).
+    sol::table adouble_type = grunk.get_type("adtl.adouble");
+    sol::protected_function ctor = adouble_type["new"];
+    sol::object probe = ctor();
 
-    grunk.register_function("initialize_adouble", [&grunk](double v) {
-        sol::table adouble_type = grunk.get_type("adtl.adouble");
+    // Looking "getValue" up on the (undecorated) type table triggers register_external_type's
+    // auto-discovery probing and caches it as a plain, un-tracked function_meta - exactly
+    // what is needed here, since a tostring metamethod must run synchronously and must not
+    // itself create a dependency-tracked action.
+    sol::protected_function get_value = adouble_type["getValue"];
 
-        sol::protected_function ctor = adouble_type["new"];
-        sol::protected_function_result instance_res = ctor(v);
-        if (!instance_res.valid()) {
-            sol::error err = instance_res;
-            throw std::runtime_error(std::string("Could not construct adouble: ") + err.what());
+    sol::state_view lua(adouble_static.lua_state());
+    sol::protected_function getmetatable = lua["getmetatable"];
+    sol::table adouble_meta = getmetatable(probe);
+
+    sol::object tostring_fn = sol::make_object(lua, sol::as_function(
+        [get_value](sol::object self) -> std::string {
+            double value = get_value(self).get<double>();
+            return "adtl.adouble.new(" + grunk::to_string(value) + ")";
         }
-        sol::object instance = instance_res;
+    ));
+    adouble_meta.set(sol::meta_function::to_string, tostring_fn);
 
-        sol::protected_function set_ad_value = adouble_type["setADValue"];
-        sol::protected_function_result set_res = set_ad_value(instance, 0, 1.0);
-        if (!set_res.valid()) {
-            sol::error err = set_res;
-            throw std::runtime_error(std::string("Could not seed adouble derivative: ") + err.what());
+    // SWIG-Lua's per-instance __index is a C dispatch function (SWIG_Lua_class_get),
+    // not a plain table - so an ordinary `instance["__tostring"]` lookup never reaches
+    // the metatable's own raw fields the way it would for a table-based __index. That is
+    // exactly the check grunk::serialize does before invoking the real tostring
+    // metamethod (which bypasses __index entirely and works fine on its own - confirmed
+    // empirically), so without this, grunk reports no tostring even though one exists.
+    // Wrap __index so that one lookup succeeds too, while every other key still falls
+    // through to SWIG's original dispatcher unchanged.
+    sol::protected_function original_index = adouble_meta[sol::meta_function::index];
+    adouble_meta.set_function(sol::meta_function::index, [original_index, tostring_fn](sol::object self, std::string const& key) -> sol::object {
+        if (key == "__tostring") {
+            return tostring_fn;
         }
-
-        return instance;
+        sol::protected_function_result res = original_index(self, key);
+        return res.valid() ? sol::object(res) : sol::lua_nil;
     });
 }
 
 void write_recipe_ad()
 {
     auto grunk = grunk::state();
-    register_adolc(grunk);
+    load_adolc_plugin(grunk);
 
     auto recipe = grunk.create_recipe();
+    recipe.insert_module_script(
+        "me",
+        R"(function seed(a)
+   ret = adtl.adouble.new(a)
+   ret:setADValue(0,1.)
+   return ret
+end)");
     recipe.eval(R"(
-        y = grunk.feature(5.)
-        x = initialize_adouble(y)
+        x_val = grunk.feature(5.)
+        x = me.seed(x_val)
 
-        a = 6.
-        output = x * a
-        resultAD = adtl.adouble.getADValue(output, 0)
+        y = adtl.adouble.new(17)
+
+        z = x * y
+        w = adtl.sin(z*6)
     )");
     recipe.tag_features();
 
     grunk.write("test_adolc.grr.yml", recipe);
+}
+
+void read_recipe_ad()
+{
+    auto grunk = grunk::state();
+    load_adolc_plugin(grunk);
+
+    auto recipe = grunk.read("test_adolc.grr.yml");
+
+    sol::object w = recipe.get_feature("w").value();
+    sol::table adouble_type = grunk.get_type("adtl.adouble");
+    sol::protected_function get_value = adouble_type["getValue"];
+    sol::protected_function get_ad_value = adouble_type["getADValue"];
+
+    double value = get_value(w).get<double>();
+    double derivative = get_ad_value(w, 0).get<double>();
+
+    std::cout << "w = " << value << ", dw/dx = " << derivative << std::endl;
 }
 
 void write_recipe()
@@ -235,18 +273,6 @@ void write_recipe()
     recipe.tag_features();
 
     grunk.write("gordon.grr.yml", recipe);
-}
-
-void read_recipe_ad()
-{
-    auto grunk = grunk::state();
-    register_adolc(grunk);
-
-    auto recipe = grunk.read("test_adolc.grr.yml");
-
-    auto front_profile = recipe.get_feature("resultAD").value().as<double>();
-
-    std::cout << "AD value: " << front_profile << std::endl;
 }
 
 
