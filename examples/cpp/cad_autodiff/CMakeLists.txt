@@ -118,24 +118,26 @@ endif()
 
 message(STATUS "Found adtl Lua module: ${ADTL_LIBRARY}")
 
-# Mockup of a genuine C++ grunk plugin (see plugins/geoml/geoml_plugin.cpp): the
-# gp_Pnt/bezier_curve/interpolate_curve_network registration that register_geoml used
-# to perform directly in cad_autodiff now lives in its own shared library, built here
-# and dlopen'd by cad_autodiff at runtime (see src/main.cpp's load_geoml_plugin)
-# instead of being linked in.
+# geoml_plugin.so: stage 2's grunk plugin (see plugins/geoml/geoml_plugin.cpp), built
+# as its own shared object and dlopen'd by cad_autodiff at runtime (see
+# src/main.cpp's load_geoml_plugin) instead of linked in.
 add_library(geoml_plugin SHARED plugins/geoml/geoml_plugin.cpp)
-target_include_directories(geoml_plugin PRIVATE include)
 target_link_libraries(geoml_plugin PRIVATE grunk geoml)
 
 add_executable(cad_autodiff src/main.cpp)
-# Exports cad_autodiff's own symbols (-rdynamic) so geoml_plugin.so's sol2/OCCT
-# template instantiations resolve to the same copy this executable uses instead of
-# a separate, incompatible one - see main.cpp's load_geoml_plugin_entry_point.
-set_target_properties(cad_autodiff PROPERTIES ENABLE_EXPORTS ON)
-target_include_directories(cad_autodiff PRIVATE include)
 target_link_libraries(cad_autodiff PRIVATE grunk geoml ${ADOLC_LIBRARY} ${CMAKE_DL_LIBS})
+
+# geoml_adolc_plugin.so: stage 3's counterpart (see plugins/geoml_adolc/), not built
+# by this project (see that directory's CMakeLists.txt for why). No find_file/
+# FATAL_ERROR here, unlike ADTL_LIBRARY/geoml_plugin above - main.cpp's
+# load_geoml_adolc_plugin is scaffolding too, never called by default.
+# TODO(stage3): point this at your build once plugins/geoml_adolc/ is built.
+set(GEOML_ADOLC_PLUGIN_SO_PATH "${CMAKE_SOURCE_DIR}/plugins/geoml_adolc/build/libgeoml_adolc_plugin.so" CACHE PATH
+    "Path to the AD-enabled geoml plugin built from plugins/geoml_adolc/ (stage 3, scaffolding only)")
+
 target_compile_definitions(cad_autodiff PRIVATE
     ADTL_SO_PATH="${ADTL_LIBRARY}"
     GEOML_PLUGIN_SO_PATH="$<TARGET_FILE:geoml_plugin>"
+    GEOML_ADOLC_PLUGIN_SO_PATH="${GEOML_ADOLC_PLUGIN_SO_PATH}"
 )
 add_dependencies(cad_autodiff geoml_plugin)

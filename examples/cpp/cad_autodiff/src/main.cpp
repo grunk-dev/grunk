@@ -4,10 +4,6 @@
 
 #include <iostream>
 
-#include <Geom_BezierCurve.hxx>
-#include <BRepTools.hxx>
-#include <BRepBuilderAPI_MakeEdge.hxx>
-
 #include <sol/types.hpp>
 #include <grunk/grunk.hpp>
 
@@ -15,25 +11,26 @@
 #include <stdexcept>
 
 #include "adolc/adtl.h"
-#include "occt_sol_traits.hpp"
 
-// This example's main point: algorithmic differentiation (AD) is possible *through*
-// grunk's dynamic layer, not just around it - a value can flow through a grunk recipe
-// (dependency tracking, lazy evaluation, YAML serialization) and still carry its AD
-// tape/derivative information. It builds this up in three stages:
+// Point of this example: algorithmic differentiation (AD) works *through* grunk's
+// dynamic layer, not just around it - a value flows through a grunk recipe
+// (dependency tracking, lazy evaluation, YAML serialization) and still carries its AD
+// derivative. Three stages, run in order by main():
 //
-//   1. write_autodiff_only_recipe / read_autodiff_only_recipe - a recipe built purely
-//      on ADOL-C's adouble type (see load_adolc_plugin), no CAD geometry involved.
-//      Shows that grunk's dynamic layer is transparent to an AD type.
-//   2. write_cad_only_recipe / read_cad_only_recipe - a recipe built on geoml/OCCT
-//      geometry (see load_geoml_plugin), using plain doubles - no AD. Shows that
-//      grunk's plugin mechanism can wrap a genuine, non-scripting-oriented C++
-//      library, not just something already Lua-friendly like a SWIG-Lua module.
-//   3. Not yet implemented (planned follow-up, see README.md): the *same* CAD recipe
-//      from stage 2, but with geoml_plugin.so swapped for a geoml_adolc_plugin.so
-//      built against ADOL-C, differentiating the geometry construction itself. This
-//      is the payoff - stages 1 and 2 in one recipe - and the reason this whole
-//      example is named "cad_autodiff".
+//   1. write_autodiff_only_recipe / read_autodiff_only_recipe - ADOL-C's adouble
+//      type, no CAD. Shows grunk's dynamic layer is transparent to an AD type.
+//   2. write_cad_recipe(false) / read_cad_recipe - geoml/OCCT geometry (see
+//      load_geoml_plugin), plain doubles, no AD. Shows grunk's plugin mechanism can
+//      wrap a real C++ library, not just something already Lua-friendly.
+//   3. write_cad_recipe(true) / read_recipe_ad - the exact same recipe script as
+//      stage 2 (with_ad only changes which plugin loads), but with AD-carrying
+//      geometry. TODO(stage3): scaffolding only - see README.md's "Stage 3" section.
+//      This is the payoff (stages 1+2 combined) and why the example is named
+//      "cad_autodiff".
+//
+// Deliberately no OCCT/geoml headers below: everything CAD-related is confined to the
+// geoml plugins (plugins/geoml_registration.hpp) - this file only ever sees
+// grunk::state, recipes, and sol::object/bool.
 
 // adtl.so is a SWIG-generated Lua module wrapping ADOL-C's tapeless adouble type
 // (see https://gitlab.dlr.de/dlr-sp/occt-differentiation/swig-adol-c, lua_wrapper
@@ -60,29 +57,22 @@ lua_CFunction load_adtl_entry_point()
 }
 
 // geoml_plugin.so is a mockup of a genuine C++ grunk plugin (see
-// plugins/geoml/geoml_plugin.cpp): unlike adtl.so, a compiled Lua module loaded via
-// load_compiled_plugin/luaL_requiref, it exposes a plain C++ entry point that
-// registers types/functions directly against a grunk::state (grunk-dev/grunk#235's
-// "C++ plugin" kind). Its signature is this library's own convention, not a Lua one -
-// there is no lua_CFunction involved. It is dlopen'd here for the same reason adtl.so
-// is: only its path needs to be known at build time (see CMakeLists.txt's
-// geoml_plugin target), not the plugin itself. GEOML_PLUGIN_SO_PATH is set by CMake
-// to the built geoml_plugin library's path.
+// plugins/geoml/geoml_plugin.cpp): unlike adtl.so (a compiled Lua module, loaded via
+// load_compiled_plugin), it exposes a plain C++ entry point that registers
+// types/functions directly against a grunk::state - grunk-dev/grunk#235's "C++
+// plugin" kind. dlopen'd for the same reason as adtl.so: only its path needs to be
+// known at build time (see CMakeLists.txt's geoml_plugin target).
 using geoml_plugin_entry_point_t = void (*)(grunk::state&);
 
 geoml_plugin_entry_point_t load_geoml_plugin_entry_point()
 {
-    // RTLD_GLOBAL (unlike adtl.so's RTLD_LOCAL above) is required here: this plugin's
-    // registration code instantiates the same sol2 usertype machinery for OCCT types
-    // (e.g. Geom_BezierCurve, via occt_sol_traits.hpp) as this executable does when
-    // reading a value back out of a recipe (see read_cad_only_recipe's .as<Handle(...)>() calls).
-    // Those are header-only template instantiations, compiled separately into this
-    // executable and into geoml_plugin.so; without RTLD_GLOBAL (and cad_autodiff's own
-    // ENABLE_EXPORTS, see CMakeLists.txt) the dynamic linker keeps the two copies'
-    // sol2-internal type identities apart, so a Handle built by the plugin silently
-    // fails to convert back to the "same" type on this side. adtl.so needs none of
-    // this, since ADOL-C's adouble crosses the boundary only as an opaque grunk::object.
-    void* handle = dlopen(GEOML_PLUGIN_SO_PATH, RTLD_NOW | RTLD_GLOBAL);
+    // RTLD_LOCAL is safe here: every OCCT/geoml-typed sol2 template instantiation
+    // (e.g. for Geom_BezierCurve) happens exclusively inside geoml_plugin.so -
+    // construction and consumption (export_brep) both live in
+    // geoml_registration.hpp - so there's no second copy on this side for the
+    // dynamic linker to unify. This file only exchanges plain sol::object/bool
+    // values with the plugin (see the file comment above).
+    void* handle = dlopen(GEOML_PLUGIN_SO_PATH, RTLD_NOW | RTLD_LOCAL);
     if (!handle) {
         throw std::runtime_error(std::string("could not load geoml_plugin.so: ") + dlerror());
     }
@@ -99,6 +89,34 @@ geoml_plugin_entry_point_t load_geoml_plugin_entry_point()
 void load_geoml_plugin(grunk::state& grunk)
 {
     auto entry_point = load_geoml_plugin_entry_point();
+    entry_point(grunk);
+}
+
+// TODO(stage3): mechanically identical to load_geoml_plugin_entry_point/
+// load_geoml_plugin above, just pointed at a different library and entry point
+// symbol - see plugins/geoml_adolc/geoml_adolc_plugin.cpp and README.md's "Stage 3"
+// section. Not yet exercised: plugins/geoml_adolc/ is a separate, standalone CMake
+// project you build yourself, so calling this throws until GEOML_ADOLC_PLUGIN_SO_PATH
+// (a CMake cache variable) is pointed at a real build.
+geoml_plugin_entry_point_t load_geoml_adolc_plugin_entry_point()
+{
+    void* handle = dlopen(GEOML_ADOLC_PLUGIN_SO_PATH, RTLD_NOW | RTLD_LOCAL);
+    if (!handle) {
+        throw std::runtime_error(std::string("could not load geoml_adolc_plugin.so: ") + dlerror());
+    }
+
+    dlerror();
+    void* sym = dlsym(handle, "grunk_geoml_adolc_plugin_entry_point");
+    if (char const* err = dlerror(); err != nullptr) {
+        throw std::runtime_error(std::string("could not find grunk_geoml_adolc_plugin_entry_point in geoml_adolc_plugin.so: ") + err);
+    }
+
+    return reinterpret_cast<geoml_plugin_entry_point_t>(sym);
+}
+
+void load_geoml_adolc_plugin(grunk::state& grunk)
+{
+    auto entry_point = load_geoml_adolc_plugin_entry_point();
     entry_point(grunk);
 }
 
@@ -210,89 +228,73 @@ void read_autodiff_only_recipe()
     std::cout << "w = " << value << ", dw/dx = " << derivative << std::endl;
 }
 
-// Stage 2: CAD only, no AD - see the file-level comment above. Builds a Gordon
-// fuselage cross-section out of bezier curves (front/back profiles, upper/lower
-// guides), a small enough recipe to keep the AD-vs-no-AD contrast readable.
-void write_cad_only_recipe()
+// Stages 2 and 3 share this recipe verbatim - with_ad only changes which plugin
+// loads, never the recipe text (the whole point, see the file comment above).
+//
+// Just one bezier curve, not a full CAD model - a dev artifact for exercising the
+// plugin swap. X is a named feature (not a literal) so there's a single input for
+// stage 3 to eventually seed a derivative from - see read_recipe_ad's TODO(stage3)
+// below.
+void write_cad_recipe(bool with_ad)
 {
     auto grunk = grunk::state();
-    load_geoml_plugin(grunk);
+    if (with_ad) {
+        load_geoml_adolc_plugin(grunk);
+    } else {
+        load_geoml_plugin(grunk);
+    }
 
     auto recipe = grunk.create_recipe();
     recipe.eval(R"(
-        X = grunk.feature(-4600.)
+        X = grunk.feature(1.)
 
-        P_1_y = grunk.feature(0.)
-        P_1_z = grunk.feature(1950.)
-        P_1 = gp_Pnt.new(X, P_1_y, P_1_z)
+        P_1 = gp_Pnt.new(X, 0., 0.)
+        P_2 = gp_Pnt.new(1., 2., 0.)
+        P_3 = gp_Pnt.new(2., -1., 0.)
+        P_4 = gp_Pnt.new(3., 0., 0.)
 
-        P_2_y = grunk.feature(-1076.95526217)
-        P_2_z = grunk.feature(1950.)
-        P_2 = gp_Pnt.new(X, P_2_y, P_2_z)
-
-        P_3_y = grunk.feature(-1950.)
-        P_3_z = grunk.feature(1076.95526217)
-        P_3 = gp_Pnt.new(X, P_3_y, P_3_z)
-
-        P_4_y = grunk.feature(-1950.)
-        P_4_z = grunk.feature(0.)
-        P_4 = gp_Pnt.new(X, P_4_y, P_4_z)
-
-        P_5_y = grunk.feature(-1950.)
-        P_5_z = grunk.feature(-1076.95526217)
-        P_5 = gp_Pnt.new(X, P_5_y, P_5_z)
-
-        P_6_y = grunk.feature(-1076.95526217)
-        P_6_z = grunk.feature(-1950.)
-        P_6 = gp_Pnt.new(X, P_6_y, P_6_z)
-
-        P_7_y = grunk.feature(0.)
-        P_7_z = grunk.feature(-1950.)
-        P_7 = gp_Pnt.new(X, P_7_y, P_7_z)
-
-        front_poles = gp_Pnt.as_vec(P_1, P_2, P_3, P_4, P_5, P_6, P_7)
-        front_profile = bezier_curve(front_poles)
-
-        P_back_1 = gp_Pnt.new(12500., 0., 1950.)
-        P_back_2 = gp_Pnt.new(12500., -1076.95526217, 1950.);
-        P_back_3 = gp_Pnt.new(12500., -1950., 1076.95526217)
-        P_back_4 = gp_Pnt.new(12500., -1950., 0.)
-        P_back_5 = gp_Pnt.new(12500., -1950., -1076.95526217)
-        P_back_6 = gp_Pnt.new(12500., -1076.95526217, -1950.)
-        P_back_7 = gp_Pnt.new(12500., 0., -1950.)
-
-        back_poles = gp_Pnt.as_vec(P_back_1, P_back_2, P_back_3, P_back_4, P_back_5, P_back_6, P_back_7)
-        back_profile = bezier_curve(back_poles)
-
-        upper_poles = gp_Pnt.as_vec(P_1, P_back_1)
-        upper_guide = bezier_curve(upper_poles)
-
-        lower_poles = gp_Pnt.as_vec(P_7, P_back_7)
-        lower_guide = bezier_curve(lower_poles)
+        poles = gp_Pnt.as_vec(P_1, P_2, P_3, P_4)
+        curve = bezier_curve(poles)
     )");
     recipe.tag_features();
 
-    grunk.write("gordon.grr.yml", recipe);
+    grunk.write("bezier_curve.grr.yml", recipe);
 }
 
-void read_cad_only_recipe()
+// Stage 2 read-back: verifies the curve rebuilds via the (non-AD) plugin, and exports
+// it - via a registered function called from within the recipe, not C++ code in this
+// file - so this stays as OCCT-agnostic as write_cad_recipe above.
+void read_cad_recipe()
 {
     auto grunk = grunk::state();
     load_geoml_plugin(grunk);
 
-    auto recipe = grunk.read("gordon.grr.yml");
+    auto recipe = grunk.read("bezier_curve.grr.yml");
+    recipe.eval(R"(exported = export_brep(curve, "bezier_curve.brep"))");
 
-    auto front_profile = recipe.get_feature("front_profile").value().as<Handle(Geom_BezierCurve)>();
-    BRepTools::Write(BRepBuilderAPI_MakeEdge(front_profile), "front_profile.brep");
+    bool exported = recipe.get_feature("exported").value().as<bool>();
+    std::cout << "bezier_curve.brep exported: " << std::boolalpha << exported << std::endl;
+}
 
-    auto back_profile = recipe.get_feature("back_profile").value().as<Handle(Geom_BezierCurve)>();
-    BRepTools::Write(BRepBuilderAPI_MakeEdge(back_profile), "back_profile.brep");
+// Stage 3 scaffold: reads bezier_curve.grr.yml (written by write_cad_recipe above)
+// with the AD plugin loaded instead of the plain one - no separate AD write needed,
+// since the recipe re-executes its steps at read time (grunk::environment::eval)
+// against whichever plugin is currently loaded. Not yet exercised - see
+// load_geoml_adolc_plugin above.
+//
+// TODO(stage3): X's derivative direction is never seeded (no analogue of stage 1's
+// `ret:setADValue(0,1.)`), so any derivative pulled out here would trivially be zero.
+// TODO(stage3): no way yet to pull a derivative back out of a Geom_BezierCurve -
+// needs a registered function alongside export_brep (e.g. sample a curve point's
+// coordinate and its derivative). See README.md's "Stage 3" section for the full list.
+void read_recipe_ad()
+{
+    auto grunk = grunk::state();
+    load_geoml_adolc_plugin(grunk);
 
-    auto lower_guide = recipe.get_feature("lower_guide").value().as<Handle(Geom_BezierCurve)>();
-    BRepTools::Write(BRepBuilderAPI_MakeEdge(lower_guide), "lower_guide.brep");
-
-    auto upper_guide = recipe.get_feature("upper_guide").value().as<Handle(Geom_BezierCurve)>();
-    BRepTools::Write(BRepBuilderAPI_MakeEdge(upper_guide), "upper_guide.brep");
+    auto recipe = grunk.read("bezier_curve.grr.yml");
+    sol::object curve = recipe.get_feature("curve").value();
+    (void)curve; // TODO(stage3): verify + extract AD sensitivities, see comment above.
 }
 
 int main() {
@@ -306,10 +308,16 @@ int main() {
 
     std::cout << "\n[2/3] CAD only (geoml_plugin.so): the same kind of recipe, now built on\n"
                  "      geoml/OCCT geometry with plain doubles - no AD." << std::endl;
-    write_cad_only_recipe();
-    read_cad_only_recipe();
+    write_cad_recipe(/*with_ad=*/false);
+    read_cad_recipe();
 
-    std::cout << "\n[3/3] CAD + AD: not yet implemented here - see README.md." << std::endl;
+    std::cout << "\n[3/3] CAD + AD: scaffolding only in plugins/geoml_adolc/, not yet built -\n"
+                 "      see README.md's \"Stage 3\" section." << std::endl;
+    // TODO(stage3): uncomment once plugins/geoml_adolc/ is built and
+    // GEOML_ADOLC_PLUGIN_SO_PATH (CMakeLists.txt) points at it. Reuses
+    // bezier_curve.grr.yml from read_cad_recipe() above - no write_cad_recipe(true)
+    // call needed first, see read_recipe_ad's comment.
+    // read_recipe_ad();
 
     std::cout << "\nDone." << std::endl;
     return 0;
