@@ -78,6 +78,13 @@ TEST(plugin, compiled_plugin_free_functions_are_tracked)
 
     x.set_value(5.);
     EXPECT_NEAR(y.value().as<double>(), 10., 1e-15);
+
+    // The serialized form must embed the fully-qualified path, since that's what has
+    // to resolve when a saved recipe using this plugin is read back in later - a plain
+    // "double_it(...)" would not resolve against the parametric environment, where the
+    // function is only reachable as "testplugin.double_it".
+    auto serialized = y.compute_node()->serialize();
+    EXPECT_NE(serialized.find("testplugin.double_it"), std::string::npos);
 }
 
 // This is the scenario create_decorated_environment's recursive decoration exists for:
