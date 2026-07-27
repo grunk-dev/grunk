@@ -6,9 +6,32 @@ SPDX-License-Identifier: MPL-2.0
 
 # CAD Autodiff Example
 
-This example demonstrates using grunk with [geoml](https://github.com/DLR-SC/geoml) for CAD modeling and automatic differentiation.
+This example's point: algorithmic differentiation (AD) is possible *through* grunk's dynamic
+layer, not just around it - a value can flow through a grunk recipe (dependency tracking, lazy
+evaluation, YAML serialization) and still carry its AD tape/derivative information. It builds
+this up in three stages, run in order by `main()`:
 
-Note that is a bare-bone example that requires building C++ code from scratch. In the current state, it is a proof-of-concept. This will be simplified in the future, once we provide grunk as a conda-forge package and have a means to distribute binary grunk plugins.
+1. **AD only** (`write_autodiff_only_recipe` / `read_autodiff_only_recipe`) - a recipe built
+   purely on [ADOL-C](https://github.com/coin-or/ADOL-C)'s `adouble` type, no CAD geometry
+   involved. Shows that grunk's dynamic layer is transparent to an AD type.
+2. **CAD only** (`write_cad_only_recipe` / `read_cad_only_recipe`) - a recipe built on
+   [geoml](https://github.com/DLR-SC/geoml)/OCCT geometry, using plain `double`s - no AD. Shows
+   that grunk's plugin mechanism can wrap a genuine, non-scripting-oriented C++ library, not just
+   something already Lua-friendly like a SWIG-Lua module.
+3. **CAD + AD** (planned follow-up, not yet implemented here) - the *same* CAD recipe from stage
+   2, but with `geoml_plugin.so` swapped for a `geoml_adolc_plugin.so` built against ADOL-C,
+   differentiating the geometry construction itself. This is the payoff - stages 1 and 2 combined
+   in one recipe - and the reason this whole example is named "cad_autodiff".
+
+Stages 1 and 2 each mock up a different kind of grunk plugin from
+[grunk-dev/grunk#235](https://github.com/grunk-dev/grunk/issues/235): `load_adolc_plugin` loads
+`adtl.so`, a compiled Lua module (SWIG-generated), while `load_geoml_plugin` loads
+`geoml_plugin.so` (see `plugins/geoml/geoml_plugin.cpp`), a plain C++ plugin whose entry point
+registers types/functions directly against a `grunk::state`. Both are `dlopen`'d at runtime
+rather than linked in, so only their path needs to be known at `cad_autodiff`'s build time, not
+the plugin's own code - a stand-in for grunk's still-unwritten runtime plugin loader.
+
+Note that this is a bare-bone example that requires building C++ code from scratch. In the current state, it is a proof-of-concept. This will be simplified in the future, once we provide grunk as a conda-forge package and have a means to distribute binary grunk plugins.
 
 ## Prerequisites
 
@@ -85,8 +108,8 @@ make
 ```
 
 As a result, one should see the `adtl.so` file. `main.cpp` loads this file at runtime into the
-grunk::state's Lua interpreter (via `grunk::state::load_module`, see `register_adolc`), rather than
-including ADOL-C's headers directly.
+grunk::state's Lua interpreter (via `grunk::state::load_compiled_plugin`, see `load_adolc_plugin`),
+rather than including ADOL-C's headers directly.
 
 If `adtl.so` ends up somewhere other than `build/_deps/swig-adol-c/build` (relative to the
 `cad_autodiff` directory), put the absolute or relative path inside the `pixi.toml` file, the same
@@ -142,8 +165,3 @@ cad_autodiff/
 └── src/
     └── main.cpp           # Example source code
 ```
-
-`main.cpp` mocks up two of the plugin kinds from grunk-dev/grunk#235: `load_adolc_plugin` loads
-`adtl.so`, a compiled Lua module (SWIG-generated), while `load_geoml_plugin` loads `geoml_plugin.so`,
-a plain C++ plugin whose entry point registers types/functions directly against a `grunk::state`.
-Both are dlopen'd at runtime rather than linked in, so only their path needs to be known at build time.

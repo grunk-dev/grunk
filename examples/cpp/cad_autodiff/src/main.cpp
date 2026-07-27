@@ -4,10 +4,8 @@
 
 #include <iostream>
 
-#include <Geom_BSplineSurface.hxx>
 #include <Geom_BezierCurve.hxx>
 #include <BRepTools.hxx>
-#include <BRepBuilderAPI_MakeFace.hxx>
 #include <BRepBuilderAPI_MakeEdge.hxx>
 
 #include <sol/types.hpp>
@@ -18,6 +16,24 @@
 
 #include "adolc/adtl.h"
 #include "occt_sol_traits.hpp"
+
+// This example's main point: algorithmic differentiation (AD) is possible *through*
+// grunk's dynamic layer, not just around it - a value can flow through a grunk recipe
+// (dependency tracking, lazy evaluation, YAML serialization) and still carry its AD
+// tape/derivative information. It builds this up in three stages:
+//
+//   1. write_autodiff_only_recipe / read_autodiff_only_recipe - a recipe built purely
+//      on ADOL-C's adouble type (see load_adolc_plugin), no CAD geometry involved.
+//      Shows that grunk's dynamic layer is transparent to an AD type.
+//   2. write_cad_only_recipe / read_cad_only_recipe - a recipe built on geoml/OCCT
+//      geometry (see load_geoml_plugin), using plain doubles - no AD. Shows that
+//      grunk's plugin mechanism can wrap a genuine, non-scripting-oriented C++
+//      library, not just something already Lua-friendly like a SWIG-Lua module.
+//   3. Not yet implemented (planned follow-up, see README.md): the *same* CAD recipe
+//      from stage 2, but with geoml_plugin.so swapped for a geoml_adolc_plugin.so
+//      built against ADOL-C, differentiating the geometry construction itself. This
+//      is the payoff - stages 1 and 2 in one recipe - and the reason this whole
+//      example is named "cad_autodiff".
 
 // adtl.so is a SWIG-generated Lua module wrapping ADOL-C's tapeless adouble type
 // (see https://gitlab.dlr.de/dlr-sp/occt-differentiation/swig-adol-c, lua_wrapper
@@ -59,7 +75,7 @@ geoml_plugin_entry_point_t load_geoml_plugin_entry_point()
     // RTLD_GLOBAL (unlike adtl.so's RTLD_LOCAL above) is required here: this plugin's
     // registration code instantiates the same sol2 usertype machinery for OCCT types
     // (e.g. Geom_BezierCurve, via occt_sol_traits.hpp) as this executable does when
-    // reading a value back out of a recipe (see read_recipe's .as<Handle(...)>() calls).
+    // reading a value back out of a recipe (see read_cad_only_recipe's .as<Handle(...)>() calls).
     // Those are header-only template instantiations, compiled separately into this
     // executable and into geoml_plugin.so; without RTLD_GLOBAL (and cad_autodiff's own
     // ENABLE_EXPORTS, see CMakeLists.txt) the dynamic linker keeps the two copies'
@@ -148,7 +164,8 @@ void load_adolc_plugin(grunk::state& grunk)
     });
 }
 
-void write_recipe_ad()
+// Stage 1: AD only, no CAD - see the file-level comment above.
+void write_autodiff_only_recipe()
 {
     auto grunk = grunk::state();
     load_adolc_plugin(grunk);
@@ -175,7 +192,7 @@ end)");
     grunk.write("test_adolc.grr.yml", recipe);
 }
 
-void read_recipe_ad()
+void read_autodiff_only_recipe()
 {
     auto grunk = grunk::state();
     load_adolc_plugin(grunk);
@@ -193,7 +210,10 @@ void read_recipe_ad()
     std::cout << "w = " << value << ", dw/dx = " << derivative << std::endl;
 }
 
-void write_recipe()
+// Stage 2: CAD only, no AD - see the file-level comment above. Builds a Gordon
+// fuselage cross-section out of bezier curves (front/back profiles, upper/lower
+// guides), a small enough recipe to keep the AD-vs-no-AD contrast readable.
+void write_cad_only_recipe()
 {
     auto grunk = grunk::state();
     load_geoml_plugin(grunk);
@@ -249,20 +269,13 @@ void write_recipe()
 
         lower_poles = gp_Pnt.as_vec(P_7, P_back_7)
         lower_guide = bezier_curve(lower_poles)
-
-        -- profiles = Geom_Curve.as_vec(front_profile, back_profile)
-        -- guides = Geom_BezierCurve.as_vec(upper_guide, lower_guide)
-
-        -- middle_fuselage = interpolate_curve_network(profiles, guides, 1.)
-
     )");
     recipe.tag_features();
 
     grunk.write("gordon.grr.yml", recipe);
 }
 
-
-void read_recipe()
+void read_cad_only_recipe()
 {
     auto grunk = grunk::state();
     load_geoml_plugin(grunk);
@@ -280,40 +293,24 @@ void read_recipe()
 
     auto upper_guide = recipe.get_feature("upper_guide").value().as<Handle(Geom_BezierCurve)>();
     BRepTools::Write(BRepBuilderAPI_MakeEdge(upper_guide), "upper_guide.brep");
-
-
-    /*
-    my_func = [&recipe](auto const& x) {
-        recipe.get_feature("X").set_value(x);
-	gp_Pnt pnt;
-	return recipe.get_feature("front_profile").value().as<Handle(Geom_BezierCurve)>()->D0(0., pnt);
-	return pnt.X();
-    };
-    */
-
-    /*
-    auto middle_fuselage_f = recipe.get_feature("middle_fuselage");
-    std::cout << "wtf\n";
-    auto middle_fuselage_obj = middle_fuselage_f.value();
-    std::cout << "shit...\n";
-    auto middle_fuselage = middle_fuselage_obj.as<Handle(Geom_BSplineSurface)>();
-    std::cout << "Handle is Null? " << middle_fuselage.IsNull() << "\n";
-    std::string filename = "middle_fuselage.brep";
-    BRepTools::Write(BRepBuilderAPI_MakeFace(middle_fuselage, Precision::Confusion()), filename.c_str());
-    */
 }
 
 int main() {
 
     std::cout << "Hello from cad_autodiff example!" << std::endl;
 
-    // create a new grunk state, "load" occt and geoml plugins and write
-    // a recipe for gordon surface creation.
-    write_recipe_ad();
+    std::cout << "\n[1/3] AD only (adtl.so): a grunk recipe built on ADOL-C's adouble type,\n"
+                 "      no CAD geometry involved." << std::endl;
+    write_autodiff_only_recipe();
+    read_autodiff_only_recipe();
 
-    // read the recipe from file and execute the steps
-    read_recipe_ad();
+    std::cout << "\n[2/3] CAD only (geoml_plugin.so): the same kind of recipe, now built on\n"
+                 "      geoml/OCCT geometry with plain doubles - no AD." << std::endl;
+    write_cad_only_recipe();
+    read_cad_only_recipe();
 
-    std::cout << "Done." << std::endl;
+    std::cout << "\n[3/3] CAD + AD: not yet implemented here - see README.md." << std::endl;
+
+    std::cout << "\nDone." << std::endl;
     return 0;
 }
