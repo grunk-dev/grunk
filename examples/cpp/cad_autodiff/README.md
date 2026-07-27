@@ -131,9 +131,19 @@ pixi run run              # Run the executable
 
 ```
 cad_autodiff/
-├── CMakeLists.txt    # Build configuration with FetchContent
-├── pixi.toml         # Dependency management
-├── README.md         # This file
+├── CMakeLists.txt         # Build configuration with FetchContent
+├── pixi.toml              # Dependency management
+├── README.md              # This file
+├── include/
+│   └── occt_sol_traits.hpp  # sol2 traits for OCCT Handle(T), shared by main.cpp and the geoml plugin
+├── plugins/
+│   └── geoml/
+│       └── geoml_plugin.cpp # Mockup of a native C++ grunk plugin (built as geoml_plugin.so, dlopen'd by main.cpp)
 └── src/
-    └── main.cpp      # Example source code
+    └── main.cpp           # Example source code
 ```
+
+`main.cpp` mocks up two of the plugin kinds from grunk-dev/grunk#235: `load_adolc_plugin` loads
+`adtl.so`, a compiled Lua module (SWIG-generated), while `load_geoml_plugin` loads `geoml_plugin.so`,
+a plain C++ plugin whose entry point registers types/functions directly against a `grunk::state`.
+Both are dlopen'd at runtime rather than linked in, so only their path needs to be known at build time.

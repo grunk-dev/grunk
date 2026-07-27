@@ -8,6 +8,11 @@ project(cad_autodiff_example LANGUAGES CXX)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+# geoml_plugin (see below) links the static geoml and grunk libraries into a shared
+# object, which requires their objects to be position-independent - set this before
+# their add_subdirectory calls so it applies to them too.
+set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+
 list(APPEND CMAKE_PREFIX_PATH "$ENV{CONDA_PREFIX}")
 
 file(MAKE_DIRECTORY "${CMAKE_SOURCE_DIR}/cmake")
@@ -113,6 +118,24 @@ endif()
 
 message(STATUS "Found adtl Lua module: ${ADTL_LIBRARY}")
 
+# Mockup of a genuine C++ grunk plugin (see plugins/geoml/geoml_plugin.cpp): the
+# gp_Pnt/bezier_curve/interpolate_curve_network registration that register_geoml used
+# to perform directly in cad_autodiff now lives in its own shared library, built here
+# and dlopen'd by cad_autodiff at runtime (see src/main.cpp's load_geoml_plugin)
+# instead of being linked in.
+add_library(geoml_plugin SHARED plugins/geoml/geoml_plugin.cpp)
+target_include_directories(geoml_plugin PRIVATE include)
+target_link_libraries(geoml_plugin PRIVATE grunk geoml)
+
 add_executable(cad_autodiff src/main.cpp)
+# Exports cad_autodiff's own symbols (-rdynamic) so geoml_plugin.so's sol2/OCCT
+# template instantiations resolve to the same copy this executable uses instead of
+# a separate, incompatible one - see main.cpp's load_geoml_plugin_entry_point.
+set_target_properties(cad_autodiff PROPERTIES ENABLE_EXPORTS ON)
+target_include_directories(cad_autodiff PRIVATE include)
 target_link_libraries(cad_autodiff PRIVATE grunk geoml ${ADOLC_LIBRARY} ${CMAKE_DL_LIBS})
-target_compile_definitions(cad_autodiff PRIVATE ADTL_SO_PATH="${ADTL_LIBRARY}")
+target_compile_definitions(cad_autodiff PRIVATE
+    ADTL_SO_PATH="${ADTL_LIBRARY}"
+    GEOML_PLUGIN_SO_PATH="$<TARGET_FILE:geoml_plugin>"
+)
+add_dependencies(cad_autodiff geoml_plugin)
