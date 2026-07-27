@@ -241,7 +241,7 @@ public:
             throw std::runtime_error(std::string("Error running module script \"") + name + "\": " + err.what());
         }
 
-        decorate_module_functions(module);
+        decorate_module_functions(module, name);
     }
 
     /**
@@ -306,8 +306,15 @@ public:
      * bridging those.
      *
      * @param table the table to decorate
+     * @param qualifier the dotted path under which `table` itself is reachable (e.g.
+     *                  "adtl" for a plugin namespace, "mymod.sub" for a nested module
+     *                  table), used to give every function_meta its fully-qualified
+     *                  name. Left empty for `table` itself being reachable unqualified.
+     *                  This is what ActionDynamic::serialize embeds verbatim, and that
+     *                  text must resolve correctly when a saved recipe is read back in -
+     *                  see register_external_type for the same convention.
      */
-    inline void decorate_module_functions(sol::table table)
+    inline void decorate_module_functions(sol::table table, std::string const& qualifier = "")
     {
         for (auto& kv : table) {
             sol::object key = kv.first;
@@ -317,12 +324,14 @@ public:
                 continue;
             }
 
+            std::string const function_name = key.as<std::string>();
+            std::string const qualified_name = qualifier.empty() ? function_name : qualifier + "." + function_name;
+
             if (value.is<sol::table>()) {
-                decorate_module_functions(value.as<sol::table>());
+                decorate_module_functions(value.as<sol::table>(), qualified_name);
             } else if (value.get_type() == sol::type::function) {
-                std::string const function_name = key.as<std::string>();
                 sol::protected_function func = value.as<sol::protected_function>();
-                table.set(function_name, create_function_meta(lua, function_name, {}, func));
+                table.set(function_name, create_function_meta(lua, qualified_name, {}, func));
             }
         }
     }
@@ -350,7 +359,7 @@ public:
     inline sol::table load_compiled_plugin(PluginInfo const& info, lua_CFunction open_fn)
     {
         sol::table ns = load_module(info.name, open_fn);
-        decorate_module_functions(ns);
+        decorate_module_functions(ns, info.name);
         original_env.set(info.name, ns);
         m_plugins.push_back(info);
         return ns;
