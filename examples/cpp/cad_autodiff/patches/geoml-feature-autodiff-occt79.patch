@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2026 Jan Kleinert <jan.kleinert@dlr.de>
+#
+# SPDX-License-Identifier: MPL-2.0
+
 diff --git a/src/common/CommonFunctions.cpp b/src/common/CommonFunctions.cpp
 index 79315da..f355db9 100644
 --- a/src/common/CommonFunctions.cpp
