@@ -14,7 +14,7 @@
 // one piece of C++ source, compiled against two different geoml/OCCT installs.
 // GEOML_ADOLC_FORWARD/GEOML_ADOLC_REVERSE (defined by geoml's own CMakeLists.txt
 // when GEOML_USE_ADOLC=ON) gate the handful of spots that do differ - the gp_Pnt
-// constructor, and seed_x/curve_point_x/curve_point_dx_dX/curve_point_dy_dX below,
+// constructor, and forward_seed/curve_point_x/curve_point_dx_dX/curve_point_dy_dX below,
 // which only exist in the AD build.
 //
 // Everything OCCT/geoml-related lives here and in occt_sol_traits.hpp - src/main.cpp
@@ -44,7 +44,7 @@ inline void register_geoml(grunk::state& grunk)
         // (Standard_Real,Standard_Real,Standard_Real) overload (as in the non-AD
         // branch below) can't bind write_cad_recipe's `gp_Pnt.new(X, 0., 0.)` call
         // (shared verbatim with the non-AD build): X may be a seeded Standard_Adouble
-        // userdata (see seed_x below) while the 0. literals stay plain Lua numbers,
+        // userdata (see forward_seed below) while the 0. literals stay plain Lua numbers,
         // so no single sol2 overload matches every argument at once - each argument
         // needs its own number-or-userdata check instead.
         [](sol::object x, sol::object y, sol::object z) {
@@ -93,22 +93,25 @@ inline void register_geoml(grunk::state& grunk)
 #if defined(GEOML_ADOLC_FORWARD) || defined(GEOML_ADOLC_REVERSE)
     // Stage 3 only: seeding X's derivative direction and pulling a derivative back
     // out of the resulting geometry. Neither call is part of write_cad_recipe's
-    // shared recipe text - src/main.cpp's read_recipe_ad appends them itself (seed_x
+    // shared recipe text - src/main.cpp's read_recipe_ad appends them itself (forward_seed
     // via DynamicFeature::set_value on X's existing node, curve_point_x/
     // curve_point_dx_dX via an appended recipe.eval), so the recipe stays identical
     // between stages 2 and 3. See README.md's "Stage 3" section.
 
     // Adapts stage 1's `me.seed(x_val)` Lua helper (src/main.cpp,
     // write_autodiff_only_recipe) to a Standard_Adouble: wraps x as an adouble and
-    // seeds derivative direction 0, the same direction curve_point_dx_dX below reads
-    // back. x arrives as a plain double (X's Lua-visible value is still a plain
-    // number at read time - see read_recipe_ad), not a Standard_Real, since nothing
-    // has produced a Standard_Adouble for it yet; that's this function's job.
+    // seeds derivative direction 0 (the same direction curve_point_dx_dX below reads
+    // back) with the given seed value - read_recipe_ad passes 1. to get d(.)/dX
+    // directly, but any value scales the resulting derivative linearly, same as
+    // ADOL-C's setADValue itself. x arrives as a plain double (X's Lua-visible value
+    // is still a plain number at read time - see read_recipe_ad), not a
+    // Standard_Real, since nothing has produced a Standard_Adouble for it yet;
+    // that's this function's job.
     grunk.register_function(
-        "seed_x",
-        [](double x) -> Standard_Real {
+        "forward_seed",
+        [](double x, double seed) -> Standard_Real {
             Standard_Adouble seeded(x);
-            seeded.setADValue(0, 1.);
+            seeded.setADValue(0, seed);
             return seeded;
         }
     );
@@ -128,7 +131,7 @@ inline void register_geoml(grunk::state& grunk)
     );
 
     // The payoff: d(curve point's X coordinate)/dX at parameter u, read directly off
-    // the AD tape - direction 0 matches seed_x above. Requires X to have actually
+    // the AD tape - direction 0 matches forward_seed above. Requires X to have actually
     // been seeded (see read_recipe_ad); otherwise this is trivially 0.
     grunk.register_function(
         "curve_point_dx_dX",

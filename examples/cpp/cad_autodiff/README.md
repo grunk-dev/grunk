@@ -164,18 +164,20 @@ a different geoml/OCCT install, is the whole point.
   can't do on its own**, both handled in `read_recipe_ad` (`src/main.cpp`), not the recipe:
   - *Seeding X.* `gp_Pnt.new(X, 0., 0.)` runs (lazily) against the specific `DynamicFeature` node
     already built for `X` when the recipe was read - reassigning the Lua variable `X` afterwards
-    wouldn't reach it. `seed_x` (`geoml_registration.hpp`, adapting stage 1's
-    `me.seed(x_val)`/`ret:setADValue(0,1.)`) builds a seeded `Standard_Adouble` from `X`'s current
-    (plain-number) value, and `read_recipe_ad` pushes it onto that same node via
+    wouldn't reach it. `forward_seed(x, seed)` (`geoml_registration.hpp`, adapting stage 1's
+    `me.seed(x_val)`/`ret:setADValue(0,1.)`) builds a `Standard_Adouble` from `X`'s current
+    (plain-number) value with direction 0 set to `seed` (`read_recipe_ad` passes `1.`, to read a
+    plain `d(.)/dX` back below), and `read_recipe_ad` pushes the result onto that same node via
     `DynamicFeature::set_value` - the mechanism grunk provides for exactly this: updating a
-    feature's value in place, invalidating dependents. One subtlety: `seed_x` is itself a
-    tracked/decorated function, so calling it produces another lazy `DynamicFeature`, not the
-    `Standard_Adouble` directly - `.value()` on that forces the one evaluation needed.
+    feature's value in place, invalidating dependents. `read_recipe_ad` calls `forward_seed`
+    through `grunk::state::get_function`, which looks it up in the *undecorated* environment - an
+    eager, untracked call, so the result is already the plain `Standard_Adouble` value, not a
+    `DynamicFeature` needing a further `.value()` unwrap.
   - *Reading a derivative back out.* `curve_point_x`/`curve_point_dx_dX`/`curve_point_dy_dX`
     (`geoml_registration.hpp`, AD-only) sample a point on the curve and read its primal value or
-    `getADValue(0)`, the same tape direction `seed_x` seeds. `read_recipe_ad` calls them via an
-    appended `recipe.eval` (the same pattern `read_cad_recipe` already uses for `export_brep`) -
-    this doesn't touch the recipe text shared with stage 2 either.
+    `getADValue(0)`, the same tape direction `forward_seed` seeds. `read_recipe_ad` calls them via
+    an appended `recipe.eval` (the same pattern `read_cad_recipe` already uses for `export_brep`)
+    - this doesn't touch the recipe text shared with stage 2 either.
   - Both `gp_Pnt.new`'s constructor and `curve_point_x`'s `u` parameter needed a mixed
     number/`Standard_Adouble` argument path: a recipe literal like `0.` is a plain Lua number,
     but `Standard_Real` is a real class in the AD build (not a fundamental type), so sol2 won't
@@ -269,7 +271,7 @@ cad_autodiff/
 │                                             # built for stage 3 - see "Stage 3" section
 ├── plugins/
 │   ├── occt_sol_traits.hpp     # sol2 traits for OCCT Handle(T) - used only by geoml_registration.hpp
-│   ├── geoml_registration.hpp  # register_geoml (incl. export_brep and, AD-only, seed_x/
+│   ├── geoml_registration.hpp  # register_geoml (incl. export_brep and, AD-only, forward_seed/
 │   │                           # curve_point_x/curve_point_dx_dX/curve_point_dy_dX), shared
 │   │                           # verbatim by both geoml plugins below
 │   ├── geoml/
