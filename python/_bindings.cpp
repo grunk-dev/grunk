@@ -7,6 +7,7 @@
 #include <nanobind/stl/string.h>
 #include <nanobind/stl/shared_ptr.h>
 #include <nanobind/stl/unordered_map.h>
+#include <nanobind/stl/map.h>
 
 #include <grunk/grunk.hpp>
 
@@ -298,8 +299,11 @@ NB_MODULE(_bindings, m) {
             return r.get_recipe(key);
         }, "key"_a)
         .def("insert_module_script", &grunk::Recipe::insert_module_script, "name"_a, "script"_a)
+        .def("insert_output", &grunk::Recipe::insert_output, "name"_a, "feature_id"_a)
+        .def("get_output", &grunk::Recipe::get_output, "name"_a)
         .def_ro("recipes", &grunk::Recipe::recipes)
-        .def_ro("module_scripts", &grunk::Recipe::module_scripts);
+        .def_ro("module_scripts", &grunk::Recipe::module_scripts)
+        .def_ro("outputs", &grunk::Recipe::outputs);
 
     auto recipe_feature = nb::class_<grunk::Feature<grunk::Recipe>>(m, "RecipeFeature");
     add_feature_base_methods<grunk::Feature<grunk::Recipe>>(recipe_feature);

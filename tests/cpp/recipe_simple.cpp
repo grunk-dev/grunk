@@ -303,3 +303,95 @@ recipes:
     EXPECT_EQ(inner.get_feature("y").value().as<double>(), 11.);
     EXPECT_EQ(inner.get_feature("z").value().as<double>(), 28.);
 }
+
+TEST(Recipe, outputs)
+{
+    grunk::state grunk;
+    grunk.register_function("add", &add);
+
+    {
+        auto x = grunk.feature(1.).with_id("x");
+        auto y = grunk.feature(2.).with_id("y");
+
+        auto recipe = grunk.create_recipe();
+        recipe["x"] = x;
+        recipe["y"] = y;
+        recipe["w"] = grunk.action("add", x, y).with_id("w");
+        recipe.insert_output("result", "w");
+
+        std::string out = "\n" + recipe.to_string();
+        std::string expected = R"(
+uses:
+  grunk: )" grunk_VERSION R"(
+parameters:
+  x: 1.0
+  y: 2.0
+steps: |
+  w = add(x, y)
+outputs:
+  result: w
+)";
+        EXPECT_EQ(out, expected);
+
+        grunk.write("test.grr.yml", recipe);
+    }
+
+    auto recipe = grunk.read("test.grr.yml");
+    EXPECT_EQ(recipe.outputs.at("result"), "w");
+    EXPECT_NEAR(recipe.get_output("result").value().as<double>(), 3., 1e-10);
+}
+
+TEST(Recipe, outputs_subrecipe)
+{
+    grunk::state grunk;
+    grunk.register_function("add", &add);
+
+    {
+        auto recipe_inner = grunk.create_recipe();
+        auto x = grunk.feature(17.).with_id("x");
+        auto y = grunk.feature(11.).with_id("y");
+        auto z = grunk.action("add", x, y).with_id("z");
+        recipe_inner["x"] = x;
+        recipe_inner["y"] = y;
+        recipe_inner["z"] = z;
+        recipe_inner.insert_output("sum", "z");
+
+        auto recipe = grunk.create_recipe();
+        recipe.insert_recipe("addition", std::move(recipe_inner));
+
+        std::string out = "\n" + recipe.to_string();
+        std::string expected = R"(
+uses:
+  grunk: )" grunk_VERSION R"(
+recipes:
+  addition:
+    uses:
+      grunk: )" grunk_VERSION R"(
+    parameters:
+      x: 17.0
+      y: 11.0
+    steps: |
+      z = add(x, y)
+    outputs:
+      sum: z
+)";
+        EXPECT_EQ(out, expected);
+
+        grunk.write("test.grr.yml", recipe);
+    }
+
+    auto recipe = grunk.read("test.grr.yml");
+    auto& inner = recipe.get_recipe("addition").change_value();
+    EXPECT_NEAR(inner.get_output("sum").value().as<double>(), 28., 1e-10);
+}
+
+TEST(Recipe, insert_output_unresolvable_throws)
+{
+    grunk::state grunk;
+
+    auto x = grunk.feature(1.).with_id("x");
+    auto recipe = grunk.create_recipe();
+    recipe["x"] = x;
+
+    EXPECT_THROW(recipe.insert_output("result", "does_not_exist"), grunk::io_error);
+}
