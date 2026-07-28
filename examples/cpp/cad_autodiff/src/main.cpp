@@ -296,14 +296,23 @@ void read_recipe_ad()
 
     auto recipe = grunk.read("bezier_curve.grr.yml");
 
+    // Retrieve X, the recipe's independent parameter, and seed its forward AD
+    // direction (seed_x, geoml_registration.hpp, calls Standard_Adouble::setADValue
+    // internally) before anything downstream is queried - otherwise every
+    // derivative pulled out below is trivially zero.
     grunk::DynamicFeature X = recipe.get_feature("X");
     double x_val = X.value().as<double>();
-    recipe.eval("X_seeded = seed_x(" + grunk::to_string(x_val) + ")");
-    // seed_x is a tracked/decorated function, so X_seeded is itself a lazy
+    sol::protected_function seed_x = grunk.get_function("seed_x").get_function(); //recipe.get<sol::protected_function>("seed_x");
+    auto x_seeded = seed_x(x_val);
+    // seed_x is itself a tracked/decorated function, so x_seeded is a lazy
     // DynamicFeature wrapping the pending seed_x action, not the Standard_Adouble
     // directly - .value() forces that one evaluation so X gets the resolved
-    // Standard_Adouble, not a Feature-wrapping-a-Feature.
-    X.set_value(recipe.get_feature("X_seeded").value());
+    // Standard_Adouble (with its derivative direction set), not a
+    // Feature-wrapping-a-Feature. X.set_value writes it onto X's own node in
+    // place - P_1/curve already depend on that specific node from grunk.read()
+    // above, so this is what actually invalidates and reseeds them, unlike
+    // reassigning the Lua variable X (which wouldn't reach that dependency edge).
+    X.set_value(x_seeded);
 
     recipe.eval(R"(
         curve_x = curve_point_x(curve, 0.5)
