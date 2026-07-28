@@ -3,15 +3,11 @@
 //
 // SPDX-License-Identifier: MPL-2.0
 
-// Stage 3 scaffold: the AD-enabled counterpart to ../geoml/geoml_plugin.cpp - same
+// Stage 3: the AD-enabled counterpart to ../geoml/geoml_plugin.cpp - same
 // register_geoml (../geoml_registration.hpp), unmodified, just linked against a
-// different geoml/OCCT install. See that header's comment for why sharing it,
-// instead of reimplementing, is the point.
-//
-// TODO(stage3): not yet built. Needs an adOCCT install, geoml's feature/autodiff
-// branch built against it, and reconciling geoml's OCCT 7.6.2 pin with adOCCT's OCCT
-// V7_9_0 base. See ../../README.md's "Stage 3" section and this directory's
-// CMakeLists.txt.
+// different geoml/OCCT install (adOCCT + geoml's feature/autodiff branch, see
+// ../../README.md's "Stage 3" section and this directory's CMakeLists.txt). See that
+// header's comment for why sharing it, instead of reimplementing, is the point.
 
 #include "../geoml_registration.hpp"
 
