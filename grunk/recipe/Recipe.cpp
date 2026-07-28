@@ -23,6 +23,7 @@ namespace grunk {
     Recipe::Recipe(Recipe&& other)
     : environment(std::move(other))
     , recipes(std::move(other.recipes))
+    , outputs(std::move(other.outputs))
     {
         re_register_lua_index();  // ← rebind __index to new 'this' after every move
     }
@@ -30,6 +31,7 @@ namespace grunk {
     Recipe::Recipe(Recipe const& other)
         : environment(other)
         , recipes(other.recipes)
+        , outputs(other.outputs)
     {
         re_register_lua_index();  // ← same for copy constructor
     }
@@ -39,6 +41,7 @@ namespace grunk {
         if (this != &other) {
             environment::operator=(std::move(other));
             recipes = std::move(other.recipes);
+            outputs = std::move(other.outputs);
             re_register_lua_index();
         }
         return *this;
@@ -49,6 +52,7 @@ namespace grunk {
         if (this != &other) {
             environment::operator=(other);
             recipes = other.recipes;
+            outputs = other.outputs;
             re_register_lua_index();
         }
         return *this;
@@ -97,6 +101,8 @@ namespace grunk {
             ret.module_scripts.insert({key, cloned_script});
             ret.install_module_proxy(key, cloned_script);
         }
+
+        ret.outputs = outputs;
 
         return ret;
     }
@@ -183,6 +189,13 @@ namespace grunk {
             eval(yml["steps"].as<std::string>());
         }
         tag();
+        if (yml["outputs"]) {
+            for (auto const& kv : yml["outputs"]) {
+                std::string name = kv.first.as<std::string>();
+                std::string feature_id = kv.second.as<std::string>();
+                insert_output(name, feature_id);
+            }
+        }
     }
 
     void Recipe::emit_yml(YAML::Emitter& out) const
@@ -226,10 +239,14 @@ namespace grunk {
         }
 
         if (!tree.get_string().empty()) {
-            out << YAML::Key << "steps" 
+            out << YAML::Key << "steps"
                 << YAML::Value << YAML::Literal << tree.get_string();
         }
-            
+
+        if (!outputs.empty()) {
+            out << YAML::Key << "outputs" << YAML::Value << outputs;
+        }
+
         if (recipes.size() > 0) {
             out << YAML::Key << "recipes";
             out << YAML::Value << YAML::BeginMap;
@@ -298,6 +315,23 @@ namespace grunk {
         sol::table proxy = lua.create_table();
         proxy[sol::metatable_key] = proxy_mt;
         m_environment[name] = proxy;
+    }
+
+    void Recipe::insert_output(std::string const& name, std::string const& feature_id)
+    {
+        sol::object value = m_environment[feature_id];
+        if (!value.valid() || !value.is<DynamicFeature>()) {
+            throw io_error(
+                "Cannot mark \"" + feature_id + "\" as output \"" + name +
+                "\": no such feature in this recipe."
+            );
+        }
+        outputs[name] = feature_id;
+    }
+
+    DynamicFeature Recipe::get_output(std::string const& name) const
+    {
+        return get_feature(outputs.at(name));
     }
 
     void Recipe::tag()

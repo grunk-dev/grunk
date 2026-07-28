@@ -219,6 +219,39 @@ steps: |
     assert pytest.approx(x2.value().as_float()) == 1.0
 
 
+def test_recipe_outputs():
+
+    x = grunk.feature(1.).with_id("x")
+    y = grunk.feature(2.).with_id("y")
+    w = (x+y).with_id("w")
+
+    recipe = grunk.create_recipe()
+    recipe["w"] = w
+    recipe.insert_output("result", "w")
+
+    res = recipe.to_string()
+    expected = f"""
+uses:
+  grunk: {grunk.__version__}
+parameters:
+  x: 1.0
+  y: 2.0
+steps: |
+  w = x + y
+outputs:
+  result: w
+"""
+
+    assert "\n" + res == expected
+    assert recipe.outputs == {"result": "w"}
+
+    grunk.write("test.grr.yml", recipe)
+
+    recipe2 = grunk.read("test.grr.yml")
+    assert recipe2.outputs == {"result": "w"}
+    assert pytest.approx(recipe2.get_output("result").value().as_float()) == 3.0
+
+
 def test_recipe_clone():
 
     x = grunk.feature(12.3).with_id("x")

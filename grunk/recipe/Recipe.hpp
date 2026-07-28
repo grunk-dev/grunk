@@ -6,6 +6,8 @@
 
 #include "grunk/dynamic/environment.hpp"
 
+#include <map>
+
 namespace YAML {
     class Node;
     class Emitter;
@@ -122,11 +124,34 @@ namespace grunk {
     /**
      * @brief Tag this recipe.
      *
-     * This iterates over all keys in the recipes environment and sets the 
+     * This iterates over all keys in the recipes environment and sets the
      * corresponding feature ids to be equal to the keys. This is a convenience
      * method to name all features in a recipe before writing it to YAML.
      */
     void tag();
+
+    /**
+     * @brief Mark a feature of this recipe as a named output.
+     *
+     * Stores the mapping under @p name in the #outputs map, so it is written
+     * to and read back from the recipe's `outputs:` YAML block. @p feature_id
+     * must currently resolve to a `DynamicFeature` in this recipe's
+     * environment (see environment::get_feature); an id that resolves to
+     * nothing, or to an anonymous/unemittable node, cannot be looked up again
+     * after a YAML round-trip, so this throws grunk::io_error in that case.
+     *
+     * @param name Output name, used as the key of the #outputs map.
+     * @param feature_id Id of the feature this output designates.
+     */
+    void insert_output(std::string const& name, std::string const& feature_id);
+
+    /**
+     * @brief Retrieve a feature previously marked as an output.
+     *
+     * @param name Output name, as passed to insert_output.
+     * @return DynamicFeature The feature designated by this output.
+     */
+    DynamicFeature get_output(std::string const& name) const;
 
         /**
          * @brief Container describing a sub-recipe entry.
@@ -174,6 +199,9 @@ namespace grunk {
 
     /// Map of module scripts stored by name.
     std::unordered_map<std::string, Feature<std::string>> module_scripts;
+
+    /// Map of output names to the id of the feature they designate.
+    std::map<std::string, std::string> outputs;
 
     private:
     /**
