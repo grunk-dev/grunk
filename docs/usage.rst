@@ -1660,3 +1660,63 @@ define a module with the same name without interfering with one another - unlike
 which share a single, global namespace.
 
 
+Outputs
+-------
+
+By default, any feature in a recipe can be queried - grunk does not distinguish inputs, intermediate
+results and outputs. For some use cases, such as marking the dependent variables of a recipe for
+automatic differentiation, it is useful to explicitly declare which features are the recipe's outputs.
+``Recipe::insert_output`` records this as a ``name -> feature id`` entry, written to and read back from
+the YAML ``outputs:`` block:
+
+.. tabs::
+
+   .. code-tab:: cpp
+
+      auto recipe = grunk.create_recipe();
+      recipe["x"] = grunk.feature(1.).with_id("x");
+      recipe["y"] = grunk.feature(2.).with_id("y");
+      recipe["w"] = grunk.action("add", recipe["x"], recipe["y"]).with_id("w");
+
+      recipe.insert_output("result", "w");
+
+   .. code-tab:: python
+
+      recipe = grunk.create_recipe()
+      recipe["x"] = grunk.feature(1.0).with_id("x")
+      recipe["y"] = grunk.feature(2.0).with_id("y")
+      recipe["w"] = grunk.action("add", recipe["x"], recipe["y"]).with_id("w")
+
+      recipe.insert_output("result", "w")
+
+   .. code-tab:: yaml
+
+      uses:
+        grunk: 0.5.0
+      parameters:
+        x: 1.0
+        y: 2.0
+      steps: |
+        w = add(x, y)
+      outputs:
+        result: w
+
+The output name and the feature's own id need not match, so an output can be given an
+external-facing name distinct from the variable name used in ``steps:``. Marking a feature as an
+output requires it to already have a resolvable id in the recipe; ``insert_output`` throws
+``grunk::io_error`` otherwise. The designated feature can be retrieved again by output name with
+``Recipe::get_output``:
+
+.. tabs::
+
+   .. code-tab:: cpp
+
+      auto w = recipe.get_output("result");
+      std::cout << w.value().as<double>() << std::endl; // 3
+
+   .. code-tab:: python
+
+      w = recipe.get_output("result")
+      print(w.value().as_float()) # 3
+
+
