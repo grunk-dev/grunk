@@ -1,0 +1,170 @@
+diff --git a/src/common/CommonFunctions.cpp b/src/common/CommonFunctions.cpp
+index 79315da..f355db9 100644
+--- a/src/common/CommonFunctions.cpp
++++ b/src/common/CommonFunctions.cpp
+@@ -1541,7 +1541,7 @@ TopoDS_Face GetNearestFace(const TopoDS_Shape& shape, const gp_Pnt& pnt)
+         }
+         if (extrema.Value() < resultDistance) {
+             resultFace = checkFace;
+-            resultDistance = static_cast<float>(extrema.Value());
++            resultDistance = static_cast<float>(getPrimal(extrema.Value()));
+         }
+     }
+     return resultFace;
+diff --git a/src/common/CommonFunctions.h b/src/common/CommonFunctions.h
+index 9d16b52..fc96e7f 100644
+--- a/src/common/CommonFunctions.h
++++ b/src/common/CommonFunctions.h
+@@ -23,7 +23,6 @@
+ 
+ #include "CCPACSImportExport.h"
+ #include "Standard.hxx"
+-#include "Standard_values.h"
+ #include "geoml_internal.h"
+ #include "gp_Pnt.hxx"
+ #include "gp_Vec.hxx"
+diff --git a/src/common/ad_utility_function.h b/src/common/ad_utility_function.h
+index 0da1186..b6cb650 100644
+--- a/src/common/ad_utility_function.h
++++ b/src/common/ad_utility_function.h
+@@ -1,31 +1,33 @@
+ #ifndef AD_UTILITY_FUNCTION_H
+ #define AD_UTILITY_FUNCTION_H
+ 
++#if defined(GEOML_ADOLC_FORWARD) or defined(GEOML_ADOLC_REVERSE)
+ 
+-template<typename T>
+-double getPrimal(const T& x);
++// adOCCT's own Standard_Real.hxx already declares the generic getPrimal<T>()
++// template (T::getValue()) plus the getPrimal<double>() specialization we'd
++// otherwise duplicate below - Standard_Real is a typedef for Standard_Adouble
++// when building against adOCCT, so that generic template already covers it.
++// Redeclaring either here is an ODR violation against adOCCT's copy.
++#include <Standard_Real.hxx>
++#include <adolc/adtl.h>
+ 
+ template<>
+-inline double getPrimal<double>(const double& x)
++inline double getPrimal<adtl::adouble>(const adtl::adouble& x)
+ {
+-    return x;
+-} 
+-
+-#if defined(GEOML_ADOLC_FORWARD) or defined(GEOML_ADOLC_REVERSE)
+-#include <Standard_TypeDef.hxx>
+-
+-template<>
+-inline double getPrimal<Standard_Real>(const Standard_Real& x)
+-{   
+     return x.getValue();
+ }
+ 
++#else
++
++template<typename T>
++double getPrimal(const T& x);
++
+ template<>
+-inline double getPrimal<adtl::adouble>(const adtl::adouble& x)
+-{   
+-    return x.getValue();
++inline double getPrimal<double>(const double& x)
++{
++    return x;
+ }
+ 
+ #endif
+ 
+-#endif // AD_UTILITY_FUNCTION_H
+\ No newline at end of file
++#endif // AD_UTILITY_FUNCTION_H
+diff --git a/src/geometry/BSplineFit.h b/src/geometry/BSplineFit.h
+index d5ca55d..b31f511 100644
+--- a/src/geometry/BSplineFit.h
++++ b/src/geometry/BSplineFit.h
+@@ -23,6 +23,8 @@
+ #include <TColStd_Array1OfReal.hxx>
+ #include <Geom_BSplineCurve.hxx>
+ #include <TColgp_Array1OfPnt.hxx>
++#include <math_Matrix.hxx>
++#include <math_Vector.hxx>
+ 
+ class BSplineFit
+ {
+@@ -69,7 +71,7 @@ private:
+ 
+ 
+     /// Computes the matrix and the right hand side of the system to be solved
+-    void initSystem(class math_Matrix& A, class math_Vector& rhsx, class math_Vector& rhsy, class math_Vector& rhsz);
++    void initSystem(math_Matrix& A, math_Vector& rhsx, math_Vector& rhsy, math_Vector& rhsz);
+ 
+     /// Computes an uniform knot vector
+     void computeKnots();
+diff --git a/src/geoml/naming_choosing/Shape.cpp b/src/geoml/naming_choosing/Shape.cpp
+index 5c2d4bd..0908c97 100644
+--- a/src/geoml/naming_choosing/Shape.cpp
++++ b/src/geoml/naming_choosing/Shape.cpp
+@@ -16,7 +16,7 @@ std::size_t ShapeHasher::operator()(Shape const& s) const
+     TopoDS_Shape occt_shape = s;
+     const void* tShapePtr = occt_shape.TShape().get();
+     std::size_t tShapeHash = std::hash<const void*>{}(tShapePtr);
+-    std::size_t locationHash = occt_shape.Location().HashCode(std::numeric_limits<int>::max());
++    std::size_t locationHash = occt_shape.Location().HashCode();
+     return tShapeHash ^ (locationHash << 1); // Combine with a left shift
+ }
+ 
+diff --git a/src/imports/StepReader.cpp b/src/imports/StepReader.cpp
+index d9790f2..9c2482d 100644
+--- a/src/imports/StepReader.cpp
++++ b/src/imports/StepReader.cpp
+@@ -55,7 +55,7 @@ namespace
+                 continue;
+             }
+ 
+-            int hash = shape->Shape().HashCode(INT_MAX);
++            int hash = static_cast<int>(std::hash<TopoDS_Shape>{}(shape->Shape()));
+             shapeMap[hash] = ishape;
+         }
+ 
+@@ -90,7 +90,7 @@ namespace
+                 std::string shapeName = prod->Name()->ToCString();
+ 
+                 // create hash and search for it in hashMap
+-                int hash = boundShape.HashCode(INT_MAX);
++                int hash = static_cast<int>(std::hash<TopoDS_Shape>{}(boundShape));
+                 HashMap::iterator it = shapeMap.find(hash);
+                 if (it == shapeMap.end()) {
+                     continue;
+diff --git a/src/math/MathFunctions.cpp b/src/math/MathFunctions.cpp
+index 359e5ae..13b97ed 100644
+--- a/src/math/MathFunctions.cpp
++++ b/src/math/MathFunctions.cpp
+@@ -18,6 +18,7 @@
+ 
+ #include "MathFunctions.h"
+ #include "geoml/error.h"
++#include "common/ad_utility_function.h"
+ 
+ #include <cassert>
+ #include <algorithm>
+@@ -166,7 +167,7 @@ Standard_Real pow_deriv(Standard_Real x, Standard_Real k, int n)
+     Standard_Real eps = 1e-15;
+ 
+     // check if k is a natural number. if yes, we have to return 0 if n > k
+-    if ( fabs(k - int(k)) < eps && n > k) {
++    if ( fabs(k - int(getPrimal(k))) < eps && n > k) {
+         return 0.;
+     }
+     else {
+diff --git a/src/math/Matrix.h b/src/math/Matrix.h
+index 0a55da1..dd4ffd5 100644
+--- a/src/math/Matrix.h
++++ b/src/math/Matrix.h
+@@ -20,6 +20,7 @@
+ #include "geoml_internal.h"
+ 
+ #include <math_Matrix.hxx>
++#include <math_Vector.hxx>
+ 
+ namespace geoml
+ {

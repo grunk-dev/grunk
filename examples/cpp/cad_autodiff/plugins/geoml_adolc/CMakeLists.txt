@@ -2,8 +2,9 @@
 #
 # SPDX-License-Identifier: MPL-2.0
 
-# TODO(stage3): scaffold, not yet built or verified. See ../../README.md's "Stage 3"
-# section before trying to configure this.
+# Stage 3's AD-enabled geoml plugin - see ../../README.md's "Stage 3" section for
+# what to build first (adOCCT, then geoml's feature/autodiff branch against it)
+# before configuring this.
 #
 # Separate CMake project from ../../CMakeLists.txt (configured/built on its own - see
 # README.md), not a target added there: the main project already claims the CMake
@@ -57,14 +58,41 @@ endif()
 # (https://github.com/DLR-SC/geoml/tree/feature/autodiff), configured with
 # -DGEOML_USE_ADOLC=ON, built against an adOCCT install (not stock OpenCASCADE) - see
 # README.md. Not FetchContent'd here (unlike stock geoml in ../../CMakeLists.txt):
-# TODO(stage3): geoml pins OCCT 7.6.2, adOCCT forks OCCT V7_9_0 - reconcile before
-# this builds. For now this expects an already-built, already-installed geoml.
+# geoml's own OCCT 7.6.2 pin needed reconciling against adOCCT's OCCT V7_9_0 base -
+# see patches/geoml-feature-autodiff-occt79.patch (applied to the checkout that
+# produced GEOML_AUTODIFF_DIR, not by this CMake project). For now this expects an
+# already-built, already-installed geoml.
 set(GEOML_AUTODIFF_DIR "" CACHE PATH
     "Install prefix of geoml's feature/autodiff branch, built against adOCCT with GEOML_USE_ADOLC=ON")
 if(NOT GEOML_AUTODIFF_DIR)
     message(FATAL_ERROR "GEOML_AUTODIFF_DIR is not set - see README.md's \"Stage 3\" section.")
 endif()
 list(APPEND CMAKE_PREFIX_PATH "${GEOML_AUTODIFF_DIR}")
+
+# The adOCCT install that GEOML_AUTODIFF_DIR above was built against. geoml's own
+# geoml-config.cmake doesn't restore either of the two dependencies below - its
+# install exports "geoml" linking against bare OCCT target names (TKernel, TKMath,
+# ...) and an ADOLC::ADOLC target, both defined ad hoc by geoml's UseOpenCASCADE.cmake/
+# UseADOLC.cmake (find_package(OpenCASCADE)/pkg_check_modules, not a find_dependency
+# geoml's install can replay for us) - so any consumer of the installed geoml has to
+# recreate both here first, or the bare names resolve to nothing and every OCCT
+# header/symbol geoml_registration.hpp needs goes missing.
+set(ADOCCT_DIR "" CACHE PATH
+    "Install prefix of adOCCT (dlr-sp/adOCCT, ad/master) that GEOML_AUTODIFF_DIR was built against")
+if(NOT ADOCCT_DIR)
+    message(FATAL_ERROR "ADOCCT_DIR is not set - see README.md's \"Stage 3\" section.")
+endif()
+# NO_DEFAULT_PATH + explicit PATHS, not CMAKE_PREFIX_PATH: CONDA_PREFIX (line 22,
+# needed for Lua/sol2) also has its own stock opencascade==7.6.2 conda package
+# installed, and its OpenCASCADEConfig.cmake would otherwise be found ahead of
+# adOCCT's - silently linking the AD-enabled geoml against the wrong, non-AD OCCT.
+find_package(OpenCASCADE CONFIG REQUIRED PATHS "${ADOCCT_DIR}" NO_DEFAULT_PATH)
+
+find_package(PkgConfig REQUIRED)
+pkg_check_modules(ADOLC REQUIRED IMPORTED_TARGET GLOBAL adolc)
+add_library(ADOLC::ADOLC INTERFACE IMPORTED GLOBAL)
+target_link_libraries(ADOLC::ADOLC INTERFACE PkgConfig::ADOLC)
+
 find_package(geoml CONFIG REQUIRED)
 
 add_library(geoml_adolc_plugin SHARED geoml_adolc_plugin.cpp)

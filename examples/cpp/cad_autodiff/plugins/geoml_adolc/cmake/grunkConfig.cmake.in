@@ -1,0 +1,32 @@
+# SPDX-FileCopyrightText: 2026 Jan Kleinert <jan.kleinert@dlr.de>
+#
+# SPDX-License-Identifier: MPL-2.0
+
+@PACKAGE_INIT@
+
+# Import the exported targets
+include("${CMAKE_CURRENT_LIST_DIR}/grunkTargets.cmake")
+
+# Find transitively required packages if they aren't already available as targets.
+# @PACKAGE_INIT@ makes find_dependency() available.
+if (NOT TARGET parametric::parametric)
+  find_dependency(parametric REQUIRED)
+endif()
+
+if (NOT TARGET sol2::sol2)
+  find_dependency(sol2 REQUIRED)
+endif()
+
+if (NOT TARGET Lua::Lua)
+  find_dependency(Lua REQUIRED)
+endif()
+
+# recipe depends on yaml-cpp; ensure the consumer finds it as well
+if (TARGET grunk::recipe)
+  if (NOT TARGET yaml-cpp::yaml-cpp)
+    find_dependency(yaml-cpp REQUIRED)
+  endif()
+endif()
+
+# package version
+set(grunk_VERSION "@PACKAGE_VERSION@")

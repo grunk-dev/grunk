@@ -24,9 +24,8 @@
 //      wrap a real C++ library, not just something already Lua-friendly.
 //   3. write_cad_recipe(true) / read_recipe_ad - the exact same recipe script as
 //      stage 2 (with_ad only changes which plugin loads), but with AD-carrying
-//      geometry. TODO(stage3): scaffolding only - see README.md's "Stage 3" section.
-//      This is the payoff (stages 1+2 combined) and why the example is named
-//      "cad_autodiff".
+//      geometry - see README.md's "Stage 3" section. This is the payoff (stages 1+2
+//      combined) and why the example is named "cad_autodiff".
 //
 // Deliberately no OCCT/geoml headers below: everything CAD-related is confined to the
 // geoml plugins (plugins/geoml_registration.hpp) - this file only ever sees
@@ -92,12 +91,13 @@ void load_geoml_plugin(grunk::state& grunk)
     entry_point(grunk);
 }
 
-// TODO(stage3): mechanically identical to load_geoml_plugin_entry_point/
-// load_geoml_plugin above, just pointed at a different library and entry point
-// symbol - see plugins/geoml_adolc/geoml_adolc_plugin.cpp and README.md's "Stage 3"
-// section. Not yet exercised: plugins/geoml_adolc/ is a separate, standalone CMake
-// project you build yourself, so calling this throws until GEOML_ADOLC_PLUGIN_SO_PATH
-// (a CMake cache variable) is pointed at a real build.
+// Mechanically identical to load_geoml_plugin_entry_point/load_geoml_plugin above,
+// just pointed at a different library and entry point symbol - see
+// plugins/geoml_adolc/geoml_adolc_plugin.cpp and README.md's "Stage 3" section.
+// plugins/geoml_adolc/ is a separate, standalone CMake project you build yourself
+// (see that directory's CMakeLists.txt for why), so this throws unless
+// GEOML_ADOLC_PLUGIN_SO_PATH (a CMake cache variable, ../../CMakeLists.txt) is
+// pointed at a real build of it.
 geoml_plugin_entry_point_t load_geoml_adolc_plugin_entry_point()
 {
     void* handle = dlopen(GEOML_ADOLC_PLUGIN_SO_PATH, RTLD_NOW | RTLD_LOCAL);
@@ -233,8 +233,7 @@ void read_autodiff_only_recipe()
 //
 // Just one bezier curve, not a full CAD model - a dev artifact for exercising the
 // plugin swap. X is a named feature (not a literal) so there's a single input for
-// stage 3 to eventually seed a derivative from - see read_recipe_ad's TODO(stage3)
-// below.
+// stage 3 to seed a derivative from - see read_recipe_ad below.
 void write_cad_recipe(bool with_ad)
 {
     auto grunk = grunk::state();
@@ -276,25 +275,54 @@ void read_cad_recipe()
     std::cout << "bezier_curve.brep exported: " << std::boolalpha << exported << std::endl;
 }
 
-// Stage 3 scaffold: reads bezier_curve.grr.yml (written by write_cad_recipe above)
-// with the AD plugin loaded instead of the plain one - no separate AD write needed,
-// since the recipe re-executes its steps at read time (grunk::environment::eval)
-// against whichever plugin is currently loaded. Not yet exercised - see
-// load_geoml_adolc_plugin above.
+// Stage 3: reads bezier_curve.grr.yml (written by write_cad_recipe above) with the
+// AD plugin loaded instead of the plain one - no separate AD write needed, since the
+// recipe re-executes its steps at read time (grunk::environment::eval) against
+// whichever plugin is currently loaded.
 //
-// TODO(stage3): X's derivative direction is never seeded (no analogue of stage 1's
-// `ret:setADValue(0,1.)`), so any derivative pulled out here would trivially be zero.
-// TODO(stage3): no way yet to pull a derivative back out of a Geom_BezierCurve -
-// needs a registered function alongside export_brep (e.g. sample a curve point's
-// coordinate and its derivative). See README.md's "Stage 3" section for the full list.
+// Seeding X's derivative direction can't happen inside the recipe's own steps: X's
+// value comes from the YAML (a plain number) and write_cad_recipe's own
+// `P_1 = gp_Pnt.new(X, 0., 0.)` step already runs (lazily, but wired into the DAG)
+// against that same X node before any step appended here would run. Re-assigning
+// the Lua variable X wouldn't reach it either - P_1 depends on the specific
+// DynamicFeature object already in the environment, not on whatever the name "X"
+// happens to point to afterwards. So this seeds X's *existing* node in place via
+// DynamicFeature::set_value (grunk/dynamic/DynamicFeature.hpp), which invalidates
+// P_1/curve exactly like changing any other feature's value would.
 void read_recipe_ad()
 {
     auto grunk = grunk::state();
     load_geoml_adolc_plugin(grunk);
 
     auto recipe = grunk.read("bezier_curve.grr.yml");
-    sol::object curve = recipe.get_feature("curve").value();
-    (void)curve; // TODO(stage3): verify + extract AD sensitivities, see comment above.
+
+    grunk::DynamicFeature X = recipe.get_feature("X");
+    double x_val = X.value().as<double>();
+    recipe.eval("X_seeded = seed_x(" + grunk::to_string(x_val) + ")");
+    // seed_x is a tracked/decorated function, so X_seeded is itself a lazy
+    // DynamicFeature wrapping the pending seed_x action, not the Standard_Adouble
+    // directly - .value() forces that one evaluation so X gets the resolved
+    // Standard_Adouble, not a Feature-wrapping-a-Feature.
+    X.set_value(recipe.get_feature("X_seeded").value());
+
+    recipe.eval(R"(
+        curve_x = curve_point_x(curve, 0.5)
+        curve_dx_dX = curve_point_dx_dX(curve, 0.5)
+        curve_dy_dX = curve_point_dy_dX(curve, 0.5)
+    )");
+
+    double curve_x = recipe.get_feature("curve_x").value().as<double>();
+    double curve_dx_dX = recipe.get_feature("curve_dx_dX").value().as<double>();
+    double curve_dy_dX = recipe.get_feature("curve_dy_dX").value().as<double>();
+
+    // Closed-form check: at u=0.5 the cubic Bezier weight on P_1 (the only pole X
+    // feeds) is (1-u)^3 = 0.125, so curve_x should be exactly 1.625 and curve_dx_dX
+    // exactly 0.125 - and since X never reaches P_1's Y coordinate, curve_dy_dX
+    // should be exactly 0.
+    std::cout << "curve point x(0.5) = " << curve_x << " (expected 1.625)\n"
+                 "d(curve point x(0.5))/dX = " << curve_dx_dX << " (expected 0.125)\n"
+                 "d(curve point y(0.5))/dX = " << curve_dy_dX << " (expected 0, sanity check)"
+              << std::endl;
 }
 
 int main() {
@@ -311,13 +339,10 @@ int main() {
     write_cad_recipe(/*with_ad=*/false);
     read_cad_recipe();
 
-    std::cout << "\n[3/3] CAD + AD: scaffolding only in plugins/geoml_adolc/, not yet built -\n"
-                 "      see README.md's \"Stage 3\" section." << std::endl;
-    // TODO(stage3): uncomment once plugins/geoml_adolc/ is built and
-    // GEOML_ADOLC_PLUGIN_SO_PATH (CMakeLists.txt) points at it. Reuses
-    // bezier_curve.grr.yml from read_cad_recipe() above - no write_cad_recipe(true)
-    // call needed first, see read_recipe_ad's comment.
-    // read_recipe_ad();
+    std::cout << "\n[3/3] CAD + AD (geoml_adolc_plugin.so): the same recipe as [2/3] again,\n"
+                 "      verbatim, now built on adOCCT/geoml's feature/autodiff branch - X's\n"
+                 "      derivative flows through the same curve construction." << std::endl;
+    read_recipe_ad();
 
     std::cout << "\nDone." << std::endl;
     return 0;

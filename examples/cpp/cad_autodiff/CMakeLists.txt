@@ -128,12 +128,13 @@ add_executable(cad_autodiff src/main.cpp)
 target_link_libraries(cad_autodiff PRIVATE grunk geoml ${ADOLC_LIBRARY} ${CMAKE_DL_LIBS})
 
 # geoml_adolc_plugin.so: stage 3's counterpart (see plugins/geoml_adolc/), not built
-# by this project (see that directory's CMakeLists.txt for why). No find_file/
-# FATAL_ERROR here, unlike ADTL_LIBRARY/geoml_plugin above - main.cpp's
-# load_geoml_adolc_plugin is scaffolding too, never called by default.
-# TODO(stage3): point this at your build once plugins/geoml_adolc/ is built.
+# by this project (see that directory's CMakeLists.txt for why) - build it yourself
+# first (README.md's "Stage 3" section), then point this at it if it ends up
+# somewhere other than the default below. No find_file/FATAL_ERROR here, unlike
+# ADTL_LIBRARY/geoml_plugin above: main.cpp's load_geoml_adolc_plugin_entry_point
+# already reports a clear dlopen error itself if the .so isn't there yet.
 set(GEOML_ADOLC_PLUGIN_SO_PATH "${CMAKE_SOURCE_DIR}/plugins/geoml_adolc/build/libgeoml_adolc_plugin.so" CACHE PATH
-    "Path to the AD-enabled geoml plugin built from plugins/geoml_adolc/ (stage 3, scaffolding only)")
+    "Path to the AD-enabled geoml plugin built from plugins/geoml_adolc/ (stage 3)")
 
 target_compile_definitions(cad_autodiff PRIVATE
     ADTL_SO_PATH="${ADTL_LIBRARY}"
