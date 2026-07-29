@@ -187,9 +187,15 @@ a different geoml/OCCT install, is the whole point.
   `curve:as(Geom_BezierCurve)` - exists in grunk too, but calling a method through its result
   reproducibly errored with "attempt to index a string value" here; the qualified-call form above
   is what actually works, so that's what this example uses.)
-- **Everything specific to *this* recipe - seeding X's derivative direction, and reading a
-  particular coordinate's value/derivative back out - is composed from those primitives in Lua**,
-  not registered in the plugin:
+- **`read_recipe_ad` treats the recipe as a black box: a function from parameters to outputs.**
+  Its only two points of contact with the recipe are `recipe.get_feature("X")` (the declared
+  parameter) and `recipe.get_output("x(0.5)")`/`recipe.get_output("y(0.5)")` (the declared outputs,
+  grunk-dev/grunk#266) - it never reaches into internal Lua variable names like `x_at_half`/
+  `y_at_half`/`point_at_half`. Forward-mode AD fits this exactly: set a seed on a parameter, then
+  read both the primal and the dual (derivative) value off any output, regardless of how the
+  recipe's own steps get from one to the other. Everything specific to *this recipe/example* -
+  seeding a parameter's derivative direction, reading a value's primal/derivative back out - is
+  composed from `geoml_registration.hpp`'s generic primitives in Lua, not registered in the plugin:
   - *Seeding X.* `gp_Pnt.new(X, 0., 0.)` runs (lazily) against the specific `DynamicFeature` node
     already built for `X` when the recipe was read - reassigning the Lua variable `X` afterwards
     wouldn't reach it. `read_recipe_ad` inserts a small `ad` Lua module
@@ -199,16 +205,17 @@ a different geoml/OCCT install, is the whole point.
     (`read_recipe_ad` passes `1.`, to read a plain `d(.)/dX` back below), and `read_recipe_ad`
     pushes the result onto `X`'s own node via `DynamicFeature::set_value` - the mechanism grunk
     provides for exactly this: updating a feature's value in place, invalidating dependents.
-    Calling `ad.seed` itself calls genuinely tracked functions internally (`Standard_Real.new`/
-    `setADValue`), so its result is a lazy `DynamicFeature` too - `.value()` forces that
-    evaluation so `X` gets the resolved value, not a `DynamicFeature`-wrapping-a-`DynamicFeature`.
   - *Reading a value/derivative back out.* The `ad` module's `primal(x)`/`derivative(x,
-    direction)` read `getValue()`/`getADValue(direction)` off any `Standard_Real` - `read_recipe_ad`
-    calls them (via an appended `recipe.eval`, the same pattern `read_cad_recipe` already uses for
-    `export_brep`) directly on `x_at_half`/`y_at_half`, the *same* output features
-    `write_cad_recipe` already declared (grunk-dev/grunk#266) - no second `Geom_BezierCurve.Value`
-    call needed, since those features are genuinely `Standard_Real`-valued once re-evaluated under
-    the AD plugin.
+    direction)` read `getValue()`/`getADValue(direction)` off any `Standard_Real` - genuinely
+    parameter/output-agnostic, they don't name `x(0.5)` or `y(0.5)` anywhere. `read_recipe_ad`
+    calls `recipe.get_output(...)` first to get each output's current (post-seed) value, then
+    applies `ad.primal`/`ad.derivative` to *that*, all as direct sol2 calls (not an appended
+    `recipe.eval` string, unlike `read_cad_recipe`'s `export_brep` call) - since `ad.seed`/
+    `ad.primal`/`ad.derivative` each call genuinely tracked functions internally
+    (`Standard_Real.new`/`getValue`/`getADValue`/`setADValue`), every one of these calls returns a
+    lazy `DynamicFeature`, not the value directly, regardless of whether it's invoked via `eval` or
+    a direct call - `read_recipe_ad`'s small `unwrap` helper forces that one evaluation
+    uniformly wherever needed.
   - `gp_Pnt.new`'s constructor needed a mixed number/`Standard_Adouble` argument path: a recipe
     literal like `0.` is a plain Lua number, but `Standard_Real` is a real class in the AD build
     (not a fundamental type), so sol2 won't implicitly convert one to the other the way it does

@@ -310,15 +310,14 @@ void read_cad_recipe()
 // recipe re-executes its steps at read time (grunk::environment::eval) against
 // whichever plugin is currently loaded.
 //
-// Seeding X's derivative direction can't happen inside the recipe's own steps: X's
-// value comes from the YAML (a plain number) and write_cad_recipe's own
-// `P_1 = gp_Pnt.new(X, 0., 0.)` step already runs (lazily, but wired into the DAG)
-// against that same X node before any step appended here would run. Re-assigning
-// the Lua variable X wouldn't reach it either - P_1 depends on the specific
-// DynamicFeature object already in the environment, not on whatever the name "X"
-// happens to point to afterwards. So this seeds X's *existing* node in place via
-// DynamicFeature::set_value (grunk/dynamic/DynamicFeature.hpp), which invalidates
-// P_1/curve exactly like changing any other feature's value would.
+// The point of this function: a grunk recipe can be treated as a black-box function
+// from parameters to outputs. At the call site - here - that means never reaching
+// into the recipe's internal Lua variable names (X's constructing gp_Pnt.new call,
+// point_at_half, x_at_half/y_at_half, ...): only its declared parameter ("X") and
+// its declared outputs ("x(0.5)"/"y(0.5)", grunk-dev/grunk#266) are ever named.
+// Forward-mode AD fits this exactly - set a seed on a parameter, then read both the
+// primal and the dual (derivative) value off any output, without caring how the
+// recipe's steps get from one to the other internally.
 void read_recipe_ad()
 {
     auto grunk = grunk::state();
@@ -328,11 +327,13 @@ void read_recipe_ad()
 
     // "ad" composes genuine, general-purpose Standard_Real operations
     // (geoml_registration.hpp: construction, getValue, getADValue, setADValue)
-    // into the seed/primal/derivative vocabulary this example needs. It's a Lua
-    // module script inserted directly into the recipe (Recipe::insert_module_script,
-    // the same mechanism stage 1 uses for "me" - write_autodiff_only_recipe), not a
-    // plugin-registered function: the plugin only knows about OCCT/geoml/ADOL-C
-    // itself, not this recipe's particular use of it.
+    // into the seed/primal/derivative vocabulary the black-box view below needs.
+    // It's a Lua module script inserted directly into the recipe
+    // (Recipe::insert_module_script, the same mechanism stage 1 uses for "me" -
+    // write_autodiff_only_recipe), not a plugin-registered function: the plugin
+    // only knows about OCCT/geoml/ADOL-C itself, not this recipe's particular use
+    // of it. None of "ad"'s three functions name a parameter or output either -
+    // they operate on whatever Standard_Real value they're given.
     recipe.insert_module_script("ad", R"(
         function seed(x, value)
             ret = Standard_Real.new(x)
@@ -348,46 +349,51 @@ void read_recipe_ad()
             return Standard_Real.getADValue(x, direction)
         end
     )");
-
-    // Retrieve X, the recipe's independent parameter, and seed its forward AD
-    // direction before anything downstream is queried - otherwise every
-    // derivative pulled out below is trivially zero. A seed of 1. reads a plain
-    // d(.)/dX derivative back below; any other value would scale it linearly,
-    // same as ADOL-C's setADValue itself.
-    grunk::DynamicFeature X = recipe.get_feature("X");
-    double x_val = X.value().as<double>();
     sol::table ad = recipe.get<sol::table>("ad");
     sol::protected_function ad_seed = ad["seed"];
-    // ad.seed calls Standard_Real.new/setADValue, both genuinely tracked
-    // functions (geoml_registration.hpp), so the result is itself a lazy
-    // DynamicFeature, not the Standard_Adouble directly - .value() forces that
-    // evaluation so X gets the resolved value (with its derivative direction
-    // set), not a Feature-wrapping-a-Feature. X.set_value writes it onto X's own
-    // node in place - P_1/curve already depend on that specific node from
-    // grunk.read() above, so this is what actually invalidates and reseeds them,
-    // unlike reassigning the Lua variable X (which wouldn't reach that
-    // dependency edge).
-    sol::object x_seeded = ad_seed(x_val, 1.);
-    if (x_seeded.is<grunk::DynamicFeature>()) {
-        x_seeded = x_seeded.as<grunk::DynamicFeature>().value();
-    }
-    X.set_value(x_seeded);
+    sol::protected_function ad_primal = ad["primal"];
+    sol::protected_function ad_derivative = ad["derivative"];
 
-    // x_at_half/y_at_half (write_cad_recipe) are already Standard_Real-valued
-    // once this recipe is re-evaluated under the AD plugin - ad.primal/
-    // ad.derivative read the seeded value and direction-0 derivative straight
-    // off them, no second Geom_BezierCurve.Value call needed.
-    recipe.eval(R"(
-        curve_x_primal = ad.primal(x_at_half)
-        curve_y_primal = ad.primal(y_at_half)
-        curve_dx_dX = ad.derivative(x_at_half, 0)
-        curve_dy_dX = ad.derivative(y_at_half, 0)
-    )");
+    // ad.seed/ad.primal/ad.derivative each call genuinely tracked functions
+    // internally (Standard_Real.new/getValue/getADValue/setADValue), so calling
+    // any of them (whether via eval or, as here, a direct sol2 call) yields a
+    // lazy DynamicFeature, not the underlying value directly - this unwraps
+    // that one evaluation.
+    auto unwrap = [](sol::object o) -> sol::object {
+        return o.is<grunk::DynamicFeature>() ? o.as<grunk::DynamicFeature>().value() : o;
+    };
 
-    double curve_x = recipe.get_feature("curve_x_primal").value().as<double>();
-    double curve_y = recipe.get_feature("curve_y_primal").value().as<double>();
-    double curve_dx_dX = recipe.get_feature("curve_dx_dX").value().as<double>();
-    double curve_dy_dX = recipe.get_feature("curve_dy_dX").value().as<double>();
+    // --- Parameter side: seed X's forward AD direction. ---
+    //
+    // A seed of 1. reads a plain d(.)/dX derivative back below; any other value
+    // would scale the resulting derivative linearly, same as ADOL-C's setADValue
+    // itself. Seeding can't happen inside the recipe's own steps: X's value
+    // comes from the YAML (a plain number) and write_cad_recipe's own
+    // `P_1 = gp_Pnt.new(X, 0., 0.)` step already runs (lazily, but wired into the
+    // DAG) against that same X node before any step appended here would run.
+    // Re-assigning the Lua variable X wouldn't reach it either - P_1 depends on
+    // the specific DynamicFeature object already in the environment, not on
+    // whatever the name "X" happens to point to afterwards. So this seeds X's
+    // *existing* node in place via DynamicFeature::set_value, which invalidates
+    // P_1/curve (and, transitively, the outputs queried below) exactly like
+    // changing any other feature's value would.
+    grunk::DynamicFeature X = recipe.get_feature("X");
+    double x_val = X.value().as<double>();
+    X.set_value(unwrap(ad_seed(x_val, 1.)));
+
+    // --- Output side: read primal + dual value off each declared output. ---
+    //
+    // recipe.get_output resolves "x(0.5)"/"y(0.5)" to whatever internal feature
+    // write_cad_recipe tagged them to (x_at_half/y_at_half) - this code never
+    // needs to know that mapping itself. Forcing .value() here (after X has
+    // been seeded above) re-evaluates the recipe's steps under the new seed.
+    sol::object x_output = recipe.get_output("x(0.5)").value();
+    sol::object y_output = recipe.get_output("y(0.5)").value();
+
+    double curve_x = unwrap(ad_primal(x_output)).as<double>();
+    double curve_y = unwrap(ad_primal(y_output)).as<double>();
+    double curve_dx_dX = unwrap(ad_derivative(x_output, 0)).as<double>();
+    double curve_dy_dX = unwrap(ad_derivative(y_output, 0)).as<double>();
 
     // Closed-form check: at u=0.5 the cubic Bezier weight on P_1 (the only pole X
     // feeds) is (1-u)^3 = 0.125, so curve_x should be exactly 1.625 and curve_dx_dX
