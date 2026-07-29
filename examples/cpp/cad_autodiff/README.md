@@ -160,36 +160,66 @@ a different geoml/OCCT install, is the whole point.
   `find_package(geoml)` - `NO_DEFAULT_PATH` matters here specifically, since the pixi environment
   also has stock `opencascade==7.6.2` on `CMAKE_PREFIX_PATH` (needed for Lua/sol2) and would
   otherwise silently win over adOCCT.
-- **Getting a *nonzero* derivative out required two things `write_cad_recipe`'s shared recipe text
-  can't do on its own**, both handled in `read_recipe_ad` (`src/main.cpp`), not the recipe:
+- **`geoml_registration.hpp` only registers genuine OCCT/geoml/ADOL-C operations** - `gp_Pnt`
+  construction and `X()`/`Y()`/`Z()` coordinate access, `Geom_BezierCurve` construction
+  (`bezier_curve`) and evaluation (`Value`, i.e. `Geom_Curve::Value`), curve export, and (AD build
+  only) `Standard_Real` itself as a Lua-constructible/inspectable type exposing ADOL-C's own
+  `getValue`/`getADValue`/`setADValue`. None of this is specific to `X`, `u=0.5`, or this recipe -
+  it's the same vocabulary any recipe using this plugin would need.
+  `Geom_BezierCurve` *is* a full usertype, with `Value` a real registered member function -
+  `grunk.register_type<Geom_BezierCurve, sol::automagic_flags::none>(...)` is what makes that
+  possible: OCCT gives `Geom_BezierCurve` no `operator==`/`operator<`, which sol2's *default*
+  usertype registration wants (particularly for a `Handle`-wrapped/unique-usertype type), but
+  `automagic_flags::none` opts out of that (and the other automagic enrollments - default
+  constructor, `__tostring`, `__pairs`, `__call`, `__len` - none of which `Geom_BezierCurve` needs
+  either). This is a real, working grunk feature (`register_type<T, Flags>`, plus a `modify_type`
+  helper for extending an already-registered usertype without re-running automagic) added for
+  exactly this situation - types reached only via `unique_usertype_traits` whose underlying C++
+  type lacks comparison operators.
+  Calling a registered member function on a value flowing through a recipe's tracked/decorated
+  environment needs grunk's qualified `Type.method(instance, args...)` form (e.g. `gp_Pnt.X(p)`,
+  `Geom_BezierCurve.Value(curve, u)`), not Lua's `p:X()` colon-call sugar - the decorated
+  environment mirrors *functions* looked up by qualified name, not arbitrary methods on arbitrary
+  tracked values; this matches grunk's own test suite (e.g. `MyScalar.pow(c, 2)`, not `c:pow(2)`).
+  (`register_external_type`, used for `adtl.adouble` in stage 1, is a separate, SWIG-specific
+  mechanism that does support colon-call syntax - not a contradiction, just a different code path.
+  `DynamicFeature::as(usertype)`, a third mechanism meant to bridge type erasure explicitly - e.g.
+  `curve:as(Geom_BezierCurve)` - exists in grunk too, but calling a method through its result
+  reproducibly errored with "attempt to index a string value" here; the qualified-call form above
+  is what actually works, so that's what this example uses.)
+- **Everything specific to *this* recipe - seeding X's derivative direction, and reading a
+  particular coordinate's value/derivative back out - is composed from those primitives in Lua**,
+  not registered in the plugin:
   - *Seeding X.* `gp_Pnt.new(X, 0., 0.)` runs (lazily) against the specific `DynamicFeature` node
     already built for `X` when the recipe was read - reassigning the Lua variable `X` afterwards
-    wouldn't reach it. `forward_seed(x, seed)` (`geoml_registration.hpp`, adapting stage 1's
-    `me.seed(x_val)`/`ret:setADValue(0,1.)`) builds a `Standard_Adouble` from `X`'s current
-    (plain-number) value with direction 0 set to `seed` (`read_recipe_ad` passes `1.`, to read a
-    plain `d(.)/dX` back below), and `read_recipe_ad` pushes the result onto that same node via
-    `DynamicFeature::set_value` - the mechanism grunk provides for exactly this: updating a
-    feature's value in place, invalidating dependents. `read_recipe_ad` calls `forward_seed`
-    through `grunk::state::get_function`, which looks it up in the *undecorated* environment - an
-    eager, untracked call, so the result is already the plain `Standard_Adouble` value, not a
-    `DynamicFeature` needing a further `.value()` unwrap.
-  - *Reading a derivative back out.* `curve_point_x`/`curve_point_dx_dX`/`curve_point_dy_dX`
-    (`geoml_registration.hpp`, AD-only) sample a point on the curve and read its primal value or
-    `getADValue(0)`, the same tape direction `forward_seed` seeds. `read_recipe_ad` calls them via
-    an appended `recipe.eval` (the same pattern `read_cad_recipe` already uses for `export_brep`)
-    - this doesn't touch the recipe text shared with stage 2 either.
-  - Both `gp_Pnt.new`'s constructor and `curve_point_x`'s `u` parameter needed a mixed
-    number/`Standard_Adouble` argument path: a recipe literal like `0.` is a plain Lua number,
-    but `Standard_Real` is a real class in the AD build (not a fundamental type), so sol2 won't
-    implicitly convert one to the other the way it does for `double`. See the `sol::object`-based
-    `to_real` conversion in `gp_Pnt`'s AD constructor overload.
+    wouldn't reach it. `read_recipe_ad` inserts a small `ad` Lua module
+    (`Recipe::insert_module_script`, the same mechanism stage 1 uses for `me`) with a `seed(x,
+    value)` function adapting stage 1's `me.seed(x_val)`/`ret:setADValue(0,1.)`: it builds a
+    `Standard_Real` from `X`'s current (plain-number) value with direction 0 set to `value`
+    (`read_recipe_ad` passes `1.`, to read a plain `d(.)/dX` back below), and `read_recipe_ad`
+    pushes the result onto `X`'s own node via `DynamicFeature::set_value` - the mechanism grunk
+    provides for exactly this: updating a feature's value in place, invalidating dependents.
+    Calling `ad.seed` itself calls genuinely tracked functions internally (`Standard_Real.new`/
+    `setADValue`), so its result is a lazy `DynamicFeature` too - `.value()` forces that
+    evaluation so `X` gets the resolved value, not a `DynamicFeature`-wrapping-a-`DynamicFeature`.
+  - *Reading a value/derivative back out.* The `ad` module's `primal(x)`/`derivative(x,
+    direction)` read `getValue()`/`getADValue(direction)` off any `Standard_Real` - `read_recipe_ad`
+    calls them (via an appended `recipe.eval`, the same pattern `read_cad_recipe` already uses for
+    `export_brep`) directly on `x_at_half`/`y_at_half`, the *same* output features
+    `write_cad_recipe` already declared (grunk-dev/grunk#266) - no second `Geom_BezierCurve.Value`
+    call needed, since those features are genuinely `Standard_Real`-valued once re-evaluated under
+    the AD plugin.
+  - `gp_Pnt.new`'s constructor needed a mixed number/`Standard_Adouble` argument path: a recipe
+    literal like `0.` is a plain Lua number, but `Standard_Real` is a real class in the AD build
+    (not a fundamental type), so sol2 won't implicitly convert one to the other the way it does
+    for `double`. See the `sol::object`-based `to_real` conversion in `gp_Pnt`'s AD constructor
+    overload.
 
 **Verifying the derivative.** At the curve parameter `u=0.5` used in `read_recipe_ad`, the cubic
 Bezier weight on `P_1` (the only pole `X` feeds) is `(1-u)^3 = 0.125` - a closed form independent
 of grunk/geoml/adOCCT entirely. The example's own output confirms the AD result against it
-exactly: `curve_point_x(curve, 0.5)` is `1.625`, `curve_point_dx_dX` is `0.125`, and
-`curve_point_dy_dX` (X reaches no other coordinate) is exactly `0` - a leakage sanity check, not
-just a magnitude check.
+exactly: `x(0.5)` is `1.625`, `d(x(0.5))/dX` is `0.125`, and `d(y(0.5))/dX` (X reaches no other
+coordinate) is exactly `0` - a leakage sanity check, not just a magnitude check.
 
 **Building it yourself:**
 
@@ -271,9 +301,9 @@ cad_autodiff/
 │                                             # built for stage 3 - see "Stage 3" section
 ├── plugins/
 │   ├── occt_sol_traits.hpp     # sol2 traits for OCCT Handle(T) - used only by geoml_registration.hpp
-│   ├── geoml_registration.hpp  # register_geoml (incl. export_brep and, AD-only, forward_seed/
-│   │                           # curve_point_x/curve_point_dx_dX/curve_point_dy_dX), shared
-│   │                           # verbatim by both geoml plugins below
+│   ├── geoml_registration.hpp  # register_geoml: only genuine OCCT/geoml/ADOL-C operations
+│   │                           # (gp_Pnt, Geom_BezierCurve, export_brep and, AD-only,
+│   │                           # Standard_Real itself) - shared verbatim by both geoml plugins below
 │   ├── geoml/
 │   │   └── geoml_plugin.cpp        # Stage 2 plugin (no AD) - built as geoml_plugin.so, dlopen'd by main.cpp
 │   └── geoml_adolc/
