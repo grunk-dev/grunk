@@ -14,8 +14,19 @@
 // one piece of C++ source, compiled against two different geoml/OCCT installs.
 // GEOML_ADOLC_FORWARD/GEOML_ADOLC_REVERSE (defined by geoml's own CMakeLists.txt
 // when GEOML_USE_ADOLC=ON) gate the handful of spots that do differ - the gp_Pnt
-// constructor, and forward_seed/curve_point_x/curve_point_dx_dX/curve_point_dy_dX below,
-// which only exist in the AD build.
+// constructor's and Geom_BezierCurve::Value's argument conversion, and the
+// Standard_Real type registration, which only exists in the AD build (in the
+// non-AD build, Standard_Real is plain double - already a native Lua number, no
+// registration needed).
+//
+// This plugin registers only genuine OCCT/geoml operations - gp_Pnt/Geom_BezierCurve
+// construction, coordinate access and evaluation, curve export, and (AD-only)
+// Standard_Real's own AD introspection (getValue/getADValue/setADValue, the same
+// operations ADOL-C's adouble exposes). Anything specific to *this example* (e.g.
+// seeding X's derivative direction, or reading a particular coordinate's
+// derivative) is composed from these in Lua instead - see write_cad_recipe's
+// recipe steps and read_recipe_ad's "ad" module script (src/main.cpp) - so this
+// header stays reusable by any recipe, not tinkered for one.
 //
 // Everything OCCT/geoml-related lives here and in occt_sol_traits.hpp - src/main.cpp
 // never includes an OCCT header, not even to use export_brep's result below: it only
@@ -42,10 +53,9 @@ inline void register_geoml(grunk::state& grunk)
 #if defined(GEOML_ADOLC_FORWARD) || defined(GEOML_ADOLC_REVERSE)
         // Standard_Real is Standard_Adouble here, not a fundamental type, so a single
         // (Standard_Real,Standard_Real,Standard_Real) overload (as in the non-AD
-        // branch below) can't bind write_cad_recipe's `gp_Pnt.new(X, 0., 0.)` call
-        // (shared verbatim with the non-AD build): X may be a seeded Standard_Adouble
-        // userdata (see forward_seed below) while the 0. literals stay plain Lua numbers,
-        // so no single sol2 overload matches every argument at once - each argument
+        // branch below) can't bind a call mixing a seeded Standard_Real argument
+        // (see the "ad" Lua module, src/main.cpp) with plain Lua number literals -
+        // no single sol2 overload matches every argument at once, so each argument
         // needs its own number-or-userdata check instead.
         [](sol::object x, sol::object y, sol::object z) {
             auto to_real = [](sol::object o) -> Standard_Real {
@@ -57,13 +67,28 @@ inline void register_geoml(grunk::state& grunk)
         [](Standard_Real x, Standard_Real y, Standard_Real z) { return gp_Pnt(x,y,z); }
 #endif
     )
+    .add_member_function("X", &gp_Pnt::X)
+    .add_member_function("Y", &gp_Pnt::Y)
+    .add_member_function("Z", &gp_Pnt::Z)
     .with_std_vector();
 
-    //grunk.register_type<Geom_Curve, sol::automagic_flags::none>("Geom_Curve")
-    //.with_std_vector();
-
-    //grunk.register_type<Geom_BezierCurve, sol::automagic_flags::none>("Geom_BezierCurve")
-    //.add_bases<Geom_Curve>();
+    // automagic_flags::none: Geom_BezierCurve has no operator==/operator<, which
+    // sol2's default usertype registration wants (for a Handle-wrapped/unique_usertype
+    // type in particular) - this opts out of that (and of the other automagic
+    // enrollments: default constructor, __tostring, __pairs, __call, __len -
+    // Geom_BezierCurve needs none of them; construction happens exclusively via
+    // bezier_curve below).
+    grunk.register_type<Geom_BezierCurve, sol::automagic_flags::none>("Geom_BezierCurve")
+    .add_member_function("Value",
+#if defined(GEOML_ADOLC_FORWARD) || defined(GEOML_ADOLC_REVERSE)
+        // Same gap as gp_Pnt's constructor: u is always a plain Lua number, but
+        // Standard_Real is Standard_Adouble here, not a fundamental type, so sol2
+        // can't bind it directly to Geom_Curve::Value's Standard_Real parameter.
+        [](Geom_BezierCurve const& self, double u) -> gp_Pnt { return self.Value(Standard_Adouble(u)); }
+#else
+        &Geom_Curve::Value
+#endif
+    );
 
     //grunk.register_type<Geom_Surface>("Geom_Surface");
 
@@ -91,65 +116,27 @@ inline void register_geoml(grunk::state& grunk)
     );
 
 #if defined(GEOML_ADOLC_FORWARD) || defined(GEOML_ADOLC_REVERSE)
-    // Stage 3 only: seeding X's derivative direction and pulling a derivative back
-    // out of the resulting geometry. Neither call is part of write_cad_recipe's
-    // shared recipe text - src/main.cpp's read_recipe_ad appends them itself (forward_seed
-    // via DynamicFeature::set_value on X's existing node, curve_point_x/
-    // curve_point_dx_dX via an appended recipe.eval), so the recipe stays identical
-    // between stages 2 and 3. See README.md's "Stage 3" section.
-
-    // Adapts stage 1's `me.seed(x_val)` Lua helper (src/main.cpp,
-    // write_autodiff_only_recipe) to a Standard_Adouble: wraps x as an adouble and
-    // seeds derivative direction 0 (the same direction curve_point_dx_dX below reads
-    // back) with the given seed value - read_recipe_ad passes 1. to get d(.)/dX
-    // directly, but any value scales the resulting derivative linearly, same as
-    // ADOL-C's setADValue itself. x arrives as a plain double (X's Lua-visible value
-    // is still a plain number at read time - see read_recipe_ad), not a
-    // Standard_Real, since nothing has produced a Standard_Adouble for it yet;
-    // that's this function's job.
-    grunk.register_function(
-        "forward_seed",
-        [](double x, double seed) -> Standard_Real {
-            Standard_Adouble seeded(x);
-            seeded.setADValue(0, seed);
-            return seeded;
-        }
-    );
-
-    // Samples the curve's X coordinate at parameter u and returns its primal value -
-    // same information export_brep's caller could get from the .brep file, but
-    // in-process and without a round trip through disk. u is a plain double, not
-    // Standard_Real: it's just the curve parameter (not something seeded - no
-    // derivative is ever needed with respect to it), and recipe.eval always passes
-    // it as a plain Lua number literal (see read_recipe_ad), which sol2 can't bind
-    // directly to a Standard_Adouble parameter (same gap gp_Pnt's constructor has).
-    grunk.register_function(
-        "curve_point_x",
-        [](Handle(Geom_BezierCurve) const& curve, double u) -> double {
-            return curve->Value(Standard_Adouble(u)).X().getValue();
-        }
-    );
-
-    // The payoff: d(curve point's X coordinate)/dX at parameter u, read directly off
-    // the AD tape - direction 0 matches forward_seed above. Requires X to have actually
-    // been seeded (see read_recipe_ad); otherwise this is trivially 0.
-    grunk.register_function(
-        "curve_point_dx_dX",
-        [](Handle(Geom_BezierCurve) const& curve, double u) -> double {
-            return curve->Value(Standard_Adouble(u)).X().getADValue(0);
-        }
-    );
-
-    // Sanity check alongside curve_point_dx_dX: X only ever feeds P_1's X
-    // coordinate (write_cad_recipe's `P_1 = gp_Pnt.new(X, 0., 0.)`), so the curve
-    // point's Y coordinate should carry no dependency on X at all - this should
-    // read exactly 0 wherever curve_point_dx_dX is nonzero, confirming the AD tape
-    // isn't leaking a derivative into an unrelated component.
-    grunk.register_function(
-        "curve_point_dy_dX",
-        [](Handle(Geom_BezierCurve) const& curve, double u) -> double {
-            return curve->Value(Standard_Adouble(u)).Y().getADValue(0);
-        }
-    );
+    // AD build only: exposes Standard_Real (== Standard_Adouble here) itself as a
+    // Lua-constructible/inspectable type, the same AD introspection ADOL-C's own
+    // adtl::adouble gives Lua in stage 1 (write_autodiff_only_recipe's
+    // load_adolc_plugin: getValue/getADValue/setADValue). This is genuine,
+    // reusable OCCT/ADOL-C functionality - not specific to X or to this recipe -
+    // gp_Pnt::X()/Y()/Z() above already return Standard_Real values that need
+    // exactly these operations to inspect from Lua. getADValue/setADValue take an
+    // AD direction index; ADOL-C's own signature is `unsigned int`, adapted to a
+    // plain Lua number here.
+    grunk.register_type<Standard_Real>("Standard_Real")
+    .add_constructors(
+        [](double v) -> Standard_Real { return Standard_Adouble(v); }
+    )
+    .add_member_function("getValue", [](Standard_Adouble const& self) -> double {
+        return self.getValue();
+    })
+    .add_member_function("getADValue", [](Standard_Adouble const& self, int direction) -> double {
+        return self.getADValue(static_cast<unsigned int>(direction));
+    })
+    .add_member_function("setADValue", [](Standard_Adouble& self, int direction, double value) {
+        self.setADValue(static_cast<unsigned int>(direction), value);
+    });
 #endif
 }

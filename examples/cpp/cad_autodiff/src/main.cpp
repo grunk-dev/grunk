@@ -234,6 +234,22 @@ void read_autodiff_only_recipe()
 // Just one bezier curve, not a full CAD model - a dev artifact for exercising the
 // plugin swap. X is a named feature (not a literal) so there's a single input for
 // stage 3 to seed a derivative from - see read_recipe_ad below.
+//
+// point_at_half/x_at_half/y_at_half sample the curve at u=0.5 (Geom_BezierCurve.Value,
+// then gp_Pnt's X()/Y() accessors - both genuine geoml_registration.hpp primitives,
+// not example-specific) and x_at_half/y_at_half are declared as the recipe's named
+// outputs (grunk-dev/grunk#266's `outputs:` block). Both work under either plugin,
+// so this is safe to bake into the shared recipe text; only the AD-only derivative
+// extraction stays confined to stage 3's read_recipe_ad, appended after read (via
+// its own "ad" Lua module) rather than written here.
+//
+// Geom_BezierCurve.Value(curve, u), not curve:Value(u): calling a registered member
+// function on a value flowing through the recipe's tracked/decorated environment
+// needs this qualified "Type.method(instance, args...)" form (matching grunk's own
+// test suite, e.g. `MyScalar.pow(c, 2)`, not `c:pow(2)`) - the decorated environment
+// mirrors *functions* looked up by qualified name, not arbitrary methods on
+// arbitrary tracked values, so Lua's `instance:method()` colon-call sugar doesn't
+// reach it directly.
 void write_cad_recipe(bool with_ad)
 {
     auto grunk = grunk::state();
@@ -254,8 +270,14 @@ void write_cad_recipe(bool with_ad)
 
         poles = gp_Pnt.as_vec(P_1, P_2, P_3, P_4)
         curve = bezier_curve(poles)
+
+        point_at_half = Geom_BezierCurve.Value(curve, 0.5)
+        x_at_half = gp_Pnt.X(point_at_half)
+        y_at_half = gp_Pnt.Y(point_at_half)
     )");
     recipe.tag_features();
+    recipe.insert_output("x(0.5)", "x_at_half");
+    recipe.insert_output("y(0.5)", "y_at_half");
 
     grunk.write("bezier_curve.grr.yml", recipe);
 }
@@ -273,6 +295,14 @@ void read_cad_recipe()
 
     bool exported = recipe.get_feature("exported").value().as<bool>();
     std::cout << "bezier_curve.brep exported: " << std::boolalpha << exported << std::endl;
+
+    // x(0.5)/y(0.5) (write_cad_recipe) are recipe outputs (grunk-dev/grunk#266),
+    // retrievable by name without knowing the internal Lua variable that produced
+    // them (x_at_half/y_at_half) - same values read_recipe_ad reads back below,
+    // just without any derivative since no AD plugin is loaded here.
+    double curve_x = recipe.get_output("x(0.5)").value().as<double>();
+    double curve_y = recipe.get_output("y(0.5)").value().as<double>();
+    std::cout << "curve point x(0.5) = " << curve_x << ", y(0.5) = " << curve_y << std::endl;
 }
 
 // Stage 3: reads bezier_curve.grr.yml (written by write_cad_recipe above) with the
@@ -296,27 +326,76 @@ void read_recipe_ad()
 
     auto recipe = grunk.read("bezier_curve.grr.yml");
 
-    grunk::DynamicFeature X = recipe.get_feature("X");
-    double x_val = X.value().as<double>();
-    sol::protected_function forward_seed = grunk.get_function("forward_seed").get_function();
-    sol::object x_seeded = forward_seed(x_val, /*seed=*/1.);
-    X.set_value(x_seeded);
+    // "ad" composes genuine, general-purpose Standard_Real operations
+    // (geoml_registration.hpp: construction, getValue, getADValue, setADValue)
+    // into the seed/primal/derivative vocabulary this example needs. It's a Lua
+    // module script inserted directly into the recipe (Recipe::insert_module_script,
+    // the same mechanism stage 1 uses for "me" - write_autodiff_only_recipe), not a
+    // plugin-registered function: the plugin only knows about OCCT/geoml/ADOL-C
+    // itself, not this recipe's particular use of it.
+    recipe.insert_module_script("ad", R"(
+        function seed(x, value)
+            ret = Standard_Real.new(x)
+            Standard_Real.setADValue(ret, 0, value)
+            return ret
+        end
 
-    recipe.eval(R"(
-        curve_x = curve_point_x(curve, 0.5)
-        curve_dx_dX = curve_point_dx_dX(curve, 0.5)
-        curve_dy_dX = curve_point_dy_dX(curve, 0.5)
+        function primal(x)
+            return Standard_Real.getValue(x)
+        end
+
+        function derivative(x, direction)
+            return Standard_Real.getADValue(x, direction)
+        end
     )");
 
-    double curve_x = recipe.get_feature("curve_x").value().as<double>();
+    // Retrieve X, the recipe's independent parameter, and seed its forward AD
+    // direction before anything downstream is queried - otherwise every
+    // derivative pulled out below is trivially zero. A seed of 1. reads a plain
+    // d(.)/dX derivative back below; any other value would scale it linearly,
+    // same as ADOL-C's setADValue itself.
+    grunk::DynamicFeature X = recipe.get_feature("X");
+    double x_val = X.value().as<double>();
+    sol::table ad = recipe.get<sol::table>("ad");
+    sol::protected_function ad_seed = ad["seed"];
+    // ad.seed calls Standard_Real.new/setADValue, both genuinely tracked
+    // functions (geoml_registration.hpp), so the result is itself a lazy
+    // DynamicFeature, not the Standard_Adouble directly - .value() forces that
+    // evaluation so X gets the resolved value (with its derivative direction
+    // set), not a Feature-wrapping-a-Feature. X.set_value writes it onto X's own
+    // node in place - P_1/curve already depend on that specific node from
+    // grunk.read() above, so this is what actually invalidates and reseeds them,
+    // unlike reassigning the Lua variable X (which wouldn't reach that
+    // dependency edge).
+    sol::object x_seeded = ad_seed(x_val, 1.);
+    if (x_seeded.is<grunk::DynamicFeature>()) {
+        x_seeded = x_seeded.as<grunk::DynamicFeature>().value();
+    }
+    X.set_value(x_seeded);
+
+    // x_at_half/y_at_half (write_cad_recipe) are already Standard_Real-valued
+    // once this recipe is re-evaluated under the AD plugin - ad.primal/
+    // ad.derivative read the seeded value and direction-0 derivative straight
+    // off them, no second Geom_BezierCurve.Value call needed.
+    recipe.eval(R"(
+        curve_x_primal = ad.primal(x_at_half)
+        curve_y_primal = ad.primal(y_at_half)
+        curve_dx_dX = ad.derivative(x_at_half, 0)
+        curve_dy_dX = ad.derivative(y_at_half, 0)
+    )");
+
+    double curve_x = recipe.get_feature("curve_x_primal").value().as<double>();
+    double curve_y = recipe.get_feature("curve_y_primal").value().as<double>();
     double curve_dx_dX = recipe.get_feature("curve_dx_dX").value().as<double>();
     double curve_dy_dX = recipe.get_feature("curve_dy_dX").value().as<double>();
 
     // Closed-form check: at u=0.5 the cubic Bezier weight on P_1 (the only pole X
     // feeds) is (1-u)^3 = 0.125, so curve_x should be exactly 1.625 and curve_dx_dX
-    // exactly 0.125 - and since X never reaches P_1's Y coordinate, curve_dy_dX
-    // should be exactly 0.
+    // exactly 0.125 - and since X never reaches P_1's Y coordinate, curve_y (a
+    // fixed combination of P_1..P_4's literal y-coordinates) is exactly 0.375 and
+    // curve_dy_dX exactly 0.
     std::cout << "curve point x(0.5) = " << curve_x << " (expected 1.625)\n"
+                 "curve point y(0.5) = " << curve_y << " (expected 0.375)\n"
                  "d(curve point x(0.5))/dX = " << curve_dx_dX << " (expected 0.125)\n"
                  "d(curve point y(0.5))/dX = " << curve_dy_dX << " (expected 0, sanity check)"
               << std::endl;
