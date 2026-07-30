@@ -694,7 +694,14 @@ private:
             sol::meta_function::call, &function_meta::operator()
         );
 
-        
+        // Backs DynamicFeature::call()'s relative-name (not fully-qualified) overload:
+        // self[method](self, ...) is exactly what Lua's own `self:method(...)` desugars
+        // to, so delegating to it here reuses the Feature usertype's real index
+        // resolution (built-in members first, then the sol::meta_function::index
+        // fallback below, keyed off the type hint) instead of duplicating it in C++.
+        // Compiled once here rather than per-call.
+        lua.script("function grunk.__member_call(self, method, ...) return self[method](self, ...) end");
+
         register_function(
             "feature",
             sol::overload(

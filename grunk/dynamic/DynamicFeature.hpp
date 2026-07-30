@@ -10,6 +10,7 @@
 
 #include <optional>
 #include <typeindex>
+#include <utility>
 
 namespace grunk {
 
@@ -108,6 +109,51 @@ public:
         sol::state_view l(lua);
         sol::table usertype_table = details::lookup_nested(l["grunk"]["parametric_env"], usertype);
         return as(usertype_table);
+    }
+
+    /**
+     * @brief Calls a member function of this feature's wrapped type by name, from C++ -
+     * the C++-side equivalent of Lua's colon-call syntax (self:method(args)).
+     *
+     * Accepts two kinds of names:
+     * - relative to the usertype (e.g. "pow"): resolved exactly like a Lua colon-call
+     *   would be - Feature's own built-in members (value, set_value, id, ...) always win
+     *   first; otherwise the wrapped type's registered method is looked up via this
+     *   feature's type hint (see type_hint()) - never by evaluating this feature's
+     *   value. Throws if no type hint is available, same as the Lua-level dispatch (see
+     *   the sol::meta_function::index handler on the Feature usertype, state.hpp).
+     * - fully qualified (e.g. "MyScalar.pow" or "MyScalar:pow" - the separator is purely
+     *   cosmetic): resolved directly against the decorated environment and invoked with
+     *   this feature passed as the leading argument, equivalent to writing
+     *   MyScalar.pow(x, args...) in a recipe script. Works regardless of type hints.
+     *
+     * @param name the method name, fully-qualified or relative to the wrapped usertype
+     * @param args the arguments to pass to the method
+     * @return object the result of the call - typically a DynamicFeature (an
+     *         uncomputed, dependency-tracked action), except when a reserved Feature
+     *         member (like "value") wins, in which case it is that member's own result.
+     */
+    template <typename... Args>
+    object call(std::string const& name, Args&&... args) const
+    {
+        check_lua();
+        sol::state_view l(lua);
+
+        auto unwrap = [&name](sol::protected_function_result ret) -> object {
+            if (!ret.valid()) {
+                sol::error err = ret;
+                throw std::runtime_error("DynamicFeature::call(\"" + name + "\"): " + err.what());
+            }
+            return ret;
+        };
+
+        if (name.find('.') != std::string::npos || name.find(':') != std::string::npos) {
+            sol::protected_function func = details::lookup_nested(l["grunk"]["parametric_env"], name);
+            return unwrap(func(*this, std::forward<Args>(args)...));
+        }
+
+        sol::protected_function func = l["grunk"]["__member_call"];
+        return unwrap(func(*this, name, std::forward<Args>(args)...));
     }
 
     /**

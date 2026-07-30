@@ -100,10 +100,17 @@ public:
      * function_meta::return_type_hint), the output feature is tagged with that type hint
      * right away - before the function has ever run - so that later method lookups on it
      * (see DynamicFeature's native colon-call dispatch) never need to force evaluation.
+     *
+     * Built via function.lua_state() rather than feature<object>({}) (which would
+     * construct from a default sol::object - lua_state() nullptr until evaluated) -
+     * the function's own Lua state is always valid and known without evaluating
+     * anything, and connect_results()/eval() below overwrite this placeholder's value
+     * unconditionally once the action actually runs, so its initial value never matters,
+     * only that its lua pointer is usable right away (e.g. by DynamicFeature::call()).
      */
     DynamicFeature initialize_results() const
     {
-        DynamicFeature out = feature<object>({});
+        DynamicFeature out(function.lua_state());
         if (auto hint = function.return_type_hint()) {
             out.set_type_hint(*hint);
         }

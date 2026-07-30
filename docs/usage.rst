@@ -576,6 +576,19 @@ pass a string identifier. We can choose between ``.`` and ``:`` as separator.
       # prints -1
       print(b.value().as_float())
 
+If we already have a ``DynamicFeature`` in hand and just want to call one of its methods - the C++/Python equivalent of Lua's ``x:val()`` colon-call - ``DynamicFeature::call`` does the same relative-name lookup described above, without needing to look the type up in ``grunk::state`` first:
+
+.. tabs::
+
+   .. code-tab:: cpp
+
+      auto z = x.call("val");         // relative name, resolved via x's type hint
+      auto z2 = x.call("MyScalar.val"); // fully-qualified name also works, regardless of any type hint
+
+   .. code-tab:: python
+
+      z = x.call("val")
+      z2 = x.call("MyScalar.val")
 
 Mixing static and dynamic mode in C++
 -------------------------------------

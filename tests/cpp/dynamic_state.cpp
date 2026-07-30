@@ -728,6 +728,119 @@ TEST(state, native_colon_call_clone_propagates_type_hint)
     EXPECT_EQ(pow_call_count, 2);
 }
 
+// --- DynamicFeature::call() - the C++-side equivalent of Lua colon-call ---
+
+TEST(state, call_relative_name)
+{
+    grunk::state grunk;
+
+    grunk.register_type<MyScalar>("MyScalar")
+    .add_constructors(
+        [](double v) { return MyScalar(v); }
+    )
+    .add_member_function("pow", &MyScalar::pow);
+
+    auto x = grunk.feature(MyScalar(2.));
+
+    grunk::object result = x.call("pow", 3);
+    ASSERT_TRUE(result.is<grunk::DynamicFeature>());
+    auto result_feature = result.as<grunk::DynamicFeature>();
+    EXPECT_EQ(result_feature.node_pointer()->get_parents().size(), 1);
+    EXPECT_NEAR(result_feature.value().as<MyScalar>().value(), 8., 1e-14); // 2^3
+}
+
+TEST(state, call_fully_qualified_name)
+{
+    grunk::state grunk;
+
+    grunk.register_type<MyScalar>("MyScalar")
+    .add_constructors(
+        [](double v) { return MyScalar(v); }
+    )
+    .add_member_function("pow", &MyScalar::pow);
+
+    // grunk.feature(T const&) does stamp a type hint, but a fully-qualified name must
+    // work regardless - it never consults the hint at all.
+    auto x = grunk.feature(MyScalar(2.));
+
+    grunk::object dot_result = x.call("MyScalar.pow", 3);
+    grunk::object colon_result = x.call("MyScalar:pow", 3); // separator is cosmetic
+
+    EXPECT_NEAR(dot_result.as<grunk::DynamicFeature>().value().as<MyScalar>().value(), 8., 1e-14);
+    EXPECT_NEAR(colon_result.as<grunk::DynamicFeature>().value().as<MyScalar>().value(), 8., 1e-14);
+}
+
+TEST(state, call_no_eager_evaluation)
+{
+    grunk::state grunk;
+
+    int pow_call_count = 0;
+    grunk.register_type<MyScalar>("MyScalar")
+    .add_constructors(
+        [](double v) { return MyScalar(v); }
+    )
+    .add_member_function("pow", [&pow_call_count](MyScalar& self, double exponent) {
+        ++pow_call_count;
+        return self.pow(exponent);
+    });
+
+    auto env = grunk.create_parametric_env();
+    env.eval(R"(
+        local x = MyScalar.new_feature(2)
+        y = MyScalar.pow(x, 2)
+    )");
+
+    grunk::DynamicFeature y = env.get_feature("y");
+    grunk::object z = y.call("pow", 3); // must not evaluate y just to resolve "pow"
+
+    EXPECT_EQ(pow_call_count, 0);
+
+    EXPECT_NEAR(z.as<grunk::DynamicFeature>().value().as<MyScalar>().value(), 64., 1e-10); // (2^2)^3
+    EXPECT_EQ(pow_call_count, 2);
+}
+
+TEST(state, call_no_hint_relative_name_throws)
+{
+    grunk::state grunk;
+
+    grunk.register_type<MyScalar>("MyScalar")
+    .add_constructors(
+        [](double v) { return MyScalar(v); }
+    )
+    .add_member_function("pow", &MyScalar::pow);
+
+    auto env = grunk.create_parametric_env();
+    env.eval("x = grunk.feature(42)"); // untemplated overload: no type hint
+    auto x = env.get_feature("x");
+
+    bool threw = false;
+    try {
+        x.call("pow", 3);
+    } catch (std::exception const& e) {
+        threw = true;
+        EXPECT_NE(std::string(e.what()).find("no static type information"), std::string::npos);
+    }
+    EXPECT_TRUE(threw);
+}
+
+TEST(state, call_reserved_name_shadowing)
+{
+    grunk::state grunk;
+
+    // MyScalar has its own "value" member, colliding with Feature's built-in value().
+    grunk.register_type<MyScalar>("MyScalar")
+    .add_constructors(
+        [](double v) { return MyScalar(v); }
+    )
+    .add_member_function("value", &MyScalar::value);
+
+    auto x = grunk.feature(MyScalar(2.));
+
+    grunk::object result = x.call("value");
+    ASSERT_TRUE(result.is<MyScalar>());
+    EXPECT_NEAR(result.as<MyScalar>().value(), 2., 1e-14);
+}
+
 /*TODO: this should ideally fail (non-const member function as action)
 TEST(state, usertype_nonconst_method_as_action_lua)
 {
