@@ -36,12 +36,13 @@ public:
 
     /**
      * @brief constructs a dynamic feature from a parametric::param. This is used internally for cloning and other operations that manipulate the underlying DAG.
-     * 
+     *
      * @param p the parametric::param to construct the feature from
      */
     explicit Feature(parametric::param<object> const& p)
      : FeatureBase<Feature<object>,object>(p)
-     , lua(nullptr) //TODO: This might be a problem. But we can't extract the lua state from the object without evaluating
+     , lua(nullptr) // action-derived feature: the lua state isn't known until evaluated
+                    // (see check_lua, which self-heals this the same way set_value does)
     {}
 
 
@@ -65,10 +66,7 @@ public:
         if constexpr (std::is_same_v<T, object>) {
             this->Base::set_value(t);
         } else {
-            if (lua == nullptr) {
-                // need to evalatue
-                lua = value().lua_state();
-            }
+            check_lua(); // self-heals lua from value() if not yet known - see check_lua
             this->Base::set_value(sol::make_object(lua, t));
         }
     }
@@ -210,17 +208,27 @@ public:
 
 private:
 
-    /** @brief checks if the lua state of the feature is initialized. This is needed for creating new features from the value of this feature, e.g. when calling methods on the feature from Lua. If the lua state is not initialized, an exception is thrown.
-     * 
-     * @throws std::runtime_error if the lua state is not initialized
+    /** @brief checks if the lua state of the feature is initialized, self-healing it first if not.
+     *
+     * A feature constructed from a parametric::param (any action-derived feature - the result
+     * of a computation, not a literal/grunk.feature root) doesn't know its lua state up front
+     * (see that constructor). Rather than fail outright, this forces evaluation - the same
+     * self-healing set_value already does - and takes the lua state from the resulting value.
+     * Only an entirely value-less feature (the default constructor, with no lua_state passed
+     * either) can still fail here.
+     *
+     * @throws std::runtime_error if the lua state is not initialized and can't be recovered
      */
     void check_lua() const {
+        if (!lua) {
+            lua = value().lua_state();
+        }
         if (!lua) {
             throw std::runtime_error("DynamicFeature: lua state is uninitialized");
         }
     }
 
-    lua_State* lua;
+    mutable lua_State* lua;
 
     /// @brief see set_type_hint/type_hint
     std::optional<std::type_index> m_type_hint;

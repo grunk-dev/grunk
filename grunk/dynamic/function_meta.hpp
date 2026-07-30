@@ -173,11 +173,24 @@ public:
 
     /**
      * @brief call the function
-     * 
+     *
      * @param va the arguments passed as parameters
+     *
+     * @throws sol::error if the underlying call fails. func(va) alone would swallow such a
+     * failure silently: a sol::protected_function_result stays a valid C++ value even when the
+     * call it represents failed, so returning it unchecked (as this used to) lets the error
+     * object (e.g. an exception's .what() text) flow back out as if it were func's actual,
+     * successful return value - this is registered as function_meta's own operator() usertype
+     * metamethod (state.hpp's init(), sol::meta_function::call), which sol2 calls under its own
+     * protected dispatch, so throwing here converts back into a proper Lua-level error instead.
      */
-    decltype(auto) operator()(sol::variadic_args va) const {
-        return func(va);
+    sol::protected_function_result operator()(sol::variadic_args va) const {
+        sol::protected_function_result result = func(va);
+        if (!result.valid()) {
+            sol::error err = result;
+            throw err;
+        }
+        return result;
     }
 
     /**

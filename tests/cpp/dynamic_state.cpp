@@ -453,6 +453,44 @@ TEST(state, usertype_method_as_action_lua)
     EXPECT_NEAR(env.get<MyScalar>("z2").value(), 8, 1e-14); // 2^3
 }
 
+// usertype_method_as_action_lua above only ever calls :as() on a "root" feature
+// (MyScalar.new_feature(2), constructed directly from an object - see DynamicFeature's
+// Feature(object const&) ctor, which knows its lua state up front). A feature that is
+// itself the result of a computation (like y below, from MyScalar.pow(x, 2)) is instead
+// constructed from a parametric::param, which used not to know its lua state at all
+// (DynamicFeature.hpp's other ctor) - so :as() on anything computed, not just literal
+// features, threw "DynamicFeature: lua state is uninitialized". That failure used to be
+// swallowed silently rather than surfaced: function_meta::operator() returned the failed
+// protected_function_result as-is, so the exception's message came back out as if it were
+// a normal (string) return value instead of failing the eval - hence asserting
+// result.valid() here, not just the computed values.
+TEST(state, usertype_method_as_action_on_computed_feature_lua)
+{
+    grunk::state grunk;
+
+    grunk.register_type<MyScalar>("MyScalar")
+    .add_constructors(
+        [](double v) { return MyScalar(v); }
+    )
+    .add_member_function("set", &MyScalar::set)
+    .add_member_function("pow", &MyScalar::pow);
+
+    auto env = grunk.create_parametric_env();
+    auto result = env.eval(R"(
+        x = MyScalar.new_feature(2)
+        y = MyScalar.pow(x, 2) -- y is computed, not a "new_feature" root
+
+        z = y:as(MyScalar).pow(3)
+        z1 = z:value()
+        x:change_value():set(3)
+        z2 = z:value()
+    )");
+    ASSERT_TRUE(result.valid());
+
+    EXPECT_NEAR(env.get<MyScalar>("z1").value(), 64, 1e-14);  // (2^2)^3 = 64
+    EXPECT_NEAR(env.get<MyScalar>("z2").value(), 729, 1e-14); // (3^2)^3 = 729
+}
+
 TEST(state, placeholder_feature_cpp)
 {
     grunk::state grunk;
