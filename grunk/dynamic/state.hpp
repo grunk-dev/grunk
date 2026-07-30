@@ -22,6 +22,8 @@
 
 #include <stdexcept>
 #include <fstream>
+#include <typeindex>
+#include <unordered_map>
 
 namespace grunk {
 
@@ -116,7 +118,13 @@ public:
         if (!table) {
             table = original_env;
         }
-        return usertype_proxy<T>{name, table->new_usertype<T>(name, sol::constant_automagic_enrollments<Flags>{})};
+        auto proxy = usertype_proxy<T>{name, table->new_usertype<T>(name, sol::constant_automagic_enrollments<Flags>{})};
+        // record T's usertype table under its C++ type, so a DynamicFeature carrying a
+        // type hint for T (see DynamicFeature::type_hint) can later look up a method by
+        // name without ever needing to evaluate its value - see the Feature usertype's
+        // sol::meta_function::index handler in init() below.
+        m_type_registry[std::type_index(typeid(T))] = (*table)[name];
+        return proxy;
     }
 
     /**
@@ -530,7 +538,9 @@ public:
     template <typename T>
     DynamicFeature feature(T const& value) const
     {
-        return grunk::feature(object(sol::make_object(lua, value)));
+        DynamicFeature f = grunk::feature(object(sol::make_object(lua, value)));
+        f.set_type_hint(std::type_index(typeid(T)));
+        return f;
     }
 
     /**
@@ -799,7 +809,32 @@ private:
         .add_member_function(sol::meta_function::division, details::make_dynamic_action(_div), {Parameter{"lhs", }, Parameter{"rhs",}  })
         .add_member_function(sol::meta_function::modulus, details::make_dynamic_action(_mod), {Parameter{"lhs", }, Parameter{"rhs",}  })
         .add_member_function(sol::meta_function::power_of, details::make_dynamic_action(_pow), {Parameter{"base", }, Parameter{"exponent",}  })
-        .add_member_function(sol::meta_function::unary_minus, details::make_dynamic_action(_unm), {Parameter{"value",}  });
+        .add_member_function(sol::meta_function::unary_minus, details::make_dynamic_action(_unm), {Parameter{"value",}  })
+        .set(sol::meta_function::index, [this](DynamicFeature const& self, std::string const& key) -> sol::object {
+            // Native colon-call dispatch fallback: sol2 checks Feature's own members
+            // (value, set_value, id, ..., as) before this ever runs, so those always win
+            // over a same-named method on the wrapped type. If self carries a static
+            // type hint (see DynamicFeature::type_hint - populated at construction time,
+            // never by evaluating self), look up "key" directly on that type's usertype
+            // table and return a tracked/decorated closure for it - exactly like the
+            // qualified TypeName.method(instance, ...) form, just reached via self:key(...)
+            // instead. Never falls back to evaluating self just to answer this query.
+            auto hint = self.type_hint();
+            if (hint) {
+                auto it = m_type_registry.find(*hint);
+                if (it != m_type_registry.end()) {
+                    sol::object found = it->second[key];
+                    if (found.valid()) {
+                        return decorate_value(found);
+                    }
+                }
+            }
+            throw std::runtime_error(
+                "Feature: no static type information available for \"" + key +
+                "\" - use :as(Type) explicitly, or ensure this feature comes from a "
+                "registered constructor/member function call."
+            );
+        });
 
 #ifdef GRUNK_WITH_RECIPE
 
@@ -944,6 +979,10 @@ private:
     sol::environment original_env;
     sol::environment decorated_env;
     std::vector<PluginInfo> m_plugins;
+
+    /// @brief maps a registered C++ type to its usertype table, keyed by std::type_index -
+    /// see register_type and the Feature usertype's sol::meta_function::index handler.
+    std::unordered_map<std::type_index, sol::table> m_type_registry;
 };
 
 } // namespace grunk

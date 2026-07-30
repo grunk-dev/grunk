@@ -2,11 +2,14 @@
 //
 // SPDX-License-Identifier: MPL-2.0
 
-#pragma once 
+#pragma once
 
 #include "grunk/core/Feature.hpp"
 #include <object.hpp>
 #include "grunk/dynamic/sol_helpers.hpp"
+
+#include <optional>
+#include <typeindex>
 
 namespace grunk {
 
@@ -109,11 +112,54 @@ public:
 
     /**
      * @brief returns the lua state of the feature. This is needed for creating new features from the value of this feature, e.g. when calling methods on the feature from Lua.
-     * 
+     *
      * @return lua_State* the lua state of the feature
      */
     lua_State* lua_state() const {
         return lua;
+    }
+
+    /**
+     * @brief Records the C++ type this feature's (possibly not-yet-evaluated) value is
+     * known to end up wrapping - populated at construction time from wherever that
+     * type is statically known (a registered constructor/member function's return
+     * type, see function_meta::return_type_hint and ActionDynamic::initialize_results;
+     * or a literal feature's own concrete type, see state::feature<T>), *not* by
+     * inspecting the value itself. This is what lets Feature's native colon-call
+     * dispatch (state.hpp's Feature usertype registration) look up a method without
+     * ever forcing evaluation just to answer a type query.
+     *
+     * @param type the wrapped value's C++ type, typically from typeid(T)
+     */
+    void set_type_hint(std::type_index type) {
+        m_type_hint = type;
+    }
+
+    /**
+     * @brief The type hint set via set_type_hint, if any. std::nullopt if this
+     * feature's value's type was never statically known at construction time (e.g. a
+     * feature built directly from a fully generic grunk::object/sol::object).
+     */
+    std::optional<std::type_index> type_hint() const {
+        return m_type_hint;
+    }
+
+    /**
+     * @brief clones this feature and its underlying DAG node (see FeatureBase::clone),
+     * additionally carrying its type hint over to the clone - cloning never changes
+     * the wrapped value's type, so this is a direct copy, not a re-derivation, and
+     * never forces evaluation either.
+     *
+     * @param cloned_nodes see FeatureBase::clone
+     * @return Feature a clone of this feature, with the same type hint
+     */
+    Feature clone(
+        std::shared_ptr<parametric::DAGNode::ClonedNodeMap> cloned_nodes = parametric::DAGNode::new_cloned_node_map()
+    ) const
+    {
+        Feature result = Base::clone(cloned_nodes);
+        result.m_type_hint = m_type_hint;
+        return result;
     }
 
 private:
@@ -129,6 +175,9 @@ private:
     }
 
     lua_State* lua;
+
+    /// @brief see set_type_hint/type_hint
+    std::optional<std::type_index> m_type_hint;
 };
 
 using DynamicFeature = Feature<object>;

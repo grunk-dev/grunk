@@ -95,11 +95,19 @@ public:
     }
 
     /**
-     * @brief initializes an empty feature for the output of this action
+     * @brief initializes an empty feature for the output of this action. If the wrapped
+     * function's C++ return type was known statically at registration time (see
+     * function_meta::return_type_hint), the output feature is tagged with that type hint
+     * right away - before the function has ever run - so that later method lookups on it
+     * (see DynamicFeature's native colon-call dispatch) never need to force evaluation.
      */
     DynamicFeature initialize_results() const
     {
-        return feature<object>({});
+        DynamicFeature out = feature<object>({});
+        if (auto hint = function.return_type_hint()) {
+            out.set_type_hint(*hint);
+        }
+        return out;
     }
 
     /**
