@@ -181,6 +181,23 @@ def test_feature_id():
     assert x.id() == "b"
 
 
+def test_feature_clone():
+
+    x = grunk.feature(2.0).with_id("x")
+    y = grunk.feature(3.0).with_id("y")
+    z = (x + y).with_id("z")
+
+    z_clone = z.clone()
+    assert z_clone.id() == "z"
+    assert pytest.approx(z_clone.value().as_float()) == 5.0
+
+    # the clone is a deep, independent copy of the DAG: changing an input of the
+    # original does not affect the clone's already-cached value.
+    x.set_value(10.0)
+    assert pytest.approx(z.value().as_float()) == 13.0
+    assert pytest.approx(z_clone.value().as_float()) == 5.0
+
+
 def test_recipe_simple():
     
     x = grunk.feature(1.).with_id("x")

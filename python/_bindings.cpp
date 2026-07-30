@@ -25,7 +25,11 @@ namespace {
             .def("with_id", &T::with_id, "id"_a)
             .def("is_placeholder", &T::is_placeholder)
             .def("change_value", &T::change_value)
-            .def("value", &T::value);
+            .def("value", &T::value)
+            // T::clone takes an optional ClonedNodeMap (used internally to preserve
+            // shared substructure across a single clone() call graph) - not exposed to
+            // Python, so wrap it rather than binding &T::clone directly.
+            .def("clone", [](T const& self) { return self.clone(); });
     };
 
 } // anonymous namespace
