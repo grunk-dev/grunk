@@ -235,21 +235,24 @@ void read_autodiff_only_recipe()
 // plugin swap. X is a named feature (not a literal) so there's a single input for
 // stage 3 to seed a derivative from - see read_recipe_ad below.
 //
-// point_at_half/x_at_half/y_at_half sample the curve at u=0.5 (Geom_BezierCurve.Value,
-// then gp_Pnt's X()/Y() accessors - both genuine geoml_registration.hpp primitives,
-// not example-specific) and x_at_half/y_at_half are declared as the recipe's named
+// point_at_half/x_at_half/y_at_half sample the curve at u=0.5 (Geom_BezierCurve's
+// Value, then gp_Pnt's X()/Y() accessors - both genuine geoml_registration.hpp
+// primitives, not example-specific) and x_at_half/y_at_half are declared as the recipe's named
 // outputs (grunk-dev/grunk#266's `outputs:` block). Both work under either plugin,
 // so this is safe to bake into the shared recipe text; only the AD-only derivative
 // extraction stays confined to stage 3's read_recipe_ad, appended after read (via
 // its own "ad" Lua module) rather than written here.
 //
-// Geom_BezierCurve.Value(curve, u), not curve:Value(u): calling a registered member
-// function on a value flowing through the recipe's tracked/decorated environment
-// needs this qualified "Type.method(instance, args...)" form (matching grunk's own
-// test suite, e.g. `MyScalar.pow(c, 2)`, not `c:pow(2)`) - the decorated environment
-// mirrors *functions* looked up by qualified name, not arbitrary methods on
-// arbitrary tracked values, so Lua's `instance:method()` colon-call sugar doesn't
-// reach it directly.
+// curve:Value(0.5)/point_at_half:X()/:Y(), not the qualified Geom_BezierCurve.Value(curve, u)/
+// gp_Pnt.X(point_at_half)/gp_Pnt.Y(point_at_half) form: grunk's native colon-call
+// dispatch (grunk-dev/grunk#269) resolves a feature's method via a type hint stamped
+// on it at construction time (never by evaluating it), so an ordinary-looking
+// `instance:method(...)` works directly for any feature that carries one - this is
+// the default, recommended form (see docs/usage.rst). bezier_curve itself returns
+// Handle(Geom_BezierCurve) (i.e. opencascade::handle<Geom_BezierCurve>), which needed
+// a small grunk fix (function_meta.hpp's deduce_return_type_hint recognizing
+// sol::unique_usertype_traits<R> and hinting the pointee type, not the smart-pointer
+// wrapper itself) before curve's own colon-call would resolve.
 void write_cad_recipe(bool with_ad)
 {
     auto grunk = grunk::state();
@@ -271,9 +274,9 @@ void write_cad_recipe(bool with_ad)
         poles = gp_Pnt.as_vec(P_1, P_2, P_3, P_4)
         curve = bezier_curve(poles)
 
-        point_at_half = Geom_BezierCurve.Value(curve, 0.5)
-        x_at_half = gp_Pnt.X(point_at_half)
-        y_at_half = gp_Pnt.Y(point_at_half)
+        point_at_half = curve:Value(0.5)
+        x_at_half = point_at_half:X()
+        y_at_half = point_at_half:Y()
     )");
     recipe.tag_features();
     recipe.insert_output("x(0.5)", "x_at_half");
