@@ -126,6 +126,16 @@ public:
     }
 
     /**
+     * @brief the function_meta this action wraps - used by a dependent action's own
+     * serialize() to recognize a colon-callable argument (see serialize() below): a
+     * parent node that is itself an ActionDynamic exposes the return type it was
+     * built with via this getter, without needing to evaluate anything.
+     */
+    function_meta const& meta() const {
+        return function;
+    }
+
+    /**
      * @brief This function evaluates the wrapped function and caches the
      * output.
      * 
@@ -180,7 +190,68 @@ public:
 
         bool is_operator = (func_name.rfind("grunk._dynamic_", 0) == 0);
         std::string argument_seperator = "";
-        if (!is_operator) {
+
+        // inputs (declared here, ahead of the operator/regular-call branch below, so
+        // the colon-call check right after can peek at the first argument)
+        auto serialize_arg = [](parametric::DAGNode const& node) -> std::string
+        {
+            bool is_anonymous = (node.id() == "");
+            bool is_constant = (node.num_parents() == 0 && is_anonymous);
+            if (is_constant) {
+                return node.serialize();
+            } else if (is_anonymous) {
+                // nested function call
+                return node.get_parents()[0]->serialize();
+            } else {
+                // a named feature
+                return node.id();
+            }
+        };
+
+        // Colon-call syntax (`arg:method(rest...)`), not the qualified
+        // `Type.method(arg, rest...)` form: only for a genuine member function (see
+        // function_meta::receiver_type_hint, stamped exclusively by
+        // usertype_proxy::add_member_function) whose first argument is itself the
+        // result of another ActionDynamic returning that exact same type - i.e. this
+        // is provably the same call native colon-call dispatch would resolve on
+        // read-back (see DynamicFeature's colon-call __index handler, state.hpp),
+        // without ever needing this argument's own (unavailable here - see
+        // DynamicFeature::type_hint, which lives on the transient Feature<object>
+        // wrapper, not on the DAG node serialize() walks) runtime type hint. Any other
+        // shape (root/parameter argument, mismatched or absent receiver type hint,
+        // free function, constructor, operator) safely falls back to the qualified
+        // form below, exactly as before this was added.
+        //
+        // this->get_parents()[0] is the argument's *value* node (a param_holder<object>),
+        // not the action that computed it - a value node has at most one parent of its
+        // own (see param_holder::compute_node(), parametric/impl/core_impl.hpp), which
+        // *is* that producing action; serialize_arg's own "nested function call" branch
+        // above walks the same extra hop to find something to recurse into.
+        std::string colon_call_method;
+        std::string colon_call_receiver;
+        if (!is_operator && !this->get_parents().empty()) {
+            if (auto const& receiver_hint = function.receiver_type_hint(); receiver_hint) {
+                auto const& first_arg_node = *this->get_parents()[0];
+                ActionDynamic const* first_arg_action = first_arg_node.num_parents() > 0
+                    ? dynamic_cast<ActionDynamic const*>(first_arg_node.get_parents()[0].get())
+                    : nullptr;
+                if (first_arg_action) {
+                    if (auto const& arg_return_hint = first_arg_action->meta().return_type_hint();
+                        arg_return_hint && *arg_return_hint == *receiver_hint)
+                    {
+                        size_t dot_pos = func_name.rfind('.');
+                        colon_call_method = (dot_pos == std::string::npos) ? func_name : func_name.substr(dot_pos + 1);
+                        colon_call_receiver = serialize_arg(first_arg_node);
+                    }
+                }
+            }
+        }
+        bool is_colon_call = !colon_call_method.empty();
+
+        if (is_colon_call) {
+            ret += colon_call_receiver + ":" + colon_call_method + "(";
+            argument_seperator = ", ";
+        } else if (!is_operator) {
             // regular function call syntax
             ret += func_name + "(";
             argument_seperator = ", ";
@@ -209,24 +280,15 @@ public:
             }
         }
 
-        // inputs
-        auto serialize_arg = [](parametric::DAGNode const& node) -> std::string
-        {
-            bool is_anonymous = (node.id() == "");
-            bool is_constant = (node.num_parents() == 0 && is_anonymous);
-            if (is_constant) {
-                return node.serialize();
-            } else if (is_anonymous) {
-                // nested function call
-                return node.get_parents()[0]->serialize();
-            } else {
-                // a named feature
-                return node.id();
-            }
-        };
-
+        // inputs - skip the first parent when it was already emitted above as the
+        // colon-call receiver
         bool first_arg = true;
+        bool skip_first = is_colon_call;
         for (auto const& input : this->get_parents()){
+            if (skip_first) {
+                skip_first = false;
+                continue;
+            }
             if (first_arg) {
                 first_arg = false;
             } else {
