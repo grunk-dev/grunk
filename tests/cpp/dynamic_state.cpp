@@ -532,6 +532,32 @@ TEST(state, native_colon_call_root_feature)
     EXPECT_NEAR(result.value().as<MyScalar>().value(), 8., 1e-14); // 2^3
 }
 
+TEST(state, native_colon_call_right_after_construction)
+{
+    // A constructor's result is always exactly T, so usertype_proxy::add_constructors
+    // stamps the type hint directly (it can't be deduced: every constructor call is
+    // wrapped in sol::overload(...), even a single one, and sol::overload_set isn't
+    // introspectable via function_traits). This is what lets colon-call work
+    // immediately on a freshly-constructed feature, e.g. right after
+    // MyScalar.new_feature(...) or MyScalar.new(...), with no intervening
+    // member-function action needed to pick up a hint.
+    grunk::state grunk;
+
+    grunk.register_type<MyScalar>("MyScalar")
+    .add_constructors(
+        [](double v) { return MyScalar(v); }
+    )
+    .add_member_function("pow", &MyScalar::pow);
+
+    auto env = grunk.create_parametric_env();
+    env.eval(R"(
+        local x = MyScalar.new_feature(2)
+        result = x:pow(3)
+    )");
+
+    EXPECT_NEAR(env.get_feature("result").value().as<MyScalar>().value(), 8., 1e-14); // 2^3
+}
+
 TEST(state, native_colon_call_no_eager_evaluation)
 {
     grunk::state grunk;

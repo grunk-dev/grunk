@@ -616,7 +616,11 @@ public:
             throw std::runtime_error(std::string("Construction error: ") + err.what());
         }
         sol::object obj = ret[0];
-        return feature(obj);
+        DynamicFeature f = feature(obj);
+        if (auto hint = ctor_return_type_hint(usertype)) {
+            f.set_type_hint(*hint);
+        }
+        return f;
     }
 
     /**
@@ -882,6 +886,24 @@ private:
      * namespace tables it sits behind (e.g. a plugin's own table, itself possibly
      * nested), rather than only directly inside original_env.
      */
+    /**
+     * @brief looks up the return type hint stored on a usertype's constructor
+     * function_meta (see usertype_proxy::add_constructors, which always stamps this
+     * with the usertype's own C++ type - a constructor's result is always exactly T).
+     * Used to give literal features built by directly invoking a constructor (as
+     * opposed to going through ActionDynamic, which stamps hints itself) the same type
+     * hint an action-based construction would get - see feature(sol::table, Args...)
+     * and decorate_table's new_feature below.
+     */
+    static std::optional<std::type_index> ctor_return_type_hint(sol::table const& usertype)
+    {
+        sol::object new_obj = usertype["new"];
+        if (new_obj.is<function_meta>()) {
+            return new_obj.as<function_meta>().return_type_hint();
+        }
+        return std::nullopt;
+    }
+
     inline sol::object decorate_value(sol::object const& result)
     {
         if (result.is<function_meta>()) {
@@ -916,14 +938,19 @@ private:
         // intercept constructors to add a new_feature method
         if (source["new"].valid()) {
             sol::protected_function ctor = source["new"];
-            decorated["new_feature"] = [ctor](sol::variadic_args args) -> DynamicFeature {
+            auto hint = ctor_return_type_hint(source);
+            decorated["new_feature"] = [ctor, hint](sol::variadic_args args) -> DynamicFeature {
                 sol::protected_function_result ret = ctor(args);
                 if (!ret.valid()) {
                     sol::error err = ret;
                     throw std::runtime_error(std::string("Construction error: ") + err.what());
                 }
                 grunk::object obj = ret;
-                return grunk::feature(obj);
+                DynamicFeature f = grunk::feature(obj);
+                if (hint) {
+                    f.set_type_hint(*hint);
+                }
+                return f;
             };
         }
 

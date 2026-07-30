@@ -196,6 +196,18 @@ public:
         return m_return_type_hint;
     }
 
+    /**
+     * @brief overrides the return type hint after construction - used by
+     * usertype_proxy::add_constructors, where the result type is always exactly the
+     * usertype being registered (known unconditionally, not deduced): a constructor's
+     * callable is always wrapped in sol::overload(...) even when there's only one of
+     * them, and sol::overload_set isn't introspectable via function_traits, so the
+     * normal deduce_return_type_hint path always yields std::nullopt for constructors.
+     */
+    void set_return_type_hint(std::type_index type) {
+        m_return_type_hint = type;
+    }
+
 private:
     ///@brief the name of the function
     std::string name;

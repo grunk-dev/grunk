@@ -7,6 +7,8 @@
 #include <sol/sol.hpp>
 #include "grunk/dynamic/function_meta.hpp"
 
+#include <typeindex>
+
 namespace grunk {
 
 /**
@@ -38,7 +40,14 @@ struct usertype_proxy {
     template <typename... Ctors>
     usertype_proxy& add_constructors(Ctors&&... ctors) {
         auto overload = sol::overload(std::forward<Ctors>(ctors)...) ;
-        auto func = create_function_meta(ut.lua_state(), name + ".new", overload);
+        sol::object func = create_function_meta(ut.lua_state(), name + ".new", overload);
+        // A constructor's result is always exactly T - stamp the type hint directly
+        // rather than relying on deduce_return_type_hint, which can't introspect the
+        // sol::overload_set every constructor call gets wrapped in (see
+        // function_meta::set_return_type_hint). This is what lets native colon-call
+        // dispatch (DynamicFeature's __index fallback) work right after construction,
+        // e.g. `MyScalar.new_feature(2):pow(3)`.
+        func.as<function_meta&>().set_return_type_hint(std::type_index(typeid(T)));
         ut[sol::meta_function::construct] = func;
         return *this;
     }
