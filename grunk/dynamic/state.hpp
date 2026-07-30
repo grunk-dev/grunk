@@ -122,8 +122,11 @@ public:
         // record T's usertype table under its C++ type, so a DynamicFeature carrying a
         // type hint for T (see DynamicFeature::type_hint) can later look up a method by
         // name without ever needing to evaluate its value - see the Feature usertype's
-        // sol::meta_function::index handler in init() below.
+        // sol::meta_function::index handler in init() below. m_type_names mirrors this,
+        // keyed the same way, purely so that handler can report a useful type name in
+        // its error messages instead of just an opaque std::type_index.
         m_type_registry[std::type_index(typeid(T))] = (*table)[name];
+        m_type_names[std::type_index(typeid(T))] = name;
         return proxy;
     }
 
@@ -153,6 +156,13 @@ public:
         int table_idx = (*table).push(L);
         sol::usertype<T> ut(L, table_idx);
         lua_pop(L, 1);
+        // Populate the type registry directly here, the same way register_type does,
+        // rather than relying on T having already been registered via register_type
+        // against this same table/name (which happened to make this work before, since
+        // both would resolve to the same underlying Lua table, but isn't guaranteed if
+        // T's usertype was created some other way, e.g. by a plugin).
+        m_type_registry[std::type_index(typeid(T))] = (*table)[name];
+        m_type_names[std::type_index(typeid(T))] = name;
         return usertype_proxy<T>{name, ut};
     }
 
@@ -830,21 +840,41 @@ private:
             // table and return a tracked/decorated closure for it - exactly like the
             // qualified TypeName.method(instance, ...) form, just reached via self:key(...)
             // instead. Never falls back to evaluating self just to answer this query.
+            //
+            // The three failure modes below are distinguished because they call for
+            // different fixes: no hint at all means the feature's origin is untracked
+            // (grunk.feature(rawObject) et al.) and needs an explicit :as(Type)/qualified
+            // call; a hint whose type was never registered is an internal inconsistency
+            // (type_hint() and m_type_registry/m_type_names are always populated
+            // together, see register_type/modify_type); a known type missing the member
+            // is very likely just a typo'd method name.
             auto hint = self.type_hint();
-            if (hint) {
-                auto it = m_type_registry.find(*hint);
-                if (it != m_type_registry.end()) {
-                    sol::object found = it->second[key];
-                    if (found.valid()) {
-                        return decorate_value(found);
-                    }
-                }
+            if (!hint) {
+                throw std::runtime_error(
+                    "Feature: no static type information available for \"" + key +
+                    "\" - use :as(Type) explicitly, or ensure this feature comes from a "
+                    "registered constructor/member function call."
+                );
             }
-            throw std::runtime_error(
-                "Feature: no static type information available for \"" + key +
-                "\" - use :as(Type) explicitly, or ensure this feature comes from a "
-                "registered constructor/member function call."
-            );
+
+            auto name_it = m_type_names.find(*hint);
+            auto registry_it = m_type_registry.find(*hint);
+            if (registry_it == m_type_registry.end() || name_it == m_type_names.end()) {
+                throw std::runtime_error(
+                    "Feature: this feature's type hint has no corresponding usertype "
+                    "registered in this state - cannot resolve \"" + key + "\". Use "
+                    ":as(Type) explicitly instead."
+                );
+            }
+
+            sol::object found = registry_it->second[key];
+            if (!found.valid()) {
+                throw std::runtime_error(
+                    "Feature: type \"" + name_it->second + "\" has no member \"" + key +
+                    "\" - use :as(Type) explicitly if this is intentional."
+                );
+            }
+            return decorate_value(found);
         });
 
 #ifdef GRUNK_WITH_RECIPE
@@ -1017,6 +1047,11 @@ private:
     /// @brief maps a registered C++ type to its usertype table, keyed by std::type_index -
     /// see register_type and the Feature usertype's sol::meta_function::index handler.
     std::unordered_map<std::type_index, sol::table> m_type_registry;
+
+    /// @brief maps a registered C++ type to its display name, keyed the same way as
+    /// m_type_registry - only used to phrase useful error messages in the Feature
+    /// usertype's sol::meta_function::index handler.
+    std::unordered_map<std::type_index, std::string> m_type_names;
 };
 
 } // namespace grunk

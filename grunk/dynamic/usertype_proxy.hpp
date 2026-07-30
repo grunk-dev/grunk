@@ -73,6 +73,18 @@ struct usertype_proxy {
      * @param fun The member function to be added.
      * @param params Optional vector of parameters for the member function, used for creating function metadata.
      * @return A reference to the usertype_proxy for chaining.
+     *
+     * @note If `fun` is itself a `sol::overload(...)` set, the resulting function_meta
+     *       gets no return-type hint (see function_meta::return_type_hint /
+     *       details::deduce_return_type_hint), the same reason constructors would too if
+     *       add_constructors didn't stamp theirs manually via
+     *       function_meta::set_return_type_hint - a sol::overload_set isn't
+     *       introspectable via function_traits. A DynamicFeature returned by such a
+     *       method then can't use native colon-call dispatch (see DynamicFeature::call /
+     *       the Feature usertype's sol::meta_function::index handler in state.hpp) and
+     *       needs an explicit :as(Type) call or the qualified TypeName.method(...) form
+     *       instead. If this becomes a real need, call func.as<function_meta&>()
+     *       .set_return_type_hint(...) on the result the same way add_constructors does.
      */
     template <typename Key, typename F>
     usertype_proxy& add_member_function(Key&& key, F&& fun, std::vector<Parameter> params = {}) {

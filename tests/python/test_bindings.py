@@ -198,6 +198,31 @@ def test_feature_clone():
     assert pytest.approx(z_clone.value().as_float()) == 5.0
 
 
+def test_feature_call():
+
+    grunk.run_module_script("callmod", """
+function add_one(x)
+    return x + 1
+end
+
+function add(x, y)
+    return x + y
+end
+""")
+
+    # fully-qualified name: works regardless of any type hint, self passed as the
+    # leading argument - the Python equivalent of Lua's MyModule.add_one(a) call.
+    a = grunk.feature(4)
+    b = a.call("callmod.add_one").as_feature()
+    assert b.value().as_int() == 5
+
+    # additional arguments after the method name are forwarded after self.
+    c = a.call("callmod.add", 10).as_feature()
+    assert c.value().as_int() == 14
+
+    grunk.clear_module("callmod")
+
+
 def test_recipe_simple():
     
     x = grunk.feature(1.).with_id("x")

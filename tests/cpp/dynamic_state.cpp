@@ -672,6 +672,58 @@ TEST(state, native_colon_call_no_hint_throws)
     EXPECT_TRUE(threw);
 }
 
+TEST(state, native_colon_call_unregistered_type_hint_throws)
+{
+    // grunk.feature<T>(value) (the templated state::feature overload) always stamps a
+    // type hint from typeid(T), regardless of whether T was ever registered as a
+    // usertype via register_type - e.g. a plain double never is. This is a distinct
+    // failure mode from "no hint at all" (see native_colon_call_no_hint_throws above)
+    // and gets its own error message (see the __index handler in state.hpp's init()).
+    grunk::state grunk;
+
+    auto x = grunk.feature(4.2);
+    auto env = grunk.create_parametric_env();
+    env["x"] = x;
+
+    bool threw = false;
+    try {
+        env.eval("z = x:foo()");
+    } catch (std::exception const& e) {
+        threw = true;
+        EXPECT_NE(std::string(e.what()).find("no corresponding usertype registered"), std::string::npos);
+    }
+    EXPECT_TRUE(threw);
+}
+
+TEST(state, native_colon_call_unknown_member_on_known_type_throws)
+{
+    // A type hint pointing at a properly-registered type, but a method name that isn't
+    // one of its members, is a third distinct failure mode (most likely a typo'd method
+    // name) and should not be confused with "no static type information available".
+    grunk::state grunk;
+
+    grunk.register_type<MyScalar>("MyScalar")
+    .add_constructors(
+        [](double v) { return MyScalar(v); }
+    )
+    .add_member_function("pow", &MyScalar::pow);
+
+    auto x = grunk.feature(MyScalar(2.));
+    auto env = grunk.create_parametric_env();
+    env["x"] = x;
+
+    bool threw = false;
+    try {
+        env.eval("z = x:not_a_real_method()");
+    } catch (std::exception const& e) {
+        threw = true;
+        std::string const msg = e.what();
+        EXPECT_NE(msg.find("MyScalar"), std::string::npos);
+        EXPECT_NE(msg.find("has no member"), std::string::npos);
+    }
+    EXPECT_TRUE(threw);
+}
+
 TEST(state, native_colon_call_reserved_name_shadowing)
 {
     grunk::state grunk;
@@ -764,6 +816,49 @@ TEST(state, native_colon_call_clone_propagates_type_hint)
 
     EXPECT_NEAR(env.get_feature("z").value().as<MyScalar>().value(), 64., 1e-10); // (2^2)^3
     EXPECT_EQ(pow_call_count, 2);
+}
+
+namespace {
+
+// A type that is never registered via grunk::state::register_type in the test below -
+// only via modify_type, on a usertype table built directly through sol2. This stands in
+// for modify_type's documented use case (a usertype that arrived some other way, e.g. a
+// plugin), so the test genuinely exercises modify_type's own type-registry population
+// rather than piggy-backing on a register_type call for the same C++ type.
+class ModifyTypeScalar
+{
+public:
+    ModifyTypeScalar(double v) : m_value(v) {}
+    double doubled() const { return m_value * 2.; }
+private:
+    double m_value;
+};
+
+} // anonymous namespace
+
+TEST(state, modify_type_only_registration_native_colon_call)
+{
+    grunk::state grunk;
+
+    // Grab this state's actual lua_State via a throwaway feature, so the usertype we
+    // build below lives in the same Lua state grunk::state itself uses internally.
+    auto probe = grunk.feature(1);
+    sol::state_view lua(probe.lua_state());
+
+    sol::table plugin_ns = lua.create_table();
+    plugin_ns.new_usertype<ModifyTypeScalar>("ModifyTypeScalar");
+
+    // register_type is never called for ModifyTypeScalar - modify_type is the only
+    // thing that should make native colon-call dispatch work for it.
+    grunk.modify_type<ModifyTypeScalar>("ModifyTypeScalar", plugin_ns)
+        .add_member_function("doubled", &ModifyTypeScalar::doubled);
+
+    auto x = grunk.feature(ModifyTypeScalar(21.));
+    auto env = grunk.create_parametric_env();
+    env["x"] = x;
+    env.eval("z = x:doubled()");
+
+    EXPECT_NEAR(env.get_feature("z").value().as<double>(), 42., 1e-14);
 }
 
 // --- DynamicFeature::call() - the C++-side equivalent of Lua colon-call ---

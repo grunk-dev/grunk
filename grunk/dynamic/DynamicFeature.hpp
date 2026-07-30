@@ -9,8 +9,10 @@
 #include "grunk/dynamic/sol_helpers.hpp"
 
 #include <optional>
+#include <type_traits>
 #include <typeindex>
 #include <utility>
+#include <vector>
 
 namespace grunk {
 
@@ -126,7 +128,14 @@ public:
      *   MyScalar.pow(x, args...) in a recipe script. Works regardless of type hints.
      *
      * @param name the method name, fully-qualified or relative to the wrapped usertype
-     * @param args the arguments to pass to the method
+     * @param args the arguments to pass to the method - a single std::vector<object> is
+     *        treated specially, its elements expanded as individual arguments (via
+     *        sol::as_args) rather than forwarded as one opaque argument. This is what
+     *        lets callers that only know the argument count at runtime - e.g. the
+     *        Python bindings, where nanobind can't bind a variadic template directly -
+     *        build a runtime-sized std::vector<object> and pass it here instead of a
+     *        fixed parameter pack (mirrors the same convention as the free function
+     *        grunk::action(), see ActionDynamic.hpp).
      * @return object the result of the call - typically a DynamicFeature (an
      *         uncomputed, dependency-tracked action), except when a reserved Feature
      *         member (like "value") wins, in which case it is that member's own result.
@@ -145,13 +154,24 @@ public:
             return ret;
         };
 
+        constexpr bool args_is_vector =
+            sizeof...(Args) == 1 && (std::is_same_v<std::decay_t<Args>, std::vector<object>> || ...);
+
         if (name.find('.') != std::string::npos || name.find(':') != std::string::npos) {
             sol::protected_function func = details::lookup_nested(l["grunk"]["parametric_env"], name);
-            return unwrap(func(*this, std::forward<Args>(args)...));
+            if constexpr (args_is_vector) {
+                return unwrap(func(*this, sol::as_args(args)...));
+            } else {
+                return unwrap(func(*this, std::forward<Args>(args)...));
+            }
         }
 
         sol::protected_function func = l["grunk"]["__member_call"];
-        return unwrap(func(*this, name, std::forward<Args>(args)...));
+        if constexpr (args_is_vector) {
+            return unwrap(func(*this, name, sol::as_args(args)...));
+        } else {
+            return unwrap(func(*this, name, std::forward<Args>(args)...));
+        }
     }
 
     /**
