@@ -96,8 +96,13 @@ struct usertype_proxy {
             fun_name = sol::to_string(std::forward<Key>(key));
         }
         fun_name = name + "." + fun_name;
-        auto func = create_function_meta(ut.lua_state(), fun_name, params, std::forward<F>(fun));
-        
+        sol::object func = create_function_meta(ut.lua_state(), fun_name, params, std::forward<F>(fun));
+        // A member function's receiver is always exactly T (the usertype it's being
+        // added to) - stamp it unconditionally, the same way add_constructors stamps
+        // its own return type hint, so ActionDynamic::serialize() can recognize this
+        // call as a genuine method call later (see function_meta::receiver_type_hint).
+        func.as<function_meta&>().set_receiver_type_hint(std::type_index(typeid(T)));
+
         ut.set(std::forward<Key>(key), func);
         return *this;
     }

@@ -228,6 +228,29 @@ public:
         m_return_type_hint = type;
     }
 
+    /**
+     * @brief the C++ type this function is a registered member function of, if any -
+     * std::nullopt for constructors, free functions and operators (anything not
+     * registered via usertype_proxy::add_member_function, which is the only place
+     * this gets stamped, always with the exact usertype T it's called on). Lets
+     * ActionDynamic::serialize() recognize a genuine member-function call and, if its
+     * first argument's own producing function returns that same type, serialize it
+     * using colon-call syntax (`arg:method(...)`) instead of the qualified
+     * `Type.method(arg, ...)` form - see ActionDynamic.hpp.
+     */
+    std::optional<std::type_index> const& receiver_type_hint() const {
+        return m_receiver_type_hint;
+    }
+
+    /**
+     * @brief sets the receiver type hint - see receiver_type_hint(). Used exclusively
+     * by usertype_proxy::add_member_function, right after construction, the same way
+     * add_constructors stamps set_return_type_hint.
+     */
+    void set_receiver_type_hint(std::type_index type) {
+        m_receiver_type_hint = type;
+    }
+
 private:
     ///@brief the name of the function
     std::string name;
@@ -240,6 +263,9 @@ private:
 
     ///@brief the wrapped callable's C++ return type, if known statically - see return_type_hint()
     std::optional<std::type_index> m_return_type_hint;
+
+    ///@brief the C++ type this is a registered member function of, if any - see receiver_type_hint()
+    std::optional<std::type_index> m_receiver_type_hint;
 };
 
 /**

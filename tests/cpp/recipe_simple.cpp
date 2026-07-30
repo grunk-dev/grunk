@@ -439,3 +439,46 @@ TEST(Recipe, native_colon_call_roundtrip_through_yaml)
     a.set_value(MyScalar(4., "a"));
     EXPECT_NEAR(b.value().as<MyScalar>().value(), 16., 1e-10); // 4^2
 }
+
+TEST(Recipe, serialize_member_call_on_chained_action_uses_colon_syntax)
+{
+    // A recipe's steps: text now prefers native colon-call syntax
+    // (`arg:method(...)`) over the qualified `Type.method(arg, ...)` form for a
+    // genuine member-function call whenever its receiver is itself the result of
+    // another action returning that exact same type (see
+    // function_meta::receiver_type_hint and ActionDynamic::serialize()) - this is
+    // provably safe to write out, since it's exactly the shape native colon-call
+    // dispatch (issue #269) resolves on read-back, without ever needing to inspect
+    // this argument's own (unavailable during serialization) runtime type hint.
+    //
+    // "a" here is a named *parameter* (a root feature, not an action) feeding "b" -
+    // a parameter's own type hint isn't visible from serialize() either, so "b"
+    // conservatively keeps the qualified form (see the roundtrip test above). "c",
+    // however, is chained off "b" (itself a MyScalar.pow(...) action) - this is the
+    // shape that gets rewritten.
+    grunk::state grunk;
+    grunk.register_type<MyScalar>("MyScalar")
+    .add_constructors([](double v, std::string const& s){ return MyScalar(v,s); })
+    .add_member_function("value", &MyScalar::value)
+    .add_member_function("pow", &MyScalar::pow)
+    .set(sol::meta_function::to_string, [](MyScalar const& s){
+        return "MyScalar.new(" + grunk::to_string(s.value()) + ", \"" + s.tag() + "\")";
+    });
+
+    auto a = grunk.feature(MyScalar(3., "a"));
+    auto recipe = grunk.create_recipe();
+    recipe["a"] = a;
+    recipe.eval(R"(
+        b = a:pow(2)
+        c = b:pow(2)
+    )");
+    recipe.tag();
+    std::string yaml = recipe.to_string();
+
+    EXPECT_NE(yaml.find("b = MyScalar.pow(a, 2)"), std::string::npos) << yaml;
+    EXPECT_NE(yaml.find("c = b:pow(2)"), std::string::npos) << yaml;
+
+    grunk.write("test_serialize_chained_colon_call.grr.yml", recipe);
+    auto read_back = grunk.read("test_serialize_chained_colon_call.grr.yml");
+    EXPECT_NEAR(read_back.get_feature("c").value().as<MyScalar>().value(), 81., 1e-10); // (3^2)^2
+}
