@@ -176,17 +176,27 @@ a different geoml/OCCT install, is the whole point.
   helper for extending an already-registered usertype without re-running automagic) added for
   exactly this situation - types reached only via `unique_usertype_traits` whose underlying C++
   type lacks comparison operators.
-  Calling a registered member function on a value flowing through a recipe's tracked/decorated
-  environment needs grunk's qualified `Type.method(instance, args...)` form (e.g. `gp_Pnt.X(p)`,
-  `Geom_BezierCurve.Value(curve, u)`), not Lua's `p:X()` colon-call sugar - the decorated
-  environment mirrors *functions* looked up by qualified name, not arbitrary methods on arbitrary
-  tracked values; this matches grunk's own test suite (e.g. `MyScalar.pow(c, 2)`, not `c:pow(2)`).
+  Calling a registered member function on a feature now uses plain colon-call syntax by default -
+  `p:X()` rather than the qualified `gp_Pnt.X(p)` form (see `docs/usage.rst`) - since native
+  colon-call dispatch (grunk-dev/grunk#269) stamps every feature that comes from a registered
+  constructor or member-function call with a static type hint at construction time, letting a
+  later `:method(...)` find the right usertype without ever forcing evaluation. This example uses
+  it throughout: `curve:Value(0.5)` and `point_at_half:X()`/`:Y()`.
+  `curve` needed one extra grunk fix to get there: `bezier_curve` returns `Handle(Geom_BezierCurve)`
+  (`opencascade::handle<Geom_BezierCurve>`, OCCT's reference-counted smart pointer), so the type
+  hint grunk stamped on `curve` used to be *that* handle type, not `Geom_BezierCurve` itself -
+  colon-call couldn't find `Geom_BezierCurve`'s usertype table from it and fell back to an error.
+  `function_meta.hpp`'s `deduce_return_type_hint` now recognizes any return type with a
+  `sol::unique_usertype_traits` specialization (the same trait sol2 itself uses to let a Handle
+  stand in for the type it wraps) and hints the pointee type instead of the wrapper - a few lines,
+  and it covers every `Handle(T)`-returning registration in this plugin, not just `bezier_curve`,
+  with no change needed in `geoml_registration.hpp` itself. (The qualified form, or
+  `curve:as(Geom_BezierCurve).Value(u)` - `DynamicFeature::as`'s prior "attempt to index a string
+  value" bug, grunk-dev/grunk#267, is fixed too - still work regardless of any type hint, if you
+  ever need an escape hatch.)
   (`register_external_type`, used for `adtl.adouble` in stage 1, is a separate, SWIG-specific
-  mechanism that does support colon-call syntax - not a contradiction, just a different code path.
-  `DynamicFeature::as(usertype)`, a third mechanism meant to bridge type erasure explicitly - e.g.
-  `curve:as(Geom_BezierCurve)` - exists in grunk too, but calling a method through its result
-  reproducibly errored with "attempt to index a string value" here; the qualified-call form above
-  is what actually works, so that's what this example uses.)
+  mechanism that has supported colon-call syntax all along - not a contradiction, just a different,
+  older code path.)
 - **`read_recipe_ad` treats the recipe as a black box: a function from parameters to outputs.**
   Its only two points of contact with the recipe are `recipe.get_feature("X")` (the declared
   parameter) and `recipe.get_output("x(0.5)")`/`recipe.get_output("y(0.5)")` (the declared outputs,
