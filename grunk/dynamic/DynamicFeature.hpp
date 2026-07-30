@@ -2,11 +2,17 @@
 //
 // SPDX-License-Identifier: MPL-2.0
 
-#pragma once 
+#pragma once
 
 #include "grunk/core/Feature.hpp"
 #include <object.hpp>
 #include "grunk/dynamic/sol_helpers.hpp"
+
+#include <optional>
+#include <type_traits>
+#include <typeindex>
+#include <utility>
+#include <vector>
 
 namespace grunk {
 
@@ -106,12 +112,118 @@ public:
     }
 
     /**
+     * @brief Calls a member function of this feature's wrapped type by name, from C++ -
+     * the C++-side equivalent of Lua's colon-call syntax (self:method(args)).
+     *
+     * Accepts two kinds of names:
+     * - relative to the usertype (e.g. "pow"): resolved exactly like a Lua colon-call
+     *   would be - Feature's own built-in members (value, set_value, id, ...) always win
+     *   first; otherwise the wrapped type's registered method is looked up via this
+     *   feature's type hint (see type_hint()) - never by evaluating this feature's
+     *   value. Throws if no type hint is available, same as the Lua-level dispatch (see
+     *   the sol::meta_function::index handler on the Feature usertype, state.hpp).
+     * - fully qualified (e.g. "MyScalar.pow" or "MyScalar:pow" - the separator is purely
+     *   cosmetic): resolved directly against the decorated environment and invoked with
+     *   this feature passed as the leading argument, equivalent to writing
+     *   MyScalar.pow(x, args...) in a recipe script. Works regardless of type hints.
+     *
+     * @param name the method name, fully-qualified or relative to the wrapped usertype
+     * @param args the arguments to pass to the method - a single std::vector<object> is
+     *        treated specially, its elements expanded as individual arguments (via
+     *        sol::as_args) rather than forwarded as one opaque argument. This is what
+     *        lets callers that only know the argument count at runtime - e.g. the
+     *        Python bindings, where nanobind can't bind a variadic template directly -
+     *        build a runtime-sized std::vector<object> and pass it here instead of a
+     *        fixed parameter pack (mirrors the same convention as the free function
+     *        grunk::action(), see ActionDynamic.hpp).
+     * @return object the result of the call - typically a DynamicFeature (an
+     *         uncomputed, dependency-tracked action), except when a reserved Feature
+     *         member (like "value") wins, in which case it is that member's own result.
+     */
+    template <typename... Args>
+    object call(std::string const& name, Args&&... args) const
+    {
+        check_lua();
+        sol::state_view l(lua);
+
+        auto unwrap = [&name](sol::protected_function_result ret) -> object {
+            if (!ret.valid()) {
+                sol::error err = ret;
+                throw std::runtime_error("DynamicFeature::call(\"" + name + "\"): " + err.what());
+            }
+            return ret;
+        };
+
+        constexpr bool args_is_vector =
+            sizeof...(Args) == 1 && (std::is_same_v<std::decay_t<Args>, std::vector<object>> || ...);
+
+        if (name.find('.') != std::string::npos || name.find(':') != std::string::npos) {
+            sol::protected_function func = details::lookup_nested(l["grunk"]["parametric_env"], name);
+            if constexpr (args_is_vector) {
+                return unwrap(func(*this, sol::as_args(args)...));
+            } else {
+                return unwrap(func(*this, std::forward<Args>(args)...));
+            }
+        }
+
+        sol::protected_function func = l["grunk"]["__member_call"];
+        if constexpr (args_is_vector) {
+            return unwrap(func(*this, name, sol::as_args(args)...));
+        } else {
+            return unwrap(func(*this, name, std::forward<Args>(args)...));
+        }
+    }
+
+    /**
      * @brief returns the lua state of the feature. This is needed for creating new features from the value of this feature, e.g. when calling methods on the feature from Lua.
-     * 
+     *
      * @return lua_State* the lua state of the feature
      */
     lua_State* lua_state() const {
         return lua;
+    }
+
+    /**
+     * @brief Records the C++ type this feature's (possibly not-yet-evaluated) value is
+     * known to end up wrapping - populated at construction time from wherever that
+     * type is statically known (a registered constructor/member function's return
+     * type, see function_meta::return_type_hint and ActionDynamic::initialize_results;
+     * or a literal feature's own concrete type, see state::feature<T>), *not* by
+     * inspecting the value itself. This is what lets Feature's native colon-call
+     * dispatch (state.hpp's Feature usertype registration) look up a method without
+     * ever forcing evaluation just to answer a type query.
+     *
+     * @param type the wrapped value's C++ type, typically from typeid(T)
+     */
+    void set_type_hint(std::type_index type) {
+        m_type_hint = type;
+    }
+
+    /**
+     * @brief The type hint set via set_type_hint, if any. std::nullopt if this
+     * feature's value's type was never statically known at construction time (e.g. a
+     * feature built directly from a fully generic grunk::object/sol::object).
+     */
+    std::optional<std::type_index> type_hint() const {
+        return m_type_hint;
+    }
+
+    /**
+     * @brief clones this feature and its underlying DAG node (see FeatureBase::clone),
+     * additionally carrying its type hint over to the clone - cloning never changes
+     * the wrapped value's type, so this is a direct copy, not a re-derivation, and
+     * never forces evaluation either.
+     *
+     * @param cloned_nodes see FeatureBase::clone
+     * @return Feature a clone of this feature, with the same type hint
+     */
+    Feature clone(
+        std::shared_ptr<parametric::DAGNode::ClonedNodeMap> cloned_nodes = parametric::DAGNode::new_cloned_node_map()
+    ) const
+    {
+        Feature result = Base::clone(cloned_nodes);
+        result.m_type_hint = m_type_hint;
+        return result;
     }
 
 private:
@@ -137,6 +249,9 @@ private:
     }
 
     mutable lua_State* lua;
+
+    /// @brief see set_type_hint/type_hint
+    std::optional<std::type_index> m_type_hint;
 };
 
 using DynamicFeature = Feature<object>;

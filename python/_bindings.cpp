@@ -17,6 +17,31 @@ using namespace nb::literals;
 
 namespace {
 
+    /**
+     * @brief Converts a single Python argument to a grunk::object, using the wrapped
+     * value's own lua_State (so the resulting object lives in the right Lua state
+     * without needing a grunk::state on hand). Used to build the argument vector for
+     * grunk::DynamicFeature::call's Python binding.
+     */
+    grunk::object to_grunk_object(lua_State* lua, nb::handle obj)
+    {
+        if (nb::isinstance<grunk::DynamicFeature>(obj)) {
+            return nb::cast<grunk::DynamicFeature>(obj);
+        } else if (nb::isinstance<grunk::object>(obj)) {
+            return nb::cast<grunk::object>(obj);
+        } else if (nb::isinstance<nb::bool_>(obj)) {
+            return sol::make_object(lua, nb::cast<bool>(obj));
+        } else if (nb::isinstance<nb::int_>(obj)) {
+            return sol::make_object(lua, nb::cast<int>(obj));
+        } else if (nb::isinstance<nb::float_>(obj)) {
+            return sol::make_object(lua, nb::cast<double>(obj));
+        } else if (nb::isinstance<nb::str>(obj)) {
+            return sol::make_object(lua, nb::cast<std::string>(obj));
+        } else {
+            throw nb::type_error("Feature.call: unsupported argument type");
+        }
+    }
+
     template <typename T, typename nbclass_t>
     void add_feature_base_methods(nbclass_t& nbclass) {
         nbclass.def("id", &T::id)
@@ -25,7 +50,11 @@ namespace {
             .def("with_id", &T::with_id, "id"_a)
             .def("is_placeholder", &T::is_placeholder)
             .def("change_value", &T::change_value)
-            .def("value", &T::value);
+            .def("value", &T::value)
+            // T::clone takes an optional ClonedNodeMap (used internally to preserve
+            // shared substructure across a single clone() call graph) - not exposed to
+            // Python, so wrap it rather than binding &T::clone directly.
+            .def("clone", [](T const& self) { return self.clone(); });
     };
 
 } // anonymous namespace
@@ -100,7 +129,20 @@ NB_MODULE(_bindings, m) {
         .def("set_value", &grunk::DynamicFeature::set_value<grunk::object>, "value"_a)
         .def("set_value", &grunk::DynamicFeature::set_value<bool>, "value"_a   )
         .def(
-            "__add__", 
+            "call",
+            [](grunk::DynamicFeature const& self, std::string const& name, nb::args args) -> grunk::object {
+                lua_State* lua = self.lua_state();
+                std::vector<grunk::object> converted;
+                converted.reserve(args.size());
+                for (auto arg : args) {
+                    converted.push_back(to_grunk_object(lua, arg));
+                }
+                return self.call(name, converted);
+            },
+            "name"_a, nb::arg("args")
+        )
+        .def(
+            "__add__",
             [](grunk::DynamicFeature const& l, grunk::DynamicFeature const& r) {
                 return l + r;
             }, 

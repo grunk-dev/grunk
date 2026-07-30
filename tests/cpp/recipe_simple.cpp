@@ -395,3 +395,47 @@ TEST(Recipe, insert_output_unresolvable_throws)
 
     EXPECT_THROW(recipe.insert_output("result", "does_not_exist"), grunk::io_error);
 }
+
+TEST(Recipe, native_colon_call_roundtrip_through_yaml)
+{
+    // Regression test for grunk issue #269 (native colon-call dispatch on
+    // DynamicFeature): using plain `a:pow(2)` syntax in a recipe's steps (instead of
+    // the qualified MyScalar.pow(a, 2) form or DynamicFeature::as()) must not corrupt
+    // the serialized YAML - the same "table: 0x..." corruption bug DynamicFeature::as()
+    // had inside written-then-rewritten recipes. This works because native dispatch
+    // resolves to the exact same function_meta (with the same baked-in qualified name)
+    // that the qualified form would also reach - see ActionDynamic::serialize(), which
+    // records function.get_name() regardless of which call syntax found it.
+    grunk::state grunk;
+    grunk.register_type<MyScalar>("MyScalar")
+    .add_constructors([](double v, std::string const& s){ return MyScalar(v,s); })
+    .add_member_function("value", &MyScalar::value)
+    .add_member_function("pow", &MyScalar::pow)
+    .set(sol::meta_function::to_string, [](MyScalar const& s){
+        return "MyScalar.new(" + grunk::to_string(s.value()) + ", \"" + s.tag() + "\")";
+    });
+
+    std::string yaml;
+    {
+        // grunk.feature(T const&) is templated, so it stamps a type hint - required
+        // for native dispatch to find "pow" without evaluating "a".
+        auto a = grunk.feature(MyScalar(3., "a"));
+        auto recipe = grunk.create_recipe();
+        recipe["a"] = a;
+        recipe.eval("b = a:pow(2)");
+        recipe.tag();
+        yaml = recipe.to_string();
+        grunk.write("test_native_colon_call.grr.yml", recipe);
+    }
+
+    ASSERT_EQ(yaml.find("table: 0x"), std::string::npos);
+
+    auto recipe = grunk.read("test_native_colon_call.grr.yml");
+
+    auto b = recipe.get_feature("b");
+    EXPECT_NEAR(b.value().as<MyScalar>().value(), 9., 1e-10); // 3^2
+
+    auto a = recipe.get_feature("a");
+    a.set_value(MyScalar(4., "a"));
+    EXPECT_NEAR(b.value().as<MyScalar>().value(), 16., 1e-10); // 4^2
+}

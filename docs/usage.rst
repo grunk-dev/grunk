@@ -502,19 +502,31 @@ When we want to construct a custom type as part of the feature tree, we have two
    z = MyScalar.new_feature(3.)    -- forwards ctor args to grunk::feature: z is independent feature
 
 
-Lua does not know about the member functions that can be invoked on a ``grunk::DynamicFeature``, which is an alias for ``grunk::Feature<grunk::object>``. Therefore, we can not directly call member functions of the underlying type using the ``:`` operator. 
+A ``grunk::DynamicFeature`` (the alias for ``grunk::Feature<grunk::object>`` that ``x``, ``y`` and ``z`` above all are) does not statically know the type it wraps, so calling a member function of the underlying type directly on it, using the ``:`` operator as if it were a plain ``MyScalar``, needs a little help to find the right method. This is exactly what plain colon-call syntax does, and it is the recommended, default way to invoke a registered method on a feature:
 
-We have two options for this:
+.. code-block:: LUA
 
-1. We can use the method ``as`` to obtain a Lua usertype that exposes the member functions as actions. 
-2. We can call the metatable method `MyScalar.val` and pass the feature as an argument. 
-
-The following code snippet shows both options.
-
-.. code-block:: LUA 
-
-   local b = x:as(MyScalar).val() - MyScalar.val(y)
+   local b = x:val() - MyScalar.val(y)
    print(b:value())  -- prints -1, because x has the value 1 and y has the value 2
+
+.. admonition:: How ``feature:method(...)`` finds "method"
+
+   Since a feature's value may not have been computed yet (that's the whole point of
+   lazy evaluation), grunk cannot simply look at the value to find out which type's
+   methods to search. Instead, every feature that comes from a registered constructor
+   or member-function call carries a small runtime type hint, stamped on it when it is
+   built - never by evaluating it. A colon-call looks up the method using that hint.
+
+   In rare cases a feature has no such hint (for instance, one built directly from a
+   generic value with no concrete C++ type in hand, e.g. ``grunk.feature(42)``). For
+   those, colon-call raises a clear error telling you to fall back to one of the two
+   explicit alternatives instead - it will never silently force-evaluate the feature
+   just to find a type, since that would defeat caching and lazy invalidation:
+
+   1. ``x:as(MyScalar).val()`` - obtain a Lua usertype that exposes the member
+      functions as actions.
+   2. ``MyScalar.val(x)`` - call the qualified free-function form directly, passing the
+      feature as the first argument.
 
 Dynamic Features and Actions in C++/Python
 ------------------------------------------
@@ -564,6 +576,19 @@ pass a string identifier. We can choose between ``.`` and ``:`` as separator.
       # prints -1
       print(b.value().as_float())
 
+If we already have a ``DynamicFeature`` in hand and just want to call one of its methods - the C++/Python equivalent of Lua's ``x:val()`` colon-call - ``DynamicFeature::call`` does the same relative-name lookup described above, without needing to look the type up in ``grunk::state`` first:
+
+.. tabs::
+
+   .. code-tab:: cpp
+
+      auto z = x.call("val");         // relative name, resolved via x's type hint
+      auto z2 = x.call("MyScalar.val"); // fully-qualified name also works, regardless of any type hint
+
+   .. code-tab:: python
+
+      z = x.call("val")
+      z2 = x.call("MyScalar.val")
 
 Mixing static and dynamic mode in C++
 -------------------------------------
