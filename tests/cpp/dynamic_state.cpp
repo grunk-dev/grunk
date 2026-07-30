@@ -5,6 +5,7 @@
 #include <gtest/gtest.h>
 #include <grunk/dynamic.hpp>
 #include <cmath>
+#include <memory>
 #include <tuple>
 #include <typeindex>
 
@@ -857,6 +858,68 @@ TEST(state, modify_type_only_registration_native_colon_call)
     auto env = grunk.create_parametric_env();
     env["x"] = x;
     env.eval("z = x:doubled()");
+
+    EXPECT_NEAR(env.get_feature("z").value().as<double>(), 42., 1e-14);
+}
+
+namespace {
+
+// A minimal stand-in for a unique-ownership smart pointer registered via
+// sol::unique_usertype_traits (e.g. OCCT's Handle(T) == opencascade::handle<T>) - see
+// native_colon_call_through_unique_usertype_return below.
+template <typename T>
+struct Handle {
+    std::shared_ptr<T> ptr;
+    Handle() = default;
+    explicit Handle(T* raw) : ptr(raw) {}
+    T* get() const { return ptr.get(); }
+    bool is_null() const { return !ptr; }
+};
+
+class HandleScalar
+{
+public:
+    HandleScalar(double v) : m_value(v) {}
+    double doubled() const { return m_value * 2.; }
+private:
+    double m_value;
+};
+
+} // anonymous namespace
+
+namespace sol {
+    template <typename T>
+    struct unique_usertype_traits<Handle<T>> {
+        using type = T;
+        using actual_type = Handle<T>;
+        static const bool value = true;
+        static bool is_null(actual_type const& p) { return p.is_null(); }
+        static type* get(actual_type const& p) { return p.get(); }
+    };
+}
+
+// Regression test for grunk issue #269 follow-up: a function returning a
+// unique-ownership smart pointer (Handle<T> here, standing in for OCCT's
+// Handle(T)/opencascade::handle<T>) around a registered usertype T must stamp its
+// result with a type hint for T itself, not the wrapper - otherwise native
+// colon-call dispatch can never find T's usertype table (see
+// details::deduce_return_type_hint's sol::is_unique_usertype_v branch,
+// function_meta.hpp).
+TEST(state, native_colon_call_through_unique_usertype_return)
+{
+    grunk::state grunk;
+    grunk.register_type<HandleScalar>("HandleScalar")
+        .add_member_function("doubled", &HandleScalar::doubled);
+
+    grunk.register_function("make_handle_scalar", [](double v) -> Handle<HandleScalar> {
+        return Handle<HandleScalar>(new HandleScalar(v));
+    });
+
+    auto env = grunk.create_parametric_env();
+    env.eval(R"(
+        h = make_handle_scalar(21.)
+        z = h:doubled()
+    )");
 
     EXPECT_NEAR(env.get_feature("z").value().as<double>(), 42., 1e-14);
 }

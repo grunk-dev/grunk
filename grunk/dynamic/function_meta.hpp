@@ -96,9 +96,16 @@ namespace details {
     std::optional<std::type_index> deduce_return_type_hint() {
         using DecayedF = std::decay_t<F>;
         if constexpr (has_return_type<DecayedF>::value) {
-            using R = typename function_traits<DecayedF>::return_type;
-            if constexpr (std::is_void_v<R> || is_tuple_v<std::decay_t<R>>) {
+            using R = std::decay_t<typename function_traits<DecayedF>::return_type>;
+            if constexpr (std::is_void_v<R> || is_tuple_v<R>) {
                 return std::nullopt;
+            } else if constexpr (sol::is_unique_usertype_v<R>) {
+                // R is itself a unique-ownership smart pointer registered via
+                // sol::unique_usertype_traits<R> (e.g. OCCT's Handle(T) ==
+                // opencascade::handle<T>) - the registered usertype (and hence the
+                // type a colon-call needs to look its methods up under) is the
+                // pointee, not the pointer wrapper itself.
+                return std::type_index(typeid(sol::unique_usertype_element_t<R>));
             } else {
                 return std::type_index(typeid(R));
             }
