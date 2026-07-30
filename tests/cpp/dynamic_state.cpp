@@ -5,6 +5,8 @@
 #include <gtest/gtest.h>
 #include <grunk/dynamic.hpp>
 #include <cmath>
+#include <tuple>
+#include <typeindex>
 
 namespace {
 
@@ -451,6 +453,44 @@ TEST(state, usertype_method_as_action_lua)
     EXPECT_NEAR(env.get<MyScalar>("z2").value(), 8, 1e-14); // 2^3
 }
 
+// usertype_method_as_action_lua above only ever calls :as() on a "root" feature
+// (MyScalar.new_feature(2), constructed directly from an object - see DynamicFeature's
+// Feature(object const&) ctor, which knows its lua state up front). A feature that is
+// itself the result of a computation (like y below, from MyScalar.pow(x, 2)) is instead
+// constructed from a parametric::param, which used not to know its lua state at all
+// (DynamicFeature.hpp's other ctor) - so :as() on anything computed, not just literal
+// features, threw "DynamicFeature: lua state is uninitialized". That failure used to be
+// swallowed silently rather than surfaced: function_meta::operator() returned the failed
+// protected_function_result as-is, so the exception's message came back out as if it were
+// a normal (string) return value instead of failing the eval - hence asserting
+// result.valid() here, not just the computed values.
+TEST(state, usertype_method_as_action_on_computed_feature_lua)
+{
+    grunk::state grunk;
+
+    grunk.register_type<MyScalar>("MyScalar")
+    .add_constructors(
+        [](double v) { return MyScalar(v); }
+    )
+    .add_member_function("set", &MyScalar::set)
+    .add_member_function("pow", &MyScalar::pow);
+
+    auto env = grunk.create_parametric_env();
+    auto result = env.eval(R"(
+        x = MyScalar.new_feature(2)
+        y = MyScalar.pow(x, 2) -- y is computed, not a "new_feature" root
+
+        z = y:as(MyScalar).pow(3)
+        z1 = z:value()
+        x:change_value():set(3)
+        z2 = z:value()
+    )");
+    ASSERT_TRUE(result.valid());
+
+    EXPECT_NEAR(env.get<MyScalar>("z1").value(), 64, 1e-14);  // (2^2)^3 = 64
+    EXPECT_NEAR(env.get<MyScalar>("z2").value(), 729, 1e-14); // (3^2)^3 = 729
+}
+
 TEST(state, placeholder_feature_cpp)
 {
     grunk::state grunk;
@@ -493,6 +533,445 @@ TEST(state, placeholder_feature_lua)
     EXPECT_FALSE(x.is_placeholder());
     EXPECT_FALSE(y.is_placeholder());
     EXPECT_NEAR(z.value().as<double>(), 3., 1e-14);
+}
+
+// --- native colon-call dispatch on DynamicFeature (grunk issue #269) ---
+//
+// These tests cover DynamicFeature's __index-based method dispatch (see the
+// sol::meta_function::index handler registered on the Feature usertype in
+// state::init(), state.hpp), which lets plain Lua colon-call syntax
+// (`feature:method(args)`) reach a registered C++ type's methods directly, without
+// DynamicFeature::as() or the qualified TypeName.method(instance, args) form. It works
+// by consulting a type hint stashed on the feature at construction time (see
+// DynamicFeature::set_type_hint/type_hint) - never by evaluating the feature's value,
+// which would defeat lazy evaluation/caching (see test native_colon_call_no_eager_evaluation
+// below, which asserts on this directly).
+
+TEST(state, native_colon_call_root_feature)
+{
+    grunk::state grunk;
+
+    grunk.register_type<MyScalar>("MyScalar")
+    .add_constructors(
+        [](double v) { return MyScalar(v); }
+    )
+    .add_member_function("pow", &MyScalar::pow);
+
+    // grunk.feature(T const&) is templated on T, so it can stamp a type hint right
+    // away - see state::feature<T>.
+    auto x = grunk.feature(MyScalar(2.));
+
+    auto env = grunk.create_parametric_env();
+    env["x"] = x;
+    env.eval("result = x:pow(3)");
+
+    auto result = env.get_feature("result");
+    EXPECT_EQ(result.node_pointer()->get_parents().size(), 1);
+    EXPECT_NEAR(result.value().as<MyScalar>().value(), 8., 1e-14); // 2^3
+}
+
+TEST(state, native_colon_call_right_after_construction)
+{
+    // A constructor's result is always exactly T, so usertype_proxy::add_constructors
+    // stamps the type hint directly (it can't be deduced: every constructor call is
+    // wrapped in sol::overload(...), even a single one, and sol::overload_set isn't
+    // introspectable via function_traits). This is what lets colon-call work
+    // immediately on a freshly-constructed feature, e.g. right after
+    // MyScalar.new_feature(...) or MyScalar.new(...), with no intervening
+    // member-function action needed to pick up a hint.
+    grunk::state grunk;
+
+    grunk.register_type<MyScalar>("MyScalar")
+    .add_constructors(
+        [](double v) { return MyScalar(v); }
+    )
+    .add_member_function("pow", &MyScalar::pow);
+
+    auto env = grunk.create_parametric_env();
+    env.eval(R"(
+        local x = MyScalar.new_feature(2)
+        result = x:pow(3)
+    )");
+
+    EXPECT_NEAR(env.get_feature("result").value().as<MyScalar>().value(), 8., 1e-14); // 2^3
+}
+
+TEST(state, native_colon_call_no_eager_evaluation)
+{
+    grunk::state grunk;
+
+    int pow_call_count = 0;
+    grunk.register_type<MyScalar>("MyScalar")
+    .add_constructors(
+        [](double v) { return MyScalar(v); }
+    )
+    .add_member_function("pow", [&pow_call_count](MyScalar& self, double exponent) {
+        ++pow_call_count;
+        return self.pow(exponent);
+    });
+
+    auto env = grunk.create_parametric_env();
+    env.eval(R"(
+        local x = MyScalar.new_feature(2)
+        y = MyScalar.pow(x, 2)  -- y: computed feature, tagged with a MyScalar type hint
+                                 -- by ActionDynamic::initialize_results, before ever running
+        z = y:pow(3)             -- resolved via native colon-call dispatch - must NOT
+                                  -- force y (or z) to be evaluated just to look up "pow"
+    )");
+
+    EXPECT_EQ(pow_call_count, 0);
+
+    EXPECT_NEAR(env.get_feature("z").value().as<MyScalar>().value(), 64., 1e-10); // (2^2)^3
+    EXPECT_EQ(pow_call_count, 2); // now both y's and z's pow() have actually run
+}
+
+TEST(state, native_colon_call_argument_order)
+{
+    grunk::state grunk;
+
+    grunk.register_type<MyScalar>("MyScalar")
+    .add_constructors(
+        [](double v) { return MyScalar(v); }
+    )
+    .add_member_function("combine", [](MyScalar const& self, double a, double b) {
+        // encodes self/a/b positionally so a self/argument shift (the :as() double-self
+        // bug this dispatch mechanism avoids) would be caught by the expected value below
+        return self.value() * 100. + a * 10. + b;
+    });
+
+    auto x = grunk.feature(MyScalar(2.));
+    auto env = grunk.create_parametric_env();
+    env["x"] = x;
+    env.eval("result = x:combine(3, 4)");
+
+    EXPECT_NEAR(env.get_feature("result").value().as<double>(), 234., 1e-10); // 2*100 + 3*10 + 4
+}
+
+TEST(state, native_colon_call_no_hint_throws)
+{
+    grunk::state grunk;
+
+    grunk.register_type<MyScalar>("MyScalar")
+    .add_constructors(
+        [](double v) { return MyScalar(v); }
+    )
+    .add_member_function("pow", &MyScalar::pow);
+
+    auto env = grunk.create_parametric_env();
+    // grunk.feature(42) goes through the untemplated grunk::object overload - no C++
+    // type was ever in hand at that call site, so no hint is available.
+    env.eval("x = grunk.feature(42)");
+
+    bool threw = false;
+    try {
+        env.eval("z = x:pow(3)");
+    } catch (std::exception const& e) {
+        threw = true;
+        EXPECT_NE(std::string(e.what()).find("no static type information"), std::string::npos);
+    }
+    EXPECT_TRUE(threw);
+}
+
+TEST(state, native_colon_call_unregistered_type_hint_throws)
+{
+    // grunk.feature<T>(value) (the templated state::feature overload) always stamps a
+    // type hint from typeid(T), regardless of whether T was ever registered as a
+    // usertype via register_type - e.g. a plain double never is. This is a distinct
+    // failure mode from "no hint at all" (see native_colon_call_no_hint_throws above)
+    // and gets its own error message (see the __index handler in state.hpp's init()).
+    grunk::state grunk;
+
+    auto x = grunk.feature(4.2);
+    auto env = grunk.create_parametric_env();
+    env["x"] = x;
+
+    bool threw = false;
+    try {
+        env.eval("z = x:foo()");
+    } catch (std::exception const& e) {
+        threw = true;
+        EXPECT_NE(std::string(e.what()).find("no corresponding usertype registered"), std::string::npos);
+    }
+    EXPECT_TRUE(threw);
+}
+
+TEST(state, native_colon_call_unknown_member_on_known_type_throws)
+{
+    // A type hint pointing at a properly-registered type, but a method name that isn't
+    // one of its members, is a third distinct failure mode (most likely a typo'd method
+    // name) and should not be confused with "no static type information available".
+    grunk::state grunk;
+
+    grunk.register_type<MyScalar>("MyScalar")
+    .add_constructors(
+        [](double v) { return MyScalar(v); }
+    )
+    .add_member_function("pow", &MyScalar::pow);
+
+    auto x = grunk.feature(MyScalar(2.));
+    auto env = grunk.create_parametric_env();
+    env["x"] = x;
+
+    bool threw = false;
+    try {
+        env.eval("z = x:not_a_real_method()");
+    } catch (std::exception const& e) {
+        threw = true;
+        std::string const msg = e.what();
+        EXPECT_NE(msg.find("MyScalar"), std::string::npos);
+        EXPECT_NE(msg.find("has no member"), std::string::npos);
+    }
+    EXPECT_TRUE(threw);
+}
+
+TEST(state, native_colon_call_reserved_name_shadowing)
+{
+    grunk::state grunk;
+
+    // MyScalar has its own "value" member, colliding with Feature's built-in value().
+    grunk.register_type<MyScalar>("MyScalar")
+    .add_constructors(
+        [](double v) { return MyScalar(v); }
+    )
+    .add_member_function("value", &MyScalar::value);
+
+    auto x = grunk.feature(MyScalar(2.));
+    auto env = grunk.create_parametric_env();
+    env["x"] = x;
+    env.eval("result = x:value()");
+
+    // Feature's own value() always wins: sol2 resolves Feature's directly-registered
+    // members before the __index fallback ever runs, so this returns the wrapped
+    // MyScalar itself (Feature::value()'s result), not a new action computing
+    // MyScalar::value() (which would yield a plain double).
+    grunk::object result = env.get("result");
+    ASSERT_TRUE(result.is<MyScalar>());
+    EXPECT_NEAR(result.as<MyScalar>().value(), 2., 1e-14);
+}
+
+TEST(state, native_colon_call_void_return_no_hint)
+{
+    grunk::state grunk;
+
+    grunk.register_type<MyScalar>("MyScalar")
+    .add_constructors(
+        [](double v) { return MyScalar(v); }
+    )
+    .add_member_function("set", &MyScalar::set); // void-returning
+
+    auto x = grunk.feature(MyScalar(2.));
+    auto env = grunk.create_parametric_env();
+    env["x"] = x;
+    env.eval("y = x:set(5.)");
+
+    grunk::DynamicFeature y = env.get_feature("y");
+    EXPECT_FALSE(y.type_hint().has_value());
+    EXPECT_NO_THROW(y.value());
+}
+
+TEST(state, deduce_return_type_hint_tuple_return_is_safe)
+{
+    // grunk::details::deduce_return_type_hint is the compile-time hook that populates
+    // function_meta::return_type_hint (see function_meta.hpp). A multi-output
+    // (std::tuple-returning) callable must not crash this deduction - it just gets no
+    // hint, same as the void-return case above.
+    auto hint = grunk::details::deduce_return_type_hint<std::tuple<double,double>(*)(MyScalar const&)>();
+    EXPECT_FALSE(hint.has_value());
+}
+
+TEST(state, native_colon_call_clone_propagates_type_hint)
+{
+    grunk::state grunk;
+
+    int pow_call_count = 0;
+    grunk.register_type<MyScalar>("MyScalar")
+    .add_constructors(
+        [](double v) { return MyScalar(v); }
+    )
+    .add_member_function("pow", [&pow_call_count](MyScalar& self, double exponent) {
+        ++pow_call_count;
+        return self.pow(exponent);
+    });
+
+    auto env = grunk.create_parametric_env();
+    env.eval(R"(
+        local x = MyScalar.new_feature(2)
+        y = MyScalar.pow(x, 2)
+    )");
+
+    grunk::DynamicFeature y = env.get_feature("y");
+    ASSERT_TRUE(y.type_hint().has_value());
+
+    grunk::DynamicFeature y_clone = y.clone();
+    ASSERT_TRUE(y_clone.type_hint().has_value());
+    EXPECT_EQ(*y_clone.type_hint(), *y.type_hint());
+
+    // colon-call dispatch on the clone must resolve without ever evaluating the
+    // original or the clone - this is exactly why DynamicFeature::clone() needed to
+    // carry the type hint across (see DynamicFeature::clone()).
+    env["y_clone"] = y_clone;
+    env.eval("z = y_clone:pow(3)");
+
+    EXPECT_EQ(pow_call_count, 0);
+
+    EXPECT_NEAR(env.get_feature("z").value().as<MyScalar>().value(), 64., 1e-10); // (2^2)^3
+    EXPECT_EQ(pow_call_count, 2);
+}
+
+namespace {
+
+// A type that is never registered via grunk::state::register_type in the test below -
+// only via modify_type, on a usertype table built directly through sol2. This stands in
+// for modify_type's documented use case (a usertype that arrived some other way, e.g. a
+// plugin), so the test genuinely exercises modify_type's own type-registry population
+// rather than piggy-backing on a register_type call for the same C++ type.
+class ModifyTypeScalar
+{
+public:
+    ModifyTypeScalar(double v) : m_value(v) {}
+    double doubled() const { return m_value * 2.; }
+private:
+    double m_value;
+};
+
+} // anonymous namespace
+
+TEST(state, modify_type_only_registration_native_colon_call)
+{
+    grunk::state grunk;
+
+    // Grab this state's actual lua_State via a throwaway feature, so the usertype we
+    // build below lives in the same Lua state grunk::state itself uses internally.
+    auto probe = grunk.feature(1);
+    sol::state_view lua(probe.lua_state());
+
+    sol::table plugin_ns = lua.create_table();
+    plugin_ns.new_usertype<ModifyTypeScalar>("ModifyTypeScalar");
+
+    // register_type is never called for ModifyTypeScalar - modify_type is the only
+    // thing that should make native colon-call dispatch work for it.
+    grunk.modify_type<ModifyTypeScalar>("ModifyTypeScalar", plugin_ns)
+        .add_member_function("doubled", &ModifyTypeScalar::doubled);
+
+    auto x = grunk.feature(ModifyTypeScalar(21.));
+    auto env = grunk.create_parametric_env();
+    env["x"] = x;
+    env.eval("z = x:doubled()");
+
+    EXPECT_NEAR(env.get_feature("z").value().as<double>(), 42., 1e-14);
+}
+
+// --- DynamicFeature::call() - the C++-side equivalent of Lua colon-call ---
+
+TEST(state, call_relative_name)
+{
+    grunk::state grunk;
+
+    grunk.register_type<MyScalar>("MyScalar")
+    .add_constructors(
+        [](double v) { return MyScalar(v); }
+    )
+    .add_member_function("pow", &MyScalar::pow);
+
+    auto x = grunk.feature(MyScalar(2.));
+
+    grunk::object result = x.call("pow", 3);
+    ASSERT_TRUE(result.is<grunk::DynamicFeature>());
+    auto result_feature = result.as<grunk::DynamicFeature>();
+    EXPECT_EQ(result_feature.node_pointer()->get_parents().size(), 1);
+    EXPECT_NEAR(result_feature.value().as<MyScalar>().value(), 8., 1e-14); // 2^3
+}
+
+TEST(state, call_fully_qualified_name)
+{
+    grunk::state grunk;
+
+    grunk.register_type<MyScalar>("MyScalar")
+    .add_constructors(
+        [](double v) { return MyScalar(v); }
+    )
+    .add_member_function("pow", &MyScalar::pow);
+
+    // grunk.feature(T const&) does stamp a type hint, but a fully-qualified name must
+    // work regardless - it never consults the hint at all.
+    auto x = grunk.feature(MyScalar(2.));
+
+    grunk::object dot_result = x.call("MyScalar.pow", 3);
+    grunk::object colon_result = x.call("MyScalar:pow", 3); // separator is cosmetic
+
+    EXPECT_NEAR(dot_result.as<grunk::DynamicFeature>().value().as<MyScalar>().value(), 8., 1e-14);
+    EXPECT_NEAR(colon_result.as<grunk::DynamicFeature>().value().as<MyScalar>().value(), 8., 1e-14);
+}
+
+TEST(state, call_no_eager_evaluation)
+{
+    grunk::state grunk;
+
+    int pow_call_count = 0;
+    grunk.register_type<MyScalar>("MyScalar")
+    .add_constructors(
+        [](double v) { return MyScalar(v); }
+    )
+    .add_member_function("pow", [&pow_call_count](MyScalar& self, double exponent) {
+        ++pow_call_count;
+        return self.pow(exponent);
+    });
+
+    auto env = grunk.create_parametric_env();
+    env.eval(R"(
+        local x = MyScalar.new_feature(2)
+        y = MyScalar.pow(x, 2)
+    )");
+
+    grunk::DynamicFeature y = env.get_feature("y");
+    grunk::object z = y.call("pow", 3); // must not evaluate y just to resolve "pow"
+
+    EXPECT_EQ(pow_call_count, 0);
+
+    EXPECT_NEAR(z.as<grunk::DynamicFeature>().value().as<MyScalar>().value(), 64., 1e-10); // (2^2)^3
+    EXPECT_EQ(pow_call_count, 2);
+}
+
+TEST(state, call_no_hint_relative_name_throws)
+{
+    grunk::state grunk;
+
+    grunk.register_type<MyScalar>("MyScalar")
+    .add_constructors(
+        [](double v) { return MyScalar(v); }
+    )
+    .add_member_function("pow", &MyScalar::pow);
+
+    auto env = grunk.create_parametric_env();
+    env.eval("x = grunk.feature(42)"); // untemplated overload: no type hint
+    auto x = env.get_feature("x");
+
+    bool threw = false;
+    try {
+        x.call("pow", 3);
+    } catch (std::exception const& e) {
+        threw = true;
+        EXPECT_NE(std::string(e.what()).find("no static type information"), std::string::npos);
+    }
+    EXPECT_TRUE(threw);
+}
+
+TEST(state, call_reserved_name_shadowing)
+{
+    grunk::state grunk;
+
+    // MyScalar has its own "value" member, colliding with Feature's built-in value().
+    grunk.register_type<MyScalar>("MyScalar")
+    .add_constructors(
+        [](double v) { return MyScalar(v); }
+    )
+    .add_member_function("value", &MyScalar::value);
+
+    auto x = grunk.feature(MyScalar(2.));
+
+    grunk::object result = x.call("value");
+    ASSERT_TRUE(result.is<MyScalar>());
+    EXPECT_NEAR(result.as<MyScalar>().value(), 2., 1e-14);
 }
 
 /*TODO: this should ideally fail (non-const member function as action)

@@ -22,6 +22,8 @@
 
 #include <stdexcept>
 #include <fstream>
+#include <typeindex>
+#include <unordered_map>
 
 namespace grunk {
 
@@ -116,7 +118,16 @@ public:
         if (!table) {
             table = original_env;
         }
-        return usertype_proxy<T>{name, table->new_usertype<T>(name, sol::constant_automagic_enrollments<Flags>{})};
+        auto proxy = usertype_proxy<T>{name, table->new_usertype<T>(name, sol::constant_automagic_enrollments<Flags>{})};
+        // record T's usertype table under its C++ type, so a DynamicFeature carrying a
+        // type hint for T (see DynamicFeature::type_hint) can later look up a method by
+        // name without ever needing to evaluate its value - see the Feature usertype's
+        // sol::meta_function::index handler in init() below. m_type_names mirrors this,
+        // keyed the same way, purely so that handler can report a useful type name in
+        // its error messages instead of just an opaque std::type_index.
+        m_type_registry[std::type_index(typeid(T))] = (*table)[name];
+        m_type_names[std::type_index(typeid(T))] = name;
+        return proxy;
     }
 
     /**
@@ -145,6 +156,13 @@ public:
         int table_idx = (*table).push(L);
         sol::usertype<T> ut(L, table_idx);
         lua_pop(L, 1);
+        // Populate the type registry directly here, the same way register_type does,
+        // rather than relying on T having already been registered via register_type
+        // against this same table/name (which happened to make this work before, since
+        // both would resolve to the same underlying Lua table, but isn't guaranteed if
+        // T's usertype was created some other way, e.g. by a plugin).
+        m_type_registry[std::type_index(typeid(T))] = (*table)[name];
+        m_type_names[std::type_index(typeid(T))] = name;
         return usertype_proxy<T>{name, ut};
     }
 
@@ -530,7 +548,9 @@ public:
     template <typename T>
     DynamicFeature feature(T const& value) const
     {
-        return grunk::feature(object(sol::make_object(lua, value)));
+        DynamicFeature f = grunk::feature(object(sol::make_object(lua, value)));
+        f.set_type_hint(std::type_index(typeid(T)));
+        return f;
     }
 
     /**
@@ -606,7 +626,11 @@ public:
             throw std::runtime_error(std::string("Construction error: ") + err.what());
         }
         sol::object obj = ret[0];
-        return feature(obj);
+        DynamicFeature f = feature(obj);
+        if (auto hint = ctor_return_type_hint(usertype)) {
+            f.set_type_hint(*hint);
+        }
+        return f;
     }
 
     /**
@@ -680,7 +704,14 @@ private:
             sol::meta_function::call, &function_meta::operator()
         );
 
-        
+        // Backs DynamicFeature::call()'s relative-name (not fully-qualified) overload:
+        // self[method](self, ...) is exactly what Lua's own `self:method(...)` desugars
+        // to, so delegating to it here reuses the Feature usertype's real index
+        // resolution (built-in members first, then the sol::meta_function::index
+        // fallback below, keyed off the type hint) instead of duplicating it in C++.
+        // Compiled once here rather than per-call.
+        lua.script("function grunk.__member_call(self, method, ...) return self[method](self, ...) end");
+
         register_function(
             "feature",
             sol::overload(
@@ -799,7 +830,52 @@ private:
         .add_member_function(sol::meta_function::division, details::make_dynamic_action(_div), {Parameter{"lhs", }, Parameter{"rhs",}  })
         .add_member_function(sol::meta_function::modulus, details::make_dynamic_action(_mod), {Parameter{"lhs", }, Parameter{"rhs",}  })
         .add_member_function(sol::meta_function::power_of, details::make_dynamic_action(_pow), {Parameter{"base", }, Parameter{"exponent",}  })
-        .add_member_function(sol::meta_function::unary_minus, details::make_dynamic_action(_unm), {Parameter{"value",}  });
+        .add_member_function(sol::meta_function::unary_minus, details::make_dynamic_action(_unm), {Parameter{"value",}  })
+        .set(sol::meta_function::index, [this](DynamicFeature const& self, std::string const& key) -> sol::object {
+            // Native colon-call dispatch fallback: sol2 checks Feature's own members
+            // (value, set_value, id, ..., as) before this ever runs, so those always win
+            // over a same-named method on the wrapped type. If self carries a static
+            // type hint (see DynamicFeature::type_hint - populated at construction time,
+            // never by evaluating self), look up "key" directly on that type's usertype
+            // table and return a tracked/decorated closure for it - exactly like the
+            // qualified TypeName.method(instance, ...) form, just reached via self:key(...)
+            // instead. Never falls back to evaluating self just to answer this query.
+            //
+            // The three failure modes below are distinguished because they call for
+            // different fixes: no hint at all means the feature's origin is untracked
+            // (grunk.feature(rawObject) et al.) and needs an explicit :as(Type)/qualified
+            // call; a hint whose type was never registered is an internal inconsistency
+            // (type_hint() and m_type_registry/m_type_names are always populated
+            // together, see register_type/modify_type); a known type missing the member
+            // is very likely just a typo'd method name.
+            auto hint = self.type_hint();
+            if (!hint) {
+                throw std::runtime_error(
+                    "Feature: no static type information available for \"" + key +
+                    "\" - use :as(Type) explicitly, or ensure this feature comes from a "
+                    "registered constructor/member function call."
+                );
+            }
+
+            auto name_it = m_type_names.find(*hint);
+            auto registry_it = m_type_registry.find(*hint);
+            if (registry_it == m_type_registry.end() || name_it == m_type_names.end()) {
+                throw std::runtime_error(
+                    "Feature: this feature's type hint has no corresponding usertype "
+                    "registered in this state - cannot resolve \"" + key + "\". Use "
+                    ":as(Type) explicitly instead."
+                );
+            }
+
+            sol::object found = registry_it->second[key];
+            if (!found.valid()) {
+                throw std::runtime_error(
+                    "Feature: type \"" + name_it->second + "\" has no member \"" + key +
+                    "\" - use :as(Type) explicitly if this is intentional."
+                );
+            }
+            return decorate_value(found);
+        });
 
 #ifdef GRUNK_WITH_RECIPE
 
@@ -847,6 +923,24 @@ private:
      * namespace tables it sits behind (e.g. a plugin's own table, itself possibly
      * nested), rather than only directly inside original_env.
      */
+    /**
+     * @brief looks up the return type hint stored on a usertype's constructor
+     * function_meta (see usertype_proxy::add_constructors, which always stamps this
+     * with the usertype's own C++ type - a constructor's result is always exactly T).
+     * Used to give literal features built by directly invoking a constructor (as
+     * opposed to going through ActionDynamic, which stamps hints itself) the same type
+     * hint an action-based construction would get - see feature(sol::table, Args...)
+     * and decorate_table's new_feature below.
+     */
+    static std::optional<std::type_index> ctor_return_type_hint(sol::table const& usertype)
+    {
+        sol::object new_obj = usertype["new"];
+        if (new_obj.is<function_meta>()) {
+            return new_obj.as<function_meta>().return_type_hint();
+        }
+        return std::nullopt;
+    }
+
     inline sol::object decorate_value(sol::object const& result)
     {
         if (result.is<function_meta>()) {
@@ -881,14 +975,19 @@ private:
         // intercept constructors to add a new_feature method
         if (source["new"].valid()) {
             sol::protected_function ctor = source["new"];
-            decorated["new_feature"] = [ctor](sol::variadic_args args) -> DynamicFeature {
+            auto hint = ctor_return_type_hint(source);
+            decorated["new_feature"] = [ctor, hint](sol::variadic_args args) -> DynamicFeature {
                 sol::protected_function_result ret = ctor(args);
                 if (!ret.valid()) {
                     sol::error err = ret;
                     throw std::runtime_error(std::string("Construction error: ") + err.what());
                 }
                 grunk::object obj = ret;
-                return grunk::feature(obj);
+                DynamicFeature f = grunk::feature(obj);
+                if (hint) {
+                    f.set_type_hint(*hint);
+                }
+                return f;
             };
         }
 
@@ -944,6 +1043,15 @@ private:
     sol::environment original_env;
     sol::environment decorated_env;
     std::vector<PluginInfo> m_plugins;
+
+    /// @brief maps a registered C++ type to its usertype table, keyed by std::type_index -
+    /// see register_type and the Feature usertype's sol::meta_function::index handler.
+    std::unordered_map<std::type_index, sol::table> m_type_registry;
+
+    /// @brief maps a registered C++ type to its display name, keyed the same way as
+    /// m_type_registry - only used to phrase useful error messages in the Feature
+    /// usertype's sol::meta_function::index handler.
+    std::unordered_map<std::type_index, std::string> m_type_names;
 };
 
 } // namespace grunk
