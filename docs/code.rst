@@ -101,15 +101,17 @@ to write parametric recipes as a mix of yaml and LUA code.
 ``grunk::plugin``
 =================
 
-To Do: Not implemented yet
-.. This section documents all functions and classes of grunk's plugin system. This
-.. includes the ``PluginRegistry`` that manages all registered plugins, the plugin 
-.. interface ``IPlugin``, that plugin authors must use as base class when writing plugins,
-.. and the ``StdPlugin``, that registers standard C++ types and functions.
+This section documents ``grunk::plugin``'s native-plugin loader: ``grunk::plugin::load_native``,
+``grunk::plugin::load_script``, the fixed ``grunk_plugin_info``/``grunk_plugin_register`` ABI, and
+the ``GRUNK_PLUGIN_EXPORT`` export macro. The plugin-authoring entry points that live directly on
+``grunk::state`` (``begin_plugin``, ``load_compiled_plugin``, ``load_lua_plugin_script``/
+``load_lua_plugin_file``, ``register_external_type``, ``PluginInfo``) are documented as part of
+:ref:`grunk::dynamic <grunk-dynamic>` instead, since they're declared there. See the
+:ref:`plugin section <using-plugins>` under Usage for a tutorial covering all three plugin kinds.
 
-.. .. doxygengroup:: plugin
-..    :content-only:
-..    :members:
+.. doxygengroup:: plugin
+   :content-only:
+   :members:
 
 .. _advanced:
 
