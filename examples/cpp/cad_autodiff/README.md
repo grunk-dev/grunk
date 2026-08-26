@@ -25,13 +25,15 @@ this up in three stages, run in order by `main()`:
    the payoff - stages 1 and 2 combined in one recipe - and the reason this whole example is
    named "cad_autodiff".
 
-Stages 1 and 2 each mock up a different kind of grunk plugin from
-[grunk-dev/grunk#235](https://github.com/grunk-dev/grunk/issues/235): `load_adolc_plugin` loads
-`adtl.so`, a compiled Lua module (SWIG-generated), while `load_geoml_plugin` loads
-`geoml_plugin.so` (see `plugins/geoml/geoml_plugin.cpp`), a plain C++ plugin whose entry point
-registers types/functions directly against a `grunk::state`. Both are `dlopen`'d at runtime
-rather than linked in, so only their path needs to be known at `cad_autodiff`'s build time, not
-the plugin's own code - a stand-in for grunk's still-unwritten runtime plugin loader.
+Stages 1 and 2 each exercise a different kind of grunk plugin from
+[grunk-dev/grunk#235](https://github.com/grunk-dev/grunk/issues/235), both loaded via
+`grunk::plugin::load_native` (`grunk/plugin.hpp`): `load_adolc_plugin` loads `adtl_plugin.so`
+(`plugins/adtl/adtl_plugin.cpp`), a thin shim around `adtl.so`, a compiled Lua module
+(SWIG-generated), while `load_geoml_plugin` loads `geoml_plugin.so` (`plugins/geoml/geoml_plugin.cpp`),
+a plain C++ plugin whose entry point registers types/functions directly against a `grunk::state`.
+Both export the same fixed `grunk_plugin_info`/`grunk_plugin_register` ABI and are `dlopen`'d at
+runtime rather than linked into `cad_autodiff` itself, so only their path needs to be known at
+build time, not the plugin's own code - `load_native` never needs to know which kind it's loading.
 
 Note that this is a bare-bone example that requires building C++ code from scratch. In the current state, it is a proof-of-concept. This will be simplified in the future, once we provide grunk as a conda-forge package and have a means to distribute binary grunk plugins.
 
@@ -74,15 +76,10 @@ make install
 
 As a result, the `ADOLC_PREFIX` directory should contain the headers and the library of ADOL-C.
 
-In case your preferred `ADOLC_PREFIX` path is different than the one suggested here,
- additional steps are required.
-- Go back to the `cad_autodiff` directory.
-- Put the absolute or relative path to `ADOLC_PREFIX` inside the `pixi.toml` file.
-  That is, look for the line:
-```
-    "-D", "ADOLC_BASE_DIR=build/_deps/ADOL-C/adolc_base"
-```
-And replace `build/_deps/ADOL-C/adolc_base` with your actual path.
+`ADOLC_PREFIX` is only ever passed directly to swig-adol-c's own `cmake` invocation below (and,
+for stage 3, to adOCCT's) - `cad_autodiff`'s own build never names ADOL-C itself (it's confined
+entirely behind `adtl.so` and, from there, `adtl_plugin.so` - see the next section), so there is
+no path to reconcile here beyond using your actual `ADOLC_PREFIX` in those commands.
 
 ### Build and install the grunk adolc interface
 
@@ -109,13 +106,14 @@ cmake -DADOLC_INCLUDE_DIR=ADOLC_PREFIX/include -DADOLC_LIB_DIR=ADOLC_PREFIX/lib6
 make
 ```
 
-As a result, one should see the `adtl.so` file. `main.cpp` loads this file at runtime into the
-grunk::state's Lua interpreter (via `grunk::state::load_compiled_plugin`, see `load_adolc_plugin`),
-rather than including ADOL-C's headers directly.
+As a result, one should see the `adtl.so` file. `plugins/adtl/adtl_plugin.cpp` links directly
+against it and re-exposes it as a grunk plugin (`adtl_plugin.so`) through grunk::plugin's native
+ABI; `main.cpp` loads that (via `grunk::plugin::load_native`, see `load_adolc_plugin`) rather than
+touching `adtl.so` or ADOL-C's headers itself.
 
 If `adtl.so` ends up somewhere other than `build/_deps/swig-adol-c/build` (relative to the
-`cad_autodiff` directory), put the absolute or relative path inside the `pixi.toml` file, the same
-way as for `ADOLC_BASE_DIR` above. Look for the line:
+`cad_autodiff` directory), put the absolute or relative path inside the `pixi.toml` file. Look for
+the line:
 ```
     "-D", "ADTL_LIB_DIR=build/_deps/swig-adol-c/build"
 ```
@@ -177,7 +175,7 @@ a different geoml/OCCT install, is the whole point.
   exactly this situation - types reached only via `unique_usertype_traits` whose underlying C++
   type lacks comparison operators.
   Calling a registered member function on a feature now uses plain colon-call syntax by default -
-  `p:X()` rather than the qualified `gp_Pnt.X(p)` form (see `docs/usage.rst`) - since native
+  `p:X()` rather than the qualified `geoml.gp_Pnt.X(p)` form (see `docs/usage.rst`) - since native
   colon-call dispatch (grunk-dev/grunk#269) stamps every feature that comes from a registered
   constructor or member-function call with a static type hint at construction time, letting a
   later `:method(...)` find the right usertype without ever forcing evaluation. This example uses
@@ -206,9 +204,9 @@ a different geoml/OCCT install, is the whole point.
   recipe's own steps get from one to the other. Everything specific to *this recipe/example* -
   seeding a parameter's derivative direction, reading a value's primal/derivative back out - is
   composed from `geoml_registration.hpp`'s generic primitives in Lua, not registered in the plugin:
-  - *Seeding X.* `gp_Pnt.new(X, 0., 0.)` runs (lazily) against the specific `DynamicFeature` node
-    already built for `X` when the recipe was read - reassigning the Lua variable `X` afterwards
-    wouldn't reach it. `read_recipe_ad` inserts a small `ad` Lua module
+  - *Seeding X.* `geoml.gp_Pnt.new(X, 0., 0.)` runs (lazily) against the specific `DynamicFeature`
+    node already built for `X` when the recipe was read - reassigning the Lua variable `X`
+    afterwards wouldn't reach it. `read_recipe_ad` inserts a small `ad` Lua module
     (`Recipe::insert_module_script`, the same mechanism stage 1 uses for `me`) with a `seed(x,
     value)` function adapting stage 1's `me.seed(x_val)`/`ret:setADValue(0,1.)`: it builds a
     `Standard_Real` from `X`'s current (plain-number) value with direction 0 set to `value`
@@ -220,16 +218,16 @@ a different geoml/OCCT install, is the whole point.
     parameter/output-agnostic, they don't name `x(0.5)` or `y(0.5)` anywhere. `read_recipe_ad`
     calls `recipe.get_output(...)` first to get each output's current (post-seed) value, then
     applies `ad.primal`/`ad.derivative` to *that*, all as direct sol2 calls (not an appended
-    `recipe.eval` string, unlike `read_cad_recipe`'s `export_brep` call) - since `ad.seed`/
+    `recipe.eval` string, unlike `read_cad_recipe`'s `geoml.export_brep` call) - since `ad.seed`/
     `ad.primal`/`ad.derivative` each call genuinely tracked functions internally
-    (`Standard_Real.new`/`getValue`/`getADValue`/`setADValue`), every one of these calls returns a
-    lazy `DynamicFeature`, not the value directly, regardless of whether it's invoked via `eval` or
-    a direct call - `read_recipe_ad`'s small `unwrap` helper forces that one evaluation
+    (`geoml.Standard_Real.new`/`getValue`/`getADValue`/`setADValue`), every one of these calls
+    returns a lazy `DynamicFeature`, not the value directly, regardless of whether it's invoked via
+    `eval` or a direct call - `read_recipe_ad`'s small `unwrap` helper forces that one evaluation
     uniformly wherever needed.
-  - `gp_Pnt.new`'s constructor needed a mixed number/`Standard_Adouble` argument path: a recipe
-    literal like `0.` is a plain Lua number, but `Standard_Real` is a real class in the AD build
-    (not a fundamental type), so sol2 won't implicitly convert one to the other the way it does
-    for `double`. See the `sol::object`-based `to_real` conversion in `gp_Pnt`'s AD constructor
+  - `geoml.gp_Pnt.new`'s constructor needed a mixed number/`Standard_Adouble` argument path: a
+    recipe literal like `0.` is a plain Lua number, but `Standard_Real` is a real class in the AD
+    build (not a fundamental type), so sol2 won't implicitly convert one to the other the way it
+    does for `double`. See the `sol::object`-based `to_real` conversion in `gp_Pnt`'s AD constructor
     overload.
 
 **Verifying the derivative.** At the curve parameter `u=0.5` used in `read_recipe_ad`, the cubic
@@ -320,18 +318,23 @@ cad_autodiff/
 │   ├── occt_sol_traits.hpp     # sol2 traits for OCCT Handle(T) - used only by geoml_registration.hpp
 │   ├── geoml_registration.hpp  # register_geoml: only genuine OCCT/geoml/ADOL-C operations
 │   │                           # (gp_Pnt, Geom_BezierCurve, export_brep and, AD-only,
-│   │                           # Standard_Real itself) - shared verbatim by both geoml plugins below
+│   │                           # Standard_Real itself), registered under the "geoml" namespace -
+│   │                           # shared verbatim by both geoml plugins below
+│   ├── adtl/
+│   │   └── adtl_plugin.cpp         # Stage 1 plugin - shim around adtl.so, built as adtl_plugin.so,
+│   │                                # loaded via grunk::plugin::load_native by main.cpp
 │   ├── geoml/
-│   │   └── geoml_plugin.cpp        # Stage 2 plugin (no AD) - built as geoml_plugin.so, dlopen'd by main.cpp
+│   │   └── geoml_plugin.cpp        # Stage 2 plugin (no AD) - built as geoml_plugin.so, loaded via
+│   │                                # grunk::plugin::load_native by main.cpp
 │   └── geoml_adolc/
 │       ├── CMakeLists.txt          # Standalone project - see README's "Stage 3" section
 │       └── geoml_adolc_plugin.cpp  # Stage 3 plugin (AD) - built against adOCCT + geoml feature/autodiff
 └── src/
-    └── main.cpp                # Example source code - deliberately never includes an OCCT/geoml header
+    └── main.cpp                # Example source code - deliberately never includes an OCCT/geoml/ADOL-C header
 ```
 
-All OCCT/geoml-specific code is confined to `plugins/` - `src/main.cpp` only ever deals with
-`grunk::state`, recipes, and generic `sol::object`/`bool` values, even when verifying a curve got
-built (via `export_brep`, called from within the recipe, not C++ code reaching into a
-`Handle(Geom_BezierCurve)`). A real grunk plugin should be the only place that needs to know a
-specific CAD/geometry library exists at all.
+All OCCT/geoml/ADOL-C-specific code is confined to `plugins/` - `src/main.cpp` only ever deals
+with `grunk::state`, `grunk::plugin::load_native`, recipes, and generic `sol::object`/`bool`
+values, even when verifying a curve got built (via `geoml.export_brep`, called from within the
+recipe, not C++ code reaching into a `Handle(Geom_BezierCurve)`). A real grunk plugin should be
+the only place that needs to know a specific CAD/geometry/AD library exists at all.
