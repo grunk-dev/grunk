@@ -416,6 +416,52 @@ public:
     }
 
     /**
+     * @brief load_lua_plugin_script starts a "pure Lua" plugin: no compilation, just a
+     * name+version and some Lua source. Thin wrapper over run_module_script that
+     * additionally records the plugin's identity in plugins(), exactly like
+     * load_compiled_plugin/begin_plugin do for their own kinds - a plain
+     * run_module_script call has no way to attach a version to what it creates, since
+     * a module (unlike a plugin) has no identity of its own.
+     *
+     * Unlike load_compiled_plugin's `info.name`, which must match a compiled module's
+     * own internal identity, a Lua-script plugin has no such constraint: its identity
+     * is entirely up to the caller, since a bare .lua file carries no name/version of
+     * its own (see grunk::plugin's native loader for the compiled-plugin case, where
+     * that identity instead comes from the plugin's own `grunk_plugin_info` symbol).
+     *
+     * @param info the plugin's name and version. `info.name` doubles as the module
+     *             name run_module_script populates.
+     * @param script the Lua source code to execute
+     * @return the plugin's namespace table
+     */
+    inline sol::table load_lua_plugin_script(PluginInfo const& info, std::string const& script)
+    {
+        run_module_script(info.name, script);
+        note_plugin(info);
+        sol::table ns = original_env[info.name];
+        return ns;
+    }
+
+    /**
+     * @brief load_lua_plugin_file loads a Lua file from disk and starts a plugin from
+     * it, following the same semantics as load_lua_plugin_script (see run_module_file's
+     * relationship to run_module_script, which this mirrors).
+     *
+     * @param info the plugin's name and version
+     * @param filename path to a Lua file
+     * @return the plugin's namespace table
+     */
+    inline sol::table load_lua_plugin_file(PluginInfo const& info, std::string const& filename)
+    {
+        std::ifstream fin(filename);
+        if (!fin) {
+            throw io_error("Could not open plugin file: " + filename);
+        }
+        std::string content((std::istreambuf_iterator<char>(fin)), std::istreambuf_iterator<char>());
+        return load_lua_plugin_script(info, content);
+    }
+
+    /**
      * @brief plugins returns the name and version of every plugin loaded so far via one
      * of the load_*_plugin methods.
      */

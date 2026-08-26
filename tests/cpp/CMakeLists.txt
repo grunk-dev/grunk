@@ -40,6 +40,7 @@ if (GRUNK_WITH_DYNAMIC)
       dynamic_module.cpp
       dynamic_plugin.cpp
       plugin_begin.cpp
+      plugin_lua_script.cpp
     )
 endif()
 
