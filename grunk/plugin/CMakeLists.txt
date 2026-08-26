@@ -6,7 +6,21 @@ add_library(grunk_plugin loader.cpp)
 add_library(grunk::plugin ALIAS grunk_plugin)
 
 target_compile_features(grunk_plugin PUBLIC cxx_std_17)
-target_link_libraries(grunk_plugin PUBLIC grunk::dynamic PRIVATE ${CMAKE_DL_LIBS})
+target_link_libraries(grunk_plugin PRIVATE ${CMAKE_DL_LIBS})
+
+# grunk::state's constructor unconditionally registers RecipeCaller/Recipe::SubRecipe
+# whenever GRUNK_WITH_RECIPE is on (grunk/dynamic/state.hpp's init(), gated by the same
+# macro grunk_dynamic itself compile-defines) - so any consumer that actually
+# instantiates a grunk::state needs grunk::recipe's compiled definitions linked in too,
+# not just grunk::dynamic's headers. grunk::dynamic can't link grunk::recipe itself
+# (grunk::recipe already links grunk::dynamic - that would be circular), so grunk::plugin,
+# sitting above both, is what closes the gap for anyone who links only grunk::plugin
+# (as plugin authors are told to - see docs/usage.rst's "Writing Plugins" section).
+if (GRUNK_WITH_RECIPE)
+  target_link_libraries(grunk_plugin PUBLIC grunk::recipe)
+else()
+  target_link_libraries(grunk_plugin PUBLIC grunk::dynamic)
+endif()
 
 # Lets grunk/grunk.hpp's own `#ifdef GRUNK_WITH_PLUGIN` (mirroring GRUNK_WITH_DYNAMIC/
 # GRUNK_WITH_RECIPE) know to pull in plugin.hpp, for anything linking grunk::plugin

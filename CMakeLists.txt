@@ -27,11 +27,14 @@ if(DEFINED SKBUILD)
     set(GRUNK_PYTHON ON CACHE BOOL "Build python bindings using nanobind" FORCE)
 endif()
 
-# When building Python bindings (or when SKBUILD drives the build) we may
-# need static libraries to be compiled as position-independent so they can
-# be linked into the Python extension module. Enable PIC in that case.
-if(DEFINED SKBUILD OR GRUNK_PYTHON)
-    message(STATUS "Enabling position independent code for building Python extension modules")
+# When building Python bindings (or when SKBUILD drives the build), or when a native
+# grunk plugin (a shared library) might link grunk's static libraries into itself -
+# e.g. GRUNK_TESTS' plugin_native_fixture, or any downstream plugin project that
+# doesn't set this itself (as examples/cpp/cad_autodiff's own CMakeLists.txt does) -
+# those static libraries need to be compiled as position-independent. Enable PIC in
+# either case.
+if(DEFINED SKBUILD OR GRUNK_PYTHON OR GRUNK_WITH_PLUGIN)
+    message(STATUS "Enabling position independent code for building shared extension modules/plugins")
     # This causes targets (including STATIC libraries) to be built with -fPIC
     set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 endif()
