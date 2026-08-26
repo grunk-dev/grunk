@@ -109,15 +109,25 @@ public:
      *
      * @param name Name of the type
      * @param table optional table as a "namespace", where the type shall be registered.
+     * @param qualifier optional dotted path under which `table` itself is reachable
+     *                  (e.g. "myplugin" for a plugin namespace - see state::begin_plugin),
+     *                  used to give the type's constructor/methods their fully-qualified
+     *                  name. Left empty for `table` itself being reachable unqualified
+     *                  (the default, flat-in-original_env case). This is what
+     *                  ActionDynamic::serialize embeds verbatim, and that text must
+     *                  resolve correctly when a saved recipe is read back in - see
+     *                  decorate_module_functions/register_external_type for the same
+     *                  convention applied to the other plugin kinds.
      * @returns a usertype_proxy<T> to allow method chaining
      */
     template <typename T, sol::automagic_flags Flags = sol::automagic_flags::all>
-    auto register_type(std::string const& name, std::optional<sol::table> table = std::nullopt)
+    auto register_type(std::string const& name, std::optional<sol::table> table = std::nullopt, std::string const& qualifier = "")
     {
         if (!table) {
             table = original_env;
         }
-        auto proxy = usertype_proxy<T>{name, table->new_usertype<T>(name, sol::constant_automagic_enrollments<Flags>{})};
+        std::string const qualified_name = qualifier.empty() ? name : qualifier + "." + name;
+        auto proxy = usertype_proxy<T>{qualified_name, table->new_usertype<T>(name, sol::constant_automagic_enrollments<Flags>{})};
         // record T's usertype table under its C++ type, so a DynamicFeature carrying a
         // type hint for T (see DynamicFeature::type_hint) can later look up a method by
         // name without ever needing to evaluate its value - see the Feature usertype's
@@ -125,7 +135,7 @@ public:
         // keyed the same way, purely so that handler can report a useful type name in
         // its error messages instead of just an opaque std::type_index.
         m_type_registry[std::type_index(typeid(T))] = (*table)[name];
-        m_type_names[std::type_index(typeid(T))] = name;
+        m_type_names[std::type_index(typeid(T))] = qualified_name;
         return proxy;
     }
 
@@ -143,10 +153,13 @@ public:
      *
      * @param name Name of the existing type
      * @param table optional table as a "namespace" where the type is registered
+     * @param qualifier optional dotted path under which `table` itself is reachable -
+     *                  see register_type's own `qualifier` parameter for the full
+     *                  explanation; this plays the same role here.
      * @returns a usertype_proxy<T> to allow method chaining (e.g. `.with_std_vector()`)
      */
     template <typename T>
-    auto modify_type(std::string const& name, std::optional<sol::table> table = std::nullopt)
+    auto modify_type(std::string const& name, std::optional<sol::table> table = std::nullopt, std::string const& qualifier = "")
     {
         if (!table) {
             table = original_env;
@@ -155,14 +168,15 @@ public:
         int table_idx = (*table).push(L);
         sol::usertype<T> ut(L, table_idx);
         lua_pop(L, 1);
+        std::string const qualified_name = qualifier.empty() ? name : qualifier + "." + name;
         // Populate the type registry directly here, the same way register_type does,
         // rather than relying on T having already been registered via register_type
         // against this same table/name (which happened to make this work before, since
         // both would resolve to the same underlying Lua table, but isn't guaranteed if
         // T's usertype was created some other way, e.g. by a plugin).
         m_type_registry[std::type_index(typeid(T))] = (*table)[name];
-        m_type_names[std::type_index(typeid(T))] = name;
-        return usertype_proxy<T>{name, ut};
+        m_type_names[std::type_index(typeid(T))] = qualified_name;
+        return usertype_proxy<T>{qualified_name, ut};
     }
 
     /**
@@ -177,16 +191,20 @@ public:
      *            lambda expression
      * @param params optional metadata for the function parameters
      * @param table optional table as a "namespace", where the type shall be registered.
+     * @param qualifier optional dotted path under which `table` itself is reachable -
+     *                  see register_type's own `qualifier` parameter for the full
+     *                  explanation; this plays the same role here.
      */
     template <typename Func>
-    void register_function(std::string const& name, Func&& fun, std::vector<Parameter> params = {}, std::optional<sol::table> table = std::nullopt)
+    void register_function(std::string const& name, Func&& fun, std::vector<Parameter> params = {}, std::optional<sol::table> table = std::nullopt, std::string const& qualifier = "")
     {
         // set function
 
         if (!table) {
             table = original_env;
         }
-        auto meta_func = create_function_meta(lua, name, params, std::forward<Func>(fun));
+        std::string const qualified_name = qualifier.empty() ? name : qualifier + "." + name;
+        auto meta_func = create_function_meta(lua, qualified_name, params, std::forward<Func>(fun));
         table->set(name, meta_func);
     }
 
@@ -365,13 +383,16 @@ public:
      * This is the "plain C++" plugin kind's counterpart to load_compiled_plugin: instead
      * of loading a compiled Lua C extension, a plugin's own entry point (see
      * grunk::plugin's native loader) calls this once to obtain its namespace, then uses
-     * ordinary register_type/register_function calls against it, e.g.:
+     * ordinary register_type/register_function calls against it - passing info.name as
+     * their own `qualifier` argument, so constructors/methods/functions serialize with
+     * their fully-qualified path (e.g. "geoml.gp_Pnt.new") rather than just "gp_Pnt.new",
+     * which would not resolve once the type is reachable only through this namespace:
      *
      * @code
      * extern "C" void grunk_plugin_register(grunk::state& state, grunk::PluginInfo const& info) {
      *     auto ns = state.begin_plugin(info);
-     *     state.register_type<gp_Pnt>("gp_Pnt", ns) ...;
-     *     state.register_function("bezier_curve", ..., {}, ns);
+     *     state.register_type<gp_Pnt>("gp_Pnt", ns, info.name) ...;
+     *     state.register_function("bezier_curve", ..., {}, ns, info.name);
      * }
      * @endcode
      *
