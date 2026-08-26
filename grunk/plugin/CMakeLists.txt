@@ -8,6 +8,11 @@ add_library(grunk::plugin ALIAS grunk_plugin)
 target_compile_features(grunk_plugin PUBLIC cxx_std_17)
 target_link_libraries(grunk_plugin PUBLIC grunk::dynamic PRIVATE ${CMAKE_DL_LIBS})
 
+# Lets grunk/grunk.hpp's own `#ifdef GRUNK_WITH_PLUGIN` (mirroring GRUNK_WITH_DYNAMIC/
+# GRUNK_WITH_RECIPE) know to pull in plugin.hpp, for anything linking grunk::plugin
+# (directly or transitively via the grunk umbrella target).
+target_compile_definitions(grunk_plugin PUBLIC GRUNK_WITH_PLUGIN)
+
 target_include_directories(grunk_plugin PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
   $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/..>
