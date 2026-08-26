@@ -39,6 +39,7 @@ if (GRUNK_WITH_DYNAMIC)
       dynamic_std_vector.cpp
       dynamic_module.cpp
       dynamic_plugin.cpp
+      plugin_begin.cpp
     )
 endif()
 

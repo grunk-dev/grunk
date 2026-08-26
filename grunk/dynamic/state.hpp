@@ -37,10 +37,9 @@ constexpr const default_construct_t default_construct;
  *
  * This is the one piece every kind of grunk plugin is meant to share, whatever
  * mechanism it uses to actually populate its namespace - a compiled Lua module (see
- * state::load_compiled_plugin), a Lua script (candidate: layering this over
- * run_module_script/run_module_file), or plain C++ calling register_type/
- * register_function directly against the table returned by a future
- * state::begin_plugin(info). Only the compiled-module path is implemented so far.
+ * state::load_compiled_plugin), a Lua script (see state::load_lua_plugin_script/
+ * state::load_lua_plugin_file), or plain C++ calling register_type/register_function
+ * directly against the table returned by state::begin_plugin(info).
  *
  * @ingroup dynamic
  */
@@ -353,6 +352,38 @@ public:
                 table.set(function_name, create_function_meta(lua, qualified_name, {}, func));
             }
         }
+    }
+
+    /**
+     * @brief begin_plugin starts a plugin whose types/functions are registered directly
+     * from C++, by returning a fresh namespace table for the caller to pass as the
+     * `table` argument to register_type/register_function/register_external_type, and
+     * recording the plugin's identity in plugins() immediately (there is no separate
+     * "finish" step - registration against the returned table can happen incrementally,
+     * exactly like a module built via run_module_script).
+     *
+     * This is the "plain C++" plugin kind's counterpart to load_compiled_plugin: instead
+     * of loading a compiled Lua C extension, a plugin's own entry point (see
+     * grunk::plugin's native loader) calls this once to obtain its namespace, then uses
+     * ordinary register_type/register_function calls against it, e.g.:
+     *
+     * @code
+     * extern "C" void grunk_plugin_register(grunk::state& state, grunk::PluginInfo const& info) {
+     *     auto ns = state.begin_plugin(info);
+     *     state.register_type<gp_Pnt>("gp_Pnt", ns) ...;
+     *     state.register_function("bezier_curve", ..., {}, ns);
+     * }
+     * @endcode
+     *
+     * @param info the plugin's name and version. `info.name` doubles as the namespace
+     *             table's key in the original environment, exactly like load_compiled_plugin.
+     * @return the plugin's (initially empty) namespace table
+     */
+    inline sol::table begin_plugin(PluginInfo const& info)
+    {
+        sol::table ns = create_module(info.name);
+        note_plugin(info);
+        return ns;
     }
 
     /**
