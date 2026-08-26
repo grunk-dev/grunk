@@ -11,7 +11,16 @@
 
 #include "../geoml_registration.hpp"
 
-extern "C" void grunk_geoml_adolc_plugin_entry_point(grunk::state& grunk)
+extern "C" grunk::PluginInfo grunk_plugin_info()
 {
-    register_geoml(grunk);
+    // Same name as geoml_plugin.cpp's - see geoml_registration.hpp's file comment for
+    // why. Version reflects the geoml branch this is built against (see README.md's
+    // "Stage 3" section), not a release tag.
+    return grunk::PluginInfo{"geoml", "feature/autodiff"};
+}
+
+extern "C" void grunk_plugin_register(grunk::state& grunk, grunk::PluginInfo const& info)
+{
+    auto ns = grunk.begin_plugin(info);
+    register_geoml(grunk, ns, info);
 }

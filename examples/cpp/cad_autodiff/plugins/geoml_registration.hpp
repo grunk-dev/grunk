@@ -12,6 +12,11 @@
 // ADOL-C adouble via https://github.com/dlr-sp/adOCCT) differs. Sharing one header
 // between both plugins, instead of hand-copying it, is what actually proves that:
 // one piece of C++ source, compiled against two different geoml/OCCT installs.
+//
+// Both callers register into the same "geoml" namespace (see grunk::state::begin_plugin
+// and each plugin's own grunk_plugin_info) - the whole point of stage 3 is that the
+// *same* recipe text (src/main.cpp's write_cad_recipe) resolves against whichever one
+// is actually loaded, so both must report the same PluginInfo::name.
 // GEOML_ADOLC_FORWARD/GEOML_ADOLC_REVERSE (defined by geoml's own CMakeLists.txt
 // when GEOML_USE_ADOLC=ON) gate the handful of spots that do differ - the gp_Pnt
 // constructor's and Geom_BezierCurve::Value's argument conversion, and the
@@ -46,9 +51,9 @@
 
 #include "occt_sol_traits.hpp"
 
-inline void register_geoml(grunk::state& grunk)
+inline void register_geoml(grunk::state& grunk, sol::table const& ns, grunk::PluginInfo const& info)
 {
-    grunk.register_type<gp_Pnt>("gp_Pnt")
+    grunk.register_type<gp_Pnt>("gp_Pnt", ns, info.name)
     .add_constructors(
 #if defined(GEOML_ADOLC_FORWARD) || defined(GEOML_ADOLC_REVERSE)
         // Standard_Real is Standard_Adouble here, not a fundamental type, so a single
@@ -78,7 +83,7 @@ inline void register_geoml(grunk::state& grunk)
     // enrollments: default constructor, __tostring, __pairs, __call, __len -
     // Geom_BezierCurve needs none of them; construction happens exclusively via
     // bezier_curve below).
-    grunk.register_type<Geom_BezierCurve, sol::automagic_flags::none>("Geom_BezierCurve")
+    grunk.register_type<Geom_BezierCurve, sol::automagic_flags::none>("Geom_BezierCurve", ns, info.name)
     .add_member_function("Value",
 #if defined(GEOML_ADOLC_FORWARD) || defined(GEOML_ADOLC_REVERSE)
         // Same gap as gp_Pnt's constructor: u is always a plain Lua number, but
@@ -100,10 +105,11 @@ inline void register_geoml(grunk::state& grunk)
         [](std::vector<gp_Pnt> const& poles) -> Handle(Geom_BezierCurve) {
             TColgp_Array1OfPnt occ_poles = geoml::StdVector_to_TCol(poles);
             return new Geom_BezierCurve(occ_poles);
-        }
+        },
+        {}, ns, info.name
     );
 
-    grunk.register_function("interpolate_curve_network", geoml::interpolate_curve_network);
+    grunk.register_function("interpolate_curve_network", geoml::interpolate_curve_network, {}, ns, info.name);
 
     // Lets a recipe verify/export a curve it built without src/main.cpp ever naming
     // an OCCT type - see this header's file comment.
@@ -112,7 +118,8 @@ inline void register_geoml(grunk::state& grunk)
         [](Handle(Geom_BezierCurve) const& curve, std::string const& filename) -> bool {
             BRepTools::Write(BRepBuilderAPI_MakeEdge(curve), filename.c_str());
             return true;
-        }
+        },
+        {}, ns, info.name
     );
 
 #if defined(GEOML_ADOLC_FORWARD) || defined(GEOML_ADOLC_REVERSE)
@@ -125,7 +132,7 @@ inline void register_geoml(grunk::state& grunk)
     // exactly these operations to inspect from Lua. getADValue/setADValue take an
     // AD direction index; ADOL-C's own signature is `unsigned int`, adapted to a
     // plain Lua number here.
-    grunk.register_type<Standard_Real>("Standard_Real")
+    grunk.register_type<Standard_Real>("Standard_Real", ns, info.name)
     .add_constructors(
         [](double v) -> Standard_Real { return Standard_Adouble(v); }
     )
