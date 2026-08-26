@@ -17,6 +17,10 @@ if (NOT TARGET grunk)
       find_package(grunk REQUIRED COMPONENTS recipe)
   endif()
 
+  if (GRUNK_WITH_PLUGIN)
+      find_package(grunk REQUIRED COMPONENTS plugin)
+  endif()
+
 endif()
 
 enable_testing()
@@ -54,6 +58,24 @@ if (GRUNK_WITH_RECIPE)
     )
 endif()
 
+if (GRUNK_WITH_PLUGIN)
+    list(APPEND TESTSOURCES plugin_loader.cpp)
+
+    # A real shared library for plugin_loader.cpp to dlopen via grunk::plugin::load_native
+    # - every other plugin test uses an in-process function/lua_CFunction stand-in instead
+    # (see dynamic_plugin.cpp's luaopen_testplugin), since only the loader itself needs an
+    # actual .so on disk.
+    add_library(plugin_native_fixture SHARED plugin_native_fixture.cpp)
+    target_link_libraries(plugin_native_fixture PRIVATE grunk::dynamic)
+endif()
+
 add_executable(runUnitTests ${TESTSOURCES})
 target_link_libraries(runUnitTests PRIVATE grunk gtest_main)
+
+if (GRUNK_WITH_PLUGIN)
+    target_compile_definitions(runUnitTests PRIVATE
+        NATIVE_FIXTURE_SO_PATH="$<TARGET_FILE:plugin_native_fixture>"
+    )
+    add_dependencies(runUnitTests plugin_native_fixture)
+endif()
 
