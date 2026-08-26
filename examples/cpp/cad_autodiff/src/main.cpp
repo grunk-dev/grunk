@@ -7,11 +7,6 @@
 #include <sol/types.hpp>
 #include <grunk/grunk.hpp>
 
-#include <dlfcn.h>
-#include <stdexcept>
-
-#include "adolc/adtl.h"
-
 // Point of this example: algorithmic differentiation (AD) works *through* grunk's
 // dynamic layer, not just around it - a value flows through a grunk recipe
 // (dependency tracking, lazy evaluation, YAML serialization) and still carries its AD
@@ -31,28 +26,13 @@
 // geoml plugins (plugins/geoml_registration.hpp) - this file only ever sees
 // grunk::state, recipes, and sol::object/bool.
 
-// adtl.so is a SWIG-generated Lua module wrapping ADOL-C's tapeless adouble type
-// (see https://gitlab.dlr.de/dlr-sp/occt-differentiation/swig-adol-c, lua_wrapper
-// branch). Proof of concept for runtime plugin loading: rather than linking adtl.so
-// into this executable and forward-declaring its luaopen_adtl entry point, it is
-// dlopen'd from disk at startup and the entry point is looked up by name - the same
-// thing linking + an extern "C" declaration would give us, just resolved at runtime
-// instead of build time. ADTL_SO_PATH is set by CMake to wherever adtl.so was found.
-lua_CFunction load_adtl_entry_point()
+// adtl_plugin.so wraps adtl.so, a SWIG-generated Lua module wrapping ADOL-C's
+// tapeless adouble type (see plugins/adtl/adtl_plugin.cpp) - grunk-dev/grunk#235's
+// "compiled Lua" plugin kind. Loaded the same way as geoml_plugin.so, via
+// grunk::plugin::load_native.
+void load_adolc_plugin(grunk::state& grunk)
 {
-    void* handle = dlopen(ADTL_SO_PATH, RTLD_NOW | RTLD_LOCAL);
-    if (!handle) {
-        throw std::runtime_error(std::string("could not load adtl.so: ") + dlerror());
-    }
-
-    dlerror(); // clear any prior error, per dlsym's own documented idiom for telling a
-               // valid NULL result apart from a real lookup failure
-    void* sym = dlsym(handle, "luaopen_adtl");
-    if (char const* err = dlerror(); err != nullptr) {
-        throw std::runtime_error(std::string("could not find luaopen_adtl in adtl.so: ") + err);
-    }
-
-    return reinterpret_cast<lua_CFunction>(sym);
+    grunk::plugin::load_native(grunk, ADTL_PLUGIN_SO_PATH);
 }
 
 // geoml_plugin.so is a genuine C++ grunk plugin (see plugins/geoml/geoml_plugin.cpp):
@@ -75,68 +55,6 @@ void load_geoml_plugin(grunk::state& grunk)
 void load_geoml_adolc_plugin(grunk::state& grunk)
 {
     grunk::plugin::load_native(grunk, GEOML_ADOLC_PLUGIN_SO_PATH);
-}
-
-void load_adolc_plugin(grunk::state& grunk)
-{
-    // Load the compiled SWIG-Lua module as a grunk plugin: its own table becomes the
-    // "adtl" namespace in original_env, its free functions (tan, exp, log, sqrt, pow,
-    // ...) are made grunk-tracked, and its identity is recorded in grunk.plugins().
-    grunk::PluginInfo info{"adtl", "2.7.2"}; // matches the wrapped ADOL-C release
-    sol::table adtl = grunk.load_compiled_plugin(info, load_adtl_entry_point());
-
-    // No .add_member_function calls are needed: adouble's default constructor lets
-    // register_external_type probe an instance and discover setADValue/getADValue/
-    // getValue (and any other method actually used) lazily, the first time each is
-    // looked up - SWIG-Lua gives no way to enumerate them up front.
-    sol::table adouble_static = adtl["adouble"];
-    grunk.register_external_type("adtl.adouble", adouble_static, adtl);
-
-    // adouble.i explicitly `%ignore`s operator<<, so the SWIG binding gives adouble
-    // instances no __tostring - without one, grunk can't serialize an adouble held
-    // directly by a Feature (e.g. one built via new_feature) into recipe YAML at all.
-    // Bridge one here in ctor syntax, so Serializer's ctor_syntax_to_new_feature_syntax
-    // can turn a written-out parameter back into a "new_feature" call on read-back,
-    // exactly the convention grunk-registered types use (see grunk's own test suite,
-    // where MyScalar's tostring returns "MyScalar.new(...)" for the same reason).
-    sol::table adouble_type = grunk.get_type("adtl.adouble");
-    sol::protected_function ctor = adouble_type["new"];
-    sol::object probe = ctor();
-
-    // Looking "getValue" up on the (undecorated) type table triggers register_external_type's
-    // auto-discovery probing and caches it as a plain, un-tracked function_meta - exactly
-    // what is needed here, since a tostring metamethod must run synchronously and must not
-    // itself create a dependency-tracked action.
-    sol::protected_function get_value = adouble_type["getValue"];
-
-    sol::state_view lua(adouble_static.lua_state());
-    sol::protected_function getmetatable = lua["getmetatable"];
-    sol::table adouble_meta = getmetatable(probe);
-
-    sol::object tostring_fn = sol::make_object(lua, sol::as_function(
-        [get_value](sol::object self) -> std::string {
-            double value = get_value(self).get<double>();
-            return "adtl.adouble.new(" + grunk::to_string(value) + ")";
-        }
-    ));
-    adouble_meta.set(sol::meta_function::to_string, tostring_fn);
-
-    // SWIG-Lua's per-instance __index is a C dispatch function (SWIG_Lua_class_get),
-    // not a plain table - so an ordinary `instance["__tostring"]` lookup never reaches
-    // the metatable's own raw fields the way it would for a table-based __index. That is
-    // exactly the check grunk::serialize does before invoking the real tostring
-    // metamethod (which bypasses __index entirely and works fine on its own - confirmed
-    // empirically), so without this, grunk reports no tostring even though one exists.
-    // Wrap __index so that one lookup succeeds too, while every other key still falls
-    // through to SWIG's original dispatcher unchanged.
-    sol::protected_function original_index = adouble_meta[sol::meta_function::index];
-    adouble_meta.set_function(sol::meta_function::index, [original_index, tostring_fn](sol::object self, std::string const& key) -> sol::object {
-        if (key == "__tostring") {
-            return tostring_fn;
-        }
-        sol::protected_function_result res = original_index(self, key);
-        return res.valid() ? sol::object(res) : sol::lua_nil;
-    });
 }
 
 // Stage 1: AD only, no CAD - see the file-level comment above.

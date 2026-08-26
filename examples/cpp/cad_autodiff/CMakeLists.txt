@@ -64,43 +64,14 @@ if(NOT grunk_POPULATED)
     add_subdirectory(${grunk_SOURCE_DIR} ${grunk_BINARY_DIR} EXCLUDE_FROM_ALL)
 endif()
 
-set(ADOLC_BASE_DIR "" CACHE PATH "Path to ADOL-C installation directory")
-
-if(NOT DEFINED ADOLC_INCLUDE_DIR)
-  set(ADOLC_INCLUDE_DIR "${ADOLC_BASE_DIR}/include" CACHE PATH "The directory containing adol-c headers")
-endif(NOT DEFINED ADOLC_INCLUDE_DIR)
-if(NOT DEFINED ADOLC_LIB_DIR)
-  set(ADOLC_LIB_DIR "${ADOLC_BASE_DIR}/lib64" CACHE PATH "The directory containing adol-c library")
-endif(NOT DEFINED ADOLC_LIB_DIR)
-
-find_file(ADOLC_HEADER_LOCATION "adolc/adtl.h" PATHS ${ADOLC_INCLUDE_DIR})
-if(${ADOLC_HEADER_LOCATION} STREQUAL "ADOLC_HEADER_LOCATION-NOTFOUND")
-  message(FATAL_ERROR "adolc/adtl.h can not be found, define ADOLC_INCLUDE_DIR")
-else(${ADOLC_HEADER_LOCATION} STREQUAL "ADOLC_HEADER_LOCATION-NOTFOUND")
-  include_directories(${ADOLC_INCLUDE_DIR})
-endif(${ADOLC_HEADER_LOCATION} STREQUAL "ADOLC_HEADER_LOCATION-NOTFOUND")
-
-# Find ADOL-C library
-find_library(ADOLC_LIBRARY
-    NAMES adolc libadolc
-    PATHS "${ADOLC_LIB_DIR}"
-    NO_DEFAULT_PATH
-)
-
-if(NOT ADOLC_LIBRARY)
-    message(FATAL_ERROR "ADOL-C library not found, define ADOLC_LIB_DIR")
-endif()
-
-message(STATUS "Found ADOL-C library: ${ADOLC_LIBRARY}")
-message(STATUS "ADOL-C include directory: ${ADOLC_INCLUDE_DIR}")
-
 # adtl.so is a SWIG-generated Lua module wrapping ADOL-C's tapeless adouble type,
 # built manually from https://gitlab.dlr.de/dlr-sp/occt-differentiation/swig-adol-c.git
-# (branch lua_wrapper) - see README.md for build instructions. It is dlopen'd from
-# disk at runtime (see main.cpp's load_adtl_entry_point) rather than linked into this
-# executable, as a proof of concept for loading a grunk plugin from a path instead of
-# a compile-time symbol - so only its path needs to be known at build time, not the
-# library itself.
+# (branch lua_wrapper) - see README.md for build instructions. adtl_plugin (below)
+# links directly against it and re-exposes it through grunk::plugin's fixed native
+# ABI (see plugins/adtl/adtl_plugin.cpp) - ADOL-C itself is never named in this
+# project (no header, no direct library link): it's confined entirely behind adtl.so
+# and, from there, behind adtl_plugin.so, the same way OCCT/geoml is confined behind
+# the geoml plugins.
 set(ADTL_LIB_DIR "${CMAKE_SOURCE_DIR}/build/_deps/swig-adol-c/build" CACHE PATH "Directory containing the built adtl Lua module (adtl.so)")
 
 # swig_add_library sets PREFIX "" on the adtl target, so the file is literally named
@@ -119,26 +90,33 @@ endif()
 message(STATUS "Found adtl Lua module: ${ADTL_LIBRARY}")
 
 # geoml_plugin.so: stage 2's grunk plugin (see plugins/geoml/geoml_plugin.cpp), built
-# as its own shared object and dlopen'd by cad_autodiff at runtime (see
-# src/main.cpp's load_geoml_plugin) instead of linked in.
+# as its own shared object and loaded by cad_autodiff at runtime via
+# grunk::plugin::load_native (src/main.cpp's load_geoml_plugin) instead of linked in.
 add_library(geoml_plugin SHARED plugins/geoml/geoml_plugin.cpp)
 target_link_libraries(geoml_plugin PRIVATE grunk geoml)
 
+# adtl_plugin.so: stage 1's grunk plugin (see plugins/adtl/adtl_plugin.cpp) - a shim
+# linking directly against the prebuilt adtl.so (ADTL_LIBRARY, found above) and
+# re-exposing it through grunk::plugin's fixed native ABI, loaded by cad_autodiff the
+# same way as geoml_plugin.so.
+add_library(adtl_plugin SHARED plugins/adtl/adtl_plugin.cpp)
+target_link_libraries(adtl_plugin PRIVATE grunk ${ADTL_LIBRARY})
+
 add_executable(cad_autodiff src/main.cpp)
-target_link_libraries(cad_autodiff PRIVATE grunk geoml ${ADOLC_LIBRARY} ${CMAKE_DL_LIBS})
+target_link_libraries(cad_autodiff PRIVATE grunk geoml)
 
 # geoml_adolc_plugin.so: stage 3's counterpart (see plugins/geoml_adolc/), not built
 # by this project (see that directory's CMakeLists.txt for why) - build it yourself
 # first (README.md's "Stage 3" section), then point this at it if it ends up
 # somewhere other than the default below. No find_file/FATAL_ERROR here, unlike
-# ADTL_LIBRARY/geoml_plugin above: main.cpp's load_geoml_adolc_plugin_entry_point
-# already reports a clear dlopen error itself if the .so isn't there yet.
+# ADTL_LIBRARY/geoml_plugin above: main.cpp's load_geoml_adolc_plugin already reports
+# a clear error itself (via grunk::plugin::load_native) if the .so isn't there yet.
 set(GEOML_ADOLC_PLUGIN_SO_PATH "${CMAKE_SOURCE_DIR}/plugins/geoml_adolc/build/libgeoml_adolc_plugin.so" CACHE PATH
     "Path to the AD-enabled geoml plugin built from plugins/geoml_adolc/ (stage 3)")
 
 target_compile_definitions(cad_autodiff PRIVATE
-    ADTL_SO_PATH="${ADTL_LIBRARY}"
+    ADTL_PLUGIN_SO_PATH="$<TARGET_FILE:adtl_plugin>"
     GEOML_PLUGIN_SO_PATH="$<TARGET_FILE:geoml_plugin>"
     GEOML_ADOLC_PLUGIN_SO_PATH="${GEOML_ADOLC_PLUGIN_SO_PATH}"
 )
-add_dependencies(cad_autodiff geoml_plugin)
+add_dependencies(cad_autodiff geoml_plugin adtl_plugin)
