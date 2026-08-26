@@ -66,7 +66,11 @@ if (GRUNK_WITH_PLUGIN)
     # (see dynamic_plugin.cpp's luaopen_testplugin), since only the loader itself needs an
     # actual .so on disk.
     add_library(plugin_native_fixture SHARED plugin_native_fixture.cpp)
-    target_link_libraries(plugin_native_fixture PRIVATE grunk::dynamic)
+    # Linking grunk::plugin (not just grunk::dynamic) matches what a real plugin is
+    # documented to do (docs/usage.rst's "Writing Plugins") - see grunk/plugin/CMakeLists.txt
+    # for why plain grunk::dynamic isn't enough once a grunk::state is actually
+    # instantiated with GRUNK_WITH_RECIPE on.
+    target_link_libraries(plugin_native_fixture PRIVATE grunk::plugin)
 endif()
 
 add_executable(runUnitTests ${TESTSOURCES})
