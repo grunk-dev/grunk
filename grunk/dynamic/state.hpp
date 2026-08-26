@@ -20,6 +20,7 @@
 
 #include <sol/sol.hpp>
 
+#include <algorithm>
 #include <stdexcept>
 #include <fstream>
 #include <typeindex>
@@ -113,7 +114,10 @@ public:
      *                  (e.g. "myplugin" for a plugin namespace - see state::begin_plugin),
      *                  used to give the type's constructor/methods their fully-qualified
      *                  name. Left empty for `table` itself being reachable unqualified
-     *                  (the default, flat-in-original_env case). This is what
+     *                  (the default, flat-in-original_env case) - unless `table` is a
+     *                  module created via create_module (e.g. begin_plugin's or
+     *                  run_module_script's own table), in which case that module's own
+     *                  name is used automatically (see module_qualifier). This is what
      *                  ActionDynamic::serialize embeds verbatim, and that text must
      *                  resolve correctly when a saved recipe is read back in - see
      *                  decorate_module_functions/register_external_type for the same
@@ -126,7 +130,8 @@ public:
         if (!table) {
             table = original_env;
         }
-        std::string const qualified_name = qualifier.empty() ? name : qualifier + "." + name;
+        std::string const effective_qualifier = !qualifier.empty() ? qualifier : module_qualifier(*table);
+        std::string const qualified_name = effective_qualifier.empty() ? name : effective_qualifier + "." + name;
         auto proxy = usertype_proxy<T>{qualified_name, table->new_usertype<T>(name, sol::constant_automagic_enrollments<Flags>{})};
         // record T's usertype table under its C++ type, so a DynamicFeature carrying a
         // type hint for T (see DynamicFeature::type_hint) can later look up a method by
@@ -168,7 +173,8 @@ public:
         int table_idx = (*table).push(L);
         sol::usertype<T> ut(L, table_idx);
         lua_pop(L, 1);
-        std::string const qualified_name = qualifier.empty() ? name : qualifier + "." + name;
+        std::string const effective_qualifier = !qualifier.empty() ? qualifier : module_qualifier(*table);
+        std::string const qualified_name = effective_qualifier.empty() ? name : effective_qualifier + "." + name;
         // Populate the type registry directly here, the same way register_type does,
         // rather than relying on T having already been registered via register_type
         // against this same table/name (which happened to make this work before, since
@@ -203,7 +209,8 @@ public:
         if (!table) {
             table = original_env;
         }
-        std::string const qualified_name = qualifier.empty() ? name : qualifier + "." + name;
+        std::string const effective_qualifier = !qualifier.empty() ? qualifier : module_qualifier(*table);
+        std::string const qualified_name = effective_qualifier.empty() ? name : effective_qualifier + "." + name;
         auto meta_func = create_function_meta(lua, qualified_name, params, std::forward<Func>(fun));
         table->set(name, meta_func);
     }
@@ -383,18 +390,26 @@ public:
      * This is the "plain C++" plugin kind's counterpart to load_compiled_plugin: instead
      * of loading a compiled Lua C extension, a plugin's own entry point (see
      * grunk::plugin's native loader) calls this once to obtain its namespace, then uses
-     * ordinary register_type/register_function calls against it - passing info.name as
-     * their own `qualifier` argument, so constructors/methods/functions serialize with
-     * their fully-qualified path (e.g. "geoml.gp_Pnt.new") rather than just "gp_Pnt.new",
-     * which would not resolve once the type is reachable only through this namespace:
+     * ordinary register_type/register_function calls against it. register_type/
+     * register_function auto-infer their own `qualifier` argument from `ns` (see
+     * module_qualifier), so constructors/methods/functions serialize with their
+     * fully-qualified path (e.g. "geoml.gp_Pnt.new") rather than just "gp_Pnt.new" (which
+     * would not resolve once the type is reachable only through this namespace) even if
+     * `info.name` isn't passed explicitly - passing it is still allowed, e.g. to
+     * override the inferred qualifier:
      *
      * @code
      * extern "C" void grunk_plugin_register(grunk::state& state, grunk::PluginInfo const& info) {
      *     auto ns = state.begin_plugin(info);
-     *     state.register_type<gp_Pnt>("gp_Pnt", ns, info.name) ...;
-     *     state.register_function("bezier_curve", ..., {}, ns, info.name);
+     *     state.register_type<gp_Pnt>("gp_Pnt", ns) ...;
+     *     state.register_function("bezier_curve", ..., {}, ns);
      * }
      * @endcode
+     *
+     * A plugin name already recorded in plugins() cannot be started again on the same
+     * state - this throws io_error rather than silently discarding the first plugin's
+     * namespace table (see create_module). Call clear_module(info.name) first if you
+     * genuinely intend to reload a plugin under the same name.
      *
      * @param info the plugin's name and version. `info.name` doubles as the namespace
      *             table's key in the original environment, exactly like load_compiled_plugin.
@@ -402,6 +417,7 @@ public:
      */
     inline sol::table begin_plugin(PluginInfo const& info)
     {
+        assert_plugin_name_free(info.name);
         sol::table ns = create_module(info.name);
         note_plugin(info);
         return ns;
@@ -420,6 +436,11 @@ public:
      * `table` argument and `<name>.<ClassName>` as its `name`, so the class ends up
      * reachable at the same path it was loaded under.
      *
+     * A plugin name already recorded in plugins() cannot be loaded again on the same
+     * state - this throws io_error rather than silently discarding the first plugin's
+     * namespace table (see load_module). Call clear_module(info.name) first if you
+     * genuinely intend to reload a plugin under the same name.
+     *
      * @param info the plugin's name and version. `info.name` doubles as the module's
      *             loading key (see load_module) and thus must match the module's own
      *             internal identity (e.g. SWIG's `%module` name).
@@ -429,6 +450,7 @@ public:
      */
     inline sol::table load_compiled_plugin(PluginInfo const& info, lua_CFunction open_fn)
     {
+        assert_plugin_name_free(info.name);
         sol::table ns = load_module(info.name, open_fn);
         decorate_module_functions(ns, info.name);
         original_env.set(info.name, ns);
@@ -450,6 +472,11 @@ public:
      * its own (see grunk::plugin's native loader for the compiled-plugin case, where
      * that identity instead comes from the plugin's own `grunk_plugin_info` symbol).
      *
+     * A plugin name already recorded in plugins() cannot be started again on the same
+     * state - this throws io_error rather than silently augmenting the first plugin's
+     * namespace table (see run_module_script). Call clear_module(info.name) first if
+     * you genuinely intend to reload a plugin under the same name.
+     *
      * @param info the plugin's name and version. `info.name` doubles as the module
      *             name run_module_script populates.
      * @param script the Lua source code to execute
@@ -457,6 +484,7 @@ public:
      */
     inline sol::table load_lua_plugin_script(PluginInfo const& info, std::string const& script)
     {
+        assert_plugin_name_free(info.name);
         run_module_script(info.name, script);
         note_plugin(info);
         sol::table ns = original_env[info.name];
@@ -489,6 +517,31 @@ public:
     inline std::vector<PluginInfo> const& plugins() const
     {
         return m_plugins;
+    }
+
+    /**
+     * @brief forget_plugin removes a plugin's identity from plugins() and the
+     * lua["grunk"]["plugins"] table note_plugin populated, without touching whatever
+     * namespace table/registrations it may have created.
+     *
+     * This is the low-level counterpart to note_plugin: grunk::plugin::load_native uses
+     * it to roll back a plugin's recorded identity if the plugin's own registration
+     * throws partway through (so a half-registered plugin is never reported as loaded -
+     * see load_native), and clear_module uses it to keep plugins() consistent when a
+     * plugin's module table is force-cleared for a reload.
+     *
+     * Does nothing if @p name is not currently recorded as a loaded plugin.
+     *
+     * @param name the plugin's name, as recorded in a prior note_plugin call
+     */
+    inline void forget_plugin(std::string const& name)
+    {
+        m_plugins.erase(
+            std::remove_if(m_plugins.begin(), m_plugins.end(), [&](PluginInfo const& p) { return p.name == name; }),
+            m_plugins.end()
+        );
+        sol::table plugins_table = lua["grunk"]["plugins"];
+        plugins_table[name] = sol::lua_nil;
     }
 
     /**
@@ -545,14 +598,19 @@ public:
      *
      * Use this to force a clean reload of a module, e.g. `clear_module(name)` followed by
      * `run_module_script(name, new_script)`, rather than relying on run_module_script's
-     * incremental-augmentation behavior.
+     * incremental-augmentation behavior. This is also the sanctioned way to reload a
+     * plugin under the same name: begin_plugin/load_compiled_plugin/load_lua_plugin_script
+     * all refuse to start a plugin whose name is already recorded in plugins() (see
+     * assert_plugin_name_free), so clear_module(name) - which also forgets the name via
+     * forget_plugin - must be called first.
      *
-     * @param name name of the module to remove
+     * @param name name of the module (or plugin) to remove
      */
     inline void clear_module(std::string const& name)
     {
         original_env.set(name, sol::lua_nil);
         decorated_env.set(name, sol::lua_nil);
+        forget_plugin(name);
     }
 
 #ifdef GRUNK_WITH_RECIPE
@@ -1133,17 +1191,70 @@ private:
      * @brief create_module creates a fresh, named module table in the original environment.
      *
      * The table's metatable falls back to the original environment for lookups, so module
-     * scripts can reference other registered types, functions and modules.
+     * scripts can reference other registered types, functions and modules. The metatable
+     * also records the module's own name (see module_qualifier), so register_type/
+     * register_function calls against this table can auto-infer their `qualifier`
+     * argument instead of requiring every call to repeat it.
      */
     inline sol::table create_module(std::string const& name)
     {
         sol::table module = lua.create_table();
         sol::table mt = lua.create_table();
         mt["__index"] = original_env;
+        mt["__grunk_module_name"] = name;
         module[sol::metatable_key] = mt;
 
         original_env.set(name, module);
         return module;
+    }
+
+    /**
+     * @brief module_qualifier returns the dotted path @p table itself is reachable
+     * under, if @p table was created via create_module (e.g. begin_plugin's or
+     * run_module_script's own namespace table) - otherwise "".
+     *
+     * register_type/register_function/modify_type use this to auto-infer their own
+     * `qualifier` argument when the caller leaves it empty, so a plugin's
+     * grunk_plugin_register (or any code registering against a module table) doesn't
+     * have to pass e.g. info.name to every single registration call just to keep
+     * constructors/methods/functions serializing with a resolvable, fully-qualified
+     * name (see register_type's `qualifier` parameter). Registering directly against
+     * original_env (the default, unqualified case) correctly yields "" here too, since
+     * original_env was never created via create_module.
+     */
+    inline std::string module_qualifier(sol::table const& table) const
+    {
+        sol::object mt = table[sol::metatable_key];
+        if (mt.valid() && mt.is<sol::table>()) {
+            sol::object tag = mt.as<sol::table>()["__grunk_module_name"];
+            if (tag.valid() && tag.is<std::string>()) {
+                return tag.as<std::string>();
+            }
+        }
+        return "";
+    }
+
+    /**
+     * @brief assert_plugin_name_free throws io_error if a plugin named @p name is
+     * already recorded in plugins() on this state.
+     *
+     * begin_plugin/load_compiled_plugin/load_lua_plugin_script all call this before
+     * touching any table, so loading a plugin a second time under the same name fails
+     * loudly instead of silently discarding (begin_plugin/load_compiled_plugin) or
+     * silently augmenting (load_lua_plugin_script) the first plugin's namespace table.
+     * Call clear_module(name) first to intentionally reload a plugin under the same name.
+     */
+    inline void assert_plugin_name_free(std::string const& name) const
+    {
+        for (PluginInfo const& p : m_plugins) {
+            if (p.name == name) {
+                throw io_error(
+                    "A plugin named \"" + name + "\" (version " + p.version + ") is already "
+                    "loaded in this grunk::state. Call clear_module(\"" + name + "\") first if "
+                    "you intend to reload it."
+                );
+            }
+        }
     }
 
     sol::state lua;

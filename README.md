@@ -192,7 +192,9 @@ GRUNK_PLUGIN_EXPORT void grunk_plugin_register(grunk::state& state, grunk::Plugi
         [](int l, int r){ return l + r; },
         {},
         ns,
-        info.name // qualifies "add"'s serialized name as "my_plugin.add"
+        info.name // qualifies "add"'s serialized name as "my_plugin.add" - ns already carries
+                  // this name itself, so it's auto-inferred if left out; passing it explicitly,
+                  // as above, is still fine and documents intent at the call site.
     );
 }
 ```
@@ -200,6 +202,10 @@ GRUNK_PLUGIN_EXPORT void grunk_plugin_register(grunk::state& state, grunk::Plugi
 `GRUNK_PLUGIN_EXPORT` (not a plain `extern "C"`) is what makes this portable: it expands to
 `extern "C" __declspec(dllexport)` on Windows, where a DLL exports nothing by default, and to
 plain `extern "C"` on Linux/macOS, where a shared library already does.
+
+Loading a plugin under a name that's already loaded on the same `grunk::state` throws rather than
+silently discarding the first plugin's namespace table - call `state.clear_module(name)` first if a
+reload is genuinely intended.
 
 ```cpp
 #include <grunk/grunk.hpp>

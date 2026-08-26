@@ -65,6 +65,24 @@ TEST(plugin, load_compiled_plugin_records_metadata)
     EXPECT_EQ(grunk.plugins()[0].version, "1.2.3");
 }
 
+// load_compiled_plugin used to silently reload the module table (luaL_requiref reuses
+// an existing registry entry for the same name) while still appending a second entry to
+// plugins() - it must now refuse a second load under an already-loaded name instead.
+TEST(plugin, load_compiled_plugin_twice_with_same_name_throws)
+{
+    grunk::state grunk;
+
+    grunk::PluginInfo info{"testplugin", "1.2.3"};
+    grunk.load_compiled_plugin(info, luaopen_testplugin);
+    EXPECT_THROW(
+        grunk.load_compiled_plugin(grunk::PluginInfo{"testplugin", "9.9.9"}, luaopen_testplugin),
+        grunk::io_error
+    );
+
+    ASSERT_EQ(grunk.plugins().size(), 1u);
+    EXPECT_EQ(grunk.plugins()[0].version, "1.2.3");
+}
+
 TEST(plugin, compiled_plugin_free_functions_are_tracked)
 {
     grunk::state grunk;

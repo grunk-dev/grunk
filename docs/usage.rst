@@ -980,6 +980,29 @@ grunk's dynamic scripting engine never needs to know which kind loaded a given s
 value is registered, it decorates and tracks identically regardless of provenance. Which kind to
 pick is purely an authoring-time decision.
 
+Each kind has its own entry point, since each starts from a different shape of input - there is no
+single umbrella "load a plugin" function:
+
+.. list-table::
+   :header-rows: 1
+
+   * - Plugin kind
+     - Loading call (consumer side)
+     - Registering call (plugin's own ``grunk_plugin_register``)
+   * - Plain C++
+     - ``grunk::plugin::load_native``
+     - ``state::begin_plugin``
+   * - Compiled Lua (SWIG, ...)
+     - ``grunk::plugin::load_native``
+     - ``state::load_compiled_plugin``
+   * - Pure Lua
+     - ``state::load_lua_plugin_file`` (or ``grunk::plugin::load_script``)
+     - *(none - the file itself is the whole plugin)*
+
+Plain C++ and compiled-Lua plugins share the same *loading* call (``load_native``, since both are
+native shared libraries with the same fixed ABI) but differ in their *registering* call, since only
+one of them is populating its namespace table by hand.
+
 Using grunk plugins
 --------------------
 
@@ -1031,8 +1054,19 @@ plugin kinds have an entry point under ``grunk::plugin``.)
 Every loaded plugin's identity is recorded on the ``grunk::state`` and can be inspected via
 ``state::plugins()``. This is also what lets a saved :ref:`recipe<grunk-recipes>`'s ``uses:`` block
 be validated on read: a recipe records every plugin it needs by name and version, and reading it
-back fails immediately, with a clear message, if a required plugin was never loaded - rather than
-failing later with a confusing "symbol not found" the first time a step referencing it runs.
+back fails immediately, with a clear message, if a plugin of a required *name* was never loaded -
+rather than failing later with a confusing "symbol not found" the first time a step referencing it
+runs. Only the plugin's *name* is checked, not its exact version: the recorded version is
+informational (e.g. useful when debugging a mismatch by hand), not enforced, since two builds of a
+plugin sharing one name are often meant to be interchangeable - see
+``examples/cpp/cad_autodiff``'s "geoml"/"geoml_adolc" plugins, which report different versions
+under the same name specifically so the same recipe can be read back against either one.
+
+A plugin name already recorded in ``plugins()`` cannot be loaded again on the same ``grunk::state``
+- ``begin_plugin``/``load_compiled_plugin``/``load_lua_plugin_script`` all throw ``io_error`` rather
+than silently discarding or augmenting the first plugin's namespace table. Call
+``state.clear_module(name)`` first (this also forgets the plugin's recorded identity) if you
+genuinely intend to reload a plugin under the same name.
 
 .. note::
 
@@ -1090,11 +1124,15 @@ A plain C++ plugin is a shared library exporting two fixed entry points, so a ge
    }
 
 ``grunk_plugin_info`` reports the plugin's identity; ``grunk_plugin_register`` is handed that same
-``PluginInfo`` back and does the actual registration. Passing ``ns`` and ``info.name`` as
-``register_type``/``register_function``'s last two arguments is what puts ``MyScalar``/``add``
+``PluginInfo`` back and does the actual registration. Passing ``ns`` as
+``register_type``/``register_function``'s ``table`` argument is what puts ``MyScalar``/``add``
 under the ``my_plugin`` namespace (``my_plugin.MyScalar``, ``my_plugin.add``) instead of flat in
 the environment, and keeps their *serialized* form (used when writing a recipe to file) resolvable
-by that same qualified path when the recipe is read back in.
+by that same qualified path when the recipe is read back in. Passing ``info.name`` as the trailing
+``qualifier`` argument (as above) is what makes that qualified path correct; it can be left out
+since ``ns`` (returned by ``begin_plugin``) already carries its own name and
+``register_type``/``register_function`` auto-infer the qualifier from it - passing it explicitly,
+as above, is still fine and makes the intent easier to read at the call site.
 
 ``GRUNK_PLUGIN_EXPORT`` (not a plain ``extern "C"``) is what makes this portable: a plain
 ``extern "C"`` is enough on Linux/macOS, where a shared library exports its symbols by default,

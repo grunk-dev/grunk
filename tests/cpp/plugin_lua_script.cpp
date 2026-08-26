@@ -75,6 +75,25 @@ TEST(PluginLuaScript, load_from_file_records_metadata)
     EXPECT_EQ(env.get("y").as<int>(), 11);
 }
 
+// load_lua_plugin_script used to silently augment the existing module table if called
+// twice with the same name (run_module_script's own incremental-augmentation behavior,
+// meant for genuine multi-script modules) while still appending a second entry to
+// plugins() - a second *plugin* load under an already-loaded name must now refuse
+// instead.
+TEST(PluginLuaScript, load_twice_with_same_name_throws)
+{
+    grunk::state grunk;
+
+    grunk.load_lua_plugin_script(grunk::PluginInfo{"lua_plugin", "0.1.0"}, "function add_one(x) return x + 1 end");
+    EXPECT_THROW(
+        grunk.load_lua_plugin_script(grunk::PluginInfo{"lua_plugin", "0.2.0"}, "function add_two(x) return x + 2 end"),
+        grunk::io_error
+    );
+
+    ASSERT_EQ(grunk.plugins().size(), 1u);
+    EXPECT_EQ(grunk.plugins()[0].version, "0.1.0");
+}
+
 TEST(PluginLuaScript, load_from_missing_file_throws)
 {
     grunk::state grunk;
