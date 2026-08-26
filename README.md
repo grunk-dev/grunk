@@ -179,12 +179,12 @@ A plugin written in C++ gets a namespace to register into via `grunk::state::beg
 // my_plugin.cpp - built as its own shared library, e.g. my_plugin.so
 #include <grunk/grunk.hpp>
 
-extern "C" grunk::PluginInfo grunk_plugin_info()
+GRUNK_PLUGIN_EXPORT grunk::PluginInfo grunk_plugin_info()
 {
     return grunk::PluginInfo{"my_plugin", "1.0.0"};
 }
 
-extern "C" void grunk_plugin_register(grunk::state& state, grunk::PluginInfo const& info)
+GRUNK_PLUGIN_EXPORT void grunk_plugin_register(grunk::state& state, grunk::PluginInfo const& info)
 {
     auto ns = state.begin_plugin(info);
     state.register_function(
@@ -196,6 +196,10 @@ extern "C" void grunk_plugin_register(grunk::state& state, grunk::PluginInfo con
     );
 }
 ```
+
+`GRUNK_PLUGIN_EXPORT` (not a plain `extern "C"`) is what makes this portable: it expands to
+`extern "C" __declspec(dllexport)` on Windows, where a DLL exports nothing by default, and to
+plain `extern "C"` on Linux/macOS, where a shared library already does.
 
 ```cpp
 #include <grunk/grunk.hpp>
