@@ -39,6 +39,11 @@ if (GRUNK_WITH_RECIPE)
         target_link_libraries(grunk PUBLIC grunk::recipe)
 endif()
 
+if (GRUNK_WITH_PLUGIN)
+        add_subdirectory(plugin)
+        target_link_libraries(grunk PUBLIC grunk::plugin)
+endif()
+
 # install grunk
 install(TARGETS grunk
         EXPORT grunkTargets
@@ -71,6 +76,14 @@ if (GRUNK_WITH_RECIPE)
     # install recipe.hpp
     install(FILES
         ${PROJECT_SOURCE_DIR}/grunk/recipe.hpp
+        DESTINATION include/grunk
+    )
+endif()
+
+if (GRUNK_WITH_PLUGIN)
+    # install plugin.hpp
+    install(FILES
+        ${PROJECT_SOURCE_DIR}/grunk/plugin.hpp
         DESTINATION include/grunk
     )
 endif()
