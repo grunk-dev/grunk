@@ -19,6 +19,17 @@ option(GRUNK_PYTHON        "Build python bindings using pybind11" OFF)
 option(GRUNK_TESTS         "Build unit tests using GTest" OFF)
 option(GRUNK_BUILD_DOCS    "Build documentation (requires doxygen and sphinx)" OFF)
 
+# grunk::plugin (grunk/plugin/CMakeLists.txt) links grunk::dynamic (directly, or via
+# grunk::recipe) unconditionally, so building it without GRUNK_WITH_DYNAMIC would
+# otherwise fail deep inside that subdirectory with an opaque "target not found" error.
+# Catch the actual missing dependency here instead, with a message that says what to do.
+if (GRUNK_WITH_PLUGIN AND NOT GRUNK_WITH_DYNAMIC)
+    message(FATAL_ERROR
+        "GRUNK_WITH_PLUGIN=ON requires GRUNK_WITH_DYNAMIC=ON (grunk::plugin is built on top "
+        "of grunk::dynamic). Either enable GRUNK_WITH_DYNAMIC or disable GRUNK_WITH_PLUGIN."
+    )
+endif()
+
 # If scikit-build (SKBUILD) is driving the build (i.e. when building wheels),
 # enable Python bindings by default so the `python/` subdirectory is
 # processed and the nanobind extension is built and packaged.

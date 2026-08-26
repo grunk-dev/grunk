@@ -71,6 +71,12 @@ if (GRUNK_WITH_PLUGIN)
     # for why plain grunk::dynamic isn't enough once a grunk::state is actually
     # instantiated with GRUNK_WITH_RECIPE on.
     target_link_libraries(plugin_native_fixture PRIVATE grunk::plugin)
+
+    # A second fixture whose grunk_plugin_register deliberately throws, so
+    # plugin_loader.cpp can verify load_native rolls back a half-registered plugin's
+    # identity instead of reporting it as loaded (see plugin_native_fixture_failing.cpp).
+    add_library(plugin_native_fixture_failing SHARED plugin_native_fixture_failing.cpp)
+    target_link_libraries(plugin_native_fixture_failing PRIVATE grunk::plugin)
 endif()
 
 add_executable(runUnitTests ${TESTSOURCES})
@@ -79,7 +85,8 @@ target_link_libraries(runUnitTests PRIVATE grunk gtest_main)
 if (GRUNK_WITH_PLUGIN)
     target_compile_definitions(runUnitTests PRIVATE
         NATIVE_FIXTURE_SO_PATH="$<TARGET_FILE:plugin_native_fixture>"
+        FAILING_NATIVE_FIXTURE_SO_PATH="$<TARGET_FILE:plugin_native_fixture_failing>"
     )
-    add_dependencies(runUnitTests plugin_native_fixture)
+    add_dependencies(runUnitTests plugin_native_fixture plugin_native_fixture_failing)
 endif()
 

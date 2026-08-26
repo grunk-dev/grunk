@@ -88,6 +88,28 @@ TEST(RecipePlugin, populate_fails_clearly_when_required_plugin_is_missing)
     EXPECT_THROW(recipe2.populate_from_string(yaml), grunk::io_error);
 }
 
+// The uses: block only validates a required plugin's *name*, not its exact version
+// (see docs/usage.rst's "Using grunk plugins" section) - two builds of a plugin sharing
+// one name are often meant to be interchangeable, e.g. examples/cpp/cad_autodiff's
+// "geoml"/"geoml_adolc" plugins, which report different versions under the same name
+// specifically so the same recipe can be read back against either one. This must keep
+// working even if the version check is ever tightened elsewhere by mistake.
+TEST(RecipePlugin, populate_succeeds_when_plugin_version_differs_but_name_matches)
+{
+    grunk::state grunk;
+    grunk.load_compiled_plugin(grunk::PluginInfo{"recipeplugin", "1.2.3"}, luaopen_recipeplugin);
+
+    auto recipe = grunk.create_recipe();
+    std::string yaml = recipe.to_string();
+    ASSERT_NE(yaml.find("recipeplugin: 1.2.3"), std::string::npos);
+
+    grunk::state other;
+    other.load_compiled_plugin(grunk::PluginInfo{"recipeplugin", "9.9.9"}, luaopen_recipeplugin);
+
+    auto recipe2 = other.create_recipe();
+    EXPECT_NO_THROW(recipe2.populate_from_string(yaml));
+}
+
 namespace {
 
 struct RecipePluginLength

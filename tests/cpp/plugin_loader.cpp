@@ -46,6 +46,45 @@ TEST(PluginLoader, load_native_missing_file_throws)
     EXPECT_THROW(grunk::plugin::load_native(grunk, "does_not_exist.so"), std::runtime_error);
 }
 
+// FAILING_NATIVE_FIXTURE_SO_PATH is set by CMakeLists.txt to the built path of the
+// plugin_native_fixture_failing shared library target (see
+// plugin_native_fixture_failing.cpp), whose grunk_plugin_register calls begin_plugin
+// (recording the plugin's identity) and then deliberately throws.
+TEST(PluginLoader, load_native_rolls_back_failed_registration)
+{
+    grunk::state grunk;
+
+    EXPECT_THROW(grunk::plugin::load_native(grunk, FAILING_NATIVE_FIXTURE_SO_PATH), std::runtime_error);
+
+    // begin_plugin recorded "failing_fixture" before grunk_plugin_register threw - a
+    // half-registered plugin must not be left reported as loaded (see load_native).
+    EXPECT_EQ(grunk.plugins().size(), 0u);
+
+    // The Lua-side mirror (lua["grunk"]["plugins"], see state::note_plugin/forget_plugin)
+    // must be rolled back too - this is what a recipe's uses: block validation reads
+    // (see Recipe::populate_from_node), so it has to agree with plugins() above. "grunk"
+    // is a plain Lua global (not part of original_env), so it's only reachable through a
+    // parametric env's decorated __index fallback to lua.globals() - a plain create_env()
+    // env can't see it (see create_decorated_environment).
+    auto penv = grunk.create_parametric_env();
+    auto res = penv.eval("assert(grunk.plugins.failing_fixture == nil)");
+    EXPECT_TRUE(res.valid());
+}
+
+TEST(PluginLoader, load_native_failure_error_includes_plugin_name_and_path)
+{
+    grunk::state grunk;
+
+    try {
+        grunk::plugin::load_native(grunk, FAILING_NATIVE_FIXTURE_SO_PATH);
+        FAIL() << "expected load_native to throw";
+    } catch (std::runtime_error const& e) {
+        std::string what = e.what();
+        EXPECT_NE(what.find("failing_fixture"), std::string::npos);
+        EXPECT_NE(what.find(FAILING_NATIVE_FIXTURE_SO_PATH), std::string::npos);
+    }
+}
+
 TEST(PluginLoader, load_script_records_metadata_and_registers_namespace)
 {
     grunk::state grunk;

@@ -35,6 +35,12 @@ std::string last_error_message()
         nullptr, err, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
         reinterpret_cast<LPSTR>(&buffer), 0, nullptr
     );
+    // FormatMessageA can fail (return 0, leave buffer null) for an error code with no
+    // message-table entry - guard against constructing a std::string from a null
+    // buffer and calling LocalFree on it in that case.
+    if (size == 0 || buffer == nullptr) {
+        return "unknown error (code " + std::to_string(err) + ")";
+    }
     std::string message(buffer, size);
     LocalFree(buffer);
     return message;
@@ -45,6 +51,11 @@ native_handle open_library(std::filesystem::path const& path)
     // LoadLibraryW (not the narrow LoadLibraryA) so a non-ASCII path round-trips
     // correctly - std::filesystem::path::wstring() already handles that conversion.
     return LoadLibraryW(path.wstring().c_str());
+}
+
+void close_library(native_handle handle)
+{
+    FreeLibrary(handle);
 }
 
 void* find_symbol_checked(native_handle handle, char const* symbol, std::string const& path)
@@ -80,6 +91,11 @@ native_handle open_library(std::filesystem::path const& path)
     return dlopen(path.string().c_str(), RTLD_NOW | RTLD_LOCAL);
 }
 
+void close_library(native_handle handle)
+{
+    dlclose(handle);
+}
+
 void* find_symbol_checked(native_handle handle, char const* symbol, std::string const& path)
 {
     dlerror(); // clear any prior error, per dlsym's own documented idiom for telling a
@@ -107,11 +123,35 @@ PluginInfo load_native(state& state, std::filesystem::path const& path)
         throw std::runtime_error("grunk::plugin::load_native: could not load \"" + path_str + "\": " + last_error_message());
     }
 
-    auto info_fn = reinterpret_cast<info_fn_t>(find_symbol_checked(handle, "grunk_plugin_info", path_str));
-    auto register_fn = reinterpret_cast<register_fn_t>(find_symbol_checked(handle, "grunk_plugin_register", path_str));
+    info_fn_t info_fn;
+    register_fn_t register_fn;
+    try {
+        info_fn = reinterpret_cast<info_fn_t>(find_symbol_checked(handle, "grunk_plugin_info", path_str));
+        register_fn = reinterpret_cast<register_fn_t>(find_symbol_checked(handle, "grunk_plugin_register", path_str));
+    } catch (...) {
+        close_library(handle);
+        throw;
+    }
 
     PluginInfo info = info_fn();
-    register_fn(state, info);
+    try {
+        register_fn(state, info);
+    } catch (std::exception const& e) {
+        // Registration may have partially completed (e.g. begin_plugin already
+        // recorded the plugin's identity before the caller's own register_type/
+        // register_function calls threw) - forget it so a half-registered plugin is
+        // never reported as loaded, and wrap the error with which plugin/library it
+        // came from, since the original exception (typically a bare sol2/Lua error)
+        // has no idea it was thrown from inside a plugin's registration.
+        state.forget_plugin(info.name);
+        throw std::runtime_error(
+            "grunk::plugin::load_native: plugin \"" + info.name + "\" (from \"" + path_str +
+            "\") failed during registration: " + e.what()
+        );
+    } catch (...) {
+        state.forget_plugin(info.name);
+        throw;
+    }
     return info;
 }
 
