@@ -12,13 +12,14 @@
 #include "../geoml_registration.hpp"
 
 // grunk_plugin_info/grunk_plugin_register: the fixed ABI grunk::plugin::load_native
-// dlsym's, extern "C" for stable, unmangled linkage - see grunk/plugin/loader.hpp.
-extern "C" grunk::PluginInfo grunk_plugin_info()
+// looks up - see grunk/plugin/loader.hpp for what GRUNK_PLUGIN_EXPORT does on each
+// platform.
+GRUNK_PLUGIN_EXPORT grunk::PluginInfo grunk_plugin_info()
 {
     return grunk::PluginInfo{"geoml", "main"}; // tracks ../../CMakeLists.txt's FetchContent GIT_TAG
 }
 
-extern "C" void grunk_plugin_register(grunk::state& grunk, grunk::PluginInfo const& info)
+GRUNK_PLUGIN_EXPORT void grunk_plugin_register(grunk::state& grunk, grunk::PluginInfo const& info)
 {
     auto ns = grunk.begin_plugin(info);
     register_geoml(grunk, ns, info);
