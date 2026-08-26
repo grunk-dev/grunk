@@ -380,16 +380,7 @@ public:
         sol::table ns = load_module(info.name, open_fn);
         decorate_module_functions(ns, info.name);
         original_env.set(info.name, ns);
-        m_plugins.push_back(info);
-
-        // Mirror the plugin's identity into the Lua-global "grunk" table (alongside
-        // env/parametric_env), so anything that only has access to this state's
-        // lua_State - like grunk::Recipe, which has no back-reference to the state
-        // that created it - can still discover which plugins are loaded, e.g. to
-        // populate/validate a recipe's "uses" block.
-        sol::table plugins_table = lua["grunk"]["plugins"];
-        plugins_table[info.name] = info.version;
-
+        note_plugin(info);
         return ns;
     }
 
@@ -1020,6 +1011,24 @@ private:
 
         // Set the decorated metatable on the new environment
         decorated_env[sol::metatable_key] = mt;
+    }
+
+    /**
+     * @brief note_plugin records a plugin's identity: it is appended to plugins() and
+     * mirrored into the Lua-global "grunk.plugins" table (alongside env/parametric_env),
+     * so anything that only has access to this state's lua_State - like grunk::Recipe,
+     * which has no back-reference to the state that created it - can still discover
+     * which plugins are loaded, e.g. to populate/validate a recipe's "uses" block.
+     *
+     * Every load_*_plugin method (whatever mechanism it uses to populate the plugin's
+     * own namespace table) calls this once it has done so, giving all plugin kinds the
+     * same discoverable identity.
+     */
+    inline void note_plugin(PluginInfo const& info)
+    {
+        m_plugins.push_back(info);
+        sol::table plugins_table = lua["grunk"]["plugins"];
+        plugins_table[info.name] = info.version;
     }
 
     /**
