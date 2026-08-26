@@ -27,7 +27,6 @@ configure = { cmd = [
     "-B", "build",
     "-D", "CMAKE_INSTALL_PREFIX=build/install",
     "-D", "CMAKE_BUILD_TYPE={{ config }}",
-    "-D", "ADOLC_BASE_DIR=build/_deps/ADOL-C/adolc_base",
     "-D", "ADTL_LIB_DIR=build/_deps/swig-adol-c/build"
 ], args = [
     { "arg" = "config", "default" = "Release" }
