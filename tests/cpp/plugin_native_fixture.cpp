@@ -15,6 +15,7 @@
 // examples/cpp/cad_autodiff's geoml_plugin.cpp uses, just namespaced.
 
 #include <grunk/dynamic.hpp>
+#include <grunk/plugin/loader.hpp>
 
 namespace {
 
@@ -28,12 +29,12 @@ struct FixtureType
 
 } // anonymous namespace
 
-extern "C" grunk::PluginInfo grunk_plugin_info()
+GRUNK_PLUGIN_EXPORT grunk::PluginInfo grunk_plugin_info()
 {
     return grunk::PluginInfo{"native_fixture", "1.0.0"};
 }
 
-extern "C" void grunk_plugin_register(grunk::state& state, grunk::PluginInfo const& info)
+GRUNK_PLUGIN_EXPORT void grunk_plugin_register(grunk::state& state, grunk::PluginInfo const& info)
 {
     auto ns = state.begin_plugin(info);
     state.register_type<FixtureType>("FixtureType", ns, info.name)

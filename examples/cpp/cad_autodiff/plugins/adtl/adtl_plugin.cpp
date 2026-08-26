@@ -28,12 +28,12 @@
 // - grunk::plugin::load_native only ever dlopen's this shim itself, one level up.
 extern "C" int luaopen_adtl(lua_State* L);
 
-extern "C" grunk::PluginInfo grunk_plugin_info()
+GRUNK_PLUGIN_EXPORT grunk::PluginInfo grunk_plugin_info()
 {
     return grunk::PluginInfo{"adtl", "2.7.2"}; // matches the wrapped ADOL-C release
 }
 
-extern "C" void grunk_plugin_register(grunk::state& grunk, grunk::PluginInfo const& info)
+GRUNK_PLUGIN_EXPORT void grunk_plugin_register(grunk::state& grunk, grunk::PluginInfo const& info)
 {
     // Load the compiled SWIG-Lua module as a grunk plugin: its own table becomes the
     // "adtl" namespace in original_env, its free functions (tan, exp, log, sqrt, pow,
