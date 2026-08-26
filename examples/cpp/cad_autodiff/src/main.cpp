@@ -55,69 +55,26 @@ lua_CFunction load_adtl_entry_point()
     return reinterpret_cast<lua_CFunction>(sym);
 }
 
-// geoml_plugin.so is a mockup of a genuine C++ grunk plugin (see
-// plugins/geoml/geoml_plugin.cpp): unlike adtl.so (a compiled Lua module, loaded via
-// load_compiled_plugin), it exposes a plain C++ entry point that registers
-// types/functions directly against a grunk::state - grunk-dev/grunk#235's "C++
-// plugin" kind. dlopen'd for the same reason as adtl.so: only its path needs to be
-// known at build time (see CMakeLists.txt's geoml_plugin target).
-using geoml_plugin_entry_point_t = void (*)(grunk::state&);
-
-geoml_plugin_entry_point_t load_geoml_plugin_entry_point()
-{
-    // RTLD_LOCAL is safe here: every OCCT/geoml-typed sol2 template instantiation
-    // (e.g. for Geom_BezierCurve) happens exclusively inside geoml_plugin.so -
-    // construction and consumption (export_brep) both live in
-    // geoml_registration.hpp - so there's no second copy on this side for the
-    // dynamic linker to unify. This file only exchanges plain sol::object/bool
-    // values with the plugin (see the file comment above).
-    void* handle = dlopen(GEOML_PLUGIN_SO_PATH, RTLD_NOW | RTLD_LOCAL);
-    if (!handle) {
-        throw std::runtime_error(std::string("could not load geoml_plugin.so: ") + dlerror());
-    }
-
-    dlerror();
-    void* sym = dlsym(handle, "grunk_geoml_plugin_entry_point");
-    if (char const* err = dlerror(); err != nullptr) {
-        throw std::runtime_error(std::string("could not find grunk_geoml_plugin_entry_point in geoml_plugin.so: ") + err);
-    }
-
-    return reinterpret_cast<geoml_plugin_entry_point_t>(sym);
-}
-
+// geoml_plugin.so is a genuine C++ grunk plugin (see plugins/geoml/geoml_plugin.cpp):
+// unlike adtl.so (a compiled Lua module, loaded via load_compiled_plugin), its entry
+// point registers types/functions directly against a grunk::state -
+// grunk-dev/grunk#235's "C++ plugin" kind. Loaded the same way as adtl_plugin.so, via
+// grunk::plugin::load_native - only its path needs to be known at build time (see
+// CMakeLists.txt's geoml_plugin target), not the plugin's own code.
 void load_geoml_plugin(grunk::state& grunk)
 {
-    auto entry_point = load_geoml_plugin_entry_point();
-    entry_point(grunk);
+    grunk::plugin::load_native(grunk, GEOML_PLUGIN_SO_PATH);
 }
 
-// Mechanically identical to load_geoml_plugin_entry_point/load_geoml_plugin above,
-// just pointed at a different library and entry point symbol - see
-// plugins/geoml_adolc/geoml_adolc_plugin.cpp and README.md's "Stage 3" section.
-// plugins/geoml_adolc/ is a separate, standalone CMake project you build yourself
-// (see that directory's CMakeLists.txt for why), so this throws unless
+// Mechanically identical to load_geoml_plugin above, just pointed at a different
+// library - see plugins/geoml_adolc/geoml_adolc_plugin.cpp and README.md's "Stage 3"
+// section. plugins/geoml_adolc/ is a separate, standalone CMake project you build
+// yourself (see that directory's CMakeLists.txt for why), so this throws unless
 // GEOML_ADOLC_PLUGIN_SO_PATH (a CMake cache variable, ../../CMakeLists.txt) is
 // pointed at a real build of it.
-geoml_plugin_entry_point_t load_geoml_adolc_plugin_entry_point()
-{
-    void* handle = dlopen(GEOML_ADOLC_PLUGIN_SO_PATH, RTLD_NOW | RTLD_LOCAL);
-    if (!handle) {
-        throw std::runtime_error(std::string("could not load geoml_adolc_plugin.so: ") + dlerror());
-    }
-
-    dlerror();
-    void* sym = dlsym(handle, "grunk_geoml_adolc_plugin_entry_point");
-    if (char const* err = dlerror(); err != nullptr) {
-        throw std::runtime_error(std::string("could not find grunk_geoml_adolc_plugin_entry_point in geoml_adolc_plugin.so: ") + err);
-    }
-
-    return reinterpret_cast<geoml_plugin_entry_point_t>(sym);
-}
-
 void load_geoml_adolc_plugin(grunk::state& grunk)
 {
-    auto entry_point = load_geoml_adolc_plugin_entry_point();
-    entry_point(grunk);
+    grunk::plugin::load_native(grunk, GEOML_ADOLC_PLUGIN_SO_PATH);
 }
 
 void load_adolc_plugin(grunk::state& grunk)
@@ -243,14 +200,17 @@ void read_autodiff_only_recipe()
 // extraction stays confined to stage 3's read_recipe_ad, appended after read (via
 // its own "ad" Lua module) rather than written here.
 //
-// curve:Value(0.5)/point_at_half:X()/:Y(), not the qualified Geom_BezierCurve.Value(curve, u)/
-// gp_Pnt.X(point_at_half)/gp_Pnt.Y(point_at_half) form: grunk's native colon-call
+// curve:Value(0.5)/point_at_half:X()/:Y(), not the qualified geoml.Geom_BezierCurve.Value(curve, u)/
+// geoml.gp_Pnt.X(point_at_half)/geoml.gp_Pnt.Y(point_at_half) form: grunk's native colon-call
 // dispatch (grunk-dev/grunk#269) resolves a feature's method via a type hint stamped
 // on it at construction time (never by evaluating it), so an ordinary-looking
 // `instance:method(...)` works directly for any feature that carries one - this is
-// the default, recommended form (see docs/usage.rst). bezier_curve itself returns
-// Handle(Geom_BezierCurve) (i.e. opencascade::handle<Geom_BezierCurve>), which needed
-// a small grunk fix (function_meta.hpp's deduce_return_type_hint recognizing
+// the default, recommended form (see docs/usage.rst), and unaffected by geoml's own
+// registrations living under the "geoml" namespace table (see geoml_registration.hpp)
+// rather than flat, since colon-call resolves via a C++-type-keyed registry, not a
+// Lua-side name lookup. bezier_curve itself returns Handle(Geom_BezierCurve) (i.e.
+// opencascade::handle<Geom_BezierCurve>), which needed a small grunk fix
+// (function_meta.hpp's deduce_return_type_hint recognizing
 // sol::unique_usertype_traits<R> and hinting the pointee type, not the smart-pointer
 // wrapper itself) before curve's own colon-call would resolve.
 void write_cad_recipe(bool with_ad)
@@ -266,13 +226,13 @@ void write_cad_recipe(bool with_ad)
     recipe.eval(R"(
         X = grunk.feature(1.)
 
-        P_1 = gp_Pnt.new(X, 0., 0.)
-        P_2 = gp_Pnt.new(1., 2., 0.)
-        P_3 = gp_Pnt.new(2., -1., 0.)
-        P_4 = gp_Pnt.new(3., 0., 0.)
+        P_1 = geoml.gp_Pnt.new(X, 0., 0.)
+        P_2 = geoml.gp_Pnt.new(1., 2., 0.)
+        P_3 = geoml.gp_Pnt.new(2., -1., 0.)
+        P_4 = geoml.gp_Pnt.new(3., 0., 0.)
 
-        poles = gp_Pnt.as_vec(P_1, P_2, P_3, P_4)
-        curve = bezier_curve(poles)
+        poles = geoml.gp_Pnt.as_vec(P_1, P_2, P_3, P_4)
+        curve = geoml.bezier_curve(poles)
 
         point_at_half = curve:Value(0.5)
         x_at_half = point_at_half:X()
@@ -294,7 +254,7 @@ void read_cad_recipe()
     load_geoml_plugin(grunk);
 
     auto recipe = grunk.read("bezier_curve.grr.yml");
-    recipe.eval(R"(exported = export_brep(curve, "bezier_curve.brep"))");
+    recipe.eval(R"(exported = geoml.export_brep(curve, "bezier_curve.brep"))");
 
     bool exported = recipe.get_feature("exported").value().as<bool>();
     std::cout << "bezier_curve.brep exported: " << std::boolalpha << exported << std::endl;
@@ -315,7 +275,7 @@ void read_cad_recipe()
 //
 // The point of this function: a grunk recipe can be treated as a black-box function
 // from parameters to outputs. At the call site - here - that means never reaching
-// into the recipe's internal Lua variable names (X's constructing gp_Pnt.new call,
+// into the recipe's internal Lua variable names (X's constructing geoml.gp_Pnt.new call,
 // point_at_half, x_at_half/y_at_half, ...): only its declared parameter ("X") and
 // its declared outputs ("x(0.5)"/"y(0.5)", grunk-dev/grunk#266) are ever named.
 // Forward-mode AD fits this exactly - set a seed on a parameter, then read both the
@@ -339,17 +299,17 @@ void read_recipe_ad()
     // they operate on whatever Standard_Real value they're given.
     recipe.insert_module_script("ad", R"(
         function seed(x, value)
-            ret = Standard_Real.new(x)
-            Standard_Real.setADValue(ret, 0, value)
+            ret = geoml.Standard_Real.new(x)
+            geoml.Standard_Real.setADValue(ret, 0, value)
             return ret
         end
 
         function primal(x)
-            return Standard_Real.getValue(x)
+            return geoml.Standard_Real.getValue(x)
         end
 
         function derivative(x, direction)
-            return Standard_Real.getADValue(x, direction)
+            return geoml.Standard_Real.getADValue(x, direction)
         end
     )");
     sol::table ad = recipe.get<sol::table>("ad");
