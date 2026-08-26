@@ -87,3 +87,82 @@ TEST(RecipePlugin, populate_fails_clearly_when_required_plugin_is_missing)
     auto recipe2 = other.create_recipe();
     EXPECT_THROW(recipe2.populate_from_string(yaml), grunk::io_error);
 }
+
+namespace {
+
+struct RecipePluginLength
+{
+    RecipePluginLength() = default;
+    RecipePluginLength(double x_) : x(x_) {}
+    double get_x() const { return x; }
+    double x{0.};
+};
+
+} // anonymous namespace
+
+// The uses:-block mechanism reads plugins() / lua["grunk"]["plugins"], which
+// note_plugin populates identically for every plugin kind (see state.hpp) - a recipe
+// must list a compiled-Lua plugin, a begin_plugin C++ plugin and a load_lua_plugin_script
+// plugin exactly the same way, regardless of which mechanism registered each one.
+TEST(RecipePlugin, uses_block_lists_plugins_regardless_of_kind)
+{
+    grunk::state grunk;
+    grunk.load_compiled_plugin(grunk::PluginInfo{"compiledplugin", "1.0.0"}, luaopen_recipeplugin);
+
+    auto ns = grunk.begin_plugin(grunk::PluginInfo{"cppplugin", "2.0.0"});
+    grunk.register_type<RecipePluginLength>("Length", ns, "cppplugin")
+        .add_constructors([](double x) { return RecipePluginLength(x); })
+        .add_member_function("get_x", &RecipePluginLength::get_x);
+
+    grunk.load_lua_plugin_script(
+        grunk::PluginInfo{"luaplugin", "3.0.0"},
+        "function add_one(x) return x + 1 end"
+    );
+
+    auto recipe = grunk.create_recipe();
+    std::string yaml = recipe.to_string();
+
+    EXPECT_NE(yaml.find("compiledplugin: 1.0.0"), std::string::npos);
+    EXPECT_NE(yaml.find("cppplugin: 2.0.0"), std::string::npos);
+    EXPECT_NE(yaml.find("luaplugin: 3.0.0"), std::string::npos);
+}
+
+// A recipe using a begin_plugin-registered C++ type must round-trip through YAML the
+// same way one using a compiled-Lua plugin already does (see
+// roundtrip_through_yaml_preserves_computation above).
+TEST(RecipePlugin, roundtrip_through_yaml_preserves_cpp_plugin_computation)
+{
+    grunk::state grunk;
+    auto ns = grunk.begin_plugin(grunk::PluginInfo{"cppplugin", "2.0.0"});
+    grunk.register_type<RecipePluginLength>("Length", ns, "cppplugin")
+        .add_constructors([](double x) { return RecipePluginLength(x); })
+        .add_member_function("get_x", &RecipePluginLength::get_x);
+
+    std::string yaml;
+    {
+        auto recipe = grunk.create_recipe();
+        recipe.eval(R"(
+            u = grunk.feature(3.)
+            l = cppplugin.Length.new(u)
+            x = cppplugin.Length.get_x(l)
+        )");
+        recipe.tag();
+        yaml = recipe.to_string();
+    }
+
+    grunk::state other;
+    auto other_ns = other.begin_plugin(grunk::PluginInfo{"cppplugin", "2.0.0"});
+    other.register_type<RecipePluginLength>("Length", other_ns, "cppplugin")
+        .add_constructors([](double x) { return RecipePluginLength(x); })
+        .add_member_function("get_x", &RecipePluginLength::get_x);
+
+    auto recipe = other.create_recipe();
+    recipe.populate_from_string(yaml);
+
+    auto x = recipe.get_feature("x");
+    EXPECT_NEAR(x.value().as<double>(), 3., 1e-10);
+
+    auto u = recipe.get_feature("u");
+    u.set_value(9.);
+    EXPECT_NEAR(x.value().as<double>(), 9., 1e-10);
+}
