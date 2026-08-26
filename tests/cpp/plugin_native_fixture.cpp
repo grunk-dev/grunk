@@ -36,13 +36,14 @@ extern "C" grunk::PluginInfo grunk_plugin_info()
 extern "C" void grunk_plugin_register(grunk::state& state, grunk::PluginInfo const& info)
 {
     auto ns = state.begin_plugin(info);
-    state.register_type<FixtureType>("FixtureType", ns)
+    state.register_type<FixtureType>("FixtureType", ns, info.name)
         .add_constructors([](double x) { return FixtureType(x); })
         .add_member_function("get_x", &FixtureType::get_x);
     state.register_function(
         "twice",
         [](FixtureType const& f) { return 2. * f.get_x(); },
         {},
-        ns
+        ns,
+        info.name
     );
 }

@@ -39,7 +39,7 @@ TEST(PluginBegin, returns_empty_namespace_table_for_direct_registration)
 
     sol::table ns = grunk.begin_plugin(grunk::PluginInfo{"cpp_plugin", "0.1.0"});
 
-    grunk.register_type<Length>("Length", ns)
+    grunk.register_type<Length>("Length", ns, "cpp_plugin")
         .add_constructors([](double x) { return Length(x); })
         .add_member_function("set_x", &Length::set_x)
         .add_member_function("get_x", &Length::get_x);
@@ -48,7 +48,8 @@ TEST(PluginBegin, returns_empty_namespace_table_for_direct_registration)
         "twice",
         [](Length const& l) { return 2. * l.get_x(); },
         {},
-        ns
+        ns,
+        "cpp_plugin"
     );
 
     // Registered under the plugin's own namespace, not flat in original_env.
@@ -66,7 +67,7 @@ TEST(PluginBegin, registrations_keep_dependency_tracking)
 
     sol::table ns = grunk.begin_plugin(grunk::PluginInfo{"cpp_plugin", "0.1.0"});
 
-    grunk.register_type<Length>("Length", ns)
+    grunk.register_type<Length>("Length", ns, "cpp_plugin")
         .add_constructors([](double x) { return Length(x); })
         .add_member_function("get_x", &Length::get_x);
 
@@ -74,7 +75,8 @@ TEST(PluginBegin, registrations_keep_dependency_tracking)
         "twice",
         [](Length const& l) { return 2. * l.get_x(); },
         {},
-        ns
+        ns,
+        "cpp_plugin"
     );
 
     auto penv = grunk.create_parametric_env();
@@ -93,17 +95,51 @@ TEST(PluginBegin, registrations_keep_dependency_tracking)
     EXPECT_NEAR(fx.value().as<double>(), 10.0, 1e-15);
 }
 
+// register_type/register_function's `qualifier` argument is what makes a nested
+// registration serialize resolvably: without it, the constructor/function's own
+// function_meta name would just be "Length.new"/"twice", which a saved recipe can't
+// resolve back through cpp_plugin's namespace table on read-back.
+TEST(PluginBegin, registrations_serialize_with_fully_qualified_name)
+{
+    grunk::state grunk;
+
+    sol::table ns = grunk.begin_plugin(grunk::PluginInfo{"cpp_plugin", "0.1.0"});
+    grunk.register_type<Length>("Length", ns, "cpp_plugin")
+        .add_constructors([](double x) { return Length(x); })
+        .add_member_function("get_x", &Length::get_x);
+    grunk.register_function(
+        "twice",
+        [](Length const& l) { return 2. * l.get_x(); },
+        {},
+        ns,
+        "cpp_plugin"
+    );
+
+    auto u = grunk.feature(3.);
+    auto l = grunk.action("cpp_plugin.Length.new", u);
+    auto x = grunk.action("cpp_plugin.twice", l);
+
+    auto serialized_ctor = l.compute_node()->serialize();
+    EXPECT_NE(serialized_ctor.find("cpp_plugin.Length.new"), std::string::npos);
+
+    auto serialized_fun = x.compute_node()->serialize();
+    EXPECT_NE(serialized_fun.find("cpp_plugin.twice"), std::string::npos);
+
+    auto deserialized = grunk.deserialize(serialized_fun);
+    EXPECT_NEAR(deserialized.as<double>(), 6.0, 1e-15);
+}
+
 TEST(PluginBegin, incremental_registration_is_allowed)
 {
     grunk::state grunk;
 
     sol::table ns = grunk.begin_plugin(grunk::PluginInfo{"cpp_plugin", "0.1.0"});
-    grunk.register_function("one", []() { return 1; }, {}, ns);
+    grunk.register_function("one", []() { return 1; }, {}, ns, "cpp_plugin");
 
     // A plugin's entry point may call begin_plugin once and keep registering into the
     // returned table across several register_type/register_function calls - the table
     // itself doesn't need to be re-fetched or re-declared.
-    grunk.register_function("two", []() { return 2; }, {}, ns);
+    grunk.register_function("two", []() { return 2; }, {}, ns, "cpp_plugin");
 
     auto env = grunk.create_env();
     auto res = env.eval("s = cpp_plugin.one() + cpp_plugin.two()");
