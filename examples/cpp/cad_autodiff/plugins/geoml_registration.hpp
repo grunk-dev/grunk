@@ -51,6 +51,9 @@
 
 #include "occt_sol_traits.hpp"
 
+#include <stdexcept>
+#include <string>
+
 inline void register_geoml(grunk::state& grunk, sol::table const& ns, grunk::PluginInfo const& info)
 {
     grunk.register_type<gp_Pnt>("gp_Pnt", ns, info.name)
@@ -140,9 +143,15 @@ inline void register_geoml(grunk::state& grunk, sol::table const& ns, grunk::Plu
         return self.getValue();
     })
     .add_member_function("getADValue", [](Standard_Adouble const& self, int direction) -> double {
+        if (direction < 0) {
+            throw std::invalid_argument("getADValue: direction must be >= 0, got " + std::to_string(direction));
+        }
         return self.getADValue(static_cast<unsigned int>(direction));
     })
     .add_member_function("setADValue", [](Standard_Adouble& self, int direction, double value) {
+        if (direction < 0) {
+            throw std::invalid_argument("setADValue: direction must be >= 0, got " + std::to_string(direction));
+        }
         self.setADValue(static_cast<unsigned int>(direction), value);
     });
 #endif

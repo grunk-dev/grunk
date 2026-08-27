@@ -35,7 +35,9 @@ FetchContent_Declare(grunk
 
 FetchContent_GetProperties(grunk)
 if(NOT grunk_POPULATED)
-    cmake_policy(SET CMP0169 OLD)
+    if(POLICY CMP0169)
+        cmake_policy(SET CMP0169 OLD)
+    endif()
     FetchContent_Populate(grunk)
 
     if(EXISTS "${grunk_SOURCE_DIR}/cmake/grunkConfig.cmake.in")

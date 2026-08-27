@@ -69,6 +69,62 @@ TEST(PluginLoader, load_native_rolls_back_failed_registration)
     auto penv = grunk.create_parametric_env();
     auto res = penv.eval("assert(grunk.plugins.failing_fixture == nil)");
     EXPECT_TRUE(res.valid());
+
+    // The type registered before grunk_plugin_register threw (see
+    // plugin_native_fixture_failing.cpp) must be gone too - forget_plugin must undo
+    // the whole partial registration, not just the plugins() bookkeeping, otherwise
+    // failing_fixture.RegisteredBeforeFailure stays reachable despite being reported
+    // as never loaded.
+    auto res2 = penv.eval("assert(failing_fixture == nil)");
+    EXPECT_TRUE(res2.valid());
+}
+
+// A second load_native call for a name that is already successfully loaded must fail
+// without touching the first, already-working plugin's bookkeeping - load_native's
+// rollback used to call forget_plugin(info.name) unconditionally, even when the
+// failure was just this call's own name-collision rejection, which erased the first
+// plugin's entry from plugins() despite its types/functions remaining fully live.
+TEST(PluginLoader, load_native_twice_does_not_forget_first_successful_load)
+{
+    grunk::state grunk;
+
+    grunk::plugin::load_native(grunk, NATIVE_FIXTURE_SO_PATH);
+    ASSERT_EQ(grunk.plugins().size(), 1u);
+
+    EXPECT_THROW(grunk::plugin::load_native(grunk, NATIVE_FIXTURE_SO_PATH), std::runtime_error);
+
+    ASSERT_EQ(grunk.plugins().size(), 1u);
+    EXPECT_EQ(grunk.plugins()[0].name, "native_fixture");
+
+    auto penv = grunk.create_parametric_env();
+    auto res = penv.eval("assert(grunk.plugins.native_fixture == \"1.0.0\")");
+    EXPECT_TRUE(res.valid());
+
+    // native_fixture's types/functions must still work after the failed retry.
+    auto res2 = penv.eval(R"(
+        u = grunk.feature(3.)
+        f = native_fixture.FixtureType.new(u)
+        x = native_fixture.twice(f)
+    )");
+    ASSERT_TRUE(res2.valid());
+    auto fx = penv.get_feature("x");
+    EXPECT_NEAR(fx.value().as<double>(), 6.0, 1e-15);
+}
+
+// NONSTD_THROW_FIXTURE_SO_PATH is set by CMakeLists.txt to the built path of the
+// plugin_native_fixture_nonstd_throw shared library target, whose registration
+// function throws a plain int (not a std::exception) - GRUNK_PLUGIN_REGISTER's own
+// catch(...) branch must still convert this to a clean error instead of letting it
+// escape grunk_plugin_register (see loader.hpp's register_fn_t doc comment for why an
+// exception escaping across the dlopen boundary is unsafe regardless of its type).
+TEST(PluginLoader, load_native_reports_non_std_exception_cleanly)
+{
+    grunk::state grunk;
+
+    EXPECT_THROW(grunk::plugin::load_native(grunk, NONSTD_THROW_FIXTURE_SO_PATH), std::runtime_error);
+
+    // Rolled back exactly like a std::exception-throwing plugin would be.
+    EXPECT_EQ(grunk.plugins().size(), 0u);
 }
 
 TEST(PluginLoader, load_native_failure_error_includes_plugin_name_and_path)

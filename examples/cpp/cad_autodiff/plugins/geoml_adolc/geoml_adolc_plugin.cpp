@@ -11,6 +11,16 @@
 
 #include "../geoml_registration.hpp"
 
+namespace {
+
+void register_geoml_adolc_plugin(grunk::state& grunk, grunk::PluginInfo const& info)
+{
+    auto ns = grunk.begin_plugin(info);
+    register_geoml(grunk, ns, info);
+}
+
+} // anonymous namespace
+
 GRUNK_PLUGIN_EXPORT grunk::PluginInfo grunk_plugin_info()
 {
     // Same name as geoml_plugin.cpp's - see geoml_registration.hpp's file comment for
@@ -19,8 +29,4 @@ GRUNK_PLUGIN_EXPORT grunk::PluginInfo grunk_plugin_info()
     return grunk::PluginInfo{"geoml", "feature/autodiff"};
 }
 
-GRUNK_PLUGIN_EXPORT void grunk_plugin_register(grunk::state& grunk, grunk::PluginInfo const& info)
-{
-    auto ns = grunk.begin_plugin(info);
-    register_geoml(grunk, ns, info);
-}
+GRUNK_PLUGIN_REGISTER(register_geoml_adolc_plugin)

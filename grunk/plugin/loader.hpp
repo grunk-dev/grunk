@@ -6,7 +6,9 @@
 
 #include "grunk/dynamic/state.hpp"
 
+#include <exception>
 #include <filesystem>
+#include <string>
 
 /**
  * @brief Marks a native plugin's two entry-point definitions (grunk_plugin_info,
@@ -39,25 +41,47 @@ namespace grunk::plugin {
  *
  * @code
  * GRUNK_PLUGIN_EXPORT grunk::PluginInfo grunk_plugin_info();
- * GRUNK_PLUGIN_EXPORT void grunk_plugin_register(grunk::state& state, grunk::PluginInfo const& info);
+ * GRUNK_PLUGIN_EXPORT char const* grunk_plugin_register(grunk::state& state, grunk::PluginInfo const& info);
  * @endcode
  *
- * `grunk_plugin_info` reports the plugin's identity; `grunk_plugin_register` is
- * handed that same PluginInfo back (rather than needing its own hardcoded copy) and
- * does whatever registration its kind requires:
+ * `grunk_plugin_info` reports the plugin's identity. `grunk_plugin_register` is
+ * handed that same PluginInfo back (rather than needing its own hardcoded copy), does
+ * whatever registration its kind requires, and reports failure by *returning* a
+ * pointer to a null-terminated error message (owned by the plugin, valid until the
+ * next call into it - see GRUNK_PLUGIN_REGISTER below) rather than by throwing - a
+ * plain C++ exception is not safe to unwind across the dlopen/dlsym boundary between
+ * this library and the plugin's own shared object unless both were built with the
+ * exact same compiler, C++ standard library, and grunk/sol2/Lua versions; when that
+ * assumption doesn't hold (a real risk once plugins are built as separate projects,
+ * as every example plugin already is), an uncaught exception crossing the boundary is
+ * undefined behavior - typically std::terminate(), which kills the whole host process
+ * before load_native's own rollback (state::forget_plugin) ever gets to run.
+ *
+ * Do not implement `grunk_plugin_register` by hand - use the GRUNK_PLUGIN_REGISTER
+ * macro, which generates the correct, exception-safe entry point around an ordinary
+ * function/lambda that itself still just returns void and is free to throw: the
+ * macro's own try/catch runs entirely on the plugin's side of the boundary (an
+ * ordinary, in-process call, not a dlopen/dlsym one), so no exception ever needs to
+ * unwind across it - only the resulting `char const*` does, which is always ABI-safe.
  *
  * @code
  * // pure C++ plugin
- * GRUNK_PLUGIN_EXPORT void grunk_plugin_register(grunk::state& state, grunk::PluginInfo const& info) {
+ * namespace {
+ * void register_my_plugin(grunk::state& state, grunk::PluginInfo const& info) {
  *     auto ns = state.begin_plugin(info);
  *     state.register_type<gp_Pnt>("gp_Pnt", ns) ... ;
  * }
+ * }
+ * GRUNK_PLUGIN_REGISTER(register_my_plugin)
  *
  * // compiled-Lua (SWIG) shim
- * GRUNK_PLUGIN_EXPORT void grunk_plugin_register(grunk::state& state, grunk::PluginInfo const& info) {
+ * namespace {
+ * void register_adtl(grunk::state& state, grunk::PluginInfo const& info) {
  *     sol::table ns = state.load_compiled_plugin(info, luaopen_adtl);
  *     state.register_external_type(info.name + ".adouble", ns["adouble"], ns);
  * }
+ * }
+ * GRUNK_PLUGIN_REGISTER(register_adtl)
  * @endcode
  *
  * A pre-built namespace table is deliberately not part of this ABI: load_compiled_plugin
@@ -66,10 +90,50 @@ namespace grunk::plugin {
  * path. Passing `(state&, info)` lets each kind call whichever of
  * state::begin_plugin/state::load_compiled_plugin actually fits its own shape.
  *
+ * Even with GRUNK_PLUGIN_REGISTER, `state&`/`PluginInfo const&` themselves still cross
+ * the boundary as real C++ objects (not an opaque/stable C ABI), so this only removes
+ * the *exception-unwinding* half of the cross-toolchain hazard - a plugin still needs
+ * to be built against the same grunk/sol2/Lua versions as the host, and with a
+ * compiler/standard library ABI-compatible with it, or its calls into `state` are
+ * themselves undefined behavior regardless of this macro.
+ *
  * @ingroup plugin
  */
 using info_fn_t = PluginInfo (*)();
-using register_fn_t = void (*)(state&, PluginInfo const&);
+using register_fn_t = char const* (*)(state&, PluginInfo const&);
+
+/**
+ * @brief Defines a plugin's `grunk_plugin_register` entry point around @p fn (a
+ * `void(grunk::state&, grunk::PluginInfo const&)` function or lambda-convertible-to-
+ * function-pointer that does the plugin's actual registration and is free to throw
+ * any std::exception on failure, exactly like the pre-GRUNK_PLUGIN_REGISTER examples
+ * in this header's own doc comment used to).
+ *
+ * The generated entry point catches on the plugin's own side of the dlopen/dlsym
+ * boundary (never across it - see register_fn_t's doc comment for why that matters)
+ * and reports failure as a `char const*` instead: nullptr on success, or a
+ * null-terminated message on failure, valid until the next call into
+ * `grunk_plugin_register` in this same shared library (it is stored in a
+ * function-local static, not returned by value, to keep the ABI a single, trivially
+ * copyable pointer).
+ *
+ * @param fn the plugin's actual registration function/lambda
+ */
+#define GRUNK_PLUGIN_REGISTER(fn) \
+    GRUNK_PLUGIN_EXPORT char const* grunk_plugin_register(grunk::state& grunk_plugin_register_state, grunk::PluginInfo const& grunk_plugin_register_info) \
+    { \
+        static thread_local std::string grunk_plugin_register_error_message; \
+        try { \
+            (fn)(grunk_plugin_register_state, grunk_plugin_register_info); \
+            return nullptr; \
+        } catch (std::exception const& grunk_plugin_register_exc) { \
+            grunk_plugin_register_error_message = grunk_plugin_register_exc.what(); \
+            return grunk_plugin_register_error_message.c_str(); \
+        } catch (...) { \
+            grunk_plugin_register_error_message = "unknown exception (not derived from std::exception)"; \
+            return grunk_plugin_register_error_message.c_str(); \
+        } \
+    }
 
 /**
  * @brief load_native loads a shared library at @p path (a `.so`/`.dylib` on

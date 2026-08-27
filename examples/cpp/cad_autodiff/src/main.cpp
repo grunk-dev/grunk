@@ -201,6 +201,14 @@ void read_cad_recipe()
 // recipe's steps get from one to the other internally.
 void read_recipe_ad()
 {
+    // By this point read_cad_recipe() (stage 2, called from main() just before this)
+    // has already dlopen'd geoml_plugin.so - and with it, stock OCCT - into this same,
+    // never-dlclose'd process. If adOCCT keeps the same SONAMEs as the stock OCCT it
+    // forks, the dynamic linker may resolve geoml_adolc_plugin.so's OCCT dependencies
+    // against those already-mapped stock objects instead of the AD-enabled ones, no
+    // matter how LD_LIBRARY_PATH is set - see README.md's "Stage 3: CAD + AD" section
+    // ("Building it yourself") for the full hazard and how to rule it out if the
+    // derivative check below ever starts failing.
     auto grunk = grunk::state();
     load_geoml_adolc_plugin(grunk);
 

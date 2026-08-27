@@ -29,12 +29,9 @@ struct FixtureType
 
 } // anonymous namespace
 
-GRUNK_PLUGIN_EXPORT grunk::PluginInfo grunk_plugin_info()
-{
-    return grunk::PluginInfo{"native_fixture", "1.0.0"};
-}
+namespace {
 
-GRUNK_PLUGIN_EXPORT void grunk_plugin_register(grunk::state& state, grunk::PluginInfo const& info)
+void register_native_fixture(grunk::state& state, grunk::PluginInfo const& info)
 {
     auto ns = state.begin_plugin(info);
     state.register_type<FixtureType>("FixtureType", ns, info.name)
@@ -48,3 +45,12 @@ GRUNK_PLUGIN_EXPORT void grunk_plugin_register(grunk::state& state, grunk::Plugi
         info.name
     );
 }
+
+} // anonymous namespace
+
+GRUNK_PLUGIN_EXPORT grunk::PluginInfo grunk_plugin_info()
+{
+    return grunk::PluginInfo{"native_fixture", "1.0.0"};
+}
+
+GRUNK_PLUGIN_REGISTER(register_native_fixture)

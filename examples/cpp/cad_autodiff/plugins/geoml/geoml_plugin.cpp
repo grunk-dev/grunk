@@ -11,16 +11,22 @@
 
 #include "../geoml_registration.hpp"
 
+namespace {
+
+void register_geoml_plugin(grunk::state& grunk, grunk::PluginInfo const& info)
+{
+    auto ns = grunk.begin_plugin(info);
+    register_geoml(grunk, ns, info);
+}
+
+} // anonymous namespace
+
 // grunk_plugin_info/grunk_plugin_register: the fixed ABI grunk::plugin::load_native
-// looks up - see grunk/plugin/loader.hpp for what GRUNK_PLUGIN_EXPORT does on each
-// platform.
+// looks up - see grunk/plugin/loader.hpp for what GRUNK_PLUGIN_EXPORT/
+// GRUNK_PLUGIN_REGISTER do on each platform.
 GRUNK_PLUGIN_EXPORT grunk::PluginInfo grunk_plugin_info()
 {
     return grunk::PluginInfo{"geoml", "main"}; // tracks ../../CMakeLists.txt's FetchContent GIT_TAG
 }
 
-GRUNK_PLUGIN_EXPORT void grunk_plugin_register(grunk::state& grunk, grunk::PluginInfo const& info)
-{
-    auto ns = grunk.begin_plugin(info);
-    register_geoml(grunk, ns, info);
-}
+GRUNK_PLUGIN_REGISTER(register_geoml_plugin)
