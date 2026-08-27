@@ -273,6 +273,19 @@ coordinate) is exactly `0` - a leakage sanity check, not just a magnitude check.
    reintroducing the version mismatch `NO_DEFAULT_PATH` (step 3's `CMakeLists.txt`) was there to
    rule out at configure time.
 
+   A second, subtler version of the same hazard: `read_cad_recipe()` (stage 2) already
+   `dlopen`'d `geoml_plugin.so` - and with it, stock OCCT's shared libraries - into this same
+   process *before* `read_recipe_ad()` (stage 3) ever runs. `load_native` never `dlclose`'s, and
+   the dynamic linker resolves a shared object's `DT_NEEDED` entries by SONAME against whatever is
+   *already mapped in the process* before consulting `LD_LIBRARY_PATH` again - so if adOCCT keeps
+   the same SONAMEs as the stock build it forks (plausible, since it patches rather than renames
+   the library), `LD_LIBRARY_PATH` being set correctly does not guarantee stage 3 actually gets the
+   AD-enabled objects: it may silently reuse stage 2's already-loaded stock ones instead. This
+   example currently relies on that not happening - if `read_recipe_ad()`'s derivative check
+   (`x_at_half`/`y_at_half` against the closed-form 0.125/0) ever starts failing after a from-source
+   adOCCT rebuild, check `ldd`/`/proc/<pid>/maps` for which OCCT objects are actually resident
+   before assuming the AD math itself is wrong.
+
 ## Building and Running
 
 Go to the `cad_autodiff` directory if not already done so.

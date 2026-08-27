@@ -31,7 +31,9 @@ FetchContent_Declare(grunk
 
 FetchContent_GetProperties(geoml)
 if(NOT geoml_POPULATED)
-    cmake_policy(SET CMP0169 OLD)
+    if(POLICY CMP0169)
+        cmake_policy(SET CMP0169 OLD)
+    endif()
     FetchContent_Populate(geoml)
 
     if(EXISTS "${geoml_SOURCE_DIR}/cmake/geomlConfig.cmake.in")
@@ -45,7 +47,9 @@ endif()
 
 FetchContent_GetProperties(grunk)
 if(NOT grunk_POPULATED)
-    cmake_policy(SET CMP0169 OLD)
+    if(POLICY CMP0169)
+        cmake_policy(SET CMP0169 OLD)
+    endif()
     FetchContent_Populate(grunk)
 
     if(EXISTS "${grunk_SOURCE_DIR}/cmake/grunkConfig.cmake.in")

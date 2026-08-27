@@ -23,6 +23,8 @@
 #include <grunk/grunk.hpp>
 #include <sol/types.hpp>
 
+#include <stdexcept>
+
 // adtl.so's own SWIG-generated Lua entry point, following Lua's own luaopen_*
 // convention. Linked directly (see ../../CMakeLists.txt) rather than dlopen'd by hand
 // - grunk::plugin::load_native only ever dlopen's this shim itself, one level up.
@@ -33,7 +35,9 @@ GRUNK_PLUGIN_EXPORT grunk::PluginInfo grunk_plugin_info()
     return grunk::PluginInfo{"adtl", "2.7.2"}; // matches the wrapped ADOL-C release
 }
 
-GRUNK_PLUGIN_EXPORT void grunk_plugin_register(grunk::state& grunk, grunk::PluginInfo const& info)
+namespace {
+
+void register_adtl_plugin(grunk::state& grunk, grunk::PluginInfo const& info)
 {
     // Load the compiled SWIG-Lua module as a grunk plugin: its own table becomes the
     // "adtl" namespace in original_env, its free functions (tan, exp, log, sqrt, pow,
@@ -89,7 +93,20 @@ GRUNK_PLUGIN_EXPORT void grunk_plugin_register(grunk::state& grunk, grunk::Plugi
         if (key == "__tostring") {
             return tostring_fn;
         }
+        // Every other key must fall through to SWIG's original dispatcher unchanged -
+        // including its failure behavior: a bad key (e.g. a typo'd accessor) must
+        // still raise SWIG's own "no such attribute" error here, not be silently
+        // swallowed into nil, which would let the mistake surface later, elsewhere,
+        // as a more confusing unrelated failure.
         sol::protected_function_result res = original_index(self, key);
-        return res.valid() ? sol::object(res) : sol::lua_nil;
+        if (!res.valid()) {
+            sol::error err = res;
+            throw std::runtime_error(err.what());
+        }
+        return res;
     });
 }
+
+} // anonymous namespace
+
+GRUNK_PLUGIN_REGISTER(register_adtl_plugin)
