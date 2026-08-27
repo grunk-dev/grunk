@@ -77,6 +77,12 @@ if (GRUNK_WITH_PLUGIN)
     # identity instead of reporting it as loaded (see plugin_native_fixture_failing.cpp).
     add_library(plugin_native_fixture_failing SHARED plugin_native_fixture_failing.cpp)
     target_link_libraries(plugin_native_fixture_failing PRIVATE grunk::plugin)
+
+    # A third fixture whose registration function throws a non-std::exception value,
+    # so plugin_loader.cpp can verify GRUNK_PLUGIN_REGISTER's catch(...) branch reports
+    # it cleanly instead of letting it escape (see plugin_native_fixture_nonstd_throw.cpp).
+    add_library(plugin_native_fixture_nonstd_throw SHARED plugin_native_fixture_nonstd_throw.cpp)
+    target_link_libraries(plugin_native_fixture_nonstd_throw PRIVATE grunk::plugin)
 endif()
 
 add_executable(runUnitTests ${TESTSOURCES})
@@ -86,7 +92,8 @@ if (GRUNK_WITH_PLUGIN)
     target_compile_definitions(runUnitTests PRIVATE
         NATIVE_FIXTURE_SO_PATH="$<TARGET_FILE:plugin_native_fixture>"
         FAILING_NATIVE_FIXTURE_SO_PATH="$<TARGET_FILE:plugin_native_fixture_failing>"
+        NONSTD_THROW_FIXTURE_SO_PATH="$<TARGET_FILE:plugin_native_fixture_nonstd_throw>"
     )
-    add_dependencies(runUnitTests plugin_native_fixture plugin_native_fixture_failing)
+    add_dependencies(runUnitTests plugin_native_fixture plugin_native_fixture_failing plugin_native_fixture_nonstd_throw)
 endif()
 

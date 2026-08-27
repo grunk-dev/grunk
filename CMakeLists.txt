@@ -38,14 +38,11 @@ if(DEFINED SKBUILD)
     set(GRUNK_PYTHON ON CACHE BOOL "Build python bindings using nanobind" FORCE)
 endif()
 
-# When building Python bindings (or when SKBUILD drives the build), or when a native
-# grunk plugin (a shared library) might link grunk's static libraries into itself -
-# e.g. GRUNK_TESTS' plugin_native_fixture, or any downstream plugin project that
-# doesn't set this itself (as examples/cpp/cad_autodiff's own CMakeLists.txt does) -
-# those static libraries need to be compiled as position-independent. Enable PIC in
-# either case.
-if(DEFINED SKBUILD OR GRUNK_PYTHON OR GRUNK_WITH_PLUGIN)
-    message(STATUS "Enabling position independent code for building shared extension modules/plugins")
+# When building Python bindings (or when SKBUILD drives the build), grunk's static
+# libraries are linked into the nanobind extension module (a shared object) and must be
+# position-independent - enable PIC globally for the whole build in that case.
+if(DEFINED SKBUILD OR GRUNK_PYTHON)
+    message(STATUS "Enabling position independent code for building shared extension modules")
     # This causes targets (including STATIC libraries) to be built with -fPIC
     set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 endif()
@@ -74,7 +71,26 @@ endif()
 # Windows specific: export all symbols
 set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
 
+# A native grunk plugin (a shared library) may link grunk's own static libraries into
+# itself - e.g. GRUNK_TESTS' plugin_native_fixture, or any downstream plugin project
+# that doesn't set this itself (as examples/cpp/cad_autodiff's own CMakeLists.txt
+# does) - which requires those libraries to be compiled position-independent. Scope
+# this to grunk's own targets (built by the add_subdirectory(grunk) call just below)
+# rather than setting CMAKE_POSITION_INDEPENDENT_CODE for the rest of this build too -
+# GRUNK_WITH_PLUGIN defaults ON, and it should not silently change the PIC default for
+# unrelated targets like tests/runUnitTests. If the block above already enabled PIC
+# globally (SKBUILD/GRUNK_PYTHON), leave it as-is rather than narrowing it here.
+if (GRUNK_WITH_PLUGIN AND NOT CMAKE_POSITION_INDEPENDENT_CODE)
+    set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+    set(_grunk_plugin_pic_scoped TRUE)
+endif()
+
 add_subdirectory(grunk)
+
+if (_grunk_plugin_pic_scoped)
+    unset(CMAKE_POSITION_INDEPENDENT_CODE)
+    unset(_grunk_plugin_pic_scoped)
+endif()
 
 if (GRUNK_TESTS)
     add_subdirectory(tests/cpp)

@@ -31,7 +31,7 @@ Models built with grunk are highly modular and extendable. Users can share plugi
 | `grunk::core` | Backend for tracking parametric dependencies. Lazy evaluation and automatic invalidation with minimal overhead. Header-only, thin wrapper for parametric | [parametric](https://github.com/grunk-dev/parametric), *optional: [taskflow](https://github.com/taskflow/taskflow) for multithreading support. Build with `GRUNK_WITH_TASKFLOW=ON` cmake option/precompiler definition to enable multithreading.* |
 | `grunk::dynamic` | Dynamic scripting support (Lua). Write scripts without boilerplate that are automatically parametric. Simple serialization and deserialization of parametric trees to and from Lua. Header-only. | `grunk::core`, [Lua](https://www.lua.org/), [sol2](https://github.com/ThePhd/sol2) |
 | `grunk::recipe` | YAML-based recipes: A human-readable structured exchange format for parametric models | `grunk::dynamic`, [yaml-cpp](https://github.com/jbeder/yaml-cpp) | 
-| `grunk::plugin` | Plugin support for sharing re-usable functions and data types. Plugins can be written in C++ for maximum performance, as a compiled Lua module (e.g. via SWIG), or in plain Lua for ease-of-use | `grunk::dynamic` |
+| `grunk::plugin` | Plugin support for sharing re-usable functions and data types. Plugins can be written in C++ for maximum performance, as a compiled Lua module (e.g. via SWIG), or in plain Lua for ease-of-use | `grunk::dynamic`, and `grunk::recipe` (transitively, whenever `GRUNK_WITH_RECIPE=ON`, the default) |
 
 ## Sneak Peak
 
@@ -184,7 +184,8 @@ GRUNK_PLUGIN_EXPORT grunk::PluginInfo grunk_plugin_info()
     return grunk::PluginInfo{"my_plugin", "1.0.0"};
 }
 
-GRUNK_PLUGIN_EXPORT void grunk_plugin_register(grunk::state& state, grunk::PluginInfo const& info)
+namespace {
+void register_my_plugin(grunk::state& state, grunk::PluginInfo const& info)
 {
     auto ns = state.begin_plugin(info);
     state.register_function(
@@ -197,11 +198,21 @@ GRUNK_PLUGIN_EXPORT void grunk_plugin_register(grunk::state& state, grunk::Plugi
                   // as above, is still fine and documents intent at the call site.
     );
 }
+}
+GRUNK_PLUGIN_REGISTER(register_my_plugin)
 ```
 
 `GRUNK_PLUGIN_EXPORT` (not a plain `extern "C"`) is what makes this portable: it expands to
 `extern "C" __declspec(dllexport)` on Windows, where a DLL exports nothing by default, and to
 plain `extern "C"` on Linux/macOS, where a shared library already does.
+
+`GRUNK_PLUGIN_REGISTER` generates the actual `grunk_plugin_register` entry point around your
+registration function: it catches any exception your function throws *on the plugin's own side* of
+the `dlopen`/`dlsym` boundary and reports failure as a plain error string instead, since an
+uncaught C++ exception is not safe to unwind across that boundary unless the plugin and the host
+were built with the exact same compiler, standard library, and grunk/sol2/Lua versions - a real risk
+once a plugin is its own separate build, as `my_plugin.cpp` above would typically be. Always use the
+macro rather than defining `grunk_plugin_register` by hand.
 
 Loading a plugin under a name that's already loaded on the same `grunk::state` throws rather than
 silently discarding the first plugin's namespace table - call `state.clear_module(name)` first if a
