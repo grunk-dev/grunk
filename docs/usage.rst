@@ -1013,22 +1013,36 @@ namespace instead of flat in the environment.
 
 **Plain C++ and compiled-Lua plugins** are both native shared libraries (``.so`` on Linux,
 ``.dylib`` on macOS, ``.dll`` on Windows), and are loaded the same way, via
-``grunk::plugin::load_native``:
+``grunk::plugin::load_native`` (``grunk.plugin.load_native`` from Python):
 
-.. code-block:: cpp
+.. tabs::
 
-   #include <grunk/grunk.hpp>
-   #include <grunk/plugin.hpp>
+   .. code-tab:: cpp
 
-   grunk::state grunk;
-   grunk::plugin::load_native(grunk, "geoml_plugin.so");
+      #include <grunk/grunk.hpp>
+      #include <grunk/plugin.hpp>
 
-   auto env = grunk.create_env();
-   env.eval(R"(
-       p = geoml.gp_Pnt.new(1., 2., 0.)
-       x = p:X()
-   )");
-   std::cout << env.get<double>("x") << std::endl;
+      grunk::state grunk;
+      grunk::plugin::load_native(grunk, "geoml_plugin.so");
+
+      auto env = grunk.create_env();
+      env.eval(R"(
+          p = geoml.gp_Pnt.new(1., 2., 0.)
+          x = p:X()
+      )");
+      std::cout << env.get<double>("x") << std::endl;
+
+   .. code-tab:: python
+
+      grnk = grunk.state()
+      grunk.plugin.load_native(grnk, "geoml_plugin.so")
+
+      env = grnk.create_env()
+      env.eval("""
+          p = geoml.gp_Pnt.new(1., 2., 0.)
+          x = p:X()
+      """)
+      print(env["x"].as_float())
 
 ``load_native`` loads the shared library, asks it for its identity (a ``grunk::PluginInfo``), and
 hands control to the plugin's own registration code - whether it turns out to be a plain C++
@@ -1037,22 +1051,35 @@ plugin or a compiled-Lua shim makes no difference to the caller.
 **Pure Lua plugins** have no shared library to load - just a name, a version, and a ``.lua`` file,
 passed directly to ``grunk::state``:
 
-.. code-block:: cpp
+.. tabs::
 
-   #include <grunk/grunk.hpp>
+   .. code-tab:: cpp
 
-   grunk::state grunk;
-   grunk.load_lua_plugin_file(grunk::PluginInfo{"my_lua_plugin", "1.0.0"}, "my_lua_plugin.lua");
+      #include <grunk/grunk.hpp>
 
-   auto env = grunk.create_env();
-   env.eval("result = my_lua_plugin.add_one(41)");
-   std::cout << env.get<int>("result") << std::endl;
+      grunk::state grunk;
+      grunk.load_lua_plugin_file(grunk::PluginInfo{"my_lua_plugin", "1.0.0"}, "my_lua_plugin.lua");
 
-(``grunk::plugin::load_script`` is a thin convenience wrapper around the same call, so all three
-plugin kinds have an entry point under ``grunk::plugin``.)
+      auto env = grunk.create_env();
+      env.eval("result = my_lua_plugin.add_one(41)");
+      std::cout << env.get<int>("result") << std::endl;
+
+   .. code-tab:: python
+
+      grnk = grunk.state()
+      grnk.load_lua_plugin_file(grunk.PluginInfo("my_lua_plugin", "1.0.0"), "my_lua_plugin.lua")
+
+      env = grnk.create_env()
+      env.eval("result = my_lua_plugin.add_one(41)")
+      print(env["result"].as_int())
+
+(``grunk::plugin::load_script``/``grunk.plugin.load_script`` is a thin convenience wrapper around
+the same call, so all three plugin kinds have an entry point under ``grunk::plugin``/
+``grunk.plugin``.)
 
 Every loaded plugin's identity is recorded on the ``grunk::state`` and can be inspected via
-``state::plugins()``. This is also what lets a saved :ref:`recipe<grunk-recipes>`'s ``uses:`` block
+``state::plugins()`` (``state.plugins()`` from Python). This is also what lets a saved
+:ref:`recipe<grunk-recipes>`'s ``uses:`` block
 be validated on read: a recipe records every plugin it needs by name and version, and reading it
 back fails immediately, with a clear message, if a plugin of a required *name* was never loaded -
 rather than failing later with a confusing "symbol not found" the first time a step referencing it
@@ -1066,14 +1093,22 @@ A plugin name already recorded in ``plugins()`` cannot be loaded again on the sa
 - ``begin_plugin``/``load_compiled_plugin``/``load_lua_plugin_script`` all throw ``io_error`` rather
 than silently discarding or augmenting the first plugin's namespace table. Call
 ``state.clear_module(name)`` first (this also forgets the plugin's recorded identity) if you
-genuinely intend to reload a plugin under the same name.
+genuinely intend to reload a plugin under the same name. ``state::forget_plugin(name)``
+(``state.forget_plugin(name)`` from Python) does the same, minus the extra step of forgetting a
+plain (non-plugin) module's contents that aren't a plugin's own namespace.
 
 .. note::
 
-   The Python bindings currently only expose *using* an already-loaded ``grunk::state``
-   (``env.eval``, ``feature``, ...), not loading a native plugin itself -
-   ``grunk::plugin::load_native`` and the ``load_*_plugin``/``begin_plugin`` family are C++-only
-   for now.
+   The Python bindings expose *loading* and *using* both native (plain C++ or compiled-Lua) and
+   pure-Lua plugins - ``grunk.plugin.load_native``/``grunk.plugin.load_script``,
+   ``state.load_lua_plugin_script``/``state.load_lua_plugin_file``, ``state.plugins()``,
+   ``state.forget_plugin()`` - all mirror their C++ counterparts above. What Python cannot do is
+   *write* a plain C++ or compiled-Lua plugin itself: ``state::begin_plugin`` and
+   ``state::load_compiled_plugin`` are not bound, since the former takes a C++ template type
+   argument and the latter a ``lua_CFunction`` module entry point, neither of which is expressible
+   from Python. A plugin's registration code is always written in C++ (see
+   :ref:`Writing Plugins<writing-plugins>` below) and built as a native shared library; Python (like
+   any other consumer) only ever *loads* the result via ``grunk.plugin.load_native``.
 
 .. _writing-plugins:
 

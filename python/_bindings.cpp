@@ -8,6 +8,8 @@
 #include <nanobind/stl/shared_ptr.h>
 #include <nanobind/stl/unordered_map.h>
 #include <nanobind/stl/map.h>
+#include <nanobind/stl/vector.h>
+#include <nanobind/stl/filesystem.h>
 
 #include <grunk/grunk.hpp>
 
@@ -62,6 +64,24 @@ namespace {
 NB_MODULE(_bindings, m) {
     m.attr("__version__") = grunk_VERSION;
     m.doc() = "A parametric modeling backend for Python, C++ and Lua.";
+
+    // PluginInfo is a plain aggregate (no user-declared constructor), so it has no
+    // 2-argument constructor for nb::init<...> to bind against under C++17 (this
+    // project's standard) - use a custom __init__ instead, nanobind's documented way
+    // to bind construction for a type shaped like this.
+    nb::class_<grunk::PluginInfo>(m, "PluginInfo")
+        .def(
+            "__init__",
+            [](grunk::PluginInfo* self, std::string const& name, std::string const& version) {
+                new (self) grunk::PluginInfo{name, version};
+            },
+            "name"_a, "version"_a
+        )
+        .def_rw("name", &grunk::PluginInfo::name)
+        .def_rw("version", &grunk::PluginInfo::version)
+        .def("__repr__", [](grunk::PluginInfo const& info) {
+            return "PluginInfo(name='" + info.name + "', version='" + info.version + "')";
+        });
 
     nb::class_<grunk::object>(m, "object")
         .def(
@@ -242,6 +262,33 @@ NB_MODULE(_bindings, m) {
         .def("run_module_script", &grunk::state::run_module_script, "name"_a, "script"_a)
         .def("run_module_file", &grunk::state::run_module_file, "name"_a, "filename"_a)
         .def("clear_module", &grunk::state::clear_module, "name"_a)
+        .def("plugins", &grunk::state::plugins)
+        .def("forget_plugin", &grunk::state::forget_plugin, "name"_a)
+        // load_lua_plugin_script/load_lua_plugin_file return their namespace table as a
+        // raw sol::table, which has no Python binding - discard it here, exactly like
+        // run_module_script's own binding above. The namespace is reachable afterwards
+        // via env["name"], same as a plain run_module_script module.
+        //
+        // begin_plugin/load_compiled_plugin are deliberately not bound: the former
+        // requires a C++ template type argument (register_type<T>), the latter a
+        // lua_CFunction module entry point - neither is expressible from Python. Both
+        // "plain C++ plugin" and "compiled Lua/SWIG plugin" kinds are still reachable
+        // from Python indirectly, via grunk.plugin.load_native below, once built as a
+        // native shared library.
+        .def(
+            "load_lua_plugin_script",
+            [](grunk::state& grunk, grunk::PluginInfo const& info, std::string const& script) {
+                grunk.load_lua_plugin_script(info, script);
+            },
+            "info"_a, "script"_a
+        )
+        .def(
+            "load_lua_plugin_file",
+            [](grunk::state& grunk, grunk::PluginInfo const& info, std::string const& filename) {
+                grunk.load_lua_plugin_file(info, filename);
+            },
+            "info"_a, "filename"_a
+        )
         .def("create_object", [](grunk::state const& grunk, nb::object obj) {
             if (nb::isinstance<nb::int_>(obj))
                 return grunk.create_object(nb::cast<int>(obj));
@@ -296,6 +343,18 @@ NB_MODULE(_bindings, m) {
     m.def("clear_module", [=](std::string const& name) {
         default_state().clear_module(name);
     }, "name"_a);
+    m.def("plugins", [=]() {
+        return default_state().plugins();
+    });
+    m.def("forget_plugin", [=](std::string const& name) {
+        default_state().forget_plugin(name);
+    }, "name"_a);
+    m.def("load_lua_plugin_script", [=](grunk::PluginInfo const& info, std::string const& script) {
+        default_state().load_lua_plugin_script(info, script);
+    }, "info"_a, "script"_a);
+    m.def("load_lua_plugin_file", [=](grunk::PluginInfo const& info, std::string const& filename) {
+        default_state().load_lua_plugin_file(info, filename);
+    }, "info"_a, "filename"_a);
     m.def("create_object", [=](nb::object obj) {
         if (nb::isinstance<nb::int_>(obj))
             return default_state().create_object(nb::cast<int>(obj));
@@ -371,4 +430,20 @@ NB_MODULE(_bindings, m) {
         }, "key"_a, "value"_a)
         .def("locked", &grunk::RecipeCaller::locked);
 
+    // Mirrors the grunk::plugin C++ namespace (grunk/plugin/loader.hpp): the entry
+    // points for loading a native shared-library plugin (a plain C++ plugin or a
+    // compiled Lua/SWIG shim, either kind - see load_native's own doc comment) or a
+    // pure-Lua plugin file, given an explicit grunk::state to register it into (like
+    // their C++ counterparts, neither has a default-state overload).
+    auto plugin_module = m.def_submodule("plugin", "Loads grunk plugins from shared libraries or Lua files.");
+    plugin_module.def("load_native", &grunk::plugin::load_native, "state"_a, "path"_a);
+    plugin_module.def(
+        "load_script",
+        // load_script also returns a raw sol::table - discarded here for the same
+        // reason as state.load_lua_plugin_script/load_lua_plugin_file above.
+        [](grunk::state& state, grunk::PluginInfo const& info, std::filesystem::path const& path) {
+            grunk::plugin::load_script(state, info, path);
+        },
+        "state"_a, "info"_a, "path"_a
+    );
 }
