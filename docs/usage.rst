@@ -1142,32 +1142,34 @@ A plain C++ plugin is a shared library exporting two fixed entry points, so a ge
 
    GRUNK_PLUGIN_EXPORT void grunk_plugin_register(grunk::state& state, grunk::PluginInfo const& info)
    {
-       // begin_plugin returns a fresh namespace table and records the plugin's identity -
-       // the only thing distinguishing this from an ordinary register_type/register_function
-       // call in the "Interacting with the Lua state" example above.
+       // begin_plugin returns a plugin_namespace proxy and records the plugin's
+       // identity - the proxy remembers its own namespace table and qualifier, so
+       // register_type/register_function calls against it don't need to repeat
+       // either one, unlike an ordinary register_type/register_function call
+       // against the raw environment in the "Interacting with the Lua state"
+       // example above.
        auto ns = state.begin_plugin(info);
 
-       state.register_type<MyScalar>("MyScalar", ns, info.name)
+       ns.register_type<MyScalar>("MyScalar")
            .add_constructors([](double v) { return MyScalar{v}; })
            .add_member_function("get", &MyScalar::get);
 
-       state.register_function(
+       ns.register_function(
            "add",
-           [](MyScalar const& l, MyScalar const& r) { return MyScalar{l.get() + r.get()}; },
-           {}, ns, info.name
+           [](MyScalar const& l, MyScalar const& r) { return MyScalar{l.get() + r.get()}; }
        );
    }
 
 ``grunk_plugin_info`` reports the plugin's identity; ``grunk_plugin_register`` is handed that same
-``PluginInfo`` back and does the actual registration. Passing ``ns`` as
-``register_type``/``register_function``'s ``table`` argument is what puts ``MyScalar``/``add``
-under the ``my_plugin`` namespace (``my_plugin.MyScalar``, ``my_plugin.add``) instead of flat in
-the environment, and keeps their *serialized* form (used when writing a recipe to file) resolvable
-by that same qualified path when the recipe is read back in. Passing ``info.name`` as the trailing
-``qualifier`` argument (as above) is what makes that qualified path correct; it can be left out
-since ``ns`` (returned by ``begin_plugin``) already carries its own name and
-``register_type``/``register_function`` auto-infer the qualifier from it - passing it explicitly,
-as above, is still fine and makes the intent easier to read at the call site.
+``PluginInfo`` back and does the actual registration. Registering against ``ns`` (a
+``grunk::plugin_namespace``) instead of the raw environment is what puts ``MyScalar``/``add`` under
+the ``my_plugin`` namespace (``my_plugin.MyScalar``, ``my_plugin.add``) instead of flat in the
+environment, and keeps their *serialized* form (used when writing a recipe to file) resolvable by
+that same qualified path when the recipe is read back in - ``ns`` already knows both its own table
+and its qualifier (``info.name``), so there is nothing left to pass explicitly at each call. Code
+that genuinely needs the raw ``sol::table`` (e.g. to override the qualifier, or to call
+``grunk::state``'s own ``register_type``/``register_function`` directly) can still get at it via
+``ns.table()`` (or the implicit conversion ``ns`` itself supports).
 
 ``GRUNK_PLUGIN_EXPORT`` (not a plain ``extern "C"``) is what makes this portable: a plain
 ``extern "C"`` is enough on Linux/macOS, where a shared library exports its symbols by default,
@@ -1214,20 +1216,23 @@ plugin, so the loader never needs to know the difference:
 
    GRUNK_PLUGIN_EXPORT void grunk_plugin_register(grunk::state& state, grunk::PluginInfo const& info)
    {
-       sol::table ns = state.load_compiled_plugin(info, luaopen_mymodule);
+       auto ns = state.load_compiled_plugin(info, luaopen_mymodule);
 
        // Classes a SWIG-Lua binding exposes need one extra step: their constructor/methods
        // aren't plain table entries the way a free function is, so register_external_type
-       // bridges them generically instead of requiring a compile-time C++ type.
+       // bridges them generically instead of requiring a compile-time C++ type. Unlike
+       // state::register_external_type, ns.register_external_type only needs the class's
+       // own short name - it auto-prefixes "mymodule." for you.
        sol::table my_class_ctor = ns["MyClass"];
-       state.register_external_type(info.name + ".MyClass", my_class_ctor, ns);
+       ns.register_external_type("MyClass", my_class_ctor);
    }
 
 ``load_compiled_plugin`` loads the module, makes its free functions grunk-trackable, and registers
 it under ``info.name`` - unlike ``begin_plugin``, it mints its own namespace table (the module's
-own table), so there is no separate ``ns`` to fetch first. See
-``examples/cpp/cad_autodiff/plugins/adtl/adtl_plugin.cpp`` for a complete, real-world version of
-this pattern, including bridging a type that also needs a ``__tostring`` for YAML serialization.
+own table), so there is no separate namespace to fetch first; ``ns`` is a ``grunk::plugin_namespace``
+either way. See ``examples/cpp/cad_autodiff/plugins/adtl/adtl_plugin.cpp`` for a complete,
+real-world version of this pattern, including bridging a type that also needs a ``__tostring`` for
+YAML serialization.
 
 Pure Lua plugin
 ~~~~~~~~~~~~~~~~

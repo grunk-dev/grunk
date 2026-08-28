@@ -132,7 +132,7 @@ TEST(RecipePlugin, uses_block_lists_plugins_regardless_of_kind)
     grunk.load_compiled_plugin(grunk::PluginInfo{"compiledplugin", "1.0.0"}, luaopen_recipeplugin);
 
     auto ns = grunk.begin_plugin(grunk::PluginInfo{"cppplugin", "2.0.0"});
-    grunk.register_type<RecipePluginLength>("Length", ns, "cppplugin")
+    ns.register_type<RecipePluginLength>("Length")
         .add_constructors([](double x) { return RecipePluginLength(x); })
         .add_member_function("get_x", &RecipePluginLength::get_x);
 
@@ -156,7 +156,7 @@ TEST(RecipePlugin, roundtrip_through_yaml_preserves_cpp_plugin_computation)
 {
     grunk::state grunk;
     auto ns = grunk.begin_plugin(grunk::PluginInfo{"cppplugin", "2.0.0"});
-    grunk.register_type<RecipePluginLength>("Length", ns, "cppplugin")
+    ns.register_type<RecipePluginLength>("Length")
         .add_constructors([](double x) { return RecipePluginLength(x); })
         .add_member_function("get_x", &RecipePluginLength::get_x);
 
@@ -174,7 +174,7 @@ TEST(RecipePlugin, roundtrip_through_yaml_preserves_cpp_plugin_computation)
 
     grunk::state other;
     auto other_ns = other.begin_plugin(grunk::PluginInfo{"cppplugin", "2.0.0"});
-    other.register_type<RecipePluginLength>("Length", other_ns, "cppplugin")
+    other_ns.register_type<RecipePluginLength>("Length")
         .add_constructors([](double x) { return RecipePluginLength(x); })
         .add_member_function("get_x", &RecipePluginLength::get_x);
 

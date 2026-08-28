@@ -187,16 +187,11 @@ GRUNK_PLUGIN_EXPORT grunk::PluginInfo grunk_plugin_info()
 namespace {
 void register_my_plugin(grunk::state& state, grunk::PluginInfo const& info)
 {
+    // begin_plugin returns a plugin_namespace proxy that already knows its own
+    // namespace table and qualifier, so ns.register_function's "add" serializes as
+    // "my_plugin.add" without repeating either one.
     auto ns = state.begin_plugin(info);
-    state.register_function(
-        "add",
-        [](int l, int r){ return l + r; },
-        {},
-        ns,
-        info.name // qualifies "add"'s serialized name as "my_plugin.add" - ns already carries
-                  // this name itself, so it's auto-inferred if left out; passing it explicitly,
-                  // as above, is still fine and documents intent at the call site.
-    );
+    ns.register_function("add", [](int l, int r){ return l + r; });
 }
 }
 GRUNK_PLUGIN_REGISTER(register_my_plugin)
