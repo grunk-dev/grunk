@@ -130,8 +130,8 @@ public:
         if (!table) {
             table = original_env;
         }
-        std::string const effective_qualifier = !qualifier.empty() ? qualifier : module_qualifier(*table);
-        std::string const qualified_name = effective_qualifier.empty() ? name : effective_qualifier + "." + name;
+        std::string const owner_module = module_qualifier(*table);
+        std::string const qualified_name = qualify(name, *table, qualifier);
         auto proxy = usertype_proxy<T>{qualified_name, table->new_usertype<T>(name, sol::constant_automagic_enrollments<Flags>{})};
         // record T's usertype table under its C++ type, so a DynamicFeature carrying a
         // type hint for T (see DynamicFeature::type_hint) can later look up a method by
@@ -139,8 +139,17 @@ public:
         // sol::meta_function::index handler in init() below. m_type_names mirrors this,
         // keyed the same way, purely so that handler can report a useful type name in
         // its error messages instead of just an opaque std::type_index.
-        m_type_registry[std::type_index(typeid(T))] = (*table)[name];
-        m_type_names[std::type_index(typeid(T))] = qualified_name;
+        std::type_index const type = std::type_index(typeid(T));
+        m_type_registry[type] = (*table)[name];
+        m_type_names[type] = qualified_name;
+        // Record which namespace (if any) this type belongs to, so forget_plugin can
+        // remove it from the type registry if that namespace is later rolled back -
+        // note this is keyed by `owner_module` (the table's own tag), not by
+        // `qualifier`, since the latter may be an explicit override that doesn't
+        // reflect which module table this type actually lives in.
+        if (!owner_module.empty()) {
+            m_module_types[owner_module].push_back(type);
+        }
         return proxy;
     }
 
@@ -187,15 +196,21 @@ public:
         int table_idx = (*table).push(L);
         sol::usertype<T> ut(L, table_idx);
         lua_pop(L, 1);
-        std::string const effective_qualifier = !qualifier.empty() ? qualifier : module_qualifier(*table);
-        std::string const qualified_name = effective_qualifier.empty() ? name : effective_qualifier + "." + name;
+        std::string const owner_module = module_qualifier(*table);
+        std::string const qualified_name = qualify(name, *table, qualifier);
         // Populate the type registry directly here, the same way register_type does,
         // rather than relying on T having already been registered via register_type
         // against this same table/name (which happened to make this work before, since
         // both would resolve to the same underlying Lua table, but isn't guaranteed if
         // T's usertype was created some other way, e.g. by a plugin).
-        m_type_registry[std::type_index(typeid(T))] = existing.as<sol::table>();
-        m_type_names[std::type_index(typeid(T))] = qualified_name;
+        std::type_index const type = std::type_index(typeid(T));
+        m_type_registry[type] = existing.as<sol::table>();
+        m_type_names[type] = qualified_name;
+        // See register_type's identical bookkeeping for why this is keyed by
+        // `owner_module` rather than `qualifier`.
+        if (!owner_module.empty()) {
+            m_module_types[owner_module].push_back(type);
+        }
         return usertype_proxy<T>{qualified_name, ut};
     }
 
@@ -223,8 +238,7 @@ public:
         if (!table) {
             table = original_env;
         }
-        std::string const effective_qualifier = !qualifier.empty() ? qualifier : module_qualifier(*table);
-        std::string const qualified_name = effective_qualifier.empty() ? name : effective_qualifier + "." + name;
+        std::string const qualified_name = qualify(name, *table, qualifier);
         auto meta_func = create_function_meta(lua, qualified_name, params, std::forward<Func>(fun));
         table->set(name, meta_func);
     }
@@ -504,7 +518,18 @@ public:
     inline sol::table load_lua_plugin_script(PluginInfo const& info, std::string const& script)
     {
         assert_plugin_name_free(info.name);
-        run_module_script(info.name, script);
+        try {
+            run_module_script(info.name, script);
+        } catch (...) {
+            // run_module_script may have already created (and partially populated) the
+            // module table before the script itself failed. assert_plugin_name_free
+            // just confirmed info.name was previously free, so it's always safe to
+            // fully vacate it here - otherwise a corrected retry under the same name
+            // would hit assert_plugin_name_free's "already in use" error instead of
+            // succeeding.
+            forget_plugin(info.name);
+            throw;
+        }
         note_plugin(info);
         sol::table ns = original_env[info.name];
         return ns;
@@ -540,15 +565,19 @@ public:
 
     /**
      * @brief forget_plugin removes a plugin's identity from plugins() and the
-     * lua["grunk"]["plugins"] table note_plugin populated, and also clears the
-     * namespace table (if any) it occupied in the original/decorated environments -
-     * so a forgotten plugin is fully gone, not just missing from plugins().
+     * lua["grunk"]["plugins"] table note_plugin populated, clears the namespace table
+     * (if any) it occupied in the original/decorated environments, clears its entry (if
+     * any) in Lua's own module cache (LUA_LOADED_TABLE - see load_module/
+     * load_compiled_plugin), and removes any C++ types registered under its namespace
+     * from the type registry (see register_type/modify_type) - so a forgotten plugin is
+     * fully gone, not just missing from plugins().
      *
      * This is the low-level counterpart to note_plugin: grunk::plugin::load_native uses
      * it to roll back a plugin's recorded identity *and* whatever it managed to
      * register before throwing partway through (so a half-registered plugin is never
      * reported as loaded, and its partially-registered types/functions aren't left
-     * reachable either - see load_native), and clear_module uses it to fully vacate a
+     * reachable either - see load_native), load_lua_plugin_script uses it to roll back a
+     * script that failed partway through, and clear_module uses it to fully vacate a
      * plugin's name before a reload.
      *
      * Does nothing if @p name is not currently recorded as a loaded plugin.
@@ -566,6 +595,28 @@ public:
 
         original_env.set(name, sol::lua_nil);
         decorated_env.set(name, sol::lua_nil);
+
+        // luaL_requiref (used by load_module/load_compiled_plugin) independently
+        // caches modules by name in the registry's LUA_LOADED_TABLE, regardless of
+        // original_env/decorated_env - without clearing that too, a subsequent
+        // load_compiled_plugin call for the same name would see it already cached and
+        // silently return the stale table instead of re-invoking open_fn.
+        lua_State* L = lua;
+        luaL_getsubtable(L, LUA_REGISTRYINDEX, LUA_LOADED_TABLE);
+        lua_pushnil(L);
+        lua_setfield(L, -2, name.c_str());
+        lua_pop(L, 1);
+
+        // Remove any C++ types register_type/modify_type recorded as belonging to this
+        // namespace, so a forgotten plugin's partial type registrations aren't left
+        // reachable via the Feature usertype's native colon-call dispatch (see init()).
+        if (auto it = m_module_types.find(name); it != m_module_types.end()) {
+            for (std::type_index const& type : it->second) {
+                m_type_registry.erase(type);
+                m_type_names.erase(type);
+            }
+            m_module_types.erase(it);
+        }
     }
 
     /**
@@ -649,20 +700,10 @@ public:
      */
     inline void clear_module(std::string const& name)
     {
-        // forget_plugin also clears original_env/decorated_env[name] - do this first
-        // so a plain (non-plugin) module is cleared the same way a plugin is.
+        // forget_plugin clears original_env/decorated_env[name], the LUA_LOADED_TABLE
+        // cache entry, and any registered types recorded under this name - so a plain
+        // (non-plugin) module is cleared exactly the same way a plugin is.
         forget_plugin(name);
-
-        // luaL_requiref (used by load_module/load_compiled_plugin) independently
-        // caches modules by name in the registry's LUA_LOADED_TABLE, regardless of
-        // original_env/decorated_env - without clearing that too, a subsequent
-        // load_compiled_plugin call for the same name would see it already cached and
-        // silently return the stale table instead of re-invoking open_fn.
-        lua_State* L = lua;
-        luaL_getsubtable(L, LUA_REGISTRYINDEX, LUA_LOADED_TABLE);
-        lua_pushnil(L);
-        lua_setfield(L, -2, name.c_str());
-        lua_pop(L, 1);
     }
 
 #ifdef GRUNK_WITH_RECIPE
@@ -1308,6 +1349,25 @@ private:
     }
 
     /**
+     * @brief qualify computes the fully-qualified, dotted name a registered
+     * type/function's constructor/methods should serialize with - see register_type's
+     * `qualifier` parameter for the full explanation of the rule this implements.
+     *
+     * Shared by register_type, modify_type and register_function, which otherwise each
+     * repeated this exact computation.
+     *
+     * @param name the type/function's own (unqualified) name
+     * @param table the namespace table it is being registered into
+     * @param qualifier an explicit override for `table`'s own qualifier, or "" to
+     *                  auto-infer it via module_qualifier
+     */
+    inline std::string qualify(std::string const& name, sol::table const& table, std::string const& qualifier) const
+    {
+        std::string const effective_qualifier = !qualifier.empty() ? qualifier : module_qualifier(table);
+        return effective_qualifier.empty() ? name : effective_qualifier + "." + name;
+    }
+
+    /**
      * @brief assert_plugin_name_free throws io_error if a plugin named @p name is
      * already recorded in plugins() on this state, or if @p name is already occupied
      * by something else entirely (e.g. a plain module created via run_module_script).
@@ -1353,6 +1413,12 @@ private:
     /// m_type_registry - only used to phrase useful error messages in the Feature
     /// usertype's sol::meta_function::index handler.
     std::unordered_map<std::type_index, std::string> m_type_names;
+
+    /// @brief maps a module/plugin name (see module_qualifier) to the C++ types
+    /// register_type/modify_type registered against tables tagged with that name - see
+    /// forget_plugin, which uses this to remove a rolled-back plugin's types from
+    /// m_type_registry/m_type_names too.
+    std::unordered_map<std::string, std::vector<std::type_index>> m_module_types;
 };
 
 } // namespace grunk

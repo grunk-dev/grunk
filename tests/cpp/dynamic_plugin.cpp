@@ -118,6 +118,30 @@ TEST(plugin, clear_module_then_load_compiled_plugin_reinvokes_open_fn)
     EXPECT_EQ(ns2.get<int>("open_count"), 2);
 }
 
+// grunk::plugin::load_native's rollback path calls forget_plugin directly (not
+// clear_module) when a plugin's grunk_plugin_register fails *after*
+// load_compiled_plugin already succeeded (the shape examples/cpp/cad_autodiff's
+// adtl_plugin.cpp has) - forget_plugin itself must therefore also clear the
+// LUA_LOADED_TABLE cache entry luaL_requiref populates, exactly like clear_module does,
+// otherwise a subsequent load attempt for the same name silently gets the stale cached
+// module back instead of re-invoking open_fn.
+TEST(plugin, forget_plugin_after_load_compiled_plugin_allows_reinvoking_open_fn)
+{
+    grunk::state grunk;
+    g_reload_probe_open_count = 0;
+
+    grunk::PluginInfo info{"reload_probe", "1.0"};
+    sol::table ns1 = grunk.load_compiled_plugin(info, luaopen_reload_probe);
+    EXPECT_EQ(ns1.get<int>("open_count"), 1);
+
+    // Simulates load_native's own rollback for a plugin whose registration fails after
+    // load_compiled_plugin already succeeded.
+    grunk.forget_plugin("reload_probe");
+
+    sol::table ns2 = grunk.load_compiled_plugin(grunk::PluginInfo{"reload_probe", "2.0"}, luaopen_reload_probe);
+    EXPECT_EQ(ns2.get<int>("open_count"), 2);
+}
+
 // begin_plugin/load_compiled_plugin used to only check plugins() for a name collision,
 // so a name already occupied by a plain run_module_script module would be silently
 // clobbered instead of rejected - exactly the failure mode

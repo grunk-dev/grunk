@@ -94,6 +94,31 @@ TEST(PluginLuaScript, load_twice_with_same_name_throws)
     EXPECT_EQ(grunk.plugins()[0].version, "0.1.0");
 }
 
+// run_module_script may have already created (and partially populated) the module
+// table before the script itself fails to run - load_lua_plugin_script must fully roll
+// that back, not just propagate the exception, otherwise a corrected retry under the
+// same name hits assert_plugin_name_free's "already in use" error instead of succeeding.
+TEST(PluginLuaScript, retry_after_failed_script_succeeds)
+{
+    grunk::state grunk;
+
+    EXPECT_THROW(
+        grunk.load_lua_plugin_script(grunk::PluginInfo{"lua_plugin", "0.1.0"}, "this is not valid lua("),
+        std::runtime_error
+    );
+    EXPECT_EQ(grunk.plugins().size(), 0u);
+
+    grunk.load_lua_plugin_script(grunk::PluginInfo{"lua_plugin", "0.2.0"}, "function add_one(x) return x + 1 end");
+
+    ASSERT_EQ(grunk.plugins().size(), 1u);
+    EXPECT_EQ(grunk.plugins()[0].version, "0.2.0");
+
+    auto env = grunk.create_env();
+    auto res = env.eval("y = lua_plugin.add_one(41)");
+    ASSERT_TRUE(res.valid());
+    EXPECT_EQ(env.get("y").as<int>(), 42);
+}
+
 TEST(PluginLuaScript, load_from_missing_file_throws)
 {
     grunk::state grunk;
