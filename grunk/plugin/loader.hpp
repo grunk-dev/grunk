@@ -69,7 +69,7 @@ namespace grunk::plugin {
  * namespace {
  * void register_my_plugin(grunk::state& state, grunk::PluginInfo const& info) {
  *     auto ns = state.begin_plugin(info);
- *     state.register_type<gp_Pnt>("gp_Pnt", ns) ... ;
+ *     ns.register_type<gp_Pnt>("gp_Pnt") ... ;
  * }
  * }
  * GRUNK_PLUGIN_REGISTER(register_my_plugin)
@@ -77,8 +77,8 @@ namespace grunk::plugin {
  * // compiled-Lua (SWIG) shim
  * namespace {
  * void register_adtl(grunk::state& state, grunk::PluginInfo const& info) {
- *     sol::table ns = state.load_compiled_plugin(info, luaopen_adtl);
- *     state.register_external_type(info.name + ".adouble", ns["adouble"], ns);
+ *     auto ns = state.load_compiled_plugin(info, luaopen_adtl);
+ *     ns.register_external_type("adouble", ns["adouble"]);
  * }
  * }
  * GRUNK_PLUGIN_REGISTER(register_adtl)

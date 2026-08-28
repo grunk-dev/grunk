@@ -50,6 +50,11 @@ struct PluginInfo
     std::string version;
 };
 
+// Forward declaration - state::begin_plugin/state::load_compiled_plugin return this (see
+// plugin_namespace's own definition below, after `class state`: its methods call back into
+// state's public register_*/modify_type API, so state must be a complete type by then).
+class plugin_namespace;
+
 /**
  * @brief The state class is responsible for grunk's dynamic scripting capabilities and
  * LUA interface. **Important:** A grunk instance must outlive any dynamic feature created
@@ -409,28 +414,24 @@ public:
 
     /**
      * @brief begin_plugin starts a plugin whose types/functions are registered directly
-     * from C++, by returning a fresh namespace table for the caller to pass as the
-     * `table` argument to register_type/register_function/register_external_type, and
-     * recording the plugin's identity in plugins() immediately (there is no separate
-     * "finish" step - registration against the returned table can happen incrementally,
-     * exactly like a module built via run_module_script).
+     * from C++, by returning a plugin_namespace proxy for the caller to register
+     * types/functions/external types against, and recording the plugin's identity in
+     * plugins() immediately (there is no separate "finish" step - registration against
+     * the returned proxy can happen incrementally, exactly like a module built via
+     * run_module_script).
      *
      * This is the "plain C++" plugin kind's counterpart to load_compiled_plugin: instead
      * of loading a compiled Lua C extension, a plugin's own entry point (see
      * grunk::plugin's native loader) calls this once to obtain its namespace, then uses
-     * ordinary register_type/register_function calls against it. register_type/
-     * register_function auto-infer their own `qualifier` argument from `ns` (see
-     * module_qualifier), so constructors/methods/functions serialize with their
-     * fully-qualified path (e.g. "geoml.gp_Pnt.new") rather than just "gp_Pnt.new" (which
-     * would not resolve once the type is reachable only through this namespace) even if
-     * `info.name` isn't passed explicitly - passing it is still allowed, e.g. to
-     * override the inferred qualifier:
+     * the returned plugin_namespace's own register_type/register_function calls, which
+     * already know their own namespace table and qualifier - no need to repeat either
+     * one at every call:
      *
      * @code
      * extern "C" void grunk_plugin_register(grunk::state& state, grunk::PluginInfo const& info) {
      *     auto ns = state.begin_plugin(info);
-     *     state.register_type<gp_Pnt>("gp_Pnt", ns) ...;
-     *     state.register_function("bezier_curve", ..., {}, ns);
+     *     ns.register_type<gp_Pnt>("gp_Pnt") ...;
+     *     ns.register_function("bezier_curve", ...);
      * }
      * @endcode
      *
@@ -441,15 +442,10 @@ public:
      *
      * @param info the plugin's name and version. `info.name` doubles as the namespace
      *             table's key in the original environment, exactly like load_compiled_plugin.
-     * @return the plugin's (initially empty) namespace table
+     * @return a plugin_namespace proxy wrapping the plugin's (initially empty) namespace
+     *         table - see plugin_namespace's own doc comment, defined below this class.
      */
-    inline sol::table begin_plugin(PluginInfo const& info)
-    {
-        assert_plugin_name_free(info.name);
-        sol::table ns = create_module(info.name);
-        note_plugin(info);
-        return ns;
-    }
+    plugin_namespace begin_plugin(PluginInfo const& info);
 
     /**
      * @brief load_compiled_plugin loads a compiled Lua C extension (e.g. a SWIG-Lua
@@ -459,10 +455,9 @@ public:
      *
      * Classes the module exposes (e.g. adtl.adouble) are not yet usable as grunk types
      * after this call - their constructor/methods aren't plain table entries (see
-     * external_type_proxy for why), so they still need bridging via
-     * register_external_type, passing this method's return value as that call's
-     * `table` argument and `<name>.<ClassName>` as its `name`, so the class ends up
-     * reachable at the same path it was loaded under.
+     * external_type_proxy for why), so they still need bridging via the returned
+     * plugin_namespace's own register_external_type (passing just the class's own short
+     * name, e.g. "adouble" - it auto-prefixes the plugin's qualifier for you).
      *
      * A plugin name already recorded in plugins() cannot be loaded again on the same
      * state - this throws io_error rather than silently discarding the first plugin's
@@ -473,23 +468,13 @@ public:
      *             loading key (see load_module) and thus must match the module's own
      *             internal identity (e.g. SWIG's `%module` name).
      * @param open_fn the module's C entry point (e.g. `luaopen_adtl`)
-     * @return the plugin's namespace table (the module's own table, decorated so its
-     *         free functions are grunk-tracked)
+     * @return a plugin_namespace proxy wrapping the plugin's namespace table (the
+     *         module's own table, decorated so its free functions are grunk-tracked) -
+     *         see plugin_namespace's own doc comment, defined below this class. Index
+     *         into it (`ns["SomeClass"]`) to reach entries the module itself defined,
+     *         e.g. a class's constructor table to pass to register_external_type.
      */
-    inline sol::table load_compiled_plugin(PluginInfo const& info, lua_CFunction open_fn)
-    {
-        assert_plugin_name_free(info.name);
-        sol::table ns = load_module(info.name, open_fn);
-        decorate_module_functions(ns, info.name);
-        original_env.set(info.name, ns);
-        // Tag ns with its own module name, exactly like create_module does for
-        // begin_plugin's namespace table, so register_type/register_function/
-        // register_external_type calls against it can auto-infer their qualifier via
-        // module_qualifier instead of requiring info.name to be repeated at every call.
-        tag_module_name(ns, info.name);
-        note_plugin(info);
-        return ns;
-    }
+    plugin_namespace load_compiled_plugin(PluginInfo const& info, lua_CFunction open_fn);
 
     /**
      * @brief load_lua_plugin_script starts a "pure Lua" plugin: no compilation, just a
@@ -1420,5 +1405,130 @@ private:
     /// m_type_registry/m_type_names too.
     std::unordered_map<std::string, std::vector<std::type_index>> m_module_types;
 };
+
+/**
+ * @brief plugin_namespace is a proxy returned by state::begin_plugin/
+ * state::load_compiled_plugin: it remembers the namespace table and qualifier a plugin
+ * registers into, so register_type/register_function/register_external_type calls
+ * against it don't need to repeat either one - `ns.register_type<T>("T")` instead of
+ * `state.register_type<T>("T", ns, info.name)`.
+ *
+ * For register_type/register_function/modify_type this is purely convenience: their
+ * `qualifier` argument is already auto-inferred from the table when left empty (see
+ * state::qualify/module_qualifier), so passing `info.name` explicitly was always
+ * redundant, just no longer necessary to spell out at every call. register_external_type
+ * is different: unlike the others, it does not auto-construct a qualified name from its
+ * `table` argument, it only validates that the caller-supplied name already starts with
+ * the table's qualifier (throwing std::logic_error otherwise) - so
+ * plugin_namespace::register_external_type actually does new work, prefixing a short
+ * name (e.g. "MyClass") into the fully-qualified one (state::register_external_type
+ * itself still requires) automatically.
+ *
+ * Normally obtained via state::begin_plugin or state::load_compiled_plugin, not
+ * constructed directly. Implicitly convertible to sol::table (and table()/operator[]
+ * expose the wrapped table directly) as an escape hatch for code that needs the raw
+ * table - e.g. to pass into an API taking a plain sol::table, or to call one of state's
+ * own register_type/register_function/modify_type methods directly with an explicit
+ * qualifier override.
+ *
+ * @ingroup dynamic
+ */
+class plugin_namespace
+{
+public:
+    plugin_namespace(state& s, sol::table ns, std::string qualifier)
+     : m_state(s)
+     , m_ns(std::move(ns))
+     , m_qualifier(std::move(qualifier))
+    {}
+
+    /// @brief see state::register_type - `name`/`table`/`qualifier` are this
+    /// namespace's own name/table/qualifier, so only the type's own name is needed here.
+    template <typename T, sol::automagic_flags Flags = sol::automagic_flags::all>
+    auto register_type(std::string const& name)
+    {
+        return m_state.register_type<T, Flags>(name, m_ns, m_qualifier);
+    }
+
+    /// @brief see state::modify_type.
+    template <typename T>
+    auto modify_type(std::string const& name)
+    {
+        return m_state.modify_type<T>(name, m_ns, m_qualifier);
+    }
+
+    /// @brief see state::register_function.
+    template <typename Func>
+    void register_function(std::string const& name, Func&& fun, std::vector<Parameter> params = {})
+    {
+        m_state.register_function(name, std::forward<Func>(fun), std::move(params), m_ns, m_qualifier);
+    }
+
+    /// @brief see state::register_external_type. Unlike that method, `name` here is
+    /// just the type's own short name (e.g. "MyClass", not "my_plugin.MyClass") - this
+    /// auto-prefixes this namespace's own qualifier onto it, rather than requiring the
+    /// caller to spell out the fully-qualified name by hand.
+    external_type_proxy register_external_type(std::string const& name, sol::protected_function ctor, sol::object probe = sol::lua_nil)
+    {
+        std::string const qualified = m_qualifier.empty() ? name : m_qualifier + "." + name;
+        return m_state.register_external_type(qualified, ctor, m_ns, probe);
+    }
+
+    /// @brief looks up an entry already present in this namespace's table - e.g. a
+    /// compiled-Lua module's own class constructor table, to pass to
+    /// register_external_type.
+    sol::object operator[](std::string const& key) const
+    {
+        return m_ns[key];
+    }
+
+    /// @brief the wrapped namespace table - see this class's own doc comment for when
+    /// you'd need this instead of this class's own register_*/modify_type methods.
+    sol::table const& table() const
+    {
+        return m_ns;
+    }
+
+    /// @brief the dotted path this namespace's own table is reachable under (e.g. the
+    /// owning plugin's name) - see state::module_qualifier.
+    std::string const& qualifier() const
+    {
+        return m_qualifier;
+    }
+
+    /// @brief escape hatch - see this class's own doc comment.
+    operator sol::table() const
+    {
+        return m_ns;
+    }
+
+private:
+    state& m_state;
+    sol::table m_ns;
+    std::string m_qualifier;
+};
+
+inline plugin_namespace state::begin_plugin(PluginInfo const& info)
+{
+    assert_plugin_name_free(info.name);
+    sol::table ns = create_module(info.name);
+    note_plugin(info);
+    return plugin_namespace(*this, ns, info.name);
+}
+
+inline plugin_namespace state::load_compiled_plugin(PluginInfo const& info, lua_CFunction open_fn)
+{
+    assert_plugin_name_free(info.name);
+    sol::table ns = load_module(info.name, open_fn);
+    decorate_module_functions(ns, info.name);
+    original_env.set(info.name, ns);
+    // Tag ns with its own module name, exactly like create_module does for
+    // begin_plugin's namespace table, so register_type/register_function/
+    // register_external_type calls against it can auto-infer their qualifier via
+    // module_qualifier instead of requiring info.name to be repeated at every call.
+    tag_module_name(ns, info.name);
+    note_plugin(info);
+    return plugin_namespace(*this, ns, info.name);
+}
 
 } // namespace grunk

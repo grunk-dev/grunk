@@ -218,15 +218,21 @@ TEST(plugin, load_compiled_plugin_namespace_supports_qualifier_auto_inference)
 // no way to enumerate a class's method names from Lua, only to look one up once you
 // already know it, so register_external_type's type table auto-discovers methods
 // lazily via a probe instance instead of requiring every one to be listed up front.
+//
+// Also exercises plugin_namespace::register_external_type's auto-prefixing: "Box" (the
+// class's own short name, not "testplugin.Box") is enough here - unlike the raw
+// state::register_external_type API, which requires the caller to spell out the fully
+// qualified name themselves (see register_external_type_throws_on_missing_namespace_prefix
+// below).
 TEST(plugin, compiled_plugin_class_bridged_with_qualified_name_keeps_tracking)
 {
     grunk::state grunk;
 
     grunk::PluginInfo info{"testplugin", "1.0"};
-    sol::table ns = grunk.load_compiled_plugin(info, luaopen_testplugin);
+    auto ns = grunk.load_compiled_plugin(info, luaopen_testplugin);
 
-    sol::table box_ctor = ns["Box"];
-    grunk.register_external_type("testplugin.Box", box_ctor, ns);
+    sol::protected_function box_ctor = ns["Box"];
+    ns.register_external_type("Box", box_ctor);
 
     auto u = grunk.feature(4.);
     auto box = grunk.action("testplugin.Box.new", u);

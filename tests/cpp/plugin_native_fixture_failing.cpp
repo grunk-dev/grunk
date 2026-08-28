@@ -27,7 +27,7 @@ struct RegisteredBeforeFailure
 void register_failing_fixture(grunk::state& state, grunk::PluginInfo const& info)
 {
     auto ns = state.begin_plugin(info);
-    state.register_type<RegisteredBeforeFailure>("RegisteredBeforeFailure", ns, info.name);
+    ns.register_type<RegisteredBeforeFailure>("RegisteredBeforeFailure");
     throw std::runtime_error("deliberate failure for PluginLoader.load_native_rolls_back_failed_registration");
 }
 

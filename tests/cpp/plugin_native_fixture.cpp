@@ -34,15 +34,12 @@ namespace {
 void register_native_fixture(grunk::state& state, grunk::PluginInfo const& info)
 {
     auto ns = state.begin_plugin(info);
-    state.register_type<FixtureType>("FixtureType", ns, info.name)
+    ns.register_type<FixtureType>("FixtureType")
         .add_constructors([](double x) { return FixtureType(x); })
         .add_member_function("get_x", &FixtureType::get_x);
-    state.register_function(
+    ns.register_function(
         "twice",
-        [](FixtureType const& f) { return 2. * f.get_x(); },
-        {},
-        ns,
-        info.name
+        [](FixtureType const& f) { return 2. * f.get_x(); }
     );
 }
 
