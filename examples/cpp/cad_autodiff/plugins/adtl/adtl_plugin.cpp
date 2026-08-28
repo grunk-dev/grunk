@@ -42,14 +42,15 @@ void register_adtl_plugin(grunk::state& grunk, grunk::PluginInfo const& info)
     // Load the compiled SWIG-Lua module as a grunk plugin: its own table becomes the
     // "adtl" namespace in original_env, its free functions (tan, exp, log, sqrt, pow,
     // ...) are made grunk-tracked, and its identity is recorded in grunk.plugins().
-    sol::table adtl = grunk.load_compiled_plugin(info, luaopen_adtl);
+    auto adtl = grunk.load_compiled_plugin(info, luaopen_adtl);
 
     // No .add_member_function calls are needed: adouble's default constructor lets
     // register_external_type probe an instance and discover setADValue/getADValue/
     // getValue (and any other method actually used) lazily, the first time each is
-    // looked up - SWIG-Lua gives no way to enumerate them up front.
+    // looked up - SWIG-Lua gives no way to enumerate them up front. plugin_namespace's
+    // register_external_type auto-prefixes "adouble" into "adtl.adouble" for us.
     sol::table adouble_static = adtl["adouble"];
-    grunk.register_external_type(info.name + ".adouble", adouble_static, adtl);
+    adtl.register_external_type("adouble", adouble_static);
 
     // adouble.i explicitly `%ignore`s operator<<, so the SWIG binding gives adouble
     // instances no __tostring - without one, grunk can't serialize an adouble held

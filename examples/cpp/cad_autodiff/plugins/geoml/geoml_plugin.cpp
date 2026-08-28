@@ -16,7 +16,7 @@ namespace {
 void register_geoml_plugin(grunk::state& grunk, grunk::PluginInfo const& info)
 {
     auto ns = grunk.begin_plugin(info);
-    register_geoml(grunk, ns, info);
+    register_geoml(ns);
 }
 
 } // anonymous namespace
