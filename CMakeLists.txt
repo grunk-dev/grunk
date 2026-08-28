@@ -120,7 +120,7 @@ install(
 )
 
 configure_package_config_file(
-    "${CMAKE_SOURCE_DIR}/cmake/grunkConfig.cmake.in"
+    "${PROJECT_SOURCE_DIR}/cmake/grunkConfig.cmake.in"
     "${CMAKE_CURRENT_BINARY_DIR}/grunkConfig.cmake"
     INSTALL_DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/grunk
 )

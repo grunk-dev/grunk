@@ -207,6 +207,32 @@ TEST(PluginBegin, qualifier_is_inferred_when_omitted)
     EXPECT_NEAR(deserialized.as<double>(), 6.0, 1e-15);
 }
 
+// forget_plugin used to only remove a plugin's Lua-visible namespace, leaving its
+// registered C++ types reachable via the process-wide type registry (m_type_registry/
+// m_type_names, see register_type) - directly contradicting forget_plugin's own doc
+// comment, which promises partially-registered types/functions aren't left reachable
+// either. A DynamicFeature carrying a type hint for the forgotten type (constructed
+// before the rollback, so its type hint comes from construction, never from evaluating
+// it) must no longer be able to dispatch methods against that type afterwards.
+TEST(PluginBegin, forget_plugin_removes_type_registry_entries)
+{
+    grunk::state grunk;
+
+    sol::table ns = grunk.begin_plugin(grunk::PluginInfo{"cpp_plugin", "0.1.0"});
+    grunk.register_type<Length>("Length", ns, "cpp_plugin")
+        .add_constructors([](double x) { return Length(x); })
+        .add_member_function("get_x", &Length::get_x);
+
+    auto l = grunk.feature("cpp_plugin.Length", 4.0);
+
+    grunk.forget_plugin("cpp_plugin");
+
+    // Before the fix, m_type_registry/m_type_names still held Length's usertype table,
+    // so this colon-call dispatch would still succeed even though the plugin was fully
+    // rolled back.
+    EXPECT_THROW(l.call("get_x"), std::runtime_error);
+}
+
 TEST(PluginBegin, incremental_registration_is_allowed)
 {
     grunk::state grunk;
