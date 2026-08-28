@@ -1174,6 +1174,15 @@ as above, is still fine and makes the intent easier to read at the call site.
 but not on Windows, where a DLL exports nothing unless a symbol is explicitly marked
 ``__declspec(dllexport)`` - exactly what ``GRUNK_PLUGIN_EXPORT`` expands to there.
 
+
+`GRUNK_PLUGIN_REGISTER` generates the actual `grunk_plugin_register` entry point around your
+registration function: it catches any exception your function throws *on the plugin's own side* of
+the `dlopen`/`dlsym` boundary and reports failure as a plain error string instead, since an
+uncaught C++ exception is not safe to unwind across that boundary unless the plugin and the host
+were built with the exact same compiler, standard library, and grunk/sol2/Lua versions - a real risk
+once a plugin is its own separate build, as `my_plugin.cpp` above would typically be. Always use the
+macro rather than defining `grunk_plugin_register` by hand.
+
 Building the plugin only needs the ``grunk::plugin`` CMake target:
 
 .. code-block:: cmake

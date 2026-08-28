@@ -202,18 +202,6 @@ void register_my_plugin(grunk::state& state, grunk::PluginInfo const& info)
 GRUNK_PLUGIN_REGISTER(register_my_plugin)
 ```
 
-`GRUNK_PLUGIN_EXPORT` (not a plain `extern "C"`) is what makes this portable: it expands to
-`extern "C" __declspec(dllexport)` on Windows, where a DLL exports nothing by default, and to
-plain `extern "C"` on Linux/macOS, where a shared library already does.
-
-`GRUNK_PLUGIN_REGISTER` generates the actual `grunk_plugin_register` entry point around your
-registration function: it catches any exception your function throws *on the plugin's own side* of
-the `dlopen`/`dlsym` boundary and reports failure as a plain error string instead, since an
-uncaught C++ exception is not safe to unwind across that boundary unless the plugin and the host
-were built with the exact same compiler, standard library, and grunk/sol2/Lua versions - a real risk
-once a plugin is its own separate build, as `my_plugin.cpp` above would typically be. Always use the
-macro rather than defining `grunk_plugin_register` by hand.
-
 Loading a plugin under a name that's already loaded on the same `grunk::state` throws rather than
 silently discarding the first plugin's namespace table - call `state.clear_module(name)` first if a
 reload is genuinely intended.
@@ -238,9 +226,11 @@ A plugin can just as well be a compiled Lua module (e.g. SWIG-generated) via `gr
 
 ## Documentation
 
-[Read the documentation](https://paradigms.pages.gitlab.dlr.de/grunk/) to learn more.
+[Read the documentation](https://grunk-dev.github.io/grunk/) to learn more.
 
 ## Examples
+
+> Work in Progress
 
 Grunk includes example applications demonstrating the library's capabilities. Each example is standalone with its own dependencies and build configuration.
 
