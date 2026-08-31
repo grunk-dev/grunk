@@ -4,7 +4,6 @@
 
 #include "grunk/plugin/loader.hpp"
 
-#include <algorithm>
 #include <stdexcept>
 
 #if defined(_WIN32)
@@ -137,34 +136,47 @@ PluginInfo load_native(state& state, std::filesystem::path const& path)
         register_fn = reinterpret_cast<register_fn_t>(find_symbol_checked(handle, "grunk_plugin_register", path_str));
         // grunk_plugin_info() itself may throw (e.g. building its version string
         // fails) - handled by this same try/catch so the handle is closed here too,
-        // not just on a symbol-lookup failure.
+        // not just on a symbol-lookup failure. Nothing has touched `state` yet at
+        // this point, so unloading the library here is always safe.
         info = info_fn();
     } catch (...) {
         close_library(handle);
         throw;
     }
 
-    // If a plugin of this name is already loaded, this call cannot have registered
-    // anything new (e.g. assert_plugin_name_free rejects it immediately) - the
-    // failure belongs entirely to *this* call, not to the already-loaded plugin, so
-    // forget_plugin must not run below and erase that unrelated, working plugin.
-    bool const already_loaded = std::any_of(
-        state.plugins().begin(), state.plugins().end(),
-        [&](PluginInfo const& p) { return p.name == info.name; }
-    );
+    // If anything at all - a plugin, or a plain, non-plugin module/symbol - already
+    // occupies this name, this call cannot have registered anything new (state's
+    // begin_plugin/load_compiled_plugin/load_lua_plugin_script all reject that
+    // immediately via assert_plugin_name_free) - the failure belongs entirely to
+    // *this* call, not to whatever pre-existing thing occupies the name, so
+    // forget_plugin must not run below and erase it. name_occupied checks both cases
+    // (it used to only check state.plugins() here, missing the "occupied by a plain
+    // module" collision, which could make forget_plugin wipe an unrelated,
+    // pre-existing module out from under a host application).
+    bool const already_occupied = state.name_occupied(info.name);
 
     // Registration may have partially completed (e.g. begin_plugin already recorded
     // the plugin's identity before the caller's own register_type/register_function
     // calls failed) - forget it so a half-registered plugin is never reported as
-    // loaded, close the handle (nothing in `state` can hold a live reference into a
-    // plugin whose registration failed, unlike the intentional leak on the success
-    // path below), and wrap the error with which plugin/library it came from, since
-    // the message alone has no idea it came from inside a plugin's registration.
-    auto fail = [&](std::string const& message) -> std::runtime_error {
-        if (!already_loaded) {
+    // loaded. Unlike the symbol-lookup failure above, the library handle is
+    // deliberately never closed here: once registration has started, `state` (and the
+    // Lua VM it owns) may hold live references into objects the plugin's own code
+    // created - e.g. a usertype metatable with a sol2-installed finalizer - that
+    // forget_plugin's bookkeeping drops grunk's own references to, but that Lua's own
+    // garbage collector may not actually sweep until later. Unloading the library out
+    // from under such a still-pending reference would let that later collection jump
+    // into now-unmapped memory. This mirrors the exact same reasoning load_native
+    // already applies to the *success* path below (the handle is never released
+    // there either) - a failed/partial registration can leave the same kind of
+    // live references, so the same invariant has to hold, at the cost of leaking the
+    // (unused) library mapping on a failed load.
+    auto rollback = [&] {
+        if (!already_occupied) {
             state.forget_plugin(info.name);
         }
-        close_library(handle);
+    };
+    auto fail = [&](std::string const& message) -> std::runtime_error {
+        rollback();
         return std::runtime_error(
             "grunk::plugin::load_native: plugin \"" + info.name + "\" (from \"" + path_str +
             "\") failed during registration: " + message
@@ -185,10 +197,7 @@ PluginInfo load_native(state& state, std::filesystem::path const& path)
     } catch (std::exception const& e) {
         throw fail(e.what());
     } catch (...) {
-        if (!already_loaded) {
-            state.forget_plugin(info.name);
-        }
-        close_library(handle);
+        rollback();
         throw;
     }
 
@@ -201,7 +210,7 @@ PluginInfo load_native(state& state, std::filesystem::path const& path)
 
 sol::table load_script(state& state, PluginInfo const& info, std::filesystem::path const& path)
 {
-    return state.load_lua_plugin_file(info, path.string());
+    return state.load_lua_plugin_file(info, path);
 }
 
 } // namespace grunk::plugin

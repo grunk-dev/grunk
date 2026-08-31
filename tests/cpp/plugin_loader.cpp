@@ -77,6 +77,20 @@ TEST(PluginLoader, load_native_rolls_back_failed_registration)
     // as never loaded.
     auto res2 = penv.eval("assert(failing_fixture == nil)");
     EXPECT_TRUE(res2.valid());
+
+    // Force a full Lua GC cycle here: forget_plugin drops grunk's own references to
+    // RegisteredBeforeFailure's usertype metatable, making it unreachable garbage, but
+    // doesn't itself sweep it - only Lua's own collector does, whenever it next runs.
+    // load_native used to unconditionally close_library() the plugin's shared library
+    // right after forget_plugin, so if that metatable carries a sol2-installed __gc
+    // finalizer (routine for any new_usertype<T> registration), a *later* collection
+    // would jump into memory the library unload already freed - observed as a Windows
+    // SEH access violation instead of a clean test failure. Forcing collection here,
+    // right after the rollback and before the library would have been unloaded, makes
+    // that hazard reproducible deterministically on every platform/CI runner rather
+    // than depending on incidental GC timing.
+    auto res3 = penv.eval("collectgarbage(\"collect\")");
+    EXPECT_TRUE(res3.valid());
 }
 
 // A second load_native call for a name that is already successfully loaded must fail
