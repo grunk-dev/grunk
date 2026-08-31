@@ -153,32 +153,15 @@ public:
         if (!table) {
             table = original_env;
         }
+        // owner_module is qualify()'s own fallback whenever `qualifier` is left empty
+        // (see qualify's doc comment) - computed directly here (rather than leaving
+        // qualify to re-derive it internally) since record_type_registration also
+        // needs it, to avoid asking module_qualifier the same question about `table`
+        // twice.
         std::string const owner_module = module_qualifier(*table);
-        std::string const qualified_name = qualify(name, *table, qualifier);
+        std::string const qualified_name = join_qualified(qualifier.empty() ? owner_module : qualifier, name);
         auto proxy = usertype_proxy<T>{qualified_name, table->new_usertype<T>(name, sol::constant_automagic_enrollments<Flags>{})};
-        // record T's usertype table under its C++ type, so a DynamicFeature carrying a
-        // type hint for T (see DynamicFeature::type_hint) can later look up a method by
-        // name without ever needing to evaluate its value - see the Feature usertype's
-        // sol::meta_function::index handler in init() below. m_type_names mirrors this,
-        // keyed the same way, purely so that handler can report a useful type name in
-        // its error messages instead of just an opaque std::type_index.
-        std::type_index const type = std::type_index(typeid(T));
-        m_type_registry[type] = (*table)[name];
-        m_type_names[type] = qualified_name;
-        // Record which namespace (if any) this type belongs to, so forget_plugin can
-        // remove it from the type registry if that namespace is later rolled back -
-        // note this is keyed by `owner_module` (the table's own tag), not by
-        // `qualifier`, since the latter may be an explicit override that doesn't
-        // reflect which module table this type actually lives in.
-        if (!owner_module.empty()) {
-            m_module_types[owner_module].push_back(type);
-            // Record which namespace currently owns this type_index's slot in
-            // m_type_registry/m_type_names, so that if a *different* plugin later
-            // re-registers the same T (overwriting the slot above), forget_plugin can
-            // tell the slot no longer belongs to this namespace and leave it alone
-            // instead of erasing the other plugin's still-live registration.
-            m_type_owner[type] = owner_module;
-        }
+        record_type_registration(std::type_index(typeid(T)), (*table)[name], qualified_name, owner_module);
         return proxy;
     }
 
@@ -225,22 +208,16 @@ public:
         int table_idx = (*table).push(L);
         sol::usertype<T> ut(L, table_idx);
         lua_pop(L, 1);
+        // See register_type's identical computation for why owner_module is derived
+        // directly here instead of leaving qualify to re-derive it internally.
         std::string const owner_module = module_qualifier(*table);
-        std::string const qualified_name = qualify(name, *table, qualifier);
+        std::string const qualified_name = join_qualified(qualifier.empty() ? owner_module : qualifier, name);
         // Populate the type registry directly here, the same way register_type does,
         // rather than relying on T having already been registered via register_type
         // against this same table/name (which happened to make this work before, since
         // both would resolve to the same underlying Lua table, but isn't guaranteed if
         // T's usertype was created some other way, e.g. by a plugin).
-        std::type_index const type = std::type_index(typeid(T));
-        m_type_registry[type] = existing.as<sol::table>();
-        m_type_names[type] = qualified_name;
-        // See register_type's identical bookkeeping for why this is keyed by
-        // `owner_module` rather than `qualifier`, and for m_type_owner's purpose.
-        if (!owner_module.empty()) {
-            m_module_types[owner_module].push_back(type);
-            m_type_owner[type] = owner_module;
-        }
+        record_type_registration(std::type_index(typeid(T)), existing.as<sol::table>(), qualified_name, owner_module);
         return usertype_proxy<T>{qualified_name, ut};
     }
 
@@ -601,12 +578,7 @@ public:
      */
     inline bool name_occupied(std::string const& name) const
     {
-        for (PluginInfo const& p : m_plugins) {
-            if (p.name == name) {
-                return true;
-            }
-        }
-        return original_env[name].valid();
+        return find_plugin(name) != nullptr || original_env[name].valid();
     }
 
     /**
@@ -662,21 +634,21 @@ public:
 
         // Remove any C++ types register_type/modify_type recorded as belonging to this
         // namespace, so a forgotten plugin's partial type registrations aren't left
-        // reachable via the Feature usertype's native colon-call dispatch (see init()) -
-        // but only if this namespace still actually owns that type_index's slot (see
-        // m_type_owner): if a *different*, still-loaded plugin later re-registered the
-        // same C++ type (overwriting m_type_registry/m_type_names for that type_index),
-        // this namespace no longer owns it and erasing it here would wrongly break that
-        // other, unrelated plugin instead of the one actually being forgotten.
-        if (auto it = m_module_types.find(name); it != m_module_types.end()) {
-            for (std::type_index const& type : it->second) {
-                if (auto owner_it = m_type_owner.find(type); owner_it != m_type_owner.end() && owner_it->second == name) {
-                    m_type_registry.erase(type);
-                    m_type_names.erase(type);
-                    m_type_owner.erase(owner_it);
-                }
+        // reachable via the Feature usertype's native colon-call dispatch (see init()).
+        // m_type_owner only ever holds a type_index's *current* owner, so scanning it
+        // directly (rather than also keeping a separate, potentially-stale per-module
+        // list of every type a namespace ever touched) can't erase a *different*,
+        // still-loaded plugin's still-live registration if it re-registered the same
+        // C++ type after this namespace did - that plugin now owns the slot, so its
+        // entry here no longer matches `name`.
+        for (auto it = m_type_owner.begin(); it != m_type_owner.end();) {
+            if (it->second == name) {
+                m_type_registry.erase(it->first);
+                m_type_names.erase(it->first);
+                it = m_type_owner.erase(it);
+            } else {
+                ++it;
             }
-            m_module_types.erase(it);
         }
     }
 
@@ -1425,8 +1397,10 @@ private:
      * type/function's constructor/methods should serialize with - see register_type's
      * `qualifier` parameter for the full explanation of the rule this implements.
      *
-     * Shared by register_type, modify_type and register_function, which otherwise each
-     * repeated this exact computation.
+     * Used by register_function. register_type/modify_type inline the same rule
+     * themselves instead of calling this (they already need `module_qualifier(table)`
+     * for their own type-ownership bookkeeping, so computing it a second time here
+     * would be redundant).
      *
      * @param name the type/function's own (unqualified) name
      * @param table the namespace table it is being registered into
@@ -1454,14 +1428,12 @@ private:
      */
     inline void assert_plugin_name_free(std::string const& name) const
     {
-        for (PluginInfo const& p : m_plugins) {
-            if (p.name == name) {
-                throw io_error(
-                    "A plugin named \"" + name + "\" (version " + p.version + ") is already "
-                    "loaded in this grunk::state. Call clear_module(\"" + name + "\") first if "
-                    "you intend to reload it."
-                );
-            }
+        if (PluginInfo const* p = find_plugin(name)) {
+            throw io_error(
+                "A plugin named \"" + name + "\" (version " + p->version + ") is already "
+                "loaded in this grunk::state. Call clear_module(\"" + name + "\") first if "
+                "you intend to reload it."
+            );
         }
         if (sol::object existing = original_env[name]; existing.valid()) {
             throw io_error(
@@ -1469,6 +1441,51 @@ private:
                 "created via run_module_script), not as a plugin. Call clear_module(\"" + name +
                 "\") first if you intend to reuse this name for a plugin."
             );
+        }
+    }
+
+    /**
+     * @brief find_plugin looks up @p name in plugins(), or returns nullptr if no
+     * plugin by that name is currently loaded.
+     *
+     * Shared by assert_plugin_name_free and name_occupied, which otherwise each
+     * repeated this same scan over m_plugins independently.
+     */
+    inline PluginInfo const* find_plugin(std::string const& name) const
+    {
+        for (PluginInfo const& p : m_plugins) {
+            if (p.name == name) {
+                return &p;
+            }
+        }
+        return nullptr;
+    }
+
+    /**
+     * @brief record_type_registration records a just-registered/modified usertype's
+     * Lua table under its C++ type (see register_type's own doc comment for why a
+     * DynamicFeature type hint needs this), and - if @p owner_module is non-empty -
+     * which namespace currently owns that type_index's slot, so forget_plugin can
+     * find and remove it if that namespace is later rolled back without disturbing a
+     * *different* namespace that re-registered the same T afterward (see
+     * forget_plugin and m_type_owner).
+     *
+     * Shared by register_type and modify_type, which otherwise each repeated this
+     * exact bookkeeping independently.
+     *
+     * @param type the C++ type being (re-)registered, as std::type_index(typeid(T))
+     * @param value T's usertype table, as already resolved by the caller
+     * @param qualified_name the fully-qualified name value's constructor/methods
+     *                        serialize with (see register_type's `qualifier` parameter)
+     * @param owner_module the namespace `value` lives in (module_qualifier(table)), or
+     *                      "" if it isn't a tagged module/plugin table
+     */
+    inline void record_type_registration(std::type_index type, sol::table value, std::string const& qualified_name, std::string const& owner_module)
+    {
+        m_type_registry[type] = std::move(value);
+        m_type_names[type] = qualified_name;
+        if (!owner_module.empty()) {
+            m_type_owner[type] = owner_module;
         }
     }
 
@@ -1514,16 +1531,13 @@ private:
     /// usertype's sol::meta_function::index handler.
     std::unordered_map<std::type_index, std::string> m_type_names;
 
-    /// @brief maps a module/plugin name (see module_qualifier) to the C++ types
-    /// register_type/modify_type registered against tables tagged with that name - see
-    /// forget_plugin, which uses this to remove a rolled-back plugin's types from
-    /// m_type_registry/m_type_names too.
-    std::unordered_map<std::string, std::vector<std::type_index>> m_module_types;
-
     /// @brief maps a registered C++ type to the name of the module/plugin whose
     /// registration currently occupies its m_type_registry/m_type_names slot - see
-    /// forget_plugin, which uses this to avoid erasing a type that a *different*,
-    /// still-loaded plugin re-registered after the one being forgotten.
+    /// forget_plugin, which scans this (rather than keeping a separate, potentially
+    /// stale per-module list of every type a namespace ever touched) both to find
+    /// which types to remove when a namespace is rolled back, and to avoid erasing a
+    /// type that a *different*, still-loaded plugin re-registered after the one being
+    /// forgotten (that plugin now owns the slot, so its entry here no longer matches).
     std::unordered_map<std::type_index, std::string> m_type_owner;
 
     /// @brief names load_module actually populated into Lua's own LUA_LOADED_TABLE
