@@ -14,3 +14,7 @@
 #ifdef GRUNK_WITH_RECIPE
 #include "recipe.hpp"
 #endif
+
+#ifdef GRUNK_WITH_PLUGIN
+#include "plugin.hpp"
+#endif

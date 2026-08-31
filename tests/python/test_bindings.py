@@ -2,8 +2,10 @@
 #
 # SPDX-License-Identifier: MPL-2.0
 
+import os
+
 import pytest
-import grunk 
+import grunk
 
 
 def test_local_state():
@@ -452,6 +454,78 @@ def test_run_module_file(tmp_path):
     fx = pe.get_feature("x")
     fx.set_value(9)
     assert fy.value().as_int() == 11
+
+
+def test_lua_plugin_script():
+
+    grnk = grunk.state()
+
+    info = grunk.PluginInfo("py_lua_plugin", "0.1.0")
+    grnk.load_lua_plugin_script(info, "function add_one(x) return x + 1 end")
+
+    plugins = grnk.plugins()
+    assert len(plugins) == 1
+    assert plugins[0].name == "py_lua_plugin"
+    assert plugins[0].version == "0.1.0"
+
+    env = grnk.create_env()
+    env.eval("y = py_lua_plugin.add_one(41)")
+    assert env["y"].as_int() == 42
+
+    grnk.forget_plugin("py_lua_plugin")
+    assert len(grnk.plugins()) == 0
+
+    # a corrected retry under the same name must succeed once forgotten, not raise
+    # the "already in use" error a plain name collision would.
+    grnk.load_lua_plugin_script(grunk.PluginInfo("py_lua_plugin", "0.2.0"), "function add_two(x) return x + 2 end")
+    assert grnk.plugins()[0].version == "0.2.0"
+
+
+def test_lua_plugin_file(tmp_path):
+
+    grnk = grunk.state()
+
+    lua_file = tmp_path / "py_lua_file_plugin.lua"
+    lua_file.write_text("function add_one(x) return x + 1 end")
+
+    grnk.load_lua_plugin_file(grunk.PluginInfo("py_lua_file_plugin", "1.0"), lua_file.as_posix())
+
+    env = grnk.create_env()
+    env.eval("y = py_lua_file_plugin.add_one(10)")
+    assert env["y"].as_int() == 11
+
+
+# TODO: this reaches directly into the C++ test suite's own CMake build directory for a
+# prebuilt fixture .so, which only exists if GRUNK_TESTS was built first (hence the
+# skipif below) - there is no proper distribution path for grunk plugins yet (see
+# docs/usage.rst's "Sharing Plugins" section). Replace this with a real installed/
+# packaged plugin fixture once that exists, instead of reaching across into the C++
+# test build's output directory.
+NATIVE_FIXTURE_SO_PATH = os.path.join(
+    os.path.dirname(__file__), "..", "..", "build", "tests", "cpp", "libplugin_native_fixture.so"
+)
+
+
+@pytest.mark.skipif(
+    not os.path.exists(NATIVE_FIXTURE_SO_PATH),
+    reason="requires the GRUNK_TESTS C++ fixture build (build/tests/cpp/libplugin_native_fixture.so)",
+)
+def test_native_plugin_load():
+
+    grnk = grunk.state()
+
+    info = grunk.plugin.load_native(grnk, NATIVE_FIXTURE_SO_PATH)
+    assert info.name == "native_fixture"
+    assert info.version == "1.0.0"
+
+    penv = grnk.create_parametric_env()
+    penv.eval("""
+        u = grunk.feature(3.)
+        f = native_fixture.FixtureType.new(u)
+        x = native_fixture.twice(f)
+    """)
+    fx = penv.get_feature("x")
+    assert pytest.approx(fx.value().as_float()) == 6.0
 
 
 def test_recipe_module_reactive_invalidation():

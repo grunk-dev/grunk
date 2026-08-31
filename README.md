@@ -19,7 +19,7 @@ Grunk is a C++ library for dataflow/incremental programming.Use it to create gen
  - header-only C++17 library with Python bindings
  - Dynamic typing and scripting interface based on Lua
  - Reproducible exchange file format based on mixed YAML and Lua
- - Plugin-interface to add custom types and functions as building blocks at runtime *(WIP)*
+ - Plugin-interface to add custom types and functions as building blocks at runtime
  - Package manager for grunk plugins *(WIP)*
 
 Models built with grunk are highly modular and extendable. Users can share plugins and enrich their models without the need to re-compile anything.
@@ -31,7 +31,7 @@ Models built with grunk are highly modular and extendable. Users can share plugi
 | `grunk::core` | Backend for tracking parametric dependencies. Lazy evaluation and automatic invalidation with minimal overhead. Header-only, thin wrapper for parametric | [parametric](https://github.com/grunk-dev/parametric), *optional: [taskflow](https://github.com/taskflow/taskflow) for multithreading support. Build with `GRUNK_WITH_TASKFLOW=ON` cmake option/precompiler definition to enable multithreading.* |
 | `grunk::dynamic` | Dynamic scripting support (Lua). Write scripts without boilerplate that are automatically parametric. Simple serialization and deserialization of parametric trees to and from Lua. Header-only. | `grunk::core`, [Lua](https://www.lua.org/), [sol2](https://github.com/ThePhd/sol2) |
 | `grunk::recipe` | YAML-based recipes: A human-readable structured exchange format for parametric models | `grunk::dynamic`, [yaml-cpp](https://github.com/jbeder/yaml-cpp) | 
-| `grunk::plugins` | Plugin support for sharing re-usable functions and data types. Plugins can be written in C++ for maximum performance or in Lua for ease-of-use | `grunk::recipe`
+| `grunk::plugin` | Plugin support for sharing re-usable functions and data types. Plugins can be written in C++ for maximum performance, as a compiled Lua module (e.g. via SWIG), or in plain Lua for ease-of-use | `grunk::dynamic`, and `grunk::recipe` (transitively, whenever `GRUNK_WITH_RECIPE=ON`, the default) |
 
 ## Sneak Peak
 
@@ -171,11 +171,79 @@ steps: |
 
 ### grunk::plugin
 
-Any type and any function can be registered in the dynamic type system of grunk in a runtime plugin. Using plugins provides the possibility to create, share and reuse parametric models *(WIP)*
+Any type and any function can be registered in the dynamic type system of grunk in a runtime plugin. Using plugins provides the possibility to create, share and reuse parametric models. A plugin reports a name and version and registers everything it provides under a namespace table keyed by its own name - grunk's dynamic scripting engine treats that namespace exactly like any other, so a recipe never needs to know or care which kind of plugin filled it in.
+
+A plugin written in C++ gets a namespace to register into via `grunk::state::begin_plugin`, and exports two fixed entry points so `grunk::plugin::load_native` can load it from a shared library at runtime without knowing its name up front:
+
+```cpp
+// my_plugin.cpp - built as its own shared library, e.g. my_plugin.so
+#include <grunk/grunk.hpp>
+
+GRUNK_PLUGIN_EXPORT grunk::PluginInfo grunk_plugin_info()
+{
+    return grunk::PluginInfo{"my_plugin", "1.0.0"};
+}
+
+namespace {
+void register_my_plugin(grunk::state& state, grunk::PluginInfo const& info)
+{
+    // begin_plugin returns a plugin_namespace proxy that already knows its own
+    // namespace table and qualifier, so ns.register_function's "add" serializes as
+    // "my_plugin.add" without repeating either one.
+    auto ns = state.begin_plugin(info);
+    ns.register_function("add", [](int l, int r){ return l + r; });
+}
+}
+GRUNK_PLUGIN_REGISTER(register_my_plugin)
+```
+
+Loading a plugin under a name that's already loaded on the same `grunk::state` throws rather than
+silently discarding the first plugin's namespace table - call `state.clear_module(name)` first if a
+reload is genuinely intended.
+
+```cpp
+#include <grunk/grunk.hpp>
+#include <grunk/plugin.hpp>
+
+int main() {
+    grunk::state grunk;
+    grunk::plugin::load_native(grunk, "my_plugin.so");
+
+    auto env = grunk.create_env();
+    env.eval("c = my_plugin.add(1, 2)");
+    assert(env.get("c").as<int>() == 3);
+
+    return 0;
+}
+```
+
+A plugin can just as well be a compiled Lua module (e.g. SWIG-generated) via `grunk::state::load_compiled_plugin`, or plain Lua source via `grunk::state::load_lua_plugin_script`/`load_lua_plugin_file` (or `grunk::plugin::load_script`) - see `grunk/plugin/loader.hpp` for the full native ABI and `grunk/dynamic/state.hpp` for all three `load_*_plugin`/`begin_plugin` methods.
 
 ## Documentation
 
-[Read the documentation](https://paradigms.pages.gitlab.dlr.de/grunk/) to learn more.
+[Read the documentation](https://grunk-dev.github.io/grunk/) to learn more.
+
+## Examples
+
+> Work in Progress
+
+Grunk includes example applications demonstrating the library's capabilities. Each example is standalone with its own dependencies and build configuration.
+
+### Available Examples
+
+| Example | Description |
+| -- | -- |
+| [examples/cpp/cad_autodiff](examples/cpp/cad_autodiff/) | CAD modeling with automatic differentiation using geoml |
+
+### Building Examples
+
+```bash
+# CAD Autodiff example
+cd examples/cpp/cad_autodiff
+pixi run all
+```
+
+See individual example README files for details.
 
 ## License
 

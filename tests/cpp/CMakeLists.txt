@@ -17,6 +17,10 @@ if (NOT TARGET grunk)
       find_package(grunk REQUIRED COMPONENTS recipe)
   endif()
 
+  if (GRUNK_WITH_PLUGIN)
+      find_package(grunk REQUIRED COMPONENTS plugin)
+  endif()
+
 endif()
 
 enable_testing()
@@ -39,6 +43,8 @@ if (GRUNK_WITH_DYNAMIC)
       dynamic_std_vector.cpp
       dynamic_module.cpp
       dynamic_plugin.cpp
+      plugin_begin.cpp
+      plugin_lua_script.cpp
     )
 endif()
 
@@ -52,6 +58,42 @@ if (GRUNK_WITH_RECIPE)
     )
 endif()
 
+if (GRUNK_WITH_PLUGIN)
+    list(APPEND TESTSOURCES plugin_loader.cpp)
+
+    # A real shared library for plugin_loader.cpp to dlopen via grunk::plugin::load_native
+    # - every other plugin test uses an in-process function/lua_CFunction stand-in instead
+    # (see dynamic_plugin.cpp's luaopen_testplugin), since only the loader itself needs an
+    # actual .so on disk.
+    add_library(plugin_native_fixture SHARED plugin_native_fixture.cpp)
+    # Linking grunk::plugin (not just grunk::dynamic) matches what a real plugin is
+    # documented to do (docs/usage.rst's "Writing Plugins") - see grunk/plugin/CMakeLists.txt
+    # for why plain grunk::dynamic isn't enough once a grunk::state is actually
+    # instantiated with GRUNK_WITH_RECIPE on.
+    target_link_libraries(plugin_native_fixture PRIVATE grunk::plugin)
+
+    # A second fixture whose grunk_plugin_register deliberately throws, so
+    # plugin_loader.cpp can verify load_native rolls back a half-registered plugin's
+    # identity instead of reporting it as loaded (see plugin_native_fixture_failing.cpp).
+    add_library(plugin_native_fixture_failing SHARED plugin_native_fixture_failing.cpp)
+    target_link_libraries(plugin_native_fixture_failing PRIVATE grunk::plugin)
+
+    # A third fixture whose registration function throws a non-std::exception value,
+    # so plugin_loader.cpp can verify GRUNK_PLUGIN_REGISTER's catch(...) branch reports
+    # it cleanly instead of letting it escape (see plugin_native_fixture_nonstd_throw.cpp).
+    add_library(plugin_native_fixture_nonstd_throw SHARED plugin_native_fixture_nonstd_throw.cpp)
+    target_link_libraries(plugin_native_fixture_nonstd_throw PRIVATE grunk::plugin)
+endif()
+
 add_executable(runUnitTests ${TESTSOURCES})
 target_link_libraries(runUnitTests PRIVATE grunk gtest_main)
+
+if (GRUNK_WITH_PLUGIN)
+    target_compile_definitions(runUnitTests PRIVATE
+        NATIVE_FIXTURE_SO_PATH="$<TARGET_FILE:plugin_native_fixture>"
+        FAILING_NATIVE_FIXTURE_SO_PATH="$<TARGET_FILE:plugin_native_fixture_failing>"
+        NONSTD_THROW_FIXTURE_SO_PATH="$<TARGET_FILE:plugin_native_fixture_nonstd_throw>"
+    )
+    add_dependencies(runUnitTests plugin_native_fixture plugin_native_fixture_failing plugin_native_fixture_nonstd_throw)
+endif()
 
