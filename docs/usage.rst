@@ -1140,7 +1140,7 @@ A plain C++ plugin is a shared library exporting two fixed entry points, so a ge
        return grunk::PluginInfo{"my_plugin", "1.0.0"};
    }
 
-   GRUNK_PLUGIN_EXPORT void grunk_plugin_register(grunk::state& state, grunk::PluginInfo const& info)
+   void register_my_plugin(grunk::state& state, grunk::PluginInfo const& info)
    {
        // begin_plugin returns a plugin_namespace proxy and records the plugin's
        // identity - the proxy remembers its own namespace table and qualifier, so
@@ -1159,8 +1159,10 @@ A plain C++ plugin is a shared library exporting two fixed entry points, so a ge
            [](MyScalar const& l, MyScalar const& r) { return MyScalar{l.get() + r.get()}; }
        );
    }
+   GRUNK_PLUGIN_REGISTER(register_my_plugin)
 
-``grunk_plugin_info`` reports the plugin's identity; ``grunk_plugin_register`` is handed that same
+``grunk_plugin_info`` reports the plugin's identity; ``register_my_plugin`` (wrapped into the actual
+``grunk_plugin_register`` entry point by ``GRUNK_PLUGIN_REGISTER`` - see below) is handed that same
 ``PluginInfo`` back and does the actual registration. Registering against ``ns`` (a
 ``grunk::plugin_namespace``) instead of the raw environment is what puts ``MyScalar``/``add`` under
 the ``my_plugin`` namespace (``my_plugin.MyScalar``, ``my_plugin.add``) instead of flat in the
@@ -1214,7 +1216,7 @@ plugin, so the loader never needs to know the difference:
        return grunk::PluginInfo{"mymodule", "1.0.0"}; // must match the SWIG module's own name
    }
 
-   GRUNK_PLUGIN_EXPORT void grunk_plugin_register(grunk::state& state, grunk::PluginInfo const& info)
+   void register_mymodule_plugin(grunk::state& state, grunk::PluginInfo const& info)
    {
        auto ns = state.load_compiled_plugin(info, luaopen_mymodule);
 
@@ -1226,6 +1228,7 @@ plugin, so the loader never needs to know the difference:
        sol::table my_class_ctor = ns["MyClass"];
        ns.register_external_type("MyClass", my_class_ctor);
    }
+   GRUNK_PLUGIN_REGISTER(register_mymodule_plugin)
 
 ``load_compiled_plugin`` loads the module, makes its free functions grunk-trackable, and registers
 it under ``info.name`` - unlike ``begin_plugin``, it mints its own namespace table (the module's

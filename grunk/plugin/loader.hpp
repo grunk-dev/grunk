@@ -150,10 +150,13 @@ using register_fn_t = char const* (*)(state&, PluginInfo const&);
  * shim, or which platform it's running on (see loader.cpp for the
  * dlopen/dlsym vs. LoadLibrary/GetProcAddress split).
  *
- * The loaded library handle is intentionally never released (dlclose/FreeLibrary):
- * @p state - and the Lua/sol2 references it holds into the plugin's registered
- * functions/types - may outlive this call for the remainder of the program, so
- * unloading the library underneath it would be unsafe.
+ * The loaded library handle is intentionally never released (dlclose/FreeLibrary) -
+ * on success *or* on a failed/partial registration: @p state - and the Lua/sol2
+ * references it holds into whatever the plugin's own code managed to register before
+ * failing (e.g. a usertype metatable's finalizer) - may outlive this call, and Lua's
+ * own garbage collector may not sweep such objects until well after this call
+ * returns, so unloading the library underneath either case would be unsafe (this
+ * leaks the library's mapping on a failed load, in exchange for that safety).
  *
  * @param state the state to register the plugin's types/functions into
  * @param path path to the plugin's shared library
