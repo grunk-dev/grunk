@@ -1123,6 +1123,48 @@ Using grunk plugins
 
 ..    15.2
 
+   .. code-tab:: python
+
+      grnk = grunk.state()
+      grnk.load_lua_plugin_file(grunk.PluginInfo("my_lua_plugin", "1.0.0"), "my_lua_plugin.lua")
+
+      env = grnk.create_env()
+      env.eval("result = my_lua_plugin.add_one(41)")
+      print(env["result"].as_int())
+
+(``grunk::plugin::load_script``/``grunk.plugin.load_script`` is a thin convenience wrapper around
+the same call, so all three plugin kinds have an entry point under ``grunk::plugin``/
+``grunk.plugin``.)
+
+Every loaded plugin's identity is recorded on the ``grunk::state`` and can be inspected via
+``state::plugins()`` (``state.plugins()`` from Python). This is also what lets a saved
+:ref:`recipe<grunk-recipes>`'s ``uses:`` block
+be validated on read: a recipe records every plugin it needs by name and version, and reading it
+back fails immediately, with a clear message, if a plugin of a required *name* was never loaded -
+rather than failing later with a confusing "symbol not found" the first time a step referencing it
+runs. Only the plugin's *name* is checked, not its exact version: the recorded version is
+informational (e.g. useful when debugging a mismatch by hand), not enforced.
+
+A plugin name already recorded in ``plugins()`` cannot be loaded again on the same ``grunk::state``
+- ``begin_plugin``/``load_compiled_plugin``/``load_lua_plugin_script`` all throw ``io_error`` rather
+than silently discarding or augmenting the first plugin's namespace table. Call
+``state.clear_module(name)`` first (this also forgets the plugin's recorded identity) if you
+genuinely intend to reload a plugin under the same name. ``state::forget_plugin(name)``
+(``state.forget_plugin(name)`` from Python) does the same, minus the extra step of forgetting a
+plain (non-plugin) module's contents that aren't a plugin's own namespace.
+
+.. note::
+
+   The Python bindings expose *loading* and *using* both native (plain C++ or compiled-Lua) and
+   pure-Lua plugins - ``grunk.plugin.load_native``/``grunk.plugin.load_script``,
+   ``state.load_lua_plugin_script``/``state.load_lua_plugin_file``, ``state.plugins()``,
+   ``state.forget_plugin()`` - all mirror their C++ counterparts above. What Python cannot do is
+   *write* a plain C++ or compiled-Lua plugin itself: ``state::begin_plugin`` and
+   ``state::load_compiled_plugin`` are not bound, since the former takes a C++ template type
+   argument and the latter a ``lua_CFunction`` module entry point, neither of which is expressible
+   from Python. A plugin's registration code is always written in C++ (see
+   :ref:`Writing Plugins<writing-plugins>` below) and built as a native shared library; Python (like
+   any other consumer) only ever *loads* the result via ``grunk.plugin.load_native``.
 
 .. _writing-plugins:
 
