@@ -158,7 +158,7 @@ Conceptually, the ``Feature<double>`` correspond to a node in a *directed acycli
 by retaining parent-child relations in the ``Feature<T>`` instances.
 
 This mode of operation is also called **static mode**, because all types and functions are known at compile time.
-If you want to use types and functions provided by plugins which are loaded at run time, you have to use grunk's **dynamic mode**, see the section on :ref:`dynamic mode<_usage-dynamic-mode>`.
+If you want to use types and functions provided by plugins which are loaded at run time, you have to use grunk's **dynamic mode**, see the section on :ref:`dynamic mode<usage-dynamic-mode>`.
 
 Classes and Member Functions
 ----------------------------
@@ -957,308 +957,319 @@ Not yet implemented.
 Grunk plugins
 =============
 
-TODO
+A grunk plugin is what supplies types and functions that can be used as building blocks of a
+feature tree, without grunk itself ever needing to know about them at compile time. Every grunk
+plugin reports a **name** and a **version** (a ``grunk::PluginInfo``), and registers everything it
+provides under a Lua namespace table keyed by that name - so a script referring to ``geoml.gp_Pnt``
+or ``adtl.adouble`` is always referring to some specific plugin's own table.
 
-.. What kind of types can we store in a ``Feature``? What kind of functions can we 
-.. use with grunk?
+There are three kinds of grunk plugin, distinguished only by how much of their own implementation
+is native C++ versus Lua:
 
-.. (Almost) anything goes: Any kind of type can be stored in a ``Feature``. Functions have
-.. to be **referentially transparent**, which means they may not alter their inputs.
-.. Internally, grunk checks if a function passed to ``grunk::action`` can be invoked given only
-.. `const` references. 
+* **Plain C++ plugins** register types/functions written entirely in C++, using the same
+  ``register_type``/``register_function`` calls already used in
+  :ref:`Interacting with the Lua state<usage-dynamic-mode>`. Fastest, but needs a C++ toolchain to
+  build.
+* **Compiled Lua plugins** wrap an existing compiled Lua C extension - typically one you didn't
+  hand-write, e.g. a `SWIG <https://www.swig.org/>`_ binding for a large existing C/C++ library -
+  as a grunk plugin.
+* **Pure Lua plugins** are nothing more than a Lua script plus a name and a version. No compilation
+  needed, at some runtime cost since everything runs interpreted.
 
-.. The power of grunk comes with its plugin system. A grunk plugin supplies types and 
-.. functions that can be used as building blocks of a feature tree. Imagine that instead of 
-.. using our ``add`` function from above, we now want to build a feature tree with the functions
-.. ``SomePluginA::add`` and ``SomePluginB::multiply``, both taking instances of 
-.. ``SomePluginA::MyDouble`` as arguments. 
+grunk's dynamic scripting engine never needs to know which kind loaded a given symbol: once a
+value is registered, it decorates and tracks identically regardless of provenance. Which kind to
+pick is purely an authoring-time decision.
 
-.. In this section of the documentation, we will first learn how to use grunk environments to manage
-.. and install grunk plugins and then see how we can use them as part of a model written in C++ or Python. 
+Each kind has its own entry point, since each starts from a different shape of input - there is no
+single umbrella "load a plugin" function:
 
-.. Grunk environments
-.. ------------------
+.. list-table::
+   :header-rows: 1
 
-.. In essence, a grunk plugin is a shared library (.so/.dll) that is responsible for registering types and 
-.. functions using reflect. 
+   * - Plugin kind
+     - Loading call (consumer side)
+     - Registering call (plugin's own ``grunk_plugin_register``)
+   * - Plain C++
+     - ``grunk::plugin::load_native``
+     - ``state::begin_plugin``
+   * - Compiled Lua (SWIG, ...)
+     - ``grunk::plugin::load_native``
+     - ``state::load_compiled_plugin``
+   * - Pure Lua
+     - ``state::load_lua_plugin_file`` (or ``grunk::plugin::load_script``)
+     - *(none - the file itself is the whole plugin)*
 
-.. Let's assume that we have both plugins ``libSomePluginA.so`` and ``libSomePluginB.so`` in the 
-.. directory ``/home/jan/grunk_plugins/`` *(Note that on Windows the file extension would be .dll)*. 
-.. In the simplest scenario, we can load the plugins using the ``PluginRegistry``. 
-
-.. .. tabs::
-
-..    .. code-tab:: cpp 
-   
-..          grunk::get_plugin_registry().prepend_path("/home/jan/grunk_plugins/");
-..          grunk::get_plugin_registry().load("SomePluginA");
-..          grunk::get_plugin_registry().load("SomePluginB");
-
-..    .. code-tab:: python 
-   
-..          grunk.get_plugin_registry().prepend_path("/home/jan/grunk_plugins/")
-..          grunk.get_plugin_registry().load("SomePluginA")
-..          grunk.get_plugin_registry().load("SomePluginB")
-
-.. ``PluginRegistry::prepend_path`` prepends the search path for plugins by a directory
-.. passed as an argument and ``PluginRegistry::load`` will load a plugin from the 
-.. search directories.
-
-.. .. note::
-
-..    It is not recommended to load plugins like this. Prefer grunk environments.
-
-.. Loading libraries like this can work, but it can become tedious if the libraries have 
-.. downstream dependencies or we are loading several libraries of different versions that 
-.. may or may not be compatible to each other. To circumvent this problem, it is better to 
-.. use a package manager that handles version compatibility issues etc. 
-
-.. For this reason, grunk builds on the conan API and introduces grunk environments.
-
-.. The grunk CLI allows the generation of isolated environments for the installation of plugins
-.. and their runtime dependencies into dedicated directories as well as functions for installing 
-.. grunk plugins from a local cache or a remote host. This functionality is built upon the conan API.
-
-.. .. note:: 
-
-..    The term "environment" may not be properly used here. For our purposes, it is just a 
-..    dedicated directory that stores a set of plugins that are compatible to each other as well as 
-..    their respective runtime dependencies.
-
-.. Let us create a new grunk environment called ``cad`` and install the plugin ```grocc/0.1.1``` into it. 
-.. Enter the following command into the command line:
-
-.. .. code:: console 
-
-..    grunk env create cad grocc/0.1.1
-
-.. This command first checks if ``grocc/0.1.1`` is already available in the local conan cache. Otherwise it 
-.. searches the grunkcenter and conancenter in this order. At the time of writing, the grunkcenter is simply 
-.. our DLR internal Gitlab package registry. 
-
-.. If it finds a binary package fitting to the local default conan profile, the plugin will be downloaded 
-.. in binary form. Otherwise grunk *(resp. conan)* will download the Plugin's source code and try to compile 
-.. the plugin locally. The latter can take some time. Have a coffee.
-
-.. If grunk *(resp. conan)* claim that the plugin cannot be found, 
-.. it is likely that the authentication token has expired and we must authenticate with grunkcenter again: 
-
-.. .. code:: console
-
-..    grunk user auth <GITLAB_USER_NAME> -p <GITLAB_API_TOKEN>
-
-.. The command ``grunk env list`` will list all environments, ``grunk env show cad`` would show 
-.. all plugins installed in the environment ``cad`` and ``grunk env remove cad`` would remove the
-.. environment ``cad```. Type ``grunk env --help`` for details.
-
-.. Note that you can have any number of environments. This can also help with managing different 
-.. versions of the same plugin in their respective isolated environments. 
-
-.. ``PluginRegistry::activate_env(std::string const& env_name)`` can be used to prepend grunk's 
-.. search path based on the environment. Then we can load any plugin within this environment using
-.. ``PluginRegistry::load`` as before. 
-
-.. Note that there is a shorthand for loading all plugins within an environment: ``PluginRegistry::load_env``.
+Plain C++ and compiled-Lua plugins share the same *loading* call (``load_native``, since both are
+native shared libraries with the same fixed ABI) but differ in their *registering* call, since only
+one of them is populating its namespace table by hand.
 
 Using grunk plugins
--------------------
+--------------------
 
-.. Let's assume that we have both plugins ``SomePluginA`` and ``SomePluginB`` installed in 
-.. a grunk environment called `my_env`
+Loading a plugin looks slightly different per kind; using its registered types/functions
+afterwards is exactly like the example in
+:ref:`Interacting with the Lua state<usage-dynamic-mode>` - a plugin just puts things under its own
+namespace instead of flat in the environment.
 
-.. .. tabs::
+**Plain C++ and compiled-Lua plugins** are both native shared libraries (``.so`` on Linux,
+``.dylib`` on macOS, ``.dll`` on Windows), and are loaded the same way, via
+``grunk::plugin::load_native`` (``grunk.plugin.load_native`` from Python):
 
-..    .. code-tab:: cpp 
-   
-..          grunk::get_plugin_registry().load_env("my_env");
+.. tabs::
 
-..          grunk::Feature x("x", "SomePluginA::MyDouble", 4.3);
-..          grunk::Feature y("y", "SomePluginA::MyDouble", 3.3);
-..          grunk::Feature z("z", "SomePluginA::MyDouble", 2.0);
+   .. code-tab:: cpp
 
-..          auto a = grunk::action("a", "SomePluginA::add", x, y);
-..          auto b = grunk::action("b", "SomePluginB::multiply", a, z);
+      #include <grunk/grunk.hpp>
+      #include <grunk/plugin.hpp>
 
-..    .. code-tab:: python 
-   
-..          grunk.get_plugin_registry().load_env("my_env")
+      grunk::state grunk;
+      grunk::plugin::load_native(grunk, "geoml_plugin.so");
 
-..          x = grunk.Feature("x", "SomePluginA::MyDouble", 4.3)
-..          y = grunk.Feature("y", "SomePluginA::MyDouble", 3.3)
-..          z = grunk.Feature("z", "SomePluginA::MyDouble", 2.0)
+      auto env = grunk.create_env();
+      env.eval(R"(
+          p = geoml.gp_Pnt.new(1., 2., 0.)
+          x = p:X()
+      )");
+      std::cout << env.get<double>("x") << std::endl;
 
-..          a = grunk.action("a", "SomePluginA::add", x, y)
-..          b = grunk.action("b", "SomePluginB::multiply", a, z)
+   .. code-tab:: python
 
-.. When working with plugins, we 
-.. have to use grunk's :ref:`dynamic mode<dynamic-mode>`, while the :ref:`first example<getting-started>` used grunk's 
-.. :ref:`static mode<static-mode>`. In essence, this means that all features of the above feature tree are now instances of ``Feature<reflect::DynamicObject>``, 
-.. see also :ref:`design principles<design-dynamic-sublanguage>`. Because the plugins are loaded
-.. at runtime, the calling code does not know about the type ``SomePluginA::MyDouble`` and the 
-.. functions ``SomePluginA::add`` and ``SomePluginB::multiply`` directly. Instead, it relies on 
-.. a runtime reflection system used by grunk's plugin system. 
+      grnk = grunk.state()
+      grunk.plugin.load_native(grnk, "geoml_plugin.so")
 
-.. .. note::
+      env = grnk.create_env()
+      env.eval("""
+          p = geoml.gp_Pnt.new(1., 2., 0.)
+          x = p:X()
+      """)
+      print(env["x"].as_float())
 
-..    Currently, static mode is not supported via the python bindings.
+``load_native`` loads the shared library, asks it for its identity (a ``grunk::PluginInfo``), and
+hands control to the plugin's own registration code - whether it turns out to be a plain C++
+plugin or a compiled-Lua shim makes no difference to the caller.
 
-.. If we evaluate the tree by querying ``b.value()``, we will retrieve an instance of ``reflect::DynamicObject``.
-.. Luckily, the type ``SomePluginA::MyDouble`` has a public data member called ``value`` which is of type
-.. ``double``, see also the section on :ref:`writing plugins<writing-plugins>`. We can use ``reflect::DynamicObject::get`` to retrieve this data member and then cast it to a 
-.. type that we can deal with:
+**Pure Lua plugins** have no shared library to load - just a name, a version, and a ``.lua`` file,
+passed directly to ``grunk::state``:
 
-.. .. tabs::
+.. tabs::
 
-..    .. code-tab:: cpp 
-  
-..          auto b_result = b.value().get("value").as<double>();
-..          std::cout << b_result << std::endl;
+   .. code-tab:: cpp
 
-..    .. code-tab:: python 
-  
-..          b_result = b.value().get("value").as_float();
-..          print(b_result)
+      #include <grunk/grunk.hpp>
 
-.. .. code-block:: console
+      grunk::state grunk;
+      grunk.load_lua_plugin_file(grunk::PluginInfo{"my_lua_plugin", "1.0.0"}, "my_lua_plugin.lua");
 
-..    15.2
+      auto env = grunk.create_env();
+      env.eval("result = my_lua_plugin.add_one(41)");
+      std::cout << env.get<int>("result") << std::endl;
 
+   .. code-tab:: python
+
+      grnk = grunk.state()
+      grnk.load_lua_plugin_file(grunk.PluginInfo("my_lua_plugin", "1.0.0"), "my_lua_plugin.lua")
+
+      env = grnk.create_env()
+      env.eval("result = my_lua_plugin.add_one(41)")
+      print(env["result"].as_int())
+
+(``grunk::plugin::load_script``/``grunk.plugin.load_script`` is a thin convenience wrapper around
+the same call, so all three plugin kinds have an entry point under ``grunk::plugin``/
+``grunk.plugin``.)
+
+Every loaded plugin's identity is recorded on the ``grunk::state`` and can be inspected via
+``state::plugins()`` (``state.plugins()`` from Python). This is also what lets a saved
+:ref:`recipe<grunk-recipes>`'s ``uses:`` block
+be validated on read: a recipe records every plugin it needs by name and version, and reading it
+back fails immediately, with a clear message, if a plugin of a required *name* was never loaded -
+rather than failing later with a confusing "symbol not found" the first time a step referencing it
+runs. Only the plugin's *name* is checked, not its exact version: the recorded version is
+informational (e.g. useful when debugging a mismatch by hand), not enforced, since two builds of a
+plugin sharing one name are often meant to be interchangeable - see
+``examples/cpp/cad_autodiff``'s "geoml"/"geoml_adolc" plugins, which report different versions
+under the same name specifically so the same recipe can be read back against either one.
+
+A plugin name already recorded in ``plugins()`` cannot be loaded again on the same ``grunk::state``
+- ``begin_plugin``/``load_compiled_plugin``/``load_lua_plugin_script`` all throw ``io_error`` rather
+than silently discarding or augmenting the first plugin's namespace table. Call
+``state.clear_module(name)`` first (this also forgets the plugin's recorded identity) if you
+genuinely intend to reload a plugin under the same name. ``state::forget_plugin(name)``
+(``state.forget_plugin(name)`` from Python) does the same, minus the extra step of forgetting a
+plain (non-plugin) module's contents that aren't a plugin's own namespace.
+
+.. note::
+
+   The Python bindings expose *loading* and *using* both native (plain C++ or compiled-Lua) and
+   pure-Lua plugins - ``grunk.plugin.load_native``/``grunk.plugin.load_script``,
+   ``state.load_lua_plugin_script``/``state.load_lua_plugin_file``, ``state.plugins()``,
+   ``state.forget_plugin()`` - all mirror their C++ counterparts above. What Python cannot do is
+   *write* a plain C++ or compiled-Lua plugin itself: ``state::begin_plugin`` and
+   ``state::load_compiled_plugin`` are not bound, since the former takes a C++ template type
+   argument and the latter a ``lua_CFunction`` module entry point, neither of which is expressible
+   from Python. A plugin's registration code is always written in C++ (see
+   :ref:`Writing Plugins<writing-plugins>` below) and built as a native shared library; Python (like
+   any other consumer) only ever *loads* the result via ``grunk.plugin.load_native``.
 
 .. _writing-plugins:
 
 Writing Plugins
----------------
+-----------------
 
-TODO
+Writing a plugin means picking one of the three kinds above and giving it a name and a version.
 
-.. Let us assume we are the authors of the plugin ``SomePluginA`` from the 
-.. :ref:`previous example<using-plugins>`, so our code looks like this:
+Plain C++ plugin
+~~~~~~~~~~~~~~~~~
 
-.. .. code-block:: cpp
-   
-..    struct MyDouble {
-..        MyDouble(double v) : value(v) {}
-..        double value;
-..    };
+A plain C++ plugin is a shared library exporting two fixed entry points, so a generic loader
+(``grunk::plugin::load_native``) can find them without already knowing the plugin's name:
 
-..    MyDouble add(MyDouble const& l, MyDouble const& r)
-..    {
-..        return {l.value + r.value};
-..    }
+.. code-block:: cpp
 
-.. We can make the type ``MyDouble`` and the function ``add`` available for 
-.. use in a feature tree by creating a grunk plugin. We do so, by including the 
-.. grunk header ``grunk/grunk.hpp`` and inheriting from ``grunk::IPlugin``. We 
-.. have to overwrite the virtual methods ``name``, ``version`` and ``init``. 
-.. In the ``init`` function we can register all types and functions we want to 
-.. make available in our grunk interface.
+   // my_plugin.cpp - built as its own shared library, e.g. my_plugin.so
+   #include <grunk/grunk.hpp>
+   #include <grunk/plugin.hpp>
 
-.. .. code-block:: cpp 
+   struct MyScalar
+   {
+       double get() const { return v; }
+       double v;
+   };
 
-..    class SomePluginA: public grunk::IPlugin
-..    {
-..    public:
-   
-..        virtual std::string name() const override final
-..        {
-..            return "SomePluginA";
-..        }
-   
-..        virtual std::string version() const override final
-..        {
-..            return "2.4.19";
-..        }
-   
-..        virtual void init() const override final 
-..        {
-..            // register types
-   
-..            register_type<MyDouble>("MyDouble")
-..            .add_constructor<double>()
-..            .add_data_member(&MyDouble::value, "value")
-..            .add_member_function(
-..                [](MyDouble const& d){
-..                    YAML::Node out(d.value);
-..                    return out;
-..                },
-..                "serialize"
-..            )
-..            .add_member_function(
-..                [](YAML::Node const& y){
-..                    return MyDouble(y.as<double>());
-..                },
-..                "deserialize"
-..            );
-   
-..            // register functions
-   
-..            register_function(&add, "add", "adds two MyDouble instances");
-..        }
-   
-..    };
-..    GRUNK_REGISTER_PLUGIN(SomePluginA)
+   GRUNK_PLUGIN_EXPORT grunk::PluginInfo grunk_plugin_info()
+   {
+       return grunk::PluginInfo{"my_plugin", "1.0.0"};
+   }
 
-.. After creating the derived class ``SomePluginA``, we need to register the plugin using 
-.. the C macro ``GRUNK_REGISTER_PLUGIN``. If the compilation unit containing this code 
-.. is compiled to a shared library, the plugin can be used in grunk.
+   void register_my_plugin(grunk::state& state, grunk::PluginInfo const& info)
+   {
+       // begin_plugin returns a plugin_namespace proxy and records the plugin's
+       // identity - the proxy remembers its own namespace table and qualifier, so
+       // register_type/register_function calls against it don't need to repeat
+       // either one, unlike an ordinary register_type/register_function call
+       // against the raw environment in the "Interacting with the Lua state"
+       // example above.
+       auto ns = state.begin_plugin(info);
 
-.. Let us take a closer look at the body of the ``init`` function. 
+       ns.register_type<MyScalar>("MyScalar")
+           .add_constructors([](double v) { return MyScalar{v}; })
+           .add_member_function("get", &MyScalar::get);
 
-.. First, the type 
-.. ``MyDouble`` is registered with the call to ``grunk::register_type``. It is given a 
-.. name to look up the type in grunk's type registry. 
+       ns.register_function(
+           "add",
+           [](MyScalar const& l, MyScalar const& r) { return MyScalar{l.get() + r.get()}; }
+       );
+   }
+   GRUNK_PLUGIN_REGISTER(register_my_plugin)
 
-.. Though this is not necessary 
-.. for grunk's plugin system, we are letting the type registry know about the 
-.. constructor taking a ``double`` with ``add_constructor``. This allows users of grunk to 
-.. create instances of ``MyDouble``, even if the plugin is loaded at runtime and the calling 
-.. program does not know about the existence of ``MyDouble`` at compile time. 
+``grunk_plugin_info`` reports the plugin's identity; ``register_my_plugin`` (wrapped into the actual
+``grunk_plugin_register`` entry point by ``GRUNK_PLUGIN_REGISTER`` - see below) is handed that same
+``PluginInfo`` back and does the actual registration. Registering against ``ns`` (a
+``grunk::plugin_namespace``) instead of the raw environment is what puts ``MyScalar``/``add`` under
+the ``my_plugin`` namespace (``my_plugin.MyScalar``, ``my_plugin.add``) instead of flat in the
+environment, and keeps their *serialized* form (used when writing a recipe to file) resolvable by
+that same qualified path when the recipe is read back in - ``ns`` already knows both its own table
+and its qualifier (``info.name``), so there is nothing left to pass explicitly at each call. Code
+that genuinely needs the raw ``sol::table`` (e.g. to override the qualifier, or to call
+``grunk::state``'s own ``register_type``/``register_function`` directly) can still get at it via
+``ns.table()`` (or the implicit conversion ``ns`` itself supports).
 
-.. Next, the public data member ``value`` is added to the grunk interface. It can be queried
-.. with the string identifier "value", and this was already used in the example 
-.. :ref:`"Using Plugins"<using-plugins>`.
+``GRUNK_PLUGIN_EXPORT`` (not a plain ``extern "C"``) is what makes this portable: a plain
+``extern "C"`` is enough on Linux/macOS, where a shared library exports its symbols by default,
+but not on Windows, where a DLL exports nothing unless a symbol is explicitly marked
+``__declspec(dllexport)`` - exactly what ``GRUNK_PLUGIN_EXPORT`` expands to there.
 
-.. If ``MyDouble`` had any public member functions, we could register them using 
-.. ``add_member_function``. But ``add_member_function`` is more powerful: We can use it to 
-.. add free functions as methods, even if they don't exist in the definition of the type. 
-.. If this free function takes a reference to ``MyDouble`` as first argument, it behaves like a normal
-.. member function. If it does not, it behaves like a static member function. 
 
-.. In the above code block, we are adding the free function ``serialize`` as a method to 
-.. ``MyDouble`` using ``add_member_function``. The free function 
-.. creates a ``YAML::Node`` (see `yaml-cpp <https://github.com/jbeder/yaml-cpp>`_) from an 
-.. instance of ``MyDouble``. In this example, the ``YAML::Node`` is very simple: It only holds the 
-.. ``MyDouble::value`` as a ``double``. This information is enough to uniquely transform an instance 
-.. of ``MyDouble`` to yaml and back again.
+`GRUNK_PLUGIN_REGISTER` generates the actual `grunk_plugin_register` entry point around your
+registration function: it catches any exception your function throws *on the plugin's own side* of
+the `dlopen`/`dlsym` boundary and reports failure as a plain error string instead, since an
+uncaught C++ exception is not safe to unwind across that boundary unless the plugin and the host
+were built with the exact same compiler, standard library, and grunk/sol2/Lua versions - a real risk
+once a plugin is its own separate build, as `my_plugin.cpp` above would typically be. Always use the
+macro rather than defining `grunk_plugin_register` by hand.
 
-.. In addition, a "static" member function is added called ``deserialize``. This method takes 
-.. a ``YAML::Node`` and creates an instance of ``MyDouble``. 
+Building the plugin only needs the ``grunk::plugin`` CMake target:
 
-.. Adding the functions
+.. code-block:: cmake
 
-.. .. code-block:: cpp
-   
-..    YAML::Node serialize(Type const&);
-..    Type deserialize(YAML::Node const&);
+   add_library(my_plugin SHARED my_plugin.cpp)
+   target_link_libraries(my_plugin PRIVATE grunk::plugin)
 
-.. as member functions to a type ``Type`` is mandatory, if 
+Compiled Lua plugin
+~~~~~~~~~~~~~~~~~~~~
 
-..  * it should be possible to use ``Type`` instances as a root parameter of a grunk feature tree **and**
-..  * it should be possible to write and read feature trees with ``Type`` instances as root parameters to/from a grunk file.
+A compiled Lua plugin is a shim around an existing compiled Lua C extension you didn't write by
+hand - e.g. a `SWIG <https://www.swig.org/>`_ Lua binding for a large existing library. The shim
+links directly against that extension and re-exposes it through the same fixed ABI as a plain C++
+plugin, so the loader never needs to know the difference:
 
-.. Finally, in the last line of the ``init`` function, the function ``add`` is registered by a 
-.. call to ``register_function``. It is given a string identifier for lookup in grunk's function
-.. registry and (optionally) a short string that serves as a documentation for that function. 
+.. code-block:: cpp
 
-.. grunk is designed so that it should be easy to add a grunk interface to an existing C++ 
-.. code base.
+   // my_swig_plugin.cpp
+   #include <grunk/grunk.hpp>
+   #include <grunk/plugin.hpp>
+
+   // The SWIG-generated module's own entry point, following Lua's luaopen_* convention.
+   extern "C" int luaopen_mymodule(lua_State* L);
+
+   GRUNK_PLUGIN_EXPORT grunk::PluginInfo grunk_plugin_info()
+   {
+       return grunk::PluginInfo{"mymodule", "1.0.0"}; // must match the SWIG module's own name
+   }
+
+   void register_mymodule_plugin(grunk::state& state, grunk::PluginInfo const& info)
+   {
+       auto ns = state.load_compiled_plugin(info, luaopen_mymodule);
+
+       // Classes a SWIG-Lua binding exposes need one extra step: their constructor/methods
+       // aren't plain table entries the way a free function is, so register_external_type
+       // bridges them generically instead of requiring a compile-time C++ type. Unlike
+       // state::register_external_type, ns.register_external_type only needs the class's
+       // own short name - it auto-prefixes "mymodule." for you.
+       sol::table my_class_ctor = ns["MyClass"];
+       ns.register_external_type("MyClass", my_class_ctor);
+   }
+   GRUNK_PLUGIN_REGISTER(register_mymodule_plugin)
+
+``load_compiled_plugin`` loads the module, makes its free functions grunk-trackable, and registers
+it under ``info.name`` - unlike ``begin_plugin``, it mints its own namespace table (the module's
+own table), so there is no separate namespace to fetch first; ``ns`` is a ``grunk::plugin_namespace``
+either way. See ``examples/cpp/cad_autodiff/plugins/adtl/adtl_plugin.cpp`` for a complete,
+real-world version of this pattern, including bridging a type that also needs a ``__tostring`` for
+YAML serialization.
+
+Pure Lua plugin
+~~~~~~~~~~~~~~~~
+
+A pure Lua plugin needs no compilation at all - just a Lua source file, loaded with an explicit
+name and version (a bare ``.lua`` file carries no identity of its own, unlike a native plugin's
+``grunk_plugin_info``):
+
+.. code-block:: lua
+
+   -- my_lua_plugin.lua
+   function add_one(x)
+       return x + 1
+   end
+
+.. code-block:: cpp
+
+   grunk::state grunk;
+   grunk.load_lua_plugin_file(grunk::PluginInfo{"my_lua_plugin", "1.0.0"}, "my_lua_plugin.lua");
+
+``load_lua_plugin_file``/``load_lua_plugin_script`` are thin wrappers over
+``run_module_file``/``run_module_script`` (see :ref:`Modules<module>`) that additionally record
+the plugin's identity, so this kind shares the same ``uses:``-block validation and namespacing as
+the other two.
 
 .. _sharing-plugins:
 
-Sharing Plugins 
----------------
+Sharing Plugins
+-----------------
 
-To Do
+Not yet implemented. Today, sharing a grunk plugin means sharing its source and build
+instructions - see ``examples/cpp/cad_autodiff`` for a complete, working example of all three
+plugin kinds side by side. A package manager for distributing built grunk plugins, so a consumer
+doesn't need a C++ toolchain at all, is planned future work.
 
 
 .. _grunk-recipes:

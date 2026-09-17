@@ -14,9 +14,21 @@ set(CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake" ${CMAKE_MODULE_PATH})
 option(GRUNK_WITH_TASKFLOW "Builds grunk with multi-threading support using Taskflow" ON)
 option(GRUNK_WITH_DYNAMIC  "Builds the grunk::dynamic library, for dynamic parametric models" ON)
 option(GRUNK_WITH_RECIPE   "Builds the grunk::recipe library, for exporting and importing recipes from/to yaml format" ON)
+option(GRUNK_WITH_PLUGIN   "Builds the grunk::plugin library, for loading runtime plugins. Requires GRUNK_WITH_DYNAMIC" ON)
 option(GRUNK_PYTHON        "Build python bindings using pybind11" OFF)
 option(GRUNK_TESTS         "Build unit tests using GTest" OFF)
 option(GRUNK_BUILD_DOCS    "Build documentation (requires doxygen and sphinx)" OFF)
+
+# grunk::plugin (grunk/plugin/CMakeLists.txt) links grunk::dynamic (directly, or via
+# grunk::recipe) unconditionally, so building it without GRUNK_WITH_DYNAMIC would
+# otherwise fail deep inside that subdirectory with an opaque "target not found" error.
+# Catch the actual missing dependency here instead, with a message that says what to do.
+if (GRUNK_WITH_PLUGIN AND NOT GRUNK_WITH_DYNAMIC)
+    message(FATAL_ERROR
+        "GRUNK_WITH_PLUGIN=ON requires GRUNK_WITH_DYNAMIC=ON (grunk::plugin is built on top "
+        "of grunk::dynamic). Either enable GRUNK_WITH_DYNAMIC or disable GRUNK_WITH_PLUGIN."
+    )
+endif()
 
 # If scikit-build (SKBUILD) is driving the build (i.e. when building wheels),
 # enable Python bindings by default so the `python/` subdirectory is
@@ -26,11 +38,11 @@ if(DEFINED SKBUILD)
     set(GRUNK_PYTHON ON CACHE BOOL "Build python bindings using nanobind" FORCE)
 endif()
 
-# When building Python bindings (or when SKBUILD drives the build) we may
-# need static libraries to be compiled as position-independent so they can
-# be linked into the Python extension module. Enable PIC in that case.
+# When building Python bindings (or when SKBUILD drives the build), grunk's static
+# libraries are linked into the nanobind extension module (a shared object) and must be
+# position-independent - enable PIC globally for the whole build in that case.
 if(DEFINED SKBUILD OR GRUNK_PYTHON)
-    message(STATUS "Enabling position independent code for building Python extension modules")
+    message(STATUS "Enabling position independent code for building shared extension modules")
     # This causes targets (including STATIC libraries) to be built with -fPIC
     set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 endif()
@@ -59,7 +71,26 @@ endif()
 # Windows specific: export all symbols
 set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
 
+# A native grunk plugin (a shared library) may link grunk's own static libraries into
+# itself - e.g. GRUNK_TESTS' plugin_native_fixture, or any downstream plugin project
+# that doesn't set this itself (as examples/cpp/cad_autodiff's own CMakeLists.txt
+# does) - which requires those libraries to be compiled position-independent. Scope
+# this to grunk's own targets (built by the add_subdirectory(grunk) call just below)
+# rather than setting CMAKE_POSITION_INDEPENDENT_CODE for the rest of this build too -
+# GRUNK_WITH_PLUGIN defaults ON, and it should not silently change the PIC default for
+# unrelated targets like tests/runUnitTests. If the block above already enabled PIC
+# globally (SKBUILD/GRUNK_PYTHON), leave it as-is rather than narrowing it here.
+if (GRUNK_WITH_PLUGIN AND NOT CMAKE_POSITION_INDEPENDENT_CODE)
+    set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+    set(_grunk_plugin_pic_scoped TRUE)
+endif()
+
 add_subdirectory(grunk)
+
+if (_grunk_plugin_pic_scoped)
+    unset(CMAKE_POSITION_INDEPENDENT_CODE)
+    unset(_grunk_plugin_pic_scoped)
+endif()
 
 if (GRUNK_TESTS)
     add_subdirectory(tests/cpp)
@@ -89,7 +120,7 @@ install(
 )
 
 configure_package_config_file(
-    "${CMAKE_SOURCE_DIR}/cmake/grunkConfig.cmake.in"
+    "${PROJECT_SOURCE_DIR}/cmake/grunkConfig.cmake.in"
     "${CMAKE_CURRENT_BINARY_DIR}/grunkConfig.cmake"
     INSTALL_DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/grunk
 )

@@ -862,6 +862,25 @@ TEST(state, modify_type_only_registration_native_colon_call)
     EXPECT_NEAR(env.get_feature("z").value().as<double>(), 42., 1e-14);
 }
 
+// modify_type used to populate the process-wide type registry with whatever
+// table[name] happened to resolve to, even nil - a plugin-authoring mistake (calling
+// modify_type against a table that never had this type registered) would silently
+// corrupt m_type_registry for typeid(T), breaking native colon-call dispatch for every
+// other, correctly-registered instance of T. It must refuse instead.
+TEST(state, modify_type_throws_when_no_existing_usertype)
+{
+    grunk::state grunk;
+
+    auto probe = grunk.feature(1);
+    sol::state_view lua(probe.lua_state());
+    sol::table empty_ns = lua.create_table();
+
+    // ModifyTypeScalar's usertype was never registered against empty_ns (unlike the
+    // test above, which does register it via plugin_ns.new_usertype before calling
+    // modify_type) - empty_ns["ModifyTypeScalar"] is nil.
+    EXPECT_THROW(grunk.modify_type<ModifyTypeScalar>("ModifyTypeScalar", empty_ns), std::logic_error);
+}
+
 namespace {
 
 // A minimal stand-in for a unique-ownership smart pointer registered via
