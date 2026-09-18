@@ -138,39 +138,97 @@ struct usertype_proxy {
 
 
     /**
-     * @brief Adds support for std::vector<T> where T is the usertype itself. This function adds two member functions to the usertype: "as_vec" and "new_vec". The "as_vec" function can be called from Lua with either a table or variadic arguments to create a std::vector<T> from the provided values. The "new_vec" function can be called from Lua to create an empty std::vector<T>.
+     * @brief Adds support for std::vector<VecElement> (VecElement defaults to T, the usertype itself) to the usertype. This function adds two member functions to the usertype: "as_vec" and "new_vec". The "as_vec" function can be called from Lua with either a table or variadic arguments to create a std::vector<VecElement> from the provided values. The "new_vec" function can be called from Lua to create an empty std::vector<VecElement>.
      *
+     * Each element is converted to VecElement by calling through an ordinary, real
+     * sol2 function (see convert_one below) rather than via
+     * sol::object::is<VecElement>()/.as<VecElement>() directly. This matters
+     * whenever T participates in a registered inheritance relationship
+     * (add_bases<T>() on some derived type Derived): sol2's own argument-binding
+     * machinery for an ordinary bound function's parameters
+     * (stack_get_unqualified.hpp's qualified_getter, backed by inheritance.hpp's
+     * type_cast/type_unique_cast) correctly performs the derived-to-base cast, but
+     * the generic sol::object::is<T>()/.as<T>() API does not walk that same
+     * inheritance chain - a Derived-typed value was previously rejected by
+     * as_vec/new_vec even though it binds correctly as a genuine T-typed function
+     * argument elsewhere. Routing through a real function call reuses the code path
+     * that is already correct.
+     *
+     * The explicit VecElement template parameter is what lets this support
+     * std::vector<Handle<T>> for a sol::unique_usertype_traits-wrapped smart
+     * pointer around T (e.g. OCCT's Handle(T)/opencascade::handle<T>) - the same
+     * unique-usertype-aware cast (type_unique_cast) that already lets a single
+     * Handle(Derived)-returning function argument bind correctly to a
+     * Handle(Base) const& parameter applies per-element here too, once the
+     * identity function below is itself typed as VecElement(VecElement const&)
+     * rather than T(T const&). Call e.g. `.with_std_vector<Handle<T>>()` on T's own
+     * usertype_proxy to get `T.as_vec(...)` producing std::vector<Handle<T>>
+     * instead of std::vector<T>.
+     *
+     * @tparam VecElement the std::vector element type - T itself by default, or a
+     *         smart-pointer-like wrapper around T (see above).
      * @return A reference to the usertype_proxy for chaining.
      */
+    template <typename VecElement = T>
     usertype_proxy& with_std_vector() {
 
         std::string ud_name = name;
-        auto from_varargs = [ud_name](sol::variadic_args va){
-            std::vector<T> ret;
+        sol::state_view lua(ut.lua_state());
+
+        // A trivial real function VecElement(VecElement const&) - calling it forces
+        // sol2's ordinary, inheritance-aware argument-binding path onto whatever
+        // value is passed in, rather than the generic (and not inheritance-aware)
+        // sol::object::as<VecElement>().
+        sol::protected_function cast_to_element = sol::make_object(lua, [](VecElement const& x) -> VecElement { return x; });
+
+        // convert_one is a generic lambda (not sol::object const&) for two reasons:
+        // (1) portability - table iteration (from_table below) yields sol::object
+        // elements, but variadic-argument iteration (from_varargs below) yields
+        // sol::stack_proxy elements; sol::object has a converting constructor from
+        // stack_proxy, but relying on that implicit conversion to bind a
+        // sol::object const& parameter compiles on GCC/Clang and fails to compile
+        // on MSVC. Taking whatever type each caller passes and forwarding it
+        // straight into cast_to_element's call operator (which itself is generic)
+        // sidesteps the conversion entirely.
+        // (2) safety - get_type() rejects non-userdata Lua values (numbers,
+        // strings, tables, ...) up front. cast_to_element's argument binding for a
+        // VecElement const& parameter only performs a full type-safety check when
+        // SOL_SAFE_FUNCTION_CALLS is on (sol2's default in debug builds, off by
+        // default in release/NDEBUG builds); calling it with a value that was
+        // never a userdata at all is undefined behavior in that unchecked mode
+        // rather than the clean failure this function is supposed to produce. A
+        // plain Lua-type-tag comparison is always safe regardless of that setting.
+        auto convert_one = [ud_name, cast_to_element](auto const& v) -> VecElement {
+            if (v.get_type() != sol::type::userdata) {
+                throw std::runtime_error("Cannot create std::vector. The values cannot be converted to the expected usertype \"" + ud_name + "\".");
+            }
+            sol::protected_function_result res = cast_to_element(v);
+            if (!res.valid()) {
+                throw std::runtime_error("Cannot create std::vector. The values cannot be converted to the expected usertype \"" + ud_name + "\".");
+            }
+            return res.get<VecElement>();
+        };
+
+        auto from_varargs = [convert_one](sol::variadic_args va){
+            std::vector<VecElement> ret;
             ret.reserve(va.size());
             for (auto const& v : va) {
-                if (!v.is<T>()) {
-                    throw std::runtime_error("Cannot create std::vector. The values cannot be converted to the expected usertype \"" + ud_name + "\".");
-                }
-                ret.push_back(v.as<T const&>());
+                ret.push_back(convert_one(v));
             }
             return ret;
         };
 
-        auto from_table = [ud_name](sol::table t) {
-            std::vector<T> ret;
+        auto from_table = [convert_one](sol::table t) {
+            std::vector<VecElement> ret;
             ret.reserve(t.size());
             for (auto const& kv : t) {
-                if (!kv.second.is<T>()) {
-                    throw std::runtime_error("Cannot create std::vector from table. The values cannot be converted to the expected usertype \"" + ud_name + "\".");
-                }
-                ret.push_back(kv.second.as<T>());
+                ret.push_back(convert_one(kv.second));
             }
             return ret;
         };
 
         add_member_function("as_vec", sol::overload(from_table, from_varargs));
-        add_member_function("new_vec", [](){ return std::vector<T>{}; });
+        add_member_function("new_vec", [](){ return std::vector<VecElement>{}; });
 
         return *this;
     }
