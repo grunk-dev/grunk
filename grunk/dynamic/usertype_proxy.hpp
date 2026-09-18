@@ -181,7 +181,27 @@ struct usertype_proxy {
         // sol::object::as<VecElement>().
         sol::protected_function cast_to_element = sol::make_object(lua, [](VecElement const& x) -> VecElement { return x; });
 
-        auto convert_one = [ud_name, cast_to_element](sol::object const& v) -> VecElement {
+        // convert_one is a generic lambda (not sol::object const&) for two reasons:
+        // (1) portability - table iteration (from_table below) yields sol::object
+        // elements, but variadic-argument iteration (from_varargs below) yields
+        // sol::stack_proxy elements; sol::object has a converting constructor from
+        // stack_proxy, but relying on that implicit conversion to bind a
+        // sol::object const& parameter compiles on GCC/Clang and fails to compile
+        // on MSVC. Taking whatever type each caller passes and forwarding it
+        // straight into cast_to_element's call operator (which itself is generic)
+        // sidesteps the conversion entirely.
+        // (2) safety - get_type() rejects non-userdata Lua values (numbers,
+        // strings, tables, ...) up front. cast_to_element's argument binding for a
+        // VecElement const& parameter only performs a full type-safety check when
+        // SOL_SAFE_FUNCTION_CALLS is on (sol2's default in debug builds, off by
+        // default in release/NDEBUG builds); calling it with a value that was
+        // never a userdata at all is undefined behavior in that unchecked mode
+        // rather than the clean failure this function is supposed to produce. A
+        // plain Lua-type-tag comparison is always safe regardless of that setting.
+        auto convert_one = [ud_name, cast_to_element](auto const& v) -> VecElement {
+            if (v.get_type() != sol::type::userdata) {
+                throw std::runtime_error("Cannot create std::vector. The values cannot be converted to the expected usertype \"" + ud_name + "\".");
+            }
             sol::protected_function_result res = cast_to_element(v);
             if (!res.valid()) {
                 throw std::runtime_error("Cannot create std::vector. The values cannot be converted to the expected usertype \"" + ud_name + "\".");
