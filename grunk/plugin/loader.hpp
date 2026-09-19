@@ -64,6 +64,12 @@ namespace grunk::plugin {
  * ordinary, in-process call, not a dlopen/dlsym one), so no exception ever needs to
  * unwind across it - only the resulting `char const*` does, which is always ABI-safe.
  *
+ * `grunk_plugin_info` itself is small enough to still write by hand
+ * (`GRUNK_PLUGIN_EXPORT grunk::PluginInfo grunk_plugin_info() { return
+ * grunk::PluginInfo{name, version}; }`), but prefer the GRUNK_PLUGIN_INFO macro
+ * below instead - same generated code, plus an MSVC warning suppression a
+ * hand-written version won't have.
+ *
  * @code
  * // pure C++ plugin
  * namespace {
@@ -72,6 +78,7 @@ namespace grunk::plugin {
  *     ns.register_type<gp_Pnt>("gp_Pnt") ... ;
  * }
  * }
+ * GRUNK_PLUGIN_INFO("my_plugin", "1.0.0")
  * GRUNK_PLUGIN_REGISTER(register_my_plugin)
  *
  * // compiled-Lua (SWIG) shim
@@ -81,6 +88,7 @@ namespace grunk::plugin {
  *     ns.register_external_type("adouble", ns["adouble"]);
  * }
  * }
+ * GRUNK_PLUGIN_INFO("adtl", "1.0.0")
  * GRUNK_PLUGIN_REGISTER(register_adtl)
  * @endcode
  *
@@ -101,6 +109,42 @@ namespace grunk::plugin {
  */
 using info_fn_t = PluginInfo (*)();
 using register_fn_t = char const* (*)(state&, PluginInfo const&);
+
+/**
+ * @brief Defines a plugin's `grunk_plugin_info` entry point, reporting its identity
+ * as @p name/@p version.
+ *
+ * Equivalent to writing `GRUNK_PLUGIN_EXPORT grunk::PluginInfo grunk_plugin_info()
+ * { return grunk::PluginInfo{name, version}; }` by hand (this header's own doc
+ * comment still shows that form, since it's what the ABI actually requires
+ * conceptually) - this macro additionally suppresses MSVC's C4190 ("'
+ * grunk_plugin_info' has C-linkage specified, but returns 'grunk::PluginInfo'
+ * which is incompatible with C") around just this one declaration.
+ *
+ * The warning is a real, general MSVC diagnostic - `extern "C"` functions aren't
+ * supposed to return non-POD C++ types (`PluginInfo` holds two `std::string`
+ * members) - but not a bug here: `GRUNK_PLUGIN_EXPORT`'s `extern "C"` is used
+ * purely to keep this symbol's name unmangled for `load_native`'s dlsym/
+ * GetProcAddress lookup (see `GRUNK_PLUGIN_EXPORT`'s own doc comment), not to claim
+ * genuine C ABI compatibility for the return value - a plugin already has to be
+ * built against the same grunk/compiler/standard-library ABI as the host
+ * regardless (see `register_fn_t`'s own doc comment on this same, already-accepted
+ * cross-toolchain assumption), so a real C++ object crossing this boundary is
+ * expected, not accidental.
+ *
+ * @param name the plugin's own PluginInfo::name
+ * @param version the plugin's own PluginInfo::version
+ */
+#if defined(_MSC_VER)
+#define GRUNK_PLUGIN_INFO(name, version) \
+    __pragma(warning(push)) \
+    __pragma(warning(disable : 4190)) \
+    GRUNK_PLUGIN_EXPORT grunk::PluginInfo grunk_plugin_info() { return grunk::PluginInfo{name, version}; } \
+    __pragma(warning(pop))
+#else
+#define GRUNK_PLUGIN_INFO(name, version) \
+    GRUNK_PLUGIN_EXPORT grunk::PluginInfo grunk_plugin_info() { return grunk::PluginInfo{name, version}; }
+#endif
 
 /**
  * @brief Defines a plugin's `grunk_plugin_register` entry point around @p fn (a

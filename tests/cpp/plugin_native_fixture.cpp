@@ -45,9 +45,5 @@ void register_native_fixture(grunk::state& state, grunk::PluginInfo const& info)
 
 } // anonymous namespace
 
-GRUNK_PLUGIN_EXPORT grunk::PluginInfo grunk_plugin_info()
-{
-    return grunk::PluginInfo{"native_fixture", "1.0.0"};
-}
-
+GRUNK_PLUGIN_INFO("native_fixture", "1.0.0")
 GRUNK_PLUGIN_REGISTER(register_native_fixture)

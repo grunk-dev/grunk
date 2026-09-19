@@ -25,9 +25,5 @@ void register_nonstd_throw_fixture(grunk::state&, grunk::PluginInfo const&)
 
 } // anonymous namespace
 
-GRUNK_PLUGIN_EXPORT grunk::PluginInfo grunk_plugin_info()
-{
-    return grunk::PluginInfo{"nonstd_throw_fixture", "1.0.0"};
-}
-
+GRUNK_PLUGIN_INFO("nonstd_throw_fixture", "1.0.0")
 GRUNK_PLUGIN_REGISTER(register_nonstd_throw_fixture)
