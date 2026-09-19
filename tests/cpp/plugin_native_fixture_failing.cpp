@@ -33,9 +33,5 @@ void register_failing_fixture(grunk::state& state, grunk::PluginInfo const& info
 
 } // anonymous namespace
 
-GRUNK_PLUGIN_EXPORT grunk::PluginInfo grunk_plugin_info()
-{
-    return grunk::PluginInfo{"failing_fixture", "1.0.0"};
-}
-
+GRUNK_PLUGIN_INFO("failing_fixture", "1.0.0")
 GRUNK_PLUGIN_REGISTER(register_failing_fixture)
