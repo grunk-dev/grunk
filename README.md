@@ -179,10 +179,7 @@ A plugin written in C++ gets a namespace to register into via `grunk::state::beg
 // my_plugin.cpp - built as its own shared library, e.g. my_plugin.so
 #include <grunk/grunk.hpp>
 
-GRUNK_PLUGIN_EXPORT grunk::PluginInfo grunk_plugin_info()
-{
-    return grunk::PluginInfo{"my_plugin", "1.0.0"};
-}
+GRUNK_PLUGIN_INFO("my_plugin", "1.0.0")
 
 namespace {
 void register_my_plugin(grunk::state& state, grunk::PluginInfo const& info)

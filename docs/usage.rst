@@ -1135,10 +1135,7 @@ A plain C++ plugin is a shared library exporting two fixed entry points, so a ge
        double v;
    };
 
-   GRUNK_PLUGIN_EXPORT grunk::PluginInfo grunk_plugin_info()
-   {
-       return grunk::PluginInfo{"my_plugin", "1.0.0"};
-   }
+   GRUNK_PLUGIN_INFO("my_plugin", "1.0.0")
 
    void register_my_plugin(grunk::state& state, grunk::PluginInfo const& info)
    {
@@ -1161,9 +1158,16 @@ A plain C++ plugin is a shared library exporting two fixed entry points, so a ge
    }
    GRUNK_PLUGIN_REGISTER(register_my_plugin)
 
-``grunk_plugin_info`` reports the plugin's identity; ``register_my_plugin`` (wrapped into the actual
-``grunk_plugin_register`` entry point by ``GRUNK_PLUGIN_REGISTER`` - see below) is handed that same
-``PluginInfo`` back and does the actual registration. Registering against ``ns`` (a
+``GRUNK_PLUGIN_INFO`` defines the ``grunk_plugin_info`` entry point, reporting the plugin's identity;
+``register_my_plugin`` (wrapped into the actual ``grunk_plugin_register`` entry point by
+``GRUNK_PLUGIN_REGISTER`` - see below) is handed that same ``PluginInfo`` back and does the actual
+registration. ``GRUNK_PLUGIN_INFO`` is equivalent to writing
+``GRUNK_PLUGIN_EXPORT grunk::PluginInfo grunk_plugin_info() { return grunk::PluginInfo{name, version}; }``
+by hand, plus an MSVC-only ``#pragma`` suppressing warning C4190 (an ``extern "C"`` function returning a
+non-POD type - ``PluginInfo`` holds two ``std::string`` members - which is expected here, not a bug: see
+the note on ``GRUNK_PLUGIN_EXPORT`` below on why the ``extern "C"`` is only about symbol naming, not
+real C ABI compatibility). Always prefer the macro over the hand-written form. Registering
+against ``ns`` (a
 ``grunk::plugin_namespace``) instead of the raw environment is what puts ``MyScalar``/``add`` under
 the ``my_plugin`` namespace (``my_plugin.MyScalar``, ``my_plugin.add``) instead of flat in the
 environment, and keeps their *serialized* form (used when writing a recipe to file) resolvable by
@@ -1211,10 +1215,7 @@ plugin, so the loader never needs to know the difference:
    // The SWIG-generated module's own entry point, following Lua's luaopen_* convention.
    extern "C" int luaopen_mymodule(lua_State* L);
 
-   GRUNK_PLUGIN_EXPORT grunk::PluginInfo grunk_plugin_info()
-   {
-       return grunk::PluginInfo{"mymodule", "1.0.0"}; // must match the SWIG module's own name
-   }
+   GRUNK_PLUGIN_INFO("mymodule", "1.0.0") // name must match the SWIG module's own name
 
    void register_mymodule_plugin(grunk::state& state, grunk::PluginInfo const& info)
    {

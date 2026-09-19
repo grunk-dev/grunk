@@ -103,7 +103,8 @@ to write parametric recipes as a mix of yaml and LUA code.
 
 This section documents ``grunk::plugin``'s native-plugin loader: ``grunk::plugin::load_native``,
 ``grunk::plugin::load_script``, the fixed ``grunk_plugin_info``/``grunk_plugin_register`` ABI, and
-the ``GRUNK_PLUGIN_EXPORT`` export macro. The plugin-authoring entry points that live directly on
+the ``GRUNK_PLUGIN_EXPORT``/``GRUNK_PLUGIN_INFO``/``GRUNK_PLUGIN_REGISTER`` macros a native plugin
+uses to define that ABI. The plugin-authoring entry points that live directly on
 ``grunk::state`` (``begin_plugin``, ``load_compiled_plugin``, ``load_lua_plugin_script``/
 ``load_lua_plugin_file``, ``register_external_type``, ``PluginInfo``) are documented as part of
 :ref:`grunk::dynamic <grunk-dynamic>` instead, since they're declared there. See the
