@@ -183,6 +183,19 @@ def test_feature_id():
     assert x.id() == "b"
 
 
+def test_get_feature_on_non_feature_value_raises():
+
+    e = grunk.create_env()
+    e.eval("""
+        x = 1.0
+        y = true
+    """)
+    with pytest.raises(RuntimeError):
+        e.get_feature("x")
+    with pytest.raises(RuntimeError):
+        e.get_feature("y")
+
+
 def test_feature_clone():
 
     x = grunk.feature(2.0).with_id("x")
