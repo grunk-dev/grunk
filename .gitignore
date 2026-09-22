@@ -8,3 +8,7 @@ python/_grunk.*.so
 .vscode
 CMakeLists.txt.user
 venv
+.pixi/
+.cache/
+build/
+build-tmp/
