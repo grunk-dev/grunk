@@ -220,6 +220,28 @@ A plugin can just as well be a compiled Lua module (e.g. SWIG-generated) via `gr
 
 [Read the documentation](https://grunk-dev.github.io/grunk/) to learn more.
 
+## Examples
+
+> Work in Progress
+
+Grunk includes example applications demonstrating the library's capabilities. Each example is standalone with its own dependencies and build configuration.
+
+### Available Examples
+
+| Example | Description |
+| -- | -- |
+| [examples/cpp/cad_autodiff](examples/cpp/cad_autodiff/) | CAD modeling with automatic differentiation using geoml |
+
+### Building Examples
+
+```bash
+# CAD Autodiff example
+cd examples/cpp/cad_autodiff
+pixi run all
+```
+
+See individual example README files for details.
+
 ## License
 
 This project is licensed under the Mozilla Public License 2.0 - see the [license file](LICENSES/MPL-2.0.txt) file for details.

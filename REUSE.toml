@@ -10,7 +10,7 @@ version = 1
 ## version control, provide its licensing info here.
 
 [[annotations]]
-path = "pixi.lock"
+path = "**/pixi.lock"
 precedence = "aggregate"
 SPDX-FileCopyrightText = "2026 Jan Kleinert <jan.kleinert@dlr.de>"
 SPDX-License-Identifier = "MPL-2.0"
