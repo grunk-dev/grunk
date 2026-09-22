@@ -108,6 +108,29 @@ struct usertype_proxy {
     }
 
     /**
+     * @brief Adds an overloaded member function to the usertype. This is the multi-overload
+     * counterpart to add_member_function, mirroring add_constructors's ergonomics: pass all
+     * overloads of a member function (e.g. resolved via an explicit
+     * `static_cast<RetType (Type::*)(Args...)>(&Type::Method)` per overload, since a bare
+     * `&Type::Method` fails to compile when Method is overloaded) and they are wrapped in a
+     * single sol::overload(...) set under one Lua-visible name.
+     *
+     * @tparam Key The type of the key used to access the member function in Lua, e.g. std::string or const char*.
+     * @tparam Funcs The types of the member function overloads to be added.
+     * @param key The key used to access the member function in Lua.
+     * @param funs The member function overloads to be added.
+     * @return A reference to the usertype_proxy for chaining.
+     *
+     * @note As with a manually-passed sol::overload(...), the resulting function_meta gets no
+     *       return-type hint (see add_member_function's note above) since a sol::overload_set
+     *       isn't introspectable via function_traits.
+     */
+    template <typename Key, typename... Funcs>
+    usertype_proxy& add_member_functions(Key&& key, Funcs&&... funs) {
+        return add_member_function(std::forward<Key>(key), sol::overload(std::forward<Funcs>(funs)...));
+    }
+
+    /**
      * @brief Adds a data member to the usertype. This function allows for adding data members to the usertype, which can be accessed from Lua on instances of the type. The function metadata is created using the provided name and parameters, which can be used for error messages and for documentation purposes.
      *
      * @tparam Key The type of the key used to access the data member in Lua, e.g. std::string or const char*.
