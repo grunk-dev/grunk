@@ -66,6 +66,18 @@ TEST(state, free_function_registration)
     ASSERT_NEAR(z, 42, 1e-14);
 }
 
+TEST(state, create_env_exposes_base_library)
+{
+    grunk::state grunk;
+    auto env = grunk.create_env();
+    env.eval(R"(
+        assert(1 == 1)
+        s = tostring(42)
+    )");
+    auto s = env.get<std::string>("s");
+    ASSERT_EQ(s, "42");
+}
+
 TEST(state, object)
 {
     grunk::state grunk;
