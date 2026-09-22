@@ -737,6 +737,85 @@ TEST(state, native_colon_call_unknown_member_on_known_type_throws)
     EXPECT_TRUE(threw);
 }
 
+// Regression test for grunk issue #285: native colon-call dispatch on
+// DynamicFeature must walk a registered type's add_bases<...>() chain, exactly like
+// plain, undecorated sol2 dispatch already does via its own base-class-aware __index
+// metatable chaining, rather than requiring an explicit :as(BaseType) cast at every
+// call site relying on an inherited method.
+TEST(state, native_colon_call_walks_add_bases)
+{
+    struct Base
+    {
+        double v;
+        double get() const { return v; }
+    };
+    struct Derived : Base
+    {
+    };
+
+    grunk::state grunk;
+
+    grunk.register_type<Base>("Base")
+    .add_constructors([](double v) { return Base{v}; })
+    .add_member_function("get", &Base::get);
+
+    grunk.register_type<Derived>("Derived")
+    .add_constructors([](double v) { return Derived{Base{v}}; })
+    .add_bases<Base>();
+
+    auto env = grunk.create_parametric_env();
+    env.eval(R"(
+        local d = Derived.new_feature(42)
+        result = d:get()
+    )");
+
+    EXPECT_NEAR(env.get_feature("result").value().as<double>(), 42., 1e-14);
+}
+
+// Same as above, but Derived lists two direct bases (Mid, Base) - as sol2's own
+// add_bases<...>() requires for a multi-level hierarchy, since sol2's argument-cast
+// machinery (sol/inheritance.hpp's type_cast) only ever checks a type's own,
+// directly-declared base list, not a base's bases transitively - and the member
+// ("get") lives only on the second one. Confirms find_member_in_hierarchy keeps
+// walking past a base that doesn't itself carry the member (Mid) to find it on a
+// later one (Base) in the same add_bases<...>() call.
+TEST(state, native_colon_call_walks_add_bases_multiple)
+{
+    struct Base
+    {
+        double v;
+        double get() const { return v; }
+    };
+    struct Mid : Base
+    {
+    };
+    struct Derived : Mid
+    {
+    };
+
+    grunk::state grunk;
+
+    grunk.register_type<Base>("Base")
+    .add_constructors([](double v) { return Base{v}; })
+    .add_member_function("get", &Base::get);
+
+    grunk.register_type<Mid>("Mid")
+    .add_constructors([](double v) { return Mid{Base{v}}; })
+    .add_bases<Base>();
+
+    grunk.register_type<Derived>("Derived")
+    .add_constructors([](double v) { return Derived{Mid{Base{v}}}; })
+    .add_bases<Mid, Base>();
+
+    auto env = grunk.create_parametric_env();
+    env.eval(R"(
+        local d = Derived.new_feature(7)
+        result = d:get()
+    )");
+
+    EXPECT_NEAR(env.get_feature("result").value().as<double>(), 7., 1e-14);
+}
+
 TEST(state, native_colon_call_reserved_name_shadowing)
 {
     grunk::state grunk;

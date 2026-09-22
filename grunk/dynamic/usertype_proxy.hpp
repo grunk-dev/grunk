@@ -7,7 +7,9 @@
 #include <sol/sol.hpp>
 #include "grunk/dynamic/function_meta.hpp"
 
+#include <functional>
 #include <typeindex>
+#include <vector>
 
 namespace grunk {
 
@@ -21,13 +23,25 @@ struct usertype_proxy {
 
     /**
      * @brief constructs a usertype_proxy with the given name and sol::usertype. The name is used for creating function metadata and for error messages. The sol::usertype is the actual usertype that is being registered with Lua, and it is stored as a member of the proxy to allow for convenient access when adding constructors, member functions and data members.
-     * 
+     *
      * @param name_ the name of the usertype, used for creating function metadata and for error messages
      * @param ut_ the sol::usertype that is being registered with Lua
+     * @param on_bases_added_ optional callback invoked by add_bases with the
+     *        std::type_index of every base class T was just declared to derive
+     *        from - lets the owning grunk::state (register_type/modify_type)
+     *        record the inheritance chain for its own bookkeeping (see
+     *        state::m_type_bases), since add_bases is called via method
+     *        chaining on the returned proxy, after register_type/modify_type
+     *        have already returned.
      */
-    usertype_proxy(std::string const& name_, sol::usertype<T> const& ut_)
+    usertype_proxy(
+        std::string const& name_,
+        sol::usertype<T> const& ut_,
+        std::function<void(std::vector<std::type_index>)> on_bases_added_ = nullptr
+    )
      : name(name_)
      , ut(ut_)
+     , on_bases_added(std::move(on_bases_added_))
     {}
 
     /**
@@ -61,6 +75,9 @@ struct usertype_proxy {
     template <typename... Ctors>
     usertype_proxy& add_bases() {
         ut[sol::base_classes] = sol::bases<Ctors...>();
+        if (on_bases_added) {
+            on_bases_added(std::vector<std::type_index>{std::type_index(typeid(Ctors))...});
+        }
         return *this;
     }
 
@@ -261,6 +278,9 @@ struct usertype_proxy {
 
     /// @brief the wrapped sol::usertype instance
     sol::usertype<T> ut;
+
+    /// @brief see the on_bases_added_ constructor parameter
+    std::function<void(std::vector<std::type_index>)> on_bases_added;
 };
 
 } // namespace grunk

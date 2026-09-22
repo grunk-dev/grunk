@@ -160,7 +160,13 @@ public:
         // twice.
         std::string const owner_module = module_qualifier(*table);
         std::string const qualified_name = join_qualified(qualifier.empty() ? owner_module : qualifier, name);
-        auto proxy = usertype_proxy<T>{qualified_name, table->new_usertype<T>(name, sol::constant_automagic_enrollments<Flags>{})};
+        auto proxy = usertype_proxy<T>{
+            qualified_name,
+            table->new_usertype<T>(name, sol::constant_automagic_enrollments<Flags>{}),
+            [this, t = std::type_index(typeid(T))](std::vector<std::type_index> bases) {
+                record_type_bases(t, std::move(bases));
+            }
+        };
         record_type_registration(std::type_index(typeid(T)), (*table)[name], qualified_name, owner_module);
         return proxy;
     }
@@ -218,7 +224,13 @@ public:
         // both would resolve to the same underlying Lua table, but isn't guaranteed if
         // T's usertype was created some other way, e.g. by a plugin).
         record_type_registration(std::type_index(typeid(T)), existing.as<sol::table>(), qualified_name, owner_module);
-        return usertype_proxy<T>{qualified_name, ut};
+        return usertype_proxy<T>{
+            qualified_name,
+            ut,
+            [this, t = std::type_index(typeid(T))](std::vector<std::type_index> bases) {
+                record_type_bases(t, std::move(bases));
+            }
+        };
     }
 
     /**
@@ -1156,7 +1168,12 @@ private:
                 );
             }
 
-            sol::object found = registry_it->second[key];
+            // Falls back through *hint's registered base classes (see
+            // find_member_in_hierarchy/record_type_bases) before giving up - mirroring
+            // what plain, undecorated sol2 dispatch already gets for free via its own
+            // add_bases<...>()-driven __index metatable chaining. See
+            // https://github.com/grunk-dev/grunk/issues/285.
+            sol::object found = find_member_in_hierarchy(*hint, key);
             if (!found.valid()) {
                 throw std::runtime_error(
                     "Feature: type \"" + name_it->second + "\" has no member \"" + key +
@@ -1495,6 +1512,59 @@ private:
     }
 
     /**
+     * @brief record_type_bases records the C++ base classes a just-registered type was
+     * declared to derive from (usertype_proxy::add_bases), so the Feature usertype's
+     * sol::meta_function::index handler can walk the same inheritance chain plain,
+     * undecorated sol2 dispatch already gets "for free" via sol2's own
+     * add_bases<...>()-driven __index metatable chaining - see find_member_in_hierarchy.
+     *
+     * Called via the on_bases_added callback given to usertype_proxy's constructor in
+     * register_type/modify_type, since add_bases is invoked via method chaining on the
+     * proxy those return, after they have already run.
+     */
+    inline void record_type_bases(std::type_index type, std::vector<std::type_index> bases)
+    {
+        m_type_bases[type] = std::move(bases);
+    }
+
+    /**
+     * @brief find_member_in_hierarchy looks up @p key on @p type's own usertype table
+     * (see m_type_registry), falling back to each of its registered base classes (see
+     * m_type_bases/record_type_bases), breadth-first, exactly mirroring what sol2's own
+     * base-class-aware __index metatable chaining already does for plain, undecorated
+     * dispatch - see the "Why this isn't (just) a documentation gap" section of
+     * https://github.com/grunk-dev/grunk/issues/285.
+     *
+     * @return the found member, or an invalid sol::object if @p key isn't reachable
+     *         from @p type through any base in its chain.
+     */
+    inline sol::object find_member_in_hierarchy(std::type_index type, std::string const& key) const
+    {
+        std::vector<std::type_index> to_visit{type};
+        std::unordered_set<std::type_index> visited;
+        for (std::size_t i = 0; i < to_visit.size(); ++i) {
+            std::type_index const current = to_visit[i];
+            if (!visited.insert(current).second) {
+                continue;
+            }
+
+            auto registry_it = m_type_registry.find(current);
+            if (registry_it != m_type_registry.end()) {
+                sol::object found = registry_it->second[key];
+                if (found.valid()) {
+                    return found;
+                }
+            }
+
+            auto bases_it = m_type_bases.find(current);
+            if (bases_it != m_type_bases.end()) {
+                to_visit.insert(to_visit.end(), bases_it->second.begin(), bases_it->second.end());
+            }
+        }
+        return sol::lua_nil;
+    }
+
+    /**
      * @brief finish_plugin_load runs the assert -> populate -> note skeleton shared by
      * begin_plugin, load_compiled_plugin and load_lua_plugin_script: reject @p info's
      * name if it's already occupied (see assert_plugin_name_free), run @p populate to
@@ -1535,6 +1605,11 @@ private:
     /// m_type_registry - only used to phrase useful error messages in the Feature
     /// usertype's sol::meta_function::index handler.
     std::unordered_map<std::type_index, std::string> m_type_names;
+
+    /// @brief maps a registered C++ type to the C++ base classes it was declared to
+    /// derive from via usertype_proxy::add_bases, keyed the same way as
+    /// m_type_registry - see record_type_bases/find_member_in_hierarchy.
+    std::unordered_map<std::type_index, std::vector<std::type_index>> m_type_bases;
 
     /// @brief maps a registered C++ type to the name of the module/plugin whose
     /// registration currently occupies its m_type_registry/m_type_names slot - see
