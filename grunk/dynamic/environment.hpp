@@ -61,6 +61,11 @@ public:
         if (!ret.valid()) {
             throw std::runtime_error("Key '" + key + "' not found in environment");
         }
+        if constexpr (!std::is_same_v<T, sol::object>) {
+            if (!ret.is<T>()) {
+                throw std::runtime_error("Key '" + key + "' is not convertible to the requested type");
+            }
+        }
         return ret;
     }
 
@@ -80,6 +85,11 @@ public:
         auto ret = m_environment[key];
         if (!ret.valid()) {
             throw std::runtime_error("Key '" + key + "' not found in environment");
+        }
+        if constexpr (!std::is_same_v<T, sol::object>) {
+            if (!ret.is<T>()) {
+                throw std::runtime_error("Key '" + key + "' is not convertible to the requested type");
+            }
         }
         return ret;
     }
