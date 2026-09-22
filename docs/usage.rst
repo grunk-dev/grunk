@@ -1191,6 +1191,47 @@ were built with the exact same compiler, standard library, and grunk/sol2/Lua ve
 once a plugin is its own separate build, as `my_plugin.cpp` above would typically be. Always use the
 macro rather than defining `grunk_plugin_register` by hand.
 
+Registering an overloaded method
++++++++++++++++++++++++++++++++
+
+Wrapping an existing C++ type is where overloaded methods first become a problem: a bare
+``&Type::Method`` doesn't compile when ``Method`` is overloaded, since there's no single function
+pointer type to deduce - ``add_member_function``'s ``F`` template parameter has nothing to bind
+against. Picking one overload takes an explicit member-pointer ``static_cast``:
+
+.. code-block:: cpp
+
+   struct MyScalar
+   {
+       double get() const { return v; }
+       void set(double x) { v = x; }
+       void set(double x, double scale) { v = x * scale; }
+       double v;
+   };
+
+   ns.register_type<MyScalar>("MyScalar")
+       .add_constructors([](double v) { return MyScalar{v}; })
+       .add_member_function("get", &MyScalar::get)
+       .add_member_function("set",
+           static_cast<void (MyScalar::*)(double)>(&MyScalar::set));
+
+If more than one overload genuinely needs to be reachable from Lua under the same name,
+``add_member_functions`` (plural) takes several such casts at once and wraps them in a single
+``sol::overload(...)`` set, mirroring ``add_constructors``'s ergonomics:
+
+.. code-block:: cpp
+
+   ns.register_type<MyScalar>("MyScalar")
+       .add_constructors([](double v) { return MyScalar{v}; })
+       .add_member_function("get", &MyScalar::get)
+       .add_member_functions("set",
+           static_cast<void (MyScalar::*)(double)>(&MyScalar::set),
+           static_cast<void (MyScalar::*)(double, double)>(&MyScalar::set));
+
+As with a manually-passed ``sol::overload(...)``, a method registered this way gets no return-type
+hint, so a ``DynamicFeature`` it returns can't use native colon-call dispatch and needs an explicit
+``:as(Type)`` call or the qualified ``TypeName.method(...)`` form instead.
+
 Building the plugin only needs the ``grunk::plugin`` CMake target:
 
 .. code-block:: cmake

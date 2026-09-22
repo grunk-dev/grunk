@@ -1068,6 +1068,52 @@ TEST(state, call_reserved_name_shadowing)
     EXPECT_NEAR(result.as<MyScalar>().value(), 2., 1e-14);
 }
 
+namespace {
+
+class OverloadedScalar
+{
+public:
+    OverloadedScalar(double v) : m_value(v) {}
+    double value() const { return m_value; }
+
+    OverloadedScalar set(double v) const { return OverloadedScalar(v); }
+    OverloadedScalar set(double v, double scale) const { return OverloadedScalar(v * scale); }
+
+private:
+    double m_value;
+};
+
+} // anonymous namespace
+
+TEST(state, usertype_add_member_functions_overload_set)
+{
+    grunk::state grunk;
+
+    grunk.register_type<OverloadedScalar>("OverloadedScalar")
+    .add_constructors(
+        [](double v) { return OverloadedScalar(v); }
+    )
+    .add_member_functions("set",
+        static_cast<OverloadedScalar (OverloadedScalar::*)(double) const>(&OverloadedScalar::set),
+        static_cast<OverloadedScalar (OverloadedScalar::*)(double, double) const>(&OverloadedScalar::set)
+    );
+
+    auto x = grunk.feature(OverloadedScalar(2.));
+
+    {
+        grunk::object result = x.call("set", 5.);
+        ASSERT_TRUE(result.is<grunk::DynamicFeature>());
+        auto y = result.as<grunk::DynamicFeature>();
+        EXPECT_NEAR(y.value().as<OverloadedScalar>().value(), 5., 1e-14);
+    }
+    {
+        grunk::object result = x.call("set", 5., 2.);
+        ASSERT_TRUE(result.is<grunk::DynamicFeature>());
+        auto y = result.as<grunk::DynamicFeature>();
+        EXPECT_NEAR(y.value().as<OverloadedScalar>().value(), 10., 1e-14);
+    }
+}
+
 /*TODO: this should ideally fail (non-const member function as action)
 TEST(state, usertype_nonconst_method_as_action_lua)
 {
