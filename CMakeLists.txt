@@ -9,6 +9,51 @@ set(CMAKE_CXX_STANDARD 17)
 
 include(GNUInstallDirs)
 
+# grunk_recipe/grunk_plugin (and the umbrella `grunk` target) are built as SHARED
+# libraries (see grunk/CMakeLists.txt, grunk/recipe/CMakeLists.txt,
+# grunk/plugin/CMakeLists.txt) so that every consumer loaded into one process - this
+# repo's own Python bindings (python/), and any downstream native plugin that links
+# grunk::plugin (grunk-occt, grunk-adolc, ...) - dynamically links against the same
+# physical .so/.dylib/.dll instead of each statically embedding its own private copy.
+# Static embedding is what caused a real, confirmed bug: grunk::dynamic's dispatch
+# state (DynamicFeature's type/base-class registry, grunk/dynamic/state.hpp) lives as
+# ordinary member data on grunk::state, but the *code* that reads/writes it still gets
+# compiled separately into each consumer when statically linked - two independently
+# compiled copies of "the same" logic loaded into one process is a well-known ELF/
+# Mach-O symbol-interposition hazard (see grunk-occt's own DESIGN.md, "A related
+# hazard, found outside the AD case"), and was observed to produce exactly the wrong-
+# dispatch symptom a plugin-registration/recipe-dispatch split like this would predict.
+#
+# CMAKE_INSTALL_RPATH_USE_LINK_PATH is *supposed* to bake the absolute path of every
+# directly-linked library into each target's installed RPATH automatically - but
+# empirically (confirmed via the generated cmake_install.cmake's own RPATH_CHANGE
+# calls) it does not pick up Lua/yaml-cpp here, because grunk_recipe/grunk_plugin only
+# reach them *transitively*, through grunk::dynamic's own INTERFACE link requirements
+# (grunk/dynamic/CMakeLists.txt's `target_link_libraries(grunk_dynamic INTERFACE ...
+# ${LUA_LIBRARIES})`) rather than a direct target_link_libraries call of their own -
+# kept on regardless, as defense in depth for anything that *does* link directly, but
+# not relied on alone. The pixi/conda environment's own lib directory is added
+# explicitly instead, the same "fixed, known, non-relocated absolute path" treatment
+# every other part of this project's own build already gives that environment (e.g.
+# CMAKE_PREFIX_PATH=$CONDA_PREFIX, set by pixi's own activation).
+#
+# The $ORIGIN/@loader_path entries let an installed grunk find its own sibling
+# libraries (grunk_plugin needing grunk_recipe) even if the install tree as a whole is
+# copied elsewhere - additive with the absolute-path entries above, not exclusive of
+# them. No effect on Windows - RPATH does not exist there; a Windows DLL is instead
+# found by being installed into the same directory as whatever loads it (see each
+# target's own RUNTIME DESTINATION, already correctly separated from LIBRARY/ARCHIVE
+# DESTINATION throughout this project, in anticipation of exactly this).
+set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
+if (DEFINED ENV{CONDA_PREFIX})
+    list(APPEND CMAKE_INSTALL_RPATH "$ENV{CONDA_PREFIX}/${CMAKE_INSTALL_LIBDIR}")
+endif()
+if (APPLE)
+    list(APPEND CMAKE_INSTALL_RPATH "@loader_path" "@loader_path/../${CMAKE_INSTALL_LIBDIR}")
+elseif (NOT WIN32)
+    list(APPEND CMAKE_INSTALL_RPATH "$ORIGIN" "$ORIGIN/../${CMAKE_INSTALL_LIBDIR}")
+endif()
+
 set(CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake" ${CMAKE_MODULE_PATH})
 
 option(GRUNK_WITH_TASKFLOW "Builds grunk with multi-threading support using Taskflow" ON)

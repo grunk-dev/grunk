@@ -8,22 +8,38 @@ if(MSVC)
 endif()
 
 configure_file(
-        ${CMAKE_CURRENT_SOURCE_DIR}/version.hpp.in 
+        ${CMAKE_CURRENT_SOURCE_DIR}/version.hpp.in
         ${CMAKE_CURRENT_BINARY_DIR}/version.hpp
 )
+
+# grunk/recipe.hpp #include "grunk/version.hpp"s this directly - never installed
+# before now because nothing ever consumed grunk via find_package() (this file
+# only ever needed to exist in the *build* tree, reachable via each module's own
+# $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/..> include entry) until
+# grunk-occt/grunk-adolc switched from vendoring grunk's source to find_package.
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/version.hpp DESTINATION include/grunk)
 
 if (NOT EXISTS "${CMAKE_BINARY_DIR}/.gitignore")
     file(WRITE "${CMAKE_BINARY_DIR}/.gitignore" "*\n")
 endif()
 
-# Add the library grunk
+# Add the library grunk. SHARED specifically when it has a real translation unit
+# (GRUNK_WITH_RECIPE) - see ../CMakeLists.txt's own RPATH comment for why this
+# matters (one dynamically-shared copy of grunk's dispatch state per process, not one
+# statically-embedded copy per consumer). The GRUNK_WITH_RECIPE=OFF branch keeps its
+# original plain add_library(grunk) (STATIC, empty) unchanged - it has zero sources of
+# its own (grunk::core/grunk::dynamic are both INTERFACE/header-only), and further
+# down this file still does `target_link_libraries(grunk PUBLIC ...)` under
+# GRUNK_WITH_PLUGIN, which is only valid for a real library target, not an INTERFACE
+# one - no downstream repo in this project ever builds with GRUNK_WITH_RECIPE=OFF, so
+# this combination isn't part of what this change needs to cover.
 if (GRUNK_WITH_RECIPE)
         # ensure the library has at least one source so CMake won't complain
         file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/grunk_version.cpp"
 "/* auto-generated */\n#include \"version.hpp\"\n")
-        add_library(grunk "${CMAKE_CURRENT_BINARY_DIR}/grunk_version.cpp")
+        add_library(grunk SHARED "${CMAKE_CURRENT_BINARY_DIR}/grunk_version.cpp")
 else()
-        add_library(grunk)
+        add_library(grunk INTERFACE)
 endif()
 
 add_subdirectory(core)

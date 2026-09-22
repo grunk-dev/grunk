@@ -2,8 +2,13 @@
 #
 # SPDX-License-Identifier: MPL-2.0
 
-add_library(grunk_plugin loader.cpp)
+# SHARED - see ../../CMakeLists.txt's RPATH comment: one dynamically-linked copy of
+# grunk's dispatch state per process, not a statically-embedded copy per consumer.
+add_library(grunk_plugin SHARED loader.cpp)
 add_library(grunk::plugin ALIAS grunk_plugin)
+
+# see ../core/CMakeLists.txt's own comment on why this is needed for find_package(grunk)
+set_target_properties(grunk_plugin PROPERTIES EXPORT_NAME plugin)
 
 target_compile_features(grunk_plugin PUBLIC cxx_std_17)
 target_link_libraries(grunk_plugin PRIVATE ${CMAKE_DL_LIBS})
@@ -31,7 +36,9 @@ target_include_directories(grunk_plugin PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
   $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/..>
   $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}>
-  $<INSTALL_INTERFACE:include/grunk>
+  $<INSTALL_INTERFACE:include>
+  # see ../core/CMakeLists.txt's own comment on why this second entry is needed
+  $<INSTALL_INTERFACE:include/grunk/plugin>
 )
 
 install(TARGETS grunk_plugin

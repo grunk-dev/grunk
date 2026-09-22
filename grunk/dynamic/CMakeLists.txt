@@ -6,6 +6,9 @@
 add_library(grunk_dynamic INTERFACE)
 add_library(grunk::dynamic ALIAS grunk_dynamic)
 
+# see ../core/CMakeLists.txt's own comment on why this is needed for find_package(grunk)
+set_target_properties(grunk_dynamic PROPERTIES EXPORT_NAME dynamic)
+
 if (GRUNK_WITH_RECIPE)
   target_compile_definitions(grunk_dynamic INTERFACE GRUNK_WITH_RECIPE)
 endif()
@@ -17,7 +20,9 @@ target_include_directories(grunk_dynamic INTERFACE
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
   $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/..>
   $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}>
-  $<INSTALL_INTERFACE:include/grunk> 
+  $<INSTALL_INTERFACE:include>
+  # see ../core/CMakeLists.txt's own comment on why this second entry is needed
+  $<INSTALL_INTERFACE:include/grunk/dynamic>
 )
 
 install(TARGETS grunk_dynamic

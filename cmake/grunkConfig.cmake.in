@@ -4,11 +4,17 @@
 
 @PACKAGE_INIT@
 
+# find_dependency() itself comes from this module, not from @PACKAGE_INIT@ (which
+# only sets up PACKAGE_PREFIX_DIR and the relative-path macros) - never actually
+# exercised until grunk-occt/grunk-adolc switched from vendoring grunk's source via
+# FetchContent to a real find_package(grunk), which is the first time this file was
+# ever processed by a consumer at all.
+include(CMakeFindDependencyMacro)
+
 # Import the exported targets
 include("${CMAKE_CURRENT_LIST_DIR}/grunkTargets.cmake")
 
 # Find transitively required packages if they aren't already available as targets.
-# @PACKAGE_INIT@ makes find_dependency() available.
 if (NOT TARGET parametric::parametric)
   find_dependency(parametric REQUIRED)
 endif()

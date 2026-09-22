@@ -59,3 +59,22 @@ target_link_libraries(_bindings PRIVATE grunk)
 
 # Install directive for scikit-build-core
 install(TARGETS _bindings LIBRARY DESTINATION grunk)
+
+# grunk's own shared libraries (grunk/grunk_recipe/grunk_plugin, all SHARED - see
+# ../CMakeLists.txt's own RPATH comment) must ship *inside* the Python package
+# directory too, alongside _bindings itself - a Python wheel has no general "shared
+# library dependency" mechanism of its own, so _bindings' own $ORIGIN-relative
+# install RPATH (set globally in ../CMakeLists.txt) can only find them if they're
+# co-located in the exact same directory _bindings is installed into. This is what
+# lets a `pip install`-built grunk wheel dynamically link its own bundled C++ core
+# instead of statically embedding a private copy - the same single-shared-copy
+# property any *other* native plugin loaded into the same process (grunk-occt,
+# grunk-adolc, ...) needs, for the reasons ../CMakeLists.txt's own comment explains.
+foreach (grunk_shared_target grunk grunk_recipe grunk_plugin)
+    if (TARGET ${grunk_shared_target})
+        install(TARGETS ${grunk_shared_target}
+            LIBRARY DESTINATION grunk
+            RUNTIME DESTINATION grunk
+        )
+    endif()
+endforeach()
