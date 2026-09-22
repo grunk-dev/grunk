@@ -83,10 +83,50 @@ if (GRUNK_WITH_PLUGIN)
     # it cleanly instead of letting it escape (see plugin_native_fixture_nonstd_throw.cpp).
     add_library(plugin_native_fixture_nonstd_throw SHARED plugin_native_fixture_nonstd_throw.cpp)
     target_link_libraries(plugin_native_fixture_nonstd_throw PRIVATE grunk::plugin)
+
+    # Windows only - see the identical, more detailed comment on runUnitTests' own
+    # copy step below. These three are loaded via grunk::plugin::load_native from an
+    # *absolute path* ($<TARGET_FILE:...>, baked in as a compile definition below),
+    # not linked - Windows searches a DLL's own directory first for *its* dependencies
+    # when loaded this way, so each fixture needs grunk's DLLs next to itself too, not
+    # just next to runUnitTests.exe (belt and braces: they already land in the same
+    # directory as runUnitTests.exe by CMake's own default per-CMakeLists.txt output
+    # layout, but relying on that implicitly here would be fragile).
+    if (WIN32)
+        foreach(_fixture plugin_native_fixture plugin_native_fixture_failing plugin_native_fixture_nonstd_throw)
+            add_custom_command(TARGET ${_fixture} POST_BUILD
+                COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                    $<TARGET_RUNTIME_DLLS:${_fixture}>
+                    $<TARGET_FILE_DIR:${_fixture}>
+                COMMAND_EXPAND_LISTS
+            )
+        endforeach()
+    endif()
 endif()
 
 add_executable(runUnitTests ${TESTSOURCES})
 target_link_libraries(runUnitTests PRIVATE grunk gtest_main)
+
+# Windows has no RPATH/RUNPATH mechanism - grunk (now SHARED - see ../CMakeLists.txt's
+# own comment) has to actually be *found* by runUnitTests.exe at test time, before
+# `cmake --install` ever runs (pixi's own test_cpp task runs the exe straight out of
+# the build tree - see pyproject.toml). On Linux/macOS this "just works" via CMake's
+# own default build-tree RPATH; on Windows the loader only ever looks in the exe's own
+# directory (plus PATH, which only covers *conda-installed* DLLs like Lua's, already on
+# PATH via pixi's own activation - not grunk.dll/grunk_recipe.dll/grunk_plugin.dll,
+# freshly built into the tree, never installed into the conda env). Copying every DLL
+# runUnitTests actually depends on (transitively - this also covers plugin_native_
+# fixture*'s own dependency on grunk's DLLs below, since those land in this same
+# directory by CMake's own default per-CMakeLists.txt output layout) next to the exe
+# itself is the standard, documented fix for this exact scenario.
+if (WIN32)
+    add_custom_command(TARGET runUnitTests POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            $<TARGET_RUNTIME_DLLS:runUnitTests>
+            $<TARGET_FILE_DIR:runUnitTests>
+        COMMAND_EXPAND_LISTS
+    )
+endif()
 
 if (GRUNK_WITH_PLUGIN)
     target_compile_definitions(runUnitTests PRIVATE
