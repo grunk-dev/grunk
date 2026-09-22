@@ -259,8 +259,13 @@ public:
      * @return A new environment instance.
      */
     inline environment create_env() const {
-        sol::environment env(lua, sol::create, lua.globals()); 
-        env[sol::metatable_key]["__index"] = original_env;
+        sol::environment env(lua, sol::create, lua.globals());
+        sol::table mt = sol::table::create(lua.lua_state());
+        mt.set_function("__index", [this](sol::table, std::string const& key) -> sol::object {
+            sol::object result = original_env[key];  // Lookup in original environment
+            return result.valid() ? result : lua.globals()[key]; // fall back to Lua's base library
+        });
+        env[sol::metatable_key] = mt;
         return environment(env);
     }
 
