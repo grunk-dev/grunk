@@ -12,6 +12,32 @@ SPDX-License-Identifier: MPL-2.0
    typing by bringing in LUA as a dynamic scripting language. `grunk::recipe` allows reading and writing mixed yaml and lua recipes. 
    A recipe still has the same yaml structure, but the steps are now a LUA
    script.
+ - New: native plugin system `grunk::plugin`, a cross-platform (Linux/macOS/Windows) runtime plugin loader.
+   Plugins can be written in C++ for maximum performance, as a compiled Lua module, or in plain Lua for
+   ease-of-use, and are now also exposed to the Python bindings (#277, #275, #284)
+ - New: the code generator (`grunk codegen`) has been moved into the grunk repo, ported from the external
+   `grunk-occt`/`grunk-adolc` tooling. grunk is now self-contained for generating bindings (#297)
+ - New: state- and recipe-scoped modules (#234), recipes can now be written using colon syntax
+   (`obj:method(...)`) in addition to the previous call syntax (#272), and recipes support an optional
+   `outputs` node (#265)
+ - `DynamicFeature` now stores a type hint (#269), gained a `call` method, and `call`/`clone` on
+   `DynamicFeature` and `Recipe` are now exposed to the Python bindings
+ - Fix `with_std_vector` to respect `add_bases` inheritance and add support for vectors of `Handle<T>`;
+   this also fixes a Windows compile error and a Release-build segfault (#282)
+ - Bug fixes:
+   - `Environment.get_feature` (Python) segfaulted on a non-`DynamicFeature` value instead of raising an
+     error (#288)
+   - `DynamicFeature.__index` type-hint dispatch did not walk `add_bases` inheritance chains (#285)
+   - Registering an overloaded C++ method via `add_member_function` required an undocumented explicit
+     `static_cast` (#280)
+   - Global environment access in `grunk.create_env` was broken (#279)
+   - Fix regression where the colon operator did not work if the type hint sat behind a custom pointer (#270)
+   - `DynamicFeature.as()` did not work on features that came from an `Action` (#267)
+   - Missing dynamic-scripting keys could cause a segfault instead of raising an error
+   - Suppress an MSVC `C4190` warning on `grunk_plugin_info` symbols via a new `GRUNK_PLUGIN_INFO` macro
+ - The C++ standard is now explicitly declared as C++17, and the Taskflow dependency is pinned (Taskflow 4
+   requires C++20). `parametric` is now consumed as a conda-forge package instead of being built from
+   source in CI.
 
 
 # v0.3.2
