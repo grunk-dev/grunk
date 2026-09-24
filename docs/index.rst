@@ -10,6 +10,7 @@
 
    installation
    usage
+   writing_plugins
    design
    code
    genindex

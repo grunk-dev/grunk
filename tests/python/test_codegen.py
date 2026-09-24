@@ -2,16 +2,22 @@
 #
 # SPDX-License-Identifier: MPL-2.0
 
-"""Tests for grunk.codegen.generate - the shared libclang-based code generator
-used by grunk-occt/grunk-adolc (see its own module docstring). Split into two
-parts: pure-logic unit tests that construct Param/Callable dataclasses directly
-(no libclang parsing involved - covers the string-emission/acceptance rules
-generate.py's own header-parsing layer feeds into) and a small integration test
-that parses a real, synthetic header via libclang end-to-end through run(), to
-catch a regression in the parsing layer itself that the pure-logic tests, by
-construction, cannot see."""
+"""Tests for grunk.codegen.generate - the shared, library-agnostic libclang-based
+code generator used by grunk-occt/grunk-adolc (see its own module docstring, and
+grunk.codegen.generate.CodeGenerator's own docstring for the extension mechanism).
+Deliberately free of any OCCT/ADOL-C-specific type name or idiom - those tests live
+in the consuming plugin's own test suite instead (e.g. grunk-occt's own
+tests/python/test_hooks.py), since they exercise that plugin's own CodeGenerator
+subclass, not this shared, otherwise-agnostic module. Split into three parts:
+pure-logic unit tests exercising the generic, built-in behavior (no libclang
+parsing involved); a small toy CodeGenerator subclass proving the hook-machinery
+plumbing itself works generically (a fake kind, a fake dual-emission macro); and
+integration tests that parse a real, synthetic header via libclang end-to-end
+through run(), to catch a regression in the parsing layer itself that the
+pure-logic tests, by construction, cannot see."""
 
 import argparse
+from pathlib import Path
 
 import yaml
 import pytest
@@ -19,72 +25,94 @@ import pytest
 from grunk.codegen import generate
 
 
+_hooks = generate.CodeGenerator()
+
+
 # ---------------------------------------------------------------------------
-# strip_type / array element helpers
+# strip_type()
 # ---------------------------------------------------------------------------
 
 def test_strip_type_removes_const_and_reference():
-    assert generate.strip_type("const gp_Vec &") == "gp_Vec"
-    assert generate.strip_type("gp_Vec") == "gp_Vec"
-    assert generate.strip_type("Standard_Real") == "Standard_Real"
+    assert generate.strip_type("const Widget &") == "Widget"
+    assert generate.strip_type("Widget") == "Widget"
+    assert generate.strip_type("double") == "double"
     assert generate.strip_type("const   double  &") == "double"
 
 
-def test_array_element_type_extracts_template_argument():
-    assert generate.array_element_type("const NCollection_Array1<gp_Pnt> &", generate.ARRAY1_PATTERN) == "gp_Pnt"
-    assert generate.array_element_type("NCollection_Array2<double>", generate.ARRAY2_PATTERN) == "double"
-
-
-def test_array_element_supported():
-    registered = {"gp_Pnt"}
-    assert generate.array_element_supported("double", registered)  # REAL_ELEMENT_SPELLINGS
-    assert generate.array_element_supported("int", registered)  # PASSTHROUGH_ELEMENT_SPELLINGS
-    assert generate.array_element_supported("gp_Pnt", registered)  # registered_types
-    assert not generate.array_element_supported("gp_Ax2", registered)
-
-
 # ---------------------------------------------------------------------------
-# Param.kind()
+# Param.kind() - the built-in kinds only (passthrough/object); anything a
+# CodeGenerator subclass classifies itself belongs in that plugin's own tests.
 # ---------------------------------------------------------------------------
 
-def test_param_kind_real_and_passthrough():
-    assert generate.Param("Standard_Real", "x").kind(set(), set()) == "real"
-    assert generate.Param("Standard_Real &", "x").kind(set(), set()) is None  # mutable-ref real rejected
-    assert generate.Param("double", "x").kind(set(), set()) == "passthrough"
-    assert generate.Param("bool &", "x").kind(set(), set()) is None
+def test_param_kind_fundamental_passthrough():
+    assert generate.Param("double", "x").kind(set(), set(), _hooks) == "passthrough"
+    assert generate.Param("bool &", "x").kind(set(), set(), _hooks) is None  # mutable-ref rejected
 
 
 def test_param_kind_registered_enum_and_type():
-    assert generate.Param("GeomAbs_Shape", "x").kind(set(), {"GeomAbs_Shape"}) == "passthrough"
-    assert generate.Param("gp_Pnt", "x").kind({"gp_Pnt"}, set()) == "object"
-    assert generate.Param("gp_Pnt &", "x").kind({"gp_Pnt"}, set()) == "object"  # mutable "out" object param IS supported
-    assert generate.Param("gp_Pnt", "x").kind(set(), set()) is None  # not registered -> unsupported
+    assert generate.Param("Color", "x").kind(set(), {"Color"}, _hooks) == "passthrough"
+    assert generate.Param("Widget", "x").kind({"Widget"}, set(), _hooks) == "object"
+    assert generate.Param("Widget &", "x").kind({"Widget"}, set(), _hooks) == "object"  # mutable "out" param IS supported
 
 
-def test_param_kind_handle():
-    assert generate.Param("opencascade::handle<Geom_Curve>", "x").kind({"Geom_Curve"}, set()) == "handle"
-    assert generate.Param("opencascade::handle<Geom_Curve>", "x").kind(set(), set()) is None  # Geom_Curve not registered
+def test_param_kind_unregistered_class_still_classifies_as_object():
+    # sol2 doesn't require a class to be pre-registered (by this run, or at
+    # all, yet) to bind a function taking/returning it - confirmed
+    # empirically against sol2 itself, see Param.kind()'s own docstring. A
+    # bare, unregistered type name - most commonly one registered by a
+    # *different* plugin this one depends on - is accepted, not rejected.
+    assert generate.Param("Widget", "x").kind(set(), set(), _hooks) == "object"
+    assert generate.Param("ns::Widget", "x").kind(set(), set(), _hooks) == "object"
 
 
-def test_param_kind_array1_array2():
-    p1 = generate.Param("const TColgp_Array1OfPnt &", "pts", "const NCollection_Array1<gp_Pnt> &")
-    assert p1.kind({"gp_Pnt"}, set()) == "array1"
-    assert p1.kind(set(), set()) is None  # gp_Pnt not registered -> element unsupported
-
-    p2 = generate.Param("const TColStd_Array2OfReal &", "m", "const NCollection_Array2<double> &")
-    assert p2.kind(set(), set()) == "array2"  # double is always supported (REAL_ELEMENT_SPELLINGS)
-
-    p_mut = generate.Param("TColgp_Array1OfPnt &", "pts", "NCollection_Array1<gp_Pnt> &")
-    assert p_mut.kind({"gp_Pnt"}, set()) is None  # mutable array ref rejected, no Lua-side identity to mutate
+def test_param_kind_unregistered_mutable_ref_with_no_canonical_stays_rejected():
+    # No canonical (typedef-resolved) spelling available at all - a
+    # return-type check builds a Param exactly this way (see Param.canonical's
+    # own field docstring) - stays conservative rather than guessing whether
+    # this is really a class or a fundamental hiding behind a typedef.
+    assert generate.Param("Widget &", "x").kind(set(), set(), _hooks) is None
 
 
-def test_param_kind_return_type_uses_empty_name():
-    # rejection_reason/accepted_arities build a synthetic Param(spelling, "") to check
-    # a *return* type - array kinds are deliberately parameter-only (see Param.kind's
-    # own comment), so an array-typed return must stay unsupported even though the
-    # element itself would otherwise qualify.
-    ret = generate.Param("NCollection_Array1<gp_Pnt>", "", "NCollection_Array1<gp_Pnt>")
-    assert ret.kind({"gp_Pnt"}, set()) is None
+def test_param_kind_unregistered_mutable_ref_confirmed_class_is_accepted():
+    # The canonical spelling positively confirms this isn't a fundamental -
+    # same "stable Lua-side identity, safe to mutate in place" reasoning an
+    # in-run registered class already gets (see the built-in registered_types
+    # case above), now extended to an unregistered one too.
+    assert generate.Param("Widget &", "x", canonical="Widget").kind(set(), set(), _hooks) == "object"
+
+
+def test_param_kind_unregistered_mutable_ref_confirmed_fundamental_stays_rejected():
+    # The canonical spelling reveals this is actually a fundamental hiding
+    # behind an unfamiliar typedef (a different library's own "Standard_Real")
+    # - a mutable reference to that would be silently wrong the same way a
+    # bare fundamental's own mutable reference already is.
+    assert generate.Param("Distance &", "x", canonical="double").kind(set(), set(), _hooks) is None
+
+
+def test_param_kind_pointer_spelling_stays_rejected():
+    # Not a plausible bare type name (BARE_TYPE_NAME doesn't match) - stays
+    # rejected regardless of the new unregistered-class fallback.
+    assert generate.Param("Widget *", "x").kind(set(), set(), _hooks) is None
+
+
+def test_param_kind_typedef_hiding_a_pointer_stays_rejected():
+    # "PWidget" here plays the role of OCCT's own "pointer to X" typedef
+    # convention (e.g. BOPAlgo_PPaveFiller = BOPAlgo_PaveFiller*) - the bare
+    # spelling alone looks like a plausible class name, but the canonical
+    # (typedef-resolved) spelling reveals it's secretly a pointer, so this
+    # stays rejected rather than pushing a raw pointer as if it were a plain
+    # object (found the hard way).
+    assert generate.Param("PWidget", "x", canonical="Widget *").kind(set(), set(), _hooks) is None
+    # A genuine class typedef (canonical still a plain identifier) is unaffected.
+    assert generate.Param("WidgetAlias", "x", canonical="Widget").kind(set(), set(), _hooks) == "object"
+
+
+def test_param_kind_falls_through_to_hooks_classify_param():
+    class _RecognizesEverything(generate.CodeGenerator):
+        def classify_param(self, param, registered_types, registered_enums):
+            return "custom"
+    assert generate.Param("SomeExoticType *", "x").kind(set(), set(), _RecognizesEverything()) == "custom"
+    assert generate.Param("SomeExoticType *", "x").kind(set(), set(), generate.CodeGenerator()) is None
 
 
 # ---------------------------------------------------------------------------
@@ -97,26 +125,26 @@ def _callable(params, return_spelling="void", is_static=False):
 
 def test_rejection_reason_none_when_all_supported():
     c = _callable([generate.Param("double", "x")])
-    assert c.rejection_reason(set(), set()) is None
+    assert c.rejection_reason(set(), set(), _hooks) is None
 
 
 def test_rejection_reason_reports_first_unsupported_param():
-    c = _callable([generate.Param("gp_Pnt", "p")])
-    reason = c.rejection_reason(set(), set())
+    c = _callable([generate.Param("Unsupported *", "p")])
+    reason = c.rejection_reason(set(), set(), _hooks)
     assert reason is not None
-    assert "gp_Pnt" in reason
+    assert "Unsupported" in reason
 
 
 def test_rejection_reason_reports_unsupported_return():
-    c = _callable([generate.Param("double", "x")], return_spelling="gp_Pnt")
-    reason = c.rejection_reason(set(), set())
+    c = _callable([generate.Param("double", "x")], return_spelling="Unsupported *")
+    reason = c.rejection_reason(set(), set(), _hooks)
     assert reason is not None
-    assert "gp_Pnt" in reason
+    assert "Unsupported" in reason
 
 
 def test_accepted_arities_all_or_nothing_when_no_defaults():
     c = _callable([generate.Param("double", "x"), generate.Param("double", "y")])
-    assert c.accepted_arities(set(), set()) == [2]
+    assert c.accepted_arities(set(), set(), _hooks) == [2]
 
 
 def test_accepted_arities_default_argument_expansion():
@@ -126,103 +154,57 @@ def test_accepted_arities_default_argument_expansion():
         generate.Param("double", "x"),
         generate.Param("double", "y", has_default=True),
     ])
-    assert c.accepted_arities(set(), set()) == [1, 2]
+    assert c.accepted_arities(set(), set(), _hooks) == [1, 2]
 
 
 def test_accepted_arities_unsupported_leading_param_with_no_default_is_unreachable():
     # First param unsupported and not defaulted -> nothing is reachable, regardless
     # of a later defaulted-but-otherwise-fine parameter.
     c = _callable([
-        generate.Param("gp_Pnt", "p"),
+        generate.Param("Unsupported *", "p"),
         generate.Param("double", "y", has_default=True),
     ])
-    assert c.accepted_arities(set(), set()) == []
+    assert c.accepted_arities(set(), set(), _hooks) == []
 
 
 def test_accepted_arities_unsupported_return_type_rejects_every_arity():
-    c = _callable([generate.Param("double", "x", has_default=True)], return_spelling="gp_Pnt")
-    assert c.accepted_arities(set(), set()) == []
+    c = _callable([generate.Param("double", "x", has_default=True)], return_spelling="Unsupported *")
+    assert c.accepted_arities(set(), set(), _hooks) == []
 
 
 # ---------------------------------------------------------------------------
 # ambiguity_safe_overload_order()
 # ---------------------------------------------------------------------------
 
-def test_ambiguity_safe_overload_order_prefers_fewer_real_kinds_within_same_arity():
-    all_real = (_callable([generate.Param("Standard_Real", "a")]), ["real"])
-    concrete = (_callable([generate.Param("gp_Ax2", "a")]), ["object"])
-    ordered = generate.ambiguity_safe_overload_order([all_real, concrete])
-    assert ordered == [concrete, all_real]
+class _AmbiguityHooks(generate.CodeGenerator):
+    OVERLOAD_AMBIGUITY_KINDS = {"dynamic"}
+
+
+def test_ambiguity_safe_overload_order_prefers_fewer_ambiguity_kinds_within_same_arity():
+    ambiguous = (_callable([generate.Param("Anything", "a")]), ["dynamic"])
+    concrete = (_callable([generate.Param("Widget", "a")]), ["object"])
+    ordered = generate.ambiguity_safe_overload_order([ambiguous, concrete], _AmbiguityHooks())
+    assert ordered == [concrete, ambiguous]
+
+
+def test_ambiguity_safe_overload_order_is_a_noop_with_default_empty_kinds():
+    ambiguous = (_callable([generate.Param("Anything", "a")]), ["dynamic"])
+    concrete = (_callable([generate.Param("Widget", "a")]), ["object"])
+    ordered = generate.ambiguity_safe_overload_order([ambiguous, concrete], generate.CodeGenerator())
+    assert ordered == [ambiguous, concrete]  # original order preserved - nothing in OVERLOAD_AMBIGUITY_KINDS
 
 
 def test_ambiguity_safe_overload_order_is_stable_and_groups_by_arity_first():
     one_arg = (_callable([generate.Param("double", "a")]), ["passthrough"])
-    two_args_a = (_callable([generate.Param("Standard_Real", "a"), generate.Param("Standard_Real", "b")]), ["real", "real"])
-    two_args_b = (_callable([generate.Param("Standard_Real", "a"), generate.Param("gp_Ax2", "b")]), ["real", "object"])
-    ordered = generate.ambiguity_safe_overload_order([two_args_a, one_arg, two_args_b])
-    # one_arg (arity 1) first, then the arity-2 group with fewer "real" kinds first.
+    two_args_a = (_callable([generate.Param("Anything", "a"), generate.Param("Anything", "b")]), ["dynamic", "dynamic"])
+    two_args_b = (_callable([generate.Param("Anything", "a"), generate.Param("Widget", "b")]), ["dynamic", "object"])
+    ordered = generate.ambiguity_safe_overload_order([two_args_a, one_arg, two_args_b], _AmbiguityHooks())
+    # one_arg (arity 1) first, then the arity-2 group with fewer "dynamic" kinds first.
     assert ordered == [one_arg, two_args_b, two_args_a]
 
 
 # ---------------------------------------------------------------------------
-# emit_lambda() / emit_callable_expr() - helper_namespace threading
-# ---------------------------------------------------------------------------
-
-def test_emit_lambda_plain_passthrough_has_no_helper_namespace_call():
-    c = _callable([generate.Param("double", "x")], return_spelling="double")
-    src = generate.emit_lambda(c, ["passthrough"], ad_branch=False, ctor_mode="value", helper_namespace="my_plugin")
-    assert "my_plugin::" not in src
-    assert "double x" in src
-
-
-def test_emit_lambda_real_ad_branch_uses_helper_namespace_to_real():
-    c = _callable([generate.Param("Standard_Real", "x")], return_spelling="double")
-    src = generate.emit_lambda(c, ["real"], ad_branch=True, ctor_mode="value", helper_namespace="my_plugin")
-    assert "my_plugin::to_real(x)" in src
-    assert "sol::object x" in src
-
-
-def test_emit_lambda_array1_real_element_uses_to_real_array1():
-    c = _callable([generate.Param("const TColgp_Array1OfPnt &", "pts", "const NCollection_Array1<double> &")], return_spelling="void")
-    src = generate.emit_lambda(c, ["array1"], ad_branch=False, ctor_mode="value", helper_namespace="occt_plugin")
-    assert "occt_plugin::to_real_array1(pts)" in src
-
-
-def test_emit_lambda_array1_non_real_element_uses_plain_to_array1():
-    c = _callable([generate.Param("const TColgp_Array1OfPnt &", "pts", "const NCollection_Array1<gp_Pnt> &")], return_spelling="void")
-    src = generate.emit_lambda(c, ["array1"], ad_branch=False, ctor_mode="value", helper_namespace="occt_plugin")
-    assert "occt_plugin::to_array1(pts)" in src
-    assert "to_real_array1" not in src
-
-
-def test_emit_lambda_array2_uses_flat_rows_cols_and_helper_namespace():
-    c = _callable([generate.Param("const TColStd_Array2OfReal &", "m", "const NCollection_Array2<double> &")], return_spelling="void")
-    src = generate.emit_lambda(c, ["array2"], ad_branch=False, ctor_mode="value", helper_namespace="adolc_plugin")
-    assert "adolc_plugin::to_real_array2(m_flat, m_rows, m_cols)" in src
-    assert "m_flat" in src and "m_rows" in src and "m_cols" in src
-
-
-def test_emit_lambda_constructor_handle_mode_heap_allocates():
-    c = generate.Callable("Geom_Curve", "constructor", "Geom_Curve", [], None, is_const=False)
-    src = generate.emit_lambda(c, [], ad_branch=False, ctor_mode="handle", helper_namespace="occt_plugin")
-    assert "opencascade::handle<Geom_Curve>" in src
-    assert "new Geom_Curve(" in src
-
-
-def test_emit_callable_expr_wraps_ad_macro_only_when_real_present():
-    plain_only = _callable([generate.Param("double", "x")], return_spelling="double")
-    src = generate.emit_callable_expr(plain_only, ["passthrough"], ctor_mode="value", helper_namespace="occt_plugin")
-    assert generate.AD_MACRO not in src
-
-    with_real = _callable([generate.Param("Standard_Real", "x")], return_spelling="double")
-    src = generate.emit_callable_expr(with_real, ["real"], ctor_mode="value", helper_namespace="occt_plugin")
-    assert f"#if defined({generate.AD_MACRO})" in src
-    assert "occt_plugin::to_real(x)" in src  # the AD branch
-    assert "Standard_Real x" in src  # the plain (non-AD) branch keeps the bare Standard_Real spelling
-
-
-# ---------------------------------------------------------------------------
-# emit_operator_lambda()
+# emit_operator_lambda() - always generic, never needs a CodeGenerator override.
 # ---------------------------------------------------------------------------
 
 def test_emit_operator_lambda_unary():
@@ -248,6 +230,171 @@ def test_emit_operator_lambda_reversed_operand_static_form():
     src = generate.emit_operator_lambda(c)
     # Reversed-operand sibling: `other` is the first Lua-facing argument, self the second.
     assert "return other + self;" in src
+
+
+# ---------------------------------------------------------------------------
+# CodeGenerator - the built-in default behavior (no subclass involved).
+# ---------------------------------------------------------------------------
+
+def test_code_generator_classify_param_default_is_none():
+    assert generate.CodeGenerator().classify_param(generate.Param("Anything", "x"), set(), set()) is None
+
+
+def test_code_generator_classify_ctor_mode_default_is_none():
+    assert generate.CodeGenerator().classify_ctor_mode("Foo", ["SomeBase"]) is None
+    assert generate.CodeGenerator().classify_ctor_mode("Foo", []) is None
+
+    class _WithNamedBaseCtorMode(generate.CodeGenerator):
+        def classify_ctor_mode(self, class_name, base_chain):
+            return "handle" if "RcBase" in base_chain else None
+    assert _WithNamedBaseCtorMode().classify_ctor_mode("Foo", ["RcBase"]) == "handle"
+    assert _WithNamedBaseCtorMode().classify_ctor_mode("Foo", ["OtherBase"]) is None
+
+
+def test_code_generator_emit_param_default_is_none():
+    assert generate.CodeGenerator().emit_param(generate.Param("double", "x"), "passthrough") is None
+
+
+def test_code_generator_emit_constructor_default_raises_loudly():
+    with pytest.raises(NotImplementedError):
+        generate.CodeGenerator().emit_constructor("Widget", "custom_mode", [], "")
+
+
+def test_code_generator_emit_bases_default_is_identity():
+    assert generate.CodeGenerator().emit_bases("Foo", []) == []
+    assert generate.CodeGenerator().emit_bases("Foo", ["A", "B"]) == ["A", "B"]
+
+
+def test_code_generator_emit_return_type_default_is_none():
+    assert generate.CodeGenerator().emit_return_type("Widget") is None
+
+
+def test_emit_callable_plain_passthrough_needs_no_conversion():
+    c = _callable([generate.Param("double", "x")], return_spelling="double")
+    src = generate.CodeGenerator().emit_callable(c, ["passthrough"], "value")
+    assert "double x" in src
+    assert "self.Do(x)" in src
+
+
+def test_emit_callable_constructor_value_mode():
+    c = generate.Callable("Widget", "constructor", "Widget", [generate.Param("double", "x")], None, is_const=False)
+    src = generate.CodeGenerator().emit_callable(c, ["passthrough"], "value")
+    assert "return Widget(x);" in src
+
+
+def test_emit_callable_constructor_unique_ptr_mode():
+    c = generate.Callable("Widget", "constructor", "Widget", [], None, is_const=False)
+    src = generate.CodeGenerator().emit_callable(c, [], "unique_ptr")
+    assert "std::make_unique<Widget>()" in src
+
+
+def test_emit_callable_constructor_custom_mode_without_override_raises():
+    c = generate.Callable("Widget", "constructor", "Widget", [], None, is_const=False)
+    with pytest.raises(NotImplementedError):
+        generate.CodeGenerator().emit_callable(c, [], "handle")
+
+
+def test_emit_callable_operator_ignores_ctor_mode_and_kinds():
+    c = generate.Callable("Widget", "operator", "operator-", [], "Widget", is_const=True,
+                           meta_function="unary_minus", operator_token="-")
+    src = generate.CodeGenerator().emit_callable(c, [], "value")
+    assert "return -self;" in src
+
+
+# ---------------------------------------------------------------------------
+# A deliberately toy, non-OCCT/ADOL-C-sounding CodeGenerator subclass - proves
+# the hook-machinery plumbing itself (a custom kind, the "override emit_callable,
+# call super() twice with private state" dual-emission composition pattern) works
+# generically, without reproducing any real library's own literals.
+# ---------------------------------------------------------------------------
+
+class _ToyCodeGenerator(generate.CodeGenerator):
+    OVERLOAD_AMBIGUITY_KINDS = {"widget"}
+    _alternate = False  # private state this subclass manages - generate.py never sees it
+
+    def classify_param(self, param, registered_types, registered_enums):
+        if param.base == "FakeScalar":
+            return None if param.is_mutable_ref else "widget"
+        return None
+
+    def emit_param(self, param, kind):
+        if kind == "widget" and self._alternate:
+            return f"sol::object {param.name}", f"toy_ns::to_widget({param.name})"
+        return None  # primary variant: plain builtin fallback spelling
+
+    def emit_callable(self, c, kinds, ctor_mode):
+        if c.kind == "operator" or "widget" not in kinds:
+            return super().emit_callable(c, kinds, ctor_mode)
+        primary = super().emit_callable(c, kinds, ctor_mode)
+        self._alternate = True
+        try:
+            alternate = super().emit_callable(c, kinds, ctor_mode)
+        finally:
+            self._alternate = False
+        return f"\n#if defined(TOY_VARIANT_MACRO)\n{alternate}\n#else\n{primary}\n#endif\n"
+
+
+def test_toy_code_generator_classify_param_recognizes_custom_kind():
+    hooks = _ToyCodeGenerator()
+    assert generate.Param("FakeScalar", "x").kind(set(), set(), hooks) == "widget"
+    assert generate.Param("FakeScalar &", "x").kind(set(), set(), hooks) is None  # mutable-ref rejected
+
+
+def test_toy_code_generator_emit_callable_dual_emission_composition():
+    c = _callable([generate.Param("FakeScalar", "x")], return_spelling="double")
+    src = _ToyCodeGenerator().emit_callable(c, ["widget"], "value")
+    assert "#if defined(TOY_VARIANT_MACRO)" in src
+    assert "toy_ns::to_widget(x)" in src  # alternate variant
+    assert "FakeScalar x" in src  # primary variant, builtin fallback spelling
+
+
+def test_toy_code_generator_emit_callable_skips_dual_emission_for_operators():
+    other = generate.Param("FakeScalar", "other")
+    c = generate.Callable("Widget", "operator", "operator+", [other], "Widget", is_const=True,
+                           meta_function="addition", operator_token="+")
+    src = _ToyCodeGenerator().emit_callable(c, ["widget"], "value")
+    assert "TOY_VARIANT_MACRO" not in src
+
+
+# ---------------------------------------------------------------------------
+# load_code_generator()
+# ---------------------------------------------------------------------------
+
+def test_load_code_generator_absent_key_returns_base_class():
+    hooks = generate.load_code_generator({}, Path("/nonexistent/config.yml"))
+    assert type(hooks) is generate.CodeGenerator
+
+
+def test_load_code_generator_missing_file_raises(tmp_path):
+    config_path = tmp_path / "config.yml"
+    with pytest.raises(RuntimeError, match="not found"):
+        generate.load_code_generator({"code_generator": "missing.py"}, config_path)
+
+
+def test_load_code_generator_loads_subclass_relative_to_config_path(tmp_path):
+    (tmp_path / "hooks.py").write_text(
+        "from grunk.codegen import generate\n"
+        "class MyHooks(generate.CodeGenerator):\n"
+        "    MARKER = 'loaded'\n"
+    )
+    hooks = generate.load_code_generator({"code_generator": "hooks.py"}, tmp_path / "config.yml")
+    assert hooks.MARKER == "loaded"
+
+
+def test_load_code_generator_zero_subclasses_raises(tmp_path):
+    (tmp_path / "hooks.py").write_text("x = 1\n")
+    with pytest.raises(RuntimeError, match="no CodeGenerator subclass"):
+        generate.load_code_generator({"code_generator": "hooks.py"}, tmp_path / "config.yml")
+
+
+def test_load_code_generator_multiple_subclasses_raises(tmp_path):
+    (tmp_path / "hooks.py").write_text(
+        "from grunk.codegen import generate\n"
+        "class A(generate.CodeGenerator): pass\n"
+        "class B(generate.CodeGenerator): pass\n"
+    )
+    with pytest.raises(RuntimeError, match="more than one"):
+        generate.load_code_generator({"code_generator": "hooks.py"}, tmp_path / "config.yml")
 
 
 # ---------------------------------------------------------------------------
@@ -305,29 +452,29 @@ def test_expand_headers_missing_literal_filename_raises(tmp_path):
 
 
 def test_expand_headers_glob_pattern_sorted_and_marked(tmp_path):
-    (tmp_path / "gp_Vec.hxx").write_text("")
-    (tmp_path / "gp_Pnt.hxx").write_text("")
-    headers, glob_matched = generate.expand_headers(["gp_*.hxx"], tmp_path)
-    assert headers == ["gp_Pnt.hxx", "gp_Vec.hxx"]  # sorted
-    assert glob_matched == {"gp_Pnt.hxx", "gp_Vec.hxx"}
+    (tmp_path / "widget_a.hxx").write_text("")
+    (tmp_path / "widget_b.hxx").write_text("")
+    headers, glob_matched = generate.expand_headers(["widget_*.hxx"], tmp_path)
+    assert headers == ["widget_a.hxx", "widget_b.hxx"]  # sorted
+    assert glob_matched == {"widget_a.hxx", "widget_b.hxx"}
 
 
 def test_expand_headers_glob_no_match_raises(tmp_path):
     with pytest.raises(RuntimeError, match="matched no files"):
-        generate.expand_headers(["gp_*.hxx"], tmp_path)
+        generate.expand_headers(["widget_*.hxx"], tmp_path)
 
 
 def test_expand_headers_exclude_headers_drops_glob_matches(tmp_path):
-    (tmp_path / "gp_Vec.hxx").write_text("")
-    (tmp_path / "gp_Bad.hxx").write_text("")
-    headers, _ = generate.expand_headers(["gp_*.hxx"], tmp_path, exclude_headers=["gp_Bad.hxx"])
-    assert headers == ["gp_Vec.hxx"]
+    (tmp_path / "widget_a.hxx").write_text("")
+    (tmp_path / "widget_bad.hxx").write_text("")
+    headers, _ = generate.expand_headers(["widget_*.hxx"], tmp_path, exclude_headers=["widget_bad.hxx"])
+    assert headers == ["widget_a.hxx"]
 
 
 def test_expand_headers_dedups_across_overlapping_patterns(tmp_path):
-    (tmp_path / "gp_Vec.hxx").write_text("")
-    headers, _ = generate.expand_headers(["gp_*.hxx", "gp_Vec.hxx"], tmp_path)
-    assert headers == ["gp_Vec.hxx"]
+    (tmp_path / "widget_a.hxx").write_text("")
+    headers, _ = generate.expand_headers(["widget_*.hxx", "widget_a.hxx"], tmp_path)
+    assert headers == ["widget_a.hxx"]
 
 
 # ---------------------------------------------------------------------------
@@ -350,13 +497,15 @@ public:
 
 
 def test_run_end_to_end_generates_expected_registration_code(tmp_path, capsys):
+    """No `code_generator:` key at all - proves the zero-hooks path (a plugin
+    like grunk-adolc's own adtl.h, whose headers never need anything beyond the
+    generator's own built-in vocabulary) works standalone."""
     include_dir = tmp_path / "include"
     include_dir.mkdir()
     (include_dir / "widget.hpp").write_text(WIDGET_HEADER)
 
     config_path = tmp_path / "config.yml"
     config_path.write_text(yaml.safe_dump({
-        "helper_namespace": "test_plugin",
         "modules": [{"name": "widget", "headers": ["widget.hpp"]}],
     }))
 
@@ -377,3 +526,48 @@ def test_run_end_to_end_generates_expected_registration_code(tmp_path, capsys):
 
     tu_lines = (output_dir / "translation_units.txt").read_text().splitlines()
     assert tu_lines == ["widget"]
+
+
+HOOKED_WIDGET_HEADER = """\
+using FakeScalar = double;
+
+class Widget {
+public:
+    Widget(double value);
+    double scale(FakeScalar factor) const;
+};
+"""
+
+
+def test_run_end_to_end_loads_code_generator_from_config(tmp_path):
+    """A `code_generator:` key pointing at a real file on disk - proves
+    load_code_generator()'s own file-resolution/subclass-discovery machinery
+    works through the full run() pipeline, not just in isolation."""
+    include_dir = tmp_path / "include"
+    include_dir.mkdir()
+    (include_dir / "widget.hpp").write_text(HOOKED_WIDGET_HEADER)
+
+    (tmp_path / "hooks.py").write_text(
+        "from grunk.codegen import generate\n"
+        "class Hooks(generate.CodeGenerator):\n"
+        "    def classify_param(self, param, registered_types, registered_enums):\n"
+        "        return 'widget' if param.base == 'FakeScalar' else None\n"
+        "    def emit_param(self, param, kind):\n"
+        "        if kind == 'widget':\n"
+        "            return f'sol::object {param.name}', f'toy_ns::to_widget({param.name})'\n"
+        "        return None\n"
+    )
+
+    config_path = tmp_path / "config.yml"
+    config_path.write_text(yaml.safe_dump({
+        "code_generator": "hooks.py",
+        "modules": [{"name": "widget", "headers": ["widget.hpp"]}],
+    }))
+
+    output_dir = tmp_path / "generated"
+    args = argparse.Namespace(config=config_path, include_dir=include_dir, output_dir=output_dir)
+    assert generate.run(args) == 0
+
+    cpp_source = (output_dir / "widget.cpp").read_text()
+    assert "sol::object factor" in cpp_source
+    assert "toy_ns::to_widget(factor)" in cpp_source
