@@ -521,11 +521,49 @@ def test_run_end_to_end_generates_expected_registration_code(tmp_path, capsys):
     assert "sol::meta_function::addition" in cpp_source
     assert '"Widget_unit"' in cpp_source  # static method, composed name (Widget is a class, not a namespace)
 
+    # No `generated_banner:` key - the generic, copyright-free default (see
+    # DEFAULT_GENERATED_BANNER's own comment) is what actually gets written,
+    # both here and in the .hpp.
+    assert cpp_source.startswith(generate.DEFAULT_GENERATED_BANNER)
+    assert (output_dir / "widget.hpp").read_text().startswith(generate.DEFAULT_GENERATED_BANNER)
+
     stderr = capsys.readouterr().err
     assert "rejected Widget::unsupported" in stderr
 
     tu_lines = (output_dir / "translation_units.txt").read_text().splitlines()
     assert tu_lines == ["widget"]
+
+
+def test_run_end_to_end_uses_custom_generated_banner(tmp_path):
+    """A `generated_banner:` key - each plugin's own SPDX/copyright header,
+    since that's specific to each plugin's own authorship, not something this
+    shared generator should assume (see DEFAULT_GENERATED_BANNER's own
+    comment)."""
+    include_dir = tmp_path / "include"
+    include_dir.mkdir()
+    (include_dir / "widget.hpp").write_text(WIDGET_HEADER)
+
+    banner = (
+        "// SPDX-FileCopyrightText: 2026 Some Plugin Author <author@example.com>\n"
+        "//\n"
+        "// SPDX-License-Identifier: Apache-2.0\n"
+    )
+    config_path = tmp_path / "config.yml"
+    config_path.write_text(yaml.safe_dump({
+        "generated_banner": banner,
+        "modules": [{"name": "widget", "headers": ["widget.hpp"]}],
+    }))
+
+    output_dir = tmp_path / "generated"
+    args = argparse.Namespace(config=config_path, include_dir=include_dir, output_dir=output_dir)
+    assert generate.run(args) == 0
+
+    cpp_source = (output_dir / "widget.cpp").read_text()
+    hpp_source = (output_dir / "widget.hpp").read_text()
+    assert cpp_source.startswith(banner)
+    assert hpp_source.startswith(banner)
+    assert generate.DEFAULT_GENERATED_BANNER not in cpp_source
+    assert "Some Plugin Author" in cpp_source
 
 
 HOOKED_WIDGET_HEADER = """\

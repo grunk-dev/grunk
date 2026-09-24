@@ -84,6 +84,12 @@ Purely declarative, no library-specific meaning in any of these:
 - `code_generator` (optional, a path to a `CodeGenerator` subclass - see above).
 - `includes_for_kinds`/`includes_for_ctor_modes` (optional; keyed by whatever
   kind/ctor-mode names a plugin's own `CodeGenerator` subclass returns).
+- `generated_banner` (optional, a verbatim multi-line string - a YAML `|` block
+  scalar is the natural way to write one - written at the top of every emitted
+  `.hpp`/`.cpp`, typically an SPDX header plus an AUTO-GENERATED notice; see
+  `DEFAULT_GENERATED_BANNER`'s own comment for the generic fallback used when
+  absent, and why this module doesn't assume any plugin's copyright/license by
+  default).
 
 ## Known gaps
 
