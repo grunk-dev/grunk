@@ -49,6 +49,20 @@ def test_param_kind_fundamental_passthrough():
     assert generate.Param("bool &", "x").kind(set(), set(), _hooks) is None  # mutable-ref rejected
 
 
+def test_param_kind_fundamental_passthrough_covers_full_vocabulary():
+    # Not just the four types this project's own two real plugins happen to
+    # use bare - CXX_FUNDAMENTAL_TYPES is the *closed* C++ vocabulary, and a
+    # bare "int"/"float"/... that reaches this check (no hook, no in-run
+    # registration) must classify the same way "double" already does - not
+    # fall through to the unregistered-class fallback's own "object" kind,
+    # which would silently drop it from REVERSIBLE_OPERAND_KINDS' own default
+    # (found via code review - two historically separate, only
+    # partially-overlapping fundamental-type sets).
+    for spelling in ("int", "float", "char", "long", "unsigned long long"):
+        assert generate.Param(spelling, "x").kind(set(), set(), _hooks) == "passthrough"
+        assert generate.Param(f"{spelling} &", "x").kind(set(), set(), _hooks) is None
+
+
 def test_param_kind_registered_enum_and_type():
     assert generate.Param("Color", "x").kind(set(), {"Color"}, _hooks) == "passthrough"
     assert generate.Param("Widget", "x").kind({"Widget"}, set(), _hooks) == "object"
@@ -93,6 +107,18 @@ def test_param_kind_pointer_spelling_stays_rejected():
     # Not a plausible bare type name (BARE_TYPE_NAME doesn't match) - stays
     # rejected regardless of the new unregistered-class fallback.
     assert generate.Param("Widget *", "x").kind(set(), set(), _hooks) is None
+
+
+def test_is_mutable_ref_uses_word_boundary_not_substring():
+    # A type name that merely *contains* "const" as a substring (e.g.
+    # "Unconstrained" contains "onstr"... "const") is not the same as a
+    # spelling with the real "const" keyword in it - a plain substring check
+    # would misclassify a genuinely mutable reference as const, silently
+    # accepting an unsafe mutable-ref-to-fundamental the same way a real
+    # `const` qualifier would (found via code review).
+    assert generate.Param("Unconstrained &", "x").is_mutable_ref is True
+    assert generate.Param("const Widget &", "x").is_mutable_ref is False
+    assert generate.Param("Widget &", "x").is_mutable_ref is True
 
 
 def test_param_kind_typedef_hiding_a_pointer_stays_rejected():
@@ -220,16 +246,31 @@ def test_emit_operator_lambda_binary_member_form():
     c = generate.Callable("Widget", "operator", "operator+", [other], "Widget", is_const=True,
                            meta_function="addition", operator_token="+")
     src = generate.emit_operator_lambda(c)
+    assert "Widget const& self" in src
     assert "return self + other;" in src
+
+
+def test_emit_operator_lambda_binary_member_form_non_const():
+    # Unusual (comparison/arithmetic operators are almost always const in
+    # practice) but legal C++ - self must be declared non-const or a call
+    # through it wouldn't compile (found via code review: this generator
+    # used to hardcode `const&` for every operator, unconditionally).
+    other = generate.Param("Widget const&", "other")
+    c = generate.Callable("Widget", "operator", "operator+", [other], "Widget", is_const=False,
+                           meta_function="addition", operator_token="+")
+    src = generate.emit_operator_lambda(c)
+    assert "Widget& self" in src
+    assert "Widget const& self" not in src
 
 
 def test_emit_operator_lambda_reversed_operand_static_form():
     other = generate.Param("double", "other")
-    c = generate.Callable("Widget", "operator", "operator+", [other], "Widget", is_const=False,
+    c = generate.Callable("Widget", "operator", "operator+", [other], "Widget", is_const=True,
                            is_static=True, meta_function="addition", operator_token="+")
     src = generate.emit_operator_lambda(c)
     # Reversed-operand sibling: `other` is the first Lua-facing argument, self the second.
     assert "return other + self;" in src
+    assert "Widget const& self" in src
 
 
 # ---------------------------------------------------------------------------
@@ -568,6 +609,70 @@ def test_run_end_to_end_uses_custom_generated_banner(tmp_path):
     assert hpp_source.startswith(banner)
     assert generate.DEFAULT_GENERATED_BANNER not in cpp_source
     assert "Some Plugin Author" in cpp_source
+
+
+BLACKLIST_PROBE_HEADER = """\
+typedef int ProbeParam;
+
+class Blacklisted {
+public:
+    Blacklisted();
+};
+
+class Gadget {
+public:
+    Gadget();
+    void probe(ProbeParam p);
+};
+"""
+
+
+def test_run_end_to_end_registered_types_excludes_blacklisted_class(tmp_path):
+    """A bare-ClassName blacklist entry means no register_type<...>() call for
+    it is ever emitted by *any* module - so it must not count as "registered"
+    for classify_param()'s own registered_types argument either (found via
+    code review: run() used to compute registered_types from the whole header
+    cache before any module's blacklist was applied). This matters most for a
+    hook like grunk-occt's own Handle(X) detection, which specifically trusts
+    registered_types to mean "safe to treat as fully registered,
+    automagic_flags::none included" - a blacklisted-but-still-"registered"
+    class would wrongly pass that check."""
+    include_dir = tmp_path / "include"
+    include_dir.mkdir()
+    (include_dir / "gadget.hpp").write_text(BLACKLIST_PROBE_HEADER)
+
+    (tmp_path / "hooks.py").write_text(
+        "from grunk.codegen import generate\n"
+        "class Hooks(generate.CodeGenerator):\n"
+        "    def classify_param(self, param, registered_types, registered_enums):\n"
+        "        if param.base != 'ProbeParam':\n"
+        "            return None\n"
+        "        seen = 'seen' if 'Blacklisted' in registered_types else 'absent'\n"
+        "        return f'probe_{seen}'\n"
+        "    def emit_param(self, param, kind):\n"
+        "        if not kind.startswith('probe_'):\n"
+        "            return None\n"
+        "        return f'/* {kind} */ int {param.name}', param.name\n"
+    )
+
+    config_path = tmp_path / "config.yml"
+    config_path.write_text(yaml.safe_dump({
+        "code_generator": "hooks.py",
+        "modules": [{
+            "name": "gadget",
+            "headers": ["gadget.hpp"],
+            "blacklist": ["Blacklisted"],
+        }],
+    }))
+
+    output_dir = tmp_path / "generated"
+    args = argparse.Namespace(config=config_path, include_dir=include_dir, output_dir=output_dir)
+    assert generate.run(args) == 0
+
+    cpp_source = (output_dir / "gadget.cpp").read_text()
+    assert "probe_absent" in cpp_source
+    assert "probe_seen" not in cpp_source
+    assert "register_type<Blacklisted" not in cpp_source
 
 
 HOOKED_WIDGET_HEADER = """\

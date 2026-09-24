@@ -123,23 +123,31 @@ def expand_headers(patterns: list[str], include_dir: Path, exclude_headers: list
     return result, glob_matched
 
 
-# Fundamental C++ types (not any third-party library's own typedef aliases) that
-# pass straight through to Lua as plain values, with zero conversion needed in the
-# emitted lambda body - a CodeGenerator subclass extends this via its own
-# classify_param() for a library's own typedef aliases of these (e.g. one library
-# might always spell a boolean through its own BOOL/Boolean typedef, never bare
-# `bool`) - see CodeGenerator's own docstring.
-CXX_FUNDAMENTAL_PASSTHROUGH_TYPES = {"double", "unsigned int", "bool", "size_t"}
-
 # The full, closed vocabulary of C++ built-in arithmetic/bool/char type
-# spellings, as libclang canonicalizes them - used only to recognize when an
-# unfamiliar type's own *canonical* (typedef-resolved) spelling reveals it's
-# secretly one of these, even though its own name looks like a plausible
-# class (a different library's own "Standard_Real"-style typedef for a
-# fundamental) - see Param.kind()'s own fallback for why a mutable reference
-# to one of these must stay rejected even though a mutable reference to a
-# genuine (typedef-free) class does not.
-CXX_FUNDAMENTAL_CANONICAL_SPELLINGS = {
+# spellings (not any third-party library's own typedef aliases), as libclang
+# canonicalizes them. Two roles: (1) a parameter/return type literally spelled
+# as one of these (self.base) passes straight through to Lua as a plain value,
+# with zero conversion needed in the emitted lambda body - a CodeGenerator
+# subclass extends this via its own classify_param() for a library's own
+# typedef aliases of these (e.g. one library might always spell a boolean
+# through its own BOOL/Boolean typedef, never bare `bool`) - see
+# CodeGenerator's own docstring; (2) recognizing when an unfamiliar type's own
+# *canonical* (typedef-resolved) spelling reveals it's secretly one of these,
+# even though its own name looks like a plausible class (a different
+# library's own "Standard_Real"-style typedef for a fundamental) - see
+# Param.kind()'s own fallback for why a mutable reference to one of these must
+# stay rejected even though a mutable reference to a genuine (typedef-free)
+# class does not. Deliberately one set for both roles - two different, only
+# partially-overlapping sets here previously let a bare (never-typedef'd)
+# fundamental outside the older, narrower role-(1) set (e.g. plain `int`,
+# never used by this project's own two real plugins but not actually
+# unsupported) silently fall through to the unregistered-class fallback
+# instead, classifying as "object" rather than "passthrough" - harmless for
+# emission (both kinds fall back to the identical plain declaration when
+# unclaimed by emit_param), but silently dropped it from
+# REVERSIBLE_OPERAND_KINDS' own default (which only lists "passthrough"),
+# found via code review.
+CXX_FUNDAMENTAL_TYPES = {
     "bool", "char", "signed char", "unsigned char", "wchar_t", "char16_t", "char32_t",
     "short", "unsigned short", "int", "unsigned int", "long", "unsigned long",
     "long long", "unsigned long long", "float", "double", "long double", "size_t",
@@ -237,7 +245,12 @@ class Param:
 
     @property
     def is_mutable_ref(self) -> bool:
-        return "&" in self.spelling and "const" not in self.spelling
+        # \b-bounded, matching strip_type()'s own "const" search - a plain
+        # substring check would also match a *type name* that merely contains
+        # "const" (e.g. a hypothetical "UnconstrainedRange&" - "unconstrained"
+        # contains "const"), wrongly treating a genuinely mutable reference as
+        # a const one, found via code review.
+        return "&" in self.spelling and not re.search(r"\bconst\b", self.spelling)
 
     def kind(self, registered_types: set[str], registered_enums: set[str], hooks: "CodeGenerator") -> str | None:
         """None if unsupported, else a short "kind" tag driving how
@@ -284,12 +297,12 @@ class Param:
         mutable reference already is - but the *canonical* (typedef-resolved)
         spelling, when available, tells the two apart reliably (a real
         class's canonical spelling is never one of
-        CXX_FUNDAMENTAL_CANONICAL_SPELLINGS), so only a mutable reference
+        CXX_FUNDAMENTAL_TYPES), so only a mutable reference
         that canonically resolves to one of those - or one for which no
         canonical spelling is available at all, i.e. a return-type check, see
         Param.canonical's own field docstring - stays conservative and
         rejected."""
-        if self.base in CXX_FUNDAMENTAL_PASSTHROUGH_TYPES:
+        if self.base in CXX_FUNDAMENTAL_TYPES:
             return None if self.is_mutable_ref else "passthrough"
         # A plain C-style enum - sol2 marshals it as a plain value with zero
         # special-casing needed in the emitted lambda body, exactly like a
@@ -322,7 +335,7 @@ class Param:
             # the canonical spelling positively confirms this isn't secretly
             # a fundamental; unavailable (a return-type check) or actually
             # fundamental both stay conservative and rejected.
-            if canonical_base is None or canonical_base in CXX_FUNDAMENTAL_CANONICAL_SPELLINGS:
+            if canonical_base is None or canonical_base in CXX_FUNDAMENTAL_TYPES:
                 return None
         return "object"
 
@@ -347,16 +360,27 @@ class Callable:
     meta_function: str | None = None
     operator_token: str | None = None
 
-    def rejection_reason(self, registered_types: set[str], registered_enums: set[str], hooks: "CodeGenerator") -> str | None:
-        for p in self.params:
-            if p.kind(registered_types, registered_enums, hooks) is None:
+    def rejection_reason(self, registered_types: set[str], registered_enums: set[str], hooks: "CodeGenerator",
+                          kinds: list[str | None] | None = None) -> str | None:
+        """kinds: this callable's own params' already-computed Param.kind()
+        results, in order, if the caller (process_module) already has them -
+        Param.kind() isn't free (hook calls, regex matching), and
+        process_module already needs this exact list itself right after
+        calling accepted_arities(), which needs it too - computed fresh here
+        if not given, so nothing about this method's own public behavior
+        changes for a caller that doesn't have it up front."""
+        if kinds is None:
+            kinds = [p.kind(registered_types, registered_enums, hooks) for p in self.params]
+        for k, p in zip(kinds, self.params):
+            if k is None:
                 return f"unsupported parameter type '{p.spelling.strip()}'"
         if self.return_spelling is not None and self.return_spelling.strip() != "void":
             if Param(self.return_spelling, "").kind(registered_types, registered_enums, hooks) is None:
                 return f"unsupported return type '{self.return_spelling.strip()}'"
         return None
 
-    def accepted_arities(self, registered_types: set[str], registered_enums: set[str], hooks: "CodeGenerator") -> list[int]:
+    def accepted_arities(self, registered_types: set[str], registered_enums: set[str], hooks: "CodeGenerator",
+                          kinds: list[str | None] | None = None) -> list[int]:
         """Every number of leading parameters this callable can be called with from
         Lua, in ascending order - normally just [len(self.params)] (today's
         all-or-nothing behavior, when nothing is defaulted), but more than one value
@@ -368,6 +392,11 @@ class Callable:
         reachable at all - either the return type itself is unsupported (no arity
         helps that), or even the shortest reachable prefix still needs an
         unsupported parameter that has no default to fall back on.
+
+        kinds: see rejection_reason()'s own identical parameter - the same
+        reasoning applies (process_module needs this same list again right
+        after calling this method, whether or not it turned out to be
+        empty - computed fresh here if not given).
 
         Because C++ requires every defaulted parameter to be trailing (you can
         never have a non-default parameter after a default one), the reachable
@@ -382,7 +411,8 @@ class Callable:
             if Param(self.return_spelling, "").kind(registered_types, registered_enums, hooks) is None:
                 return []
         n = len(self.params)
-        kinds = [p.kind(registered_types, registered_enums, hooks) for p in self.params]
+        if kinds is None:
+            kinds = [p.kind(registered_types, registered_enums, hooks) for p in self.params]
         m = 0
         while m < n and kinds[m] is not None:
             m += 1
@@ -589,20 +619,47 @@ def collect_namespace_callables(namespace_cursors: list[cindex.Cursor], ns_name:
 def find_class_definition(tu: cindex.TranslationUnit, class_name: str) -> cindex.Cursor | None:
     """Finds the CLASS_DECL/STRUCT_DECL definition of class_name anywhere in the
     translation unit - used to walk base classes from other, transitively-included
-    headers.
+    headers. class_name may itself be namespace-qualified (base_chain() passes it
+    straight from a base specifier's own strip_type(...type.spelling), which
+    - like any type spelling, see discover_entities' own comment on this same
+    asymmetry - includes qualification when the base class has any) - a cursor's
+    own .spelling is always bare/unqualified, so a qualified class_name is
+    compared against each candidate's own qualified .type.spelling instead.
+
+    One level of namespace nesting is followed, matching discover_entities' own
+    scope (see its own docstring for why deeper nesting isn't attempted) - a base
+    class living inside a namespace would otherwise never be found at all
+    (tu.cursor.get_children() alone never descends into one), silently
+    terminating base_chain()'s own walk one step too early.
 
     Uses `tu.cursor.get_children()`, not `tu.cursor.walk_preorder()` - same
     performance reasoning as discover_entities(): every class this generator's
-    base-chain walk ever looks up is, like discover_entities' own targets, a
-    direct child of the translation unit (a #include textually inserts the
+    base-chain walk ever looks up is, like discover_entities' own targets, at
+    most one level below the translation unit (a #include textually inserts the
     included file's top-level declarations at that point - it doesn't nest them
     under anything), so the full recursive walk was doing a great deal of
     unnecessary work descending into function bodies and nested expressions."""
-    for cursor in tu.cursor.get_children():
-        if cursor.kind not in (cindex.CursorKind.CLASS_DECL, cindex.CursorKind.STRUCT_DECL):
-            continue
-        if cursor.spelling == class_name and cursor.is_definition():
-            return cursor
+    def matches(cursor: cindex.Cursor) -> bool:
+        if cursor.spelling == class_name:
+            return True
+        return strip_type(cursor.type.spelling) == class_name
+
+    def search(cursors) -> cindex.Cursor | None:
+        for cursor in cursors:
+            if cursor.kind in (cindex.CursorKind.CLASS_DECL, cindex.CursorKind.STRUCT_DECL):
+                if matches(cursor) and cursor.is_definition():
+                    return cursor
+        return None
+
+    top_level = list(tu.cursor.get_children())
+    found = search(top_level)
+    if found is not None:
+        return found
+    for cursor in top_level:
+        if cursor.kind == cindex.CursorKind.NAMESPACE:
+            found = search(cursor.get_children())
+            if found is not None:
+                return found
     return None
 
 
@@ -785,9 +842,16 @@ def emit_operator_lambda(c: Callable) -> str:
     needing that for its own operators can still override
     CodeGenerator.emit_callable() wholesale (see its own docstring)."""
     ret = (c.return_spelling or "").strip()
+    # collect_class_callables() records the real member operator's own
+    # constness (child.is_const_method()) - a non-const operator (unusual, but
+    # not forbidden by C++) genuinely can't be called through a const
+    # reference, so self's own declared constness has to match, the same rule
+    # CodeGenerator.emit_callable()'s own (non-operator) method dispatch
+    # already follows for the identical reason.
+    self_decl = f"{c.class_name} const& self" if c.is_const else f"{c.class_name}& self"
     if not c.params:
         # Unary (e.g. operator-() const) - self is the only operand.
-        return f"[]({c.class_name} const& self) -> {ret} {{ return {c.operator_token}self; }}"
+        return f"[]({self_decl}) -> {ret} {{ return {c.operator_token}self; }}"
     other_decl = f"{c.params[0].spelling} {c.params[0].name}"
     if c.is_static:
         # Reversed-operand sibling (see process_module's own synthesis) - `other`
@@ -796,11 +860,15 @@ def emit_operator_lambda(c: Callable) -> str:
         # Widget&) - relies on C++ operator resolution finding it, not on this
         # generator having parsed that friend declaration itself (see
         # collect_friend_functions' own comment on why friend operators aren't
-        # collected that way at all).
-        return (f"[]({other_decl}, {c.class_name} const& self) -> {ret} "
+        # collected that way at all). c.is_const here is the *original* member
+        # operator's own constness (copied verbatim when this sibling was
+        # synthesized) - not literally what the friend's own parameter
+        # declares, but matches it for every idiomatic C++ operator pair, and
+        # self is only ever passed through here, never mutated either way.
+        return (f"[]({other_decl}, {self_decl}) -> {ret} "
                 f"{{ return {c.params[0].name} {c.operator_token} self; }}")
     # Normal member form: self OP other.
-    return (f"[]({c.class_name} const& self, {other_decl}) -> {ret} "
+    return (f"[]({self_decl}, {other_decl}) -> {ret} "
             f"{{ return self {c.operator_token} {c.params[0].name}; }}")
 
 
@@ -1221,9 +1289,17 @@ def process_module(module: dict, cache: dict[str, ParsedHeader], registered_type
                     result.blacklisted.append(c)
                     continue
 
-                arities = c.accepted_arities(registered_types, registered_enums, hooks)
+                # Computed once and passed into both accepted_arities() and
+                # (on rejection) rejection_reason() below - each would
+                # otherwise recompute this same, not-free (hook calls, regex
+                # matching) per-parameter kind list a second time, found via
+                # code review.
+                full_kinds = [p.kind(registered_types, registered_enums, hooks) for p in c.params]
+                arities = c.accepted_arities(registered_types, registered_enums, hooks, kinds=full_kinds)
                 if not arities:
-                    result.rejected.append((c, c.rejection_reason(registered_types, registered_enums, hooks)))
+                    result.rejected.append(
+                        (c, c.rejection_reason(registered_types, registered_enums, hooks, kinds=full_kinds))
+                    )
                     continue
 
                 # One (Callable, kinds) entry per reachable arity - see
@@ -1232,7 +1308,6 @@ def process_module(module: dict, cache: dict[str, ParsedHeader], registered_type
                 # emits a shorter parameter list, dropping trailing arguments
                 # this call simply never passes and letting C++ apply their
                 # real defaults.
-                full_kinds = [p.kind(registered_types, registered_enums, hooks) for p in c.params]
                 for i in arities:
                     kinds = full_kinds[:i]
                     # A real signature can be discovered more than once via two
@@ -1346,32 +1421,47 @@ void register_{result.name}(grunk::plugin_namespace& ns);
             # == "namespace") get registered under their own bare name where
             # possible, not prefixed - since nothing stops them from keeping
             # their own name directly under the plugin namespace table, exactly
-            # mirroring their real C++ nesting. BUT the collision check below
-            # always has to test the *prefixed* name regardless of whether the
-            # enclosing scope is a genuine namespace or a "namespace class" (a
-            # plain C++ class with only static members) - a library's own
-            # naming convention can create the exact same collision either way
-            # (e.g. a downcast helper composing to the same name as its own
-            # destination leaf type), and a namespace-vs-class libclang
-            # cursor-kind change on the library's own side (not this
-            # generator's) can reintroduce this on any future header bump -
-            # checking only the bare name here would silently miss it and
-            # register a plain free function instead of attaching it as the
-            # colliding type's own member.
+            # mirroring their real C++ nesting. A "namespace class" (a plain
+            # C++ class with only static members) always uses the prefixed
+            # name instead - nothing else identifies it.
+            #
+            # Two different collisions are possible, and need checking
+            # separately: the name actually about to be used (final_name -
+            # bare for a namespace, prefixed otherwise) might itself already
+            # be a registered type; *and*, for a namespace specifically, its
+            # own composed form might be too, even though that's not the name
+            # being registered here - a library's own naming convention can
+            # make this exact case common (e.g. TopoDS::Face, a genuine
+            # namespace function, "composing" to TopoDS_Face, an already-
+            # registered class - checking only final_name ("Face") would
+            # silently miss this and register a plain free function under a
+            # name distinct from, but easily confused with, the type it's
+            # semantically a downcast helper *for*). Checking only
+            # composed_name (as an earlier version of this code did)
+            # symmetrically missed the opposite case: a namespace function's
+            # own *bare* name colliding with some unrelated already-registered
+            # type that composed_name, being a different string, would never
+            # match - found via code review.
             composed_name = f"{class_name}_{method_name}"
             is_namespace = result.entity_kind.get(class_name) == "namespace"
-            if composed_name in registered_here:
+            final_name = method_name if is_namespace else composed_name
+            if final_name in registered_here:
+                collision_name = final_name
+            elif is_namespace and composed_name in registered_here:
+                collision_name = composed_name
+            else:
+                collision_name = None
+            if collision_name is not None:
                 # Naming collision - rather than clobbering the colliding
                 # type's own table with a plain function, attach it as that
                 # type's own .DownCast(shape)-style member instead, for a
                 # consistent Lua-side idiom regardless of which downcast
                 # mechanism is underneath. See python/grunk/codegen/README.md's
                 # "Static-only 'namespace classes'".
-                extra_member_functions.setdefault(composed_name, []).append(
+                extra_member_functions.setdefault(collision_name, []).append(
                     f'        .add_member_function("DownCast", {fun_expr})'
                 )
             else:
-                final_name = method_name if is_namespace else composed_name
                 free_function_parts.append(f'    ns.register_function("{final_name}", {fun_expr});')
 
     body_parts = []
@@ -1635,8 +1725,25 @@ def run(args: argparse.Namespace) -> int:
     for module in config["modules"]:
         parse_headers(module["headers"], args.include_dir, clang_args, cache)
 
-    registered_types = {e.name for p in cache.values() for e in p.entities if e.kind == "class"}
-    registered_enums = {e.name for p in cache.values() for e in p.entities if e.kind == "enum"}
+    # A bare ClassName/EnumName blacklist entry (in *any* module's own blacklist -
+    # process_module()'s own per-module check only skips *that* module's own
+    # registration, but no register_type/new_enum call for that name is ever
+    # emitted by *any* module either way) must also be excluded here, or a
+    # parameter/return type elsewhere in the config referencing it would still
+    # classify as "object"/"passthrough" (registered_types/registered_enums
+    # membership) even though nothing ever actually registers it - found via
+    # code review, not yet hit in practice (this repo's own config.yml has none
+    # of its bare-class blacklist entries also used as a parameter/return type
+    # elsewhere), but a real hazard for a future config that does.
+    blacklisted_names: set[str] = {
+        name for module in config["modules"] for name in module.get("blacklist", []) if "::" not in name
+    }
+    registered_types = {
+        e.name for p in cache.values() for e in p.entities if e.kind == "class"
+    } - blacklisted_names
+    registered_enums = {
+        e.name for p in cache.values() for e in p.entities if e.kind == "enum"
+    } - blacklisted_names
 
     for module in config["modules"]:
         result = process_module(module, cache, registered_types, registered_enums, hooks)
