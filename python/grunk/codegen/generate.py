@@ -325,7 +325,6 @@ class Param:
             if canonical_base is None or canonical_base in CXX_FUNDAMENTAL_CANONICAL_SPELLINGS:
                 return None
         return "object"
-        return None
 
 
 @dataclass
