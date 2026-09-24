@@ -543,10 +543,14 @@ def test_run_end_to_end_uses_custom_generated_banner(tmp_path):
     include_dir.mkdir()
     (include_dir / "widget.hpp").write_text(WIDGET_HEADER)
 
+    # Deliberately not shaped like a real SPDX license/copyright tag - one here
+    # would be indistinguishable, to REUSE's own naive text scan of this
+    # repository's own source files, from an actual (wrong) license declaration
+    # for this test file itself (found the hard way: REUSE CI failed on exactly
+    # this before this comment existed).
     banner = (
-        "// SPDX-FileCopyrightText: 2026 Some Plugin Author <author@example.com>\n"
-        "//\n"
-        "// SPDX-License-Identifier: Apache-2.0\n"
+        "// Copyright (c) 2026 Some Plugin Author - All rights reserved.\n"
+        "// Not affiliated with grunk's own license.\n"
     )
     config_path = tmp_path / "config.yml"
     config_path.write_text(yaml.safe_dump({
