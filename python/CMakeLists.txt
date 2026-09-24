@@ -32,6 +32,20 @@ else()
 endif()
 
 find_package(Python 3.9 COMPONENTS Interpreter ${DEV_MODULE} REQUIRED)
+
+# scikit-build-core (the supported `pip install`/SKBUILD path) injects nanobind_DIR itself before
+# this file is even processed. A bare cmake/ccmake configure with GRUNK_PYTHON toggled on manually
+# has no such injection, so find_package(nanobind) below would otherwise only succeed by accident
+# (a stale nanobind_DIR left over in CMakeCache.txt from an earlier SKBUILD-driven configure of the
+# same build directory). Query nanobind's own CMake dir from the selected interpreter so both paths
+# work identically.
+if (NOT DEFINED nanobind_DIR)
+    execute_process(
+        COMMAND "${Python_EXECUTABLE}" -m nanobind --cmake_dir
+        OUTPUT_VARIABLE NB_DIR
+        OUTPUT_STRIP_TRAILING_WHITESPACE)
+    list(APPEND CMAKE_PREFIX_PATH "${NB_DIR}")
+endif()
 find_package(nanobind CONFIG REQUIRED)
 
 # We are now ready to compile the actual extension module
