@@ -107,7 +107,26 @@ def expand_headers(patterns: list[str], include_dir: Path, exclude_headers: list
     for pattern in patterns:
         is_glob = any(ch in pattern for ch in "*?[")
         if is_glob:
-            matches = sorted(p.name for p in include_dir.glob(pattern) if p.name not in excluded)
+            # Path.relative_to(include_dir), not the bare basename (p.name): a glob
+            # like "gp_*.hxx" against a flat include_dir (OCCT's own layout) makes no
+            # difference here (a flat file's relative path already equals its
+            # basename), but a glob spanning subdirectories - e.g. "geoml/<module>/*.h"
+            # - previously collapsed to just the trailing filename, which
+            # process_module then re-joined onto include_dir directly
+            # (include_dir / header), silently reconstructing the WRONG path for
+            # anything not sitting flat under include_dir (confirmed the hard way
+            # against a real nested-header library: a TranslationUnitLoadError trying
+            # to parse "<include_dir>/surfaces.h", which doesn't exist - the real file
+            # was "<include_dir>/geoml/surfaces/surfaces.h"). exclude_headers is
+            # matched against this same relative-path spelling, so a nested-layout
+            # plugin's own exclude_headers entries should be relative-path spelled too
+            # (a flat-layout plugin's existing bare-filename entries are unaffected,
+            # since relative path and basename coincide there).
+            matches = sorted(
+                str(p.relative_to(include_dir))
+                for p in include_dir.glob(pattern)
+                if str(p.relative_to(include_dir)) not in excluded
+            )
             if not matches:
                 raise RuntimeError(f"header glob {pattern!r} matched no files in {include_dir}")
         else:
@@ -161,6 +180,57 @@ CXX_FUNDAMENTAL_TYPES = {
 # name this generator run doesn't itself recognize still gets treated as an
 # "object" rather than rejected.
 BARE_TYPE_NAME = re.compile(r"[A-Za-z_]\w*(::[A-Za-z_]\w*)*")
+
+# std::string - sol2 converts a Lua string to/from std::string automatically, no
+# wrapping needed, exactly like a bare fundamental (hence "passthrough", not
+# "object" - it behaves like a value, not a Lua-side-identity usertype). Needs this
+# explicit, unconditional built-in rather than falling through to the "object"
+# fallback below: std::string's *surface* spelling ("std::string") matches
+# BARE_TYPE_NAME fine, but its *canonical* (typedef-resolved) spelling is whichever
+# standard library implementation's own real template instantiation (libstdc++'s
+# std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char>>),
+# which does not match BARE_TYPE_NAME (angle brackets, commas) - the "object"
+# fallback's own canonical cross-check (see Param.kind()) used to reject on this
+# basis alone, silently rejecting every std::string parameter/return of any plugin
+# wrapping any library that uses std::string directly (found the hard way wrapping
+# geoml: has_tag, every exporter/importer's filename parameter, ... all silently
+# rejected until this became a built-in). Genuinely library-agnostic - not an idiom
+# of any one third-party library, so belongs here rather than behind a
+# CodeGenerator.classify_param() override.
+CXX_STD_STRING = "std::string"
+
+# std::vector<T> - sol2 already converts a Lua table to/from std::vector<T> natively
+# (its own generic container support) whenever T itself is push/gettable, with zero
+# wrapping code needed in the emitted lambda body, as long as this generator
+# classifies the *whole* std::vector<T> as a plain "passthrough"-shaped parameter
+# rather than rejecting it. Like std::string above, this needs its own built-in
+# rather than the "object" fallback: a parameter/return spelled directly as
+# "std::vector<T>" (as opposed to hidden behind a library's own typedef, e.g.
+# OCCT's TColgp_Array1OfPnt-style indirection - not this pattern's concern, see a
+# CodeGenerator subclass's own classify_param() for that) fails even the *surface*
+# BARE_TYPE_NAME check (angle brackets), let alone the canonical one - rejected
+# outright before a subclass's own classify_param() ever gets a chance to special-
+# case it (found the hard way wrapping geoml: nurbs_curve, interpolate_curves,
+# translate, every extract_control_point_* accessor, ... all silently rejected).
+# Deliberately permissive about the *element* type T - any CXX_FUNDAMENTAL_TYPES
+# member, std::string itself, or any other plausible bare class name (registered by
+# this run or not - exactly Param.kind()'s own "object" fallback logic for a
+# standalone parameter, reapplied here to one vector element) is accepted, since
+# none of those need any manual per-element conversion for sol2 to already handle a
+# std::vector of them correctly.
+STD_VECTOR_PATTERN = re.compile(r"^std::vector<\s*(.+?)\s*>$")
+
+
+def _std_vector_element_supported(elem: str, registered_types: set[str], registered_enums: set[str]) -> bool:
+    """Whether `elem` (a std::vector<T>'s own T, already stripped of surrounding
+    whitespace) is a type sol2 can already push/get on its own, needing no manual
+    conversion - see STD_VECTOR_PATTERN's own comment for the full rationale."""
+    if elem in CXX_FUNDAMENTAL_TYPES or elem == CXX_STD_STRING:
+        return True
+    if elem in registered_types or elem in registered_enums:
+        return True
+    return bool(BARE_TYPE_NAME.fullmatch(elem))
+
 
 # Operator overloads (see python/grunk/codegen/README.md's "Operator overloads and
 # friend free functions"): C++ operator token -> sol2 meta_function name.
@@ -309,6 +379,20 @@ class Param:
         # fundamental above - reuses the "passthrough" kind rather than a new one.
         if self.base in registered_enums:
             return None if self.is_mutable_ref else "passthrough"
+        # std::string/std::vector<T> - see their own module-level comments for why
+        # these need to be unconditional built-ins (ahead of registered_types/
+        # classify_param, exactly like the fundamentals/enum checks above) rather
+        # than falling through to the "object" fallback below or being left to each
+        # plugin's own classify_param() override: both are genuinely library-
+        # agnostic (pure standard-library idioms, not any one third-party library's
+        # own convention), and the "object" fallback's own canonical/bare-type-name
+        # checks reject both outright regardless (std::string's canonical spelling,
+        # and std::vector<T>'s own *surface* spelling, both contain angle brackets).
+        if self.base == CXX_STD_STRING:
+            return None if self.is_mutable_ref else "passthrough"
+        m_vec = STD_VECTOR_PATTERN.fullmatch(self.base)
+        if m_vec and _std_vector_element_supported(m_vec.group(1), registered_types, registered_enums):
+            return None if self.is_mutable_ref else "passthrough"
         if self.base in registered_types:
             return "object"
         kind = hooks.classify_param(self, registered_types, registered_enums)
@@ -325,16 +409,29 @@ class Param:
         # to notice it's secretly a pointer, but self.canonical can (found
         # the hard way: silently pushing a raw pointer as if it were a plain
         # object is a different, riskier shape than this fallback is meant
-        # to cover).
+        # to cover). Deliberately checks for a *pointer* spelling specifically
+        # (trailing "*"), not "canonical_base doesn't look like a bare type name" in
+        # general - that broader check used to reject any class whose canonical
+        # spelling happens to be a template instantiation (std::string's own
+        # standard-library implementation, or any other class template used
+        # directly), even though a template instantiation is exactly as safe a
+        # "genuine, stable-identity class" as a plain class name is; only a pointer
+        # canonical is the actual, documented hazard this check exists to catch.
         canonical_base = strip_type(self.canonical) if self.canonical else None
-        if canonical_base is not None and not BARE_TYPE_NAME.fullmatch(canonical_base):
+        canonical_is_pointer = canonical_base is not None and canonical_base.endswith("*")
+        if canonical_is_pointer:
             return None
         if self.is_mutable_ref:
             # Safe (a mutable reference to a genuine, stable-identity class -
             # same as an in-run registered class already supports) only when
             # the canonical spelling positively confirms this isn't secretly
             # a fundamental; unavailable (a return-type check) or actually
-            # fundamental both stay conservative and rejected.
+            # fundamental both stay conservative and rejected. canonical_base
+            # need not itself be a "bare type name" here - a template
+            # instantiation (std::vector<double>, a real class with its own
+            # stable identity) is exactly as safe as a bare class name for this
+            # purpose, so only an actual CXX_FUNDAMENTAL_TYPES match (or no
+            # canonical spelling at all) is disqualifying.
             if canonical_base is None or canonical_base in CXX_FUNDAMENTAL_TYPES:
                 return None
         return "object"
