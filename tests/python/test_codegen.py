@@ -133,6 +133,79 @@ def test_param_kind_typedef_hiding_a_pointer_stays_rejected():
     assert generate.Param("WidgetAlias", "x", canonical="Widget").kind(set(), set(), _hooks) == "object"
 
 
+def test_param_kind_canonical_template_instantiation_does_not_reject():
+    # Regression test: the canonical-spelling cross-check used to reject
+    # *any* class whose canonical spelling isn't itself a bare type name
+    # (BARE_TYPE_NAME.fullmatch), not just a pointer - which silently broke
+    # every std::string parameter of any plugin using it directly (found
+    # wrapping geoml: std::string's own canonical spelling is libstdc++'s real
+    # template instantiation, std::__cxx11::basic_string<char, ...>, which
+    # doesn't match BARE_TYPE_NAME at all - angle brackets, commas). "Widget"
+    # here plays the role of any class whose canonical spelling happens to be
+    # a template instantiation (its own standard-library implementation, or
+    # any other class template used directly) - exactly as safe a "genuine,
+    # stable-identity class" as a plain class name, and must classify as
+    # "object" here, the same as a plain canonical spelling already does two
+    # tests up. Only a *pointer* canonical spelling (previous test) is the
+    # actual, documented hazard this cross-check exists to catch.
+    assert generate.Param("Widget", "x", canonical="ns::Widget<int, std::allocator<int>>").kind(
+        set(), set(), _hooks
+    ) == "object"
+    # Same, but as a confirmed-safe mutable "out" parameter (the other branch
+    # this cross-check feeds into) - a template-instantiated canonical is not
+    # a fundamental, so this should be accepted exactly like a plain-class
+    # canonical mutable ref already is.
+    assert generate.Param("Widget &", "x", canonical="ns::Widget<int, std::allocator<int>>").kind(
+        set(), set(), _hooks
+    ) == "object"
+
+
+# ---------------------------------------------------------------------------
+# Param.kind() - std::string/std::vector<T> built-ins. Genuinely library-
+# agnostic (pure standard-library idioms, not any one third-party library's
+# own convention) - see CXX_STD_STRING/STD_VECTOR_PATTERN's own module-level
+# comments for the full rationale and the real-world symptom (every
+# std::string/std::vector<T>-taking geoml function silently rejected until
+# these became built-ins).
+# ---------------------------------------------------------------------------
+
+def test_param_kind_std_string_passthrough():
+    assert generate.Param("std::string", "x").kind(set(), set(), _hooks) == "passthrough"
+    assert generate.Param("const std::string &", "x").kind(set(), set(), _hooks) == "passthrough"
+    # Mutable out-param stays rejected - same reasoning as a bare fundamental's
+    # own mutable reference (no Lua-side identity to mutate a temporary
+    # std::string through).
+    assert generate.Param("std::string &", "x").kind(set(), set(), _hooks) is None
+
+
+def test_param_kind_std_vector_of_fundamental_passthrough():
+    assert generate.Param("std::vector<double>", "x").kind(set(), set(), _hooks) == "passthrough"
+    assert generate.Param("const std::vector<int> &", "x").kind(set(), set(), _hooks) == "passthrough"
+    assert generate.Param("std::vector<double> &", "x").kind(set(), set(), _hooks) is None
+
+
+def test_param_kind_std_vector_of_std_string_passthrough():
+    assert generate.Param("const std::vector<std::string> &", "x").kind(set(), set(), _hooks) == "passthrough"
+
+
+def test_param_kind_std_vector_of_registered_type_passthrough():
+    assert generate.Param("const std::vector<Widget> &", "x").kind({"Widget"}, set(), _hooks) == "passthrough"
+
+
+def test_param_kind_std_vector_of_plausible_bare_class_passthrough():
+    # Not registered by this run at all - exactly Param.kind()'s own "object"
+    # fallback logic for a standalone parameter, reapplied here to one vector
+    # element (most commonly a type registered by a *different* plugin this
+    # one depends on).
+    assert generate.Param("const std::vector<Widget> &", "x").kind(set(), set(), _hooks) == "passthrough"
+
+
+def test_param_kind_std_vector_of_unsupported_element_is_rejected():
+    # A pointer-shaped element is not a plausible bare type name - the whole
+    # vector stays rejected, same conservatism as a bare pointer parameter.
+    assert generate.Param("const std::vector<Widget *> &", "x").kind(set(), set(), _hooks) is None
+
+
 def test_param_kind_falls_through_to_hooks_classify_param():
     class _RecognizesEverything(generate.CodeGenerator):
         def classify_param(self, param, registered_types, registered_enums):
@@ -516,6 +589,59 @@ def test_expand_headers_dedups_across_overlapping_patterns(tmp_path):
     (tmp_path / "widget_a.hxx").write_text("")
     headers, _ = generate.expand_headers(["widget_*.hxx", "widget_a.hxx"], tmp_path)
     assert headers == ["widget_a.hxx"]
+
+
+def test_expand_headers_glob_preserves_nested_relative_path(tmp_path):
+    # Regression test: a glob match used to be reduced to its bare basename
+    # (p.name) before being handed back to parse_headers(), which then
+    # reconstructs the path as include_dir / header - silently correct for a
+    # flat header layout (OCCT's own), but silently WRONG for any nested one
+    # (a real library like geoml, headers under geoml/<module>/*.h) - found
+    # the hard way, a TranslationUnitLoadError trying to parse
+    # "<include_dir>/widget.hpp", which never existed; the real file was
+    # "<include_dir>/nested/widget.hpp". The returned path must be relative to
+    # include_dir (nested/widget.hpp), not just the trailing filename.
+    (tmp_path / "nested").mkdir()
+    (tmp_path / "nested" / "widget.hpp").write_text("")
+    headers, glob_matched = generate.expand_headers(["nested/*.hpp"], tmp_path)
+    assert headers == ["nested/widget.hpp"]
+    assert glob_matched == {"nested/widget.hpp"}
+    assert (tmp_path / headers[0]).exists()
+
+
+def test_expand_headers_glob_disambiguates_same_basename_in_different_dirs(tmp_path):
+    # A real basename collision a basename-only glob would have mishandled
+    # silently (found wrapping geoml: geoml/boolean_ops/modeling.hpp and
+    # geoml/primitives/modeling.hpp share the exact same filename) - both must
+    # survive, distinguished by their own relative path.
+    (tmp_path / "a").mkdir()
+    (tmp_path / "b").mkdir()
+    (tmp_path / "a" / "modeling.hpp").write_text("")
+    (tmp_path / "b" / "modeling.hpp").write_text("")
+    headers, _ = generate.expand_headers(["a/*.hpp", "b/*.hpp"], tmp_path)
+    assert headers == ["a/modeling.hpp", "b/modeling.hpp"]
+
+
+def test_expand_headers_exclude_headers_drops_nested_glob_matches(tmp_path):
+    # exclude_headers is matched against the same relative-path spelling
+    # expand_headers now returns for a nested glob, not the bare basename.
+    (tmp_path / "nested").mkdir()
+    (tmp_path / "nested" / "widget_a.hpp").write_text("")
+    (tmp_path / "nested" / "widget_bad.hpp").write_text("")
+    headers, _ = generate.expand_headers(
+        ["nested/*.hpp"], tmp_path, exclude_headers=["nested/widget_bad.hpp"]
+    )
+    assert headers == ["nested/widget_a.hpp"]
+
+
+def test_expand_headers_flat_layout_glob_unaffected_by_relative_path_change(tmp_path):
+    # A flat file's relative path already equals its basename, so a
+    # flat-layout plugin (grunk-occt's own OCCT headers) sees no behavior
+    # change at all from the relative-path fix above.
+    (tmp_path / "widget_a.hxx").write_text("")
+    headers, glob_matched = generate.expand_headers(["widget_*.hxx"], tmp_path)
+    assert headers == ["widget_a.hxx"]
+    assert glob_matched == {"widget_a.hxx"}
 
 
 # ---------------------------------------------------------------------------
