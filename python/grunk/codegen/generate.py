@@ -121,11 +121,26 @@ def expand_headers(patterns: list[str], include_dir: Path, exclude_headers: list
             # matched against this same relative-path spelling, so a nested-layout
             # plugin's own exclude_headers entries should be relative-path spelled too
             # (a flat-layout plugin's existing bare-filename entries are unaffected,
-            # since relative path and basename coincide there).
+            # since relative path and basename coincide there). .as_posix(), not
+            # plain str(): Path.relative_to() renders with the *native* separator
+            # on the platform the generator itself happens to be running on -
+            # backslash on Windows - so a plain str() would make this glob's own
+            # returned header spelling (and therefore config.yml's own
+            # exclude_headers matching, and translation_units.txt/generated
+            # filenames wherever a header's own relative path feeds into one)
+            # silently platform-dependent, breaking reproducibility and any
+            # config.yml exclude_headers entry authored (as every one in this
+            # codebase already is) with forward slashes - found via a real CI
+            # failure on Windows, not just reasoned about. include_dir / header
+            # reconstruction (parse_headers, elsewhere) still resolves correctly
+            # from a forward-slash string on Windows either way - pathlib's own
+            # Windows path flavour accepts '/' as a separator natively - so this
+            # is purely about keeping the *returned spelling* canonical, not a
+            # second, different path-reconstruction bug.
             matches = sorted(
-                str(p.relative_to(include_dir))
+                p.relative_to(include_dir).as_posix()
                 for p in include_dir.glob(pattern)
-                if str(p.relative_to(include_dir)) not in excluded
+                if p.relative_to(include_dir).as_posix() not in excluded
             )
             if not matches:
                 raise RuntimeError(f"header glob {pattern!r} matched no files in {include_dir}")
