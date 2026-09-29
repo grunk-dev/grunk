@@ -383,6 +383,67 @@ def test_code_generator_emit_return_type_default_is_none():
     assert generate.CodeGenerator().emit_return_type("Widget") is None
 
 
+def test_render_sol_base_classes_header_emits_transitive_bases_and_derived():
+    # Base <- Middle <- Derived, Middle <- OtherDerived (a diamond-free, simple
+    # three-generation hierarchy) - see render_sol_base_classes_header's own
+    # docstring for why both directions (SOL_BASE_CLASSES: Derived's own full
+    # ancestor chain; SOL_DERIVED_CLASSES: every class that transitively derives
+    # from a given base) are needed, and why they must be computed globally
+    # across every module in one run, not per-module.
+    all_bases = {
+        "Derived": ["Middle", "Base"],
+        "OtherDerived": ["Middle", "Base"],
+        "Middle": ["Base"],
+        "Base": [],
+    }
+    class_to_header = {name: "widgets.hpp" for name in all_bases}
+    source = generate.render_sol_base_classes_header(all_bases, {}, class_to_header, generate.CodeGenerator())
+
+    assert "#include <widgets.hpp>" in source
+    assert "SOL_BASE_CLASSES(Derived, Middle, Base);" in source
+    assert "SOL_BASE_CLASSES(Middle, Base);" in source
+    assert "SOL_BASE_CLASSES(OtherDerived, Middle, Base);" in source
+    # Base has no bases of its own - no SOL_BASE_CLASSES(Base, ...) line.
+    assert "SOL_BASE_CLASSES(Base," not in source
+    assert "SOL_DERIVED_CLASSES(Base, Derived, Middle, OtherDerived);" in source
+    assert "SOL_DERIVED_CLASSES(Middle, Derived, OtherDerived);" in source
+
+
+def test_render_sol_base_classes_header_qualifies_namespaced_names():
+    # Unlike each module's own generated .cpp (which gets a `using ns::Name;` for
+    # every namespaced entity it discovers), this shared header has no such
+    # declarations - a namespaced class must be spelled out fully qualified for
+    # its name to resolve regardless of which module's .cpp includes this
+    # header first.
+    all_bases = {"Derived": ["Base"]}
+    all_namespace_of = {"Derived": "mylib", "Base": "mylib"}
+    class_to_header = {"Derived": "widgets.hpp", "Base": "widgets.hpp"}
+    source = generate.render_sol_base_classes_header(all_bases, all_namespace_of, class_to_header, generate.CodeGenerator())
+
+    assert "SOL_BASE_CLASSES(mylib::Derived, mylib::Base);" in source
+    assert "SOL_DERIVED_CLASSES(mylib::Base, mylib::Derived);" in source
+
+
+def test_render_sol_base_classes_header_respects_hooks_emit_bases_override():
+    # A plugin's own emit_bases() override (e.g. truncating a chain at a
+    # library-specific root, exactly like grunk-occt's own Standard_Transient
+    # truncation) must be reflected here identically to how it's reflected in
+    # each class's own .add_bases<...>() call - the two mechanisms should never
+    # disagree about "what is this class's base, as far as Lua is concerned".
+    class TruncateAtMiddle(generate.CodeGenerator):
+        def emit_bases(self, class_name, chain):
+            return chain[:1]  # only the direct parent, never further
+
+    all_bases = {"Derived": ["Middle", "Base"]}
+    class_to_header = {"Derived": "widgets.hpp", "Middle": "widgets.hpp", "Base": "widgets.hpp"}
+    source = generate.render_sol_base_classes_header(all_bases, {}, class_to_header, TruncateAtMiddle())
+
+    assert "SOL_BASE_CLASSES(Derived, Middle);" in source
+    assert "SOL_BASE_CLASSES(Derived, Middle, Base);" not in source
+    assert "SOL_DERIVED_CLASSES(Middle, Derived);" in source
+    assert "SOL_DERIVED_CLASSES(Base, Derived);" not in source
+
+
 def test_emit_callable_plain_passthrough_needs_no_conversion():
     c = _callable([generate.Param("double", "x")], return_spelling="double")
     src = generate.CodeGenerator().emit_callable(c, ["passthrough"], "value")

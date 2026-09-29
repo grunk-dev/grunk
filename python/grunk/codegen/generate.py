@@ -1466,6 +1466,106 @@ def process_module(module: dict, cache: dict[str, ParsedHeader], registered_type
     return result
 
 
+def render_sol_base_classes_header(all_bases: dict[str, list[str]], all_namespace_of: dict[str, str],
+                                    class_to_header: dict[str, str], hooks: CodeGenerator,
+                                    banner: str = DEFAULT_GENERATED_BANNER) -> str:
+    """Renders sol_base_classes.hpp: one SOL_BASE_CLASSES(...)/SOL_DERIVED_CLASSES(...)
+    macro pair per class with a non-empty base chain, aggregated across *every*
+    module in this run (not just one) - see this generator's own module-level
+    docstring/README for why this needs to be global rather than per-module.
+
+    This is a *separate*, compile-time-only mechanism from the ordinary
+    `.add_bases<...>()` runtime call render_module() already emits per class
+    (usertype_proxy::add_bases, a Lua-visible metatable property used for plain
+    reference-based up/downcasting and colon-call method lookup): sol2's own
+    Handle(Derived)->Handle(Base) *unique-usertype* conversion
+    (sol::detail::inheritance<T>::type_unique_cast, consulted when a
+    Handle(Geom_BSplineSurface)-shaped value needs to satisfy a Handle(Geom_Surface)
+    parameter/overload-candidate, say) instead requires two explicit compile-time
+    template specializations - SOL_BASE_CLASSES(Derived, Base...) (the "upward"
+    direction, giving `sol::base<Derived>` its own bases) and
+    SOL_DERIVED_CLASSES(Base, Derived...) (the "downward" direction, giving
+    `sol::derive<Base>` the set of classes that might actually be stored where a
+    Base is asked for) - without *both*, sol2 unconditionally treats the
+    relevant list as empty and the conversion silently never happens, regardless
+    of what add_bases<...>() declares. Confirmed empirically (a live spike
+    against real OCCT classes) that adding both macros, plus a
+    unique_usertype_traits<Handle<T>>::rebind_actual_type member (the plugin's
+    own responsibility, not this generator's - see the consuming plugin's own
+    sol traits header), is sufficient to make the conversion work correctly,
+    including in an OCCT build without OCCT_HANDLE_NOCAST (no value-constructing
+    handle converting constructor, only an implicit reference-conversion
+    operator) - the actual assignment this triggers binds through that operator
+    and then runs the target handle's own ordinary, always-available
+    same-type copy-assignment, with correct reference counting.
+
+    A *derived* class's own SOL_BASE_CLASSES bases come from hooks.emit_bases()
+    (the same override point/filtering a plugin's hooks.py already uses for
+    add_bases<...>()), so a plugin that truncates or filters its own class
+    hierarchy there (e.g. stopping short of a deep, Lua-irrelevant ancestor
+    chain) gets the identical chain reflected here - the two mechanisms should
+    always agree on "what is this class's base, as far as Lua is concerned".
+    SOL_DERIVED_CLASSES's own "downward" lists are then just this same
+    information inverted globally across every class in the run.
+
+    Names are emitted fully-qualified (via all_namespace_of, ModuleResult's own
+    per-module namespace_of aggregated across the whole run) since, unlike each
+    module's own generated .cpp, this shared header has no per-module `using
+    ns::Name;` declarations to rely on. class_to_header maps every class name in
+    all_bases (bases and classes-with-bases alike) to the literal header it was
+    discovered in (built by run() from the same parse cache every module's own
+    processing already reads), so this header is self-contained regardless of
+    which module's .cpp happens to include it first - a class mentioned here
+    only as *someone else's* base (never itself explicitly processed as this
+    run's own primary subject) still needs its own #include for its name to be
+    resolvable at all.
+
+    usertype_traits<T>::qualified_name() (what SOL_BASE_CLASSES/
+    SOL_DERIVED_CLASSES ultimately compare at runtime) is a compile-time-type-
+    derived (RTTI demangle-based) string, entirely independent of whether
+    register_type<T>(...) was ever called for T at runtime - so a base class
+    that is itself never registered as a Lua-visible usertype (a pure
+    implementation-detail intermediate ancestor, say) can still appear here
+    without issue."""
+    def qualify(name: str) -> str:
+        ns = all_namespace_of.get(name)
+        return f"{ns}::{name}" if ns else name
+
+    # Every class name this header will ever mention, on either side of a
+    # SOL_BASE_CLASSES/SOL_DERIVED_CLASSES pair - collected first so each one's
+    # own header is included exactly once, in a stable (sorted) order.
+    all_names: set[str] = set(all_bases.keys())
+    for bases in all_bases.values():
+        all_names.update(bases)
+
+    header_lines = sorted({
+        f"#include <{class_to_header[name]}>" for name in all_names if name in class_to_header
+    })
+
+    derived_of: dict[str, list[str]] = {}
+    base_lines: list[str] = []
+    for name in sorted(all_bases.keys()):
+        bases = hooks.emit_bases(name, all_bases[name])
+        if not bases:
+            continue
+        base_lines.append(f"SOL_BASE_CLASSES({qualify(name)}, {', '.join(qualify(b) for b in bases)});")
+        for base in bases:
+            derived_of.setdefault(base, []).append(name)
+
+    derived_lines = [
+        f"SOL_DERIVED_CLASSES({qualify(base)}, {', '.join(qualify(d) for d in sorted(derived))});"
+        for base, derived in sorted(derived_of.items())
+    ]
+
+    body = "\n".join(header_lines) + "\n\n" + "\n".join(base_lines) + "\n\n" + "\n".join(derived_lines) + "\n"
+    return banner + f"""
+#pragma once
+
+#include <sol/sol.hpp>
+
+{body}"""
+
+
 def render_module(result: ModuleResult, hooks: CodeGenerator,
                    includes_for_kinds: dict[str, list[str]],
                    includes_for_ctor_modes: dict[str, list[str]],
@@ -1687,6 +1787,7 @@ void register_{result.name}(grunk::plugin_namespace& ns);
 
     cpp_source = banner + f"""
 #include "{result.name}.hpp"
+#include "sol_base_classes.hpp"
 
 {includes}
 
@@ -1857,11 +1958,20 @@ def run(args: argparse.Namespace) -> int:
         e.name for p in cache.values() for e in p.entities if e.kind == "enum"
     } - blacklisted_names
 
+    # Aggregated across *every* module (not reset per module) so
+    # render_sol_base_classes_header() below can see the whole class hierarchy
+    # this run knows about, however many modules a given base/derived pair's
+    # two ends happen to be split across - see that function's own docstring.
+    all_bases: dict[str, list[str]] = {}
+    all_namespace_of: dict[str, str] = {}
+
     for module in config["modules"]:
         result = process_module(module, cache, registered_types, registered_enums, hooks)
         header_source, cpp_source = render_module(result, hooks, includes_for_kinds, includes_for_ctor_modes, banner)
         (args.output_dir / f"{result.name}.hpp").write_text(header_source)
         (args.output_dir / f"{result.name}.cpp").write_text(cpp_source)
+        all_bases.update(result.bases)
+        all_namespace_of.update(result.namespace_of)
 
         n_accepted = sum(len(v) for v in result.accepted_ctors.values()) + sum(
             len(o) for m in result.accepted_methods.values() for o in m.values()
@@ -1872,6 +1982,17 @@ def run(args: argparse.Namespace) -> int:
             print(f"  rejected {c.class_name}::{c.cpp_name}: {reason}", file=sys.stderr)
         for c in result.blacklisted:
             print(f"  blacklisted {c.class_name}::{c.cpp_name}", file=sys.stderr)
+
+    # class name -> the literal header it was discovered in, built from the same
+    # whole-config parse cache used for registered_types/registered_enums above -
+    # see render_sol_base_classes_header()'s own docstring for why this shared
+    # header needs it (a class mentioned there only as someone else's base may
+    # never have been this run's own primary subject in any one module).
+    class_to_header: dict[str, str] = {
+        e.name: header for header, parsed in cache.items() for e in parsed.entities if e.kind == "class"
+    }
+    sol_base_classes_source = render_sol_base_classes_header(all_bases, all_namespace_of, class_to_header, hooks, banner)
+    (args.output_dir / "sol_base_classes.hpp").write_text(sol_base_classes_source)
 
     # See the consuming CMakeLists.txt's own comment on reading this file: one
     # line per translation unit, each a space-separated list of module names
