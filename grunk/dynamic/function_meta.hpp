@@ -114,6 +114,79 @@ namespace details {
         }
     }
 
+    /**
+     * @brief Deduces, at registration time, whether a callable is a genuine
+     * mutator in the sense that matters for decorated/parametric dispatch (see
+     * ActionDynamic.hpp's make_dynamic_action): evaluation there is lazy and
+     * pull-based (grunk wraps the external `parametric` library's own DAG
+     * engine), so a mutating call's own result feature, if never explicitly
+     * read, is simply never evaluated at all - the underlying C++ mutation
+     * never happens, silently.
+     *
+     * Deliberately requires BOTH of:
+     *   1. a non-const lvalue-reference receiver ("self") - the call can
+     *      actually write through it at all, and
+     *   2. a `void` return type - the call has no OTHER possible reason to
+     *      exist than that mutation, since there's nothing else to read.
+     * Checking only (1) produces real false positives: plenty of ordinary,
+     * non-mutating methods simply aren't marked `const` (this project's own
+     * MyScalar::pow test fixture is exactly such a case - non-const, returns a
+     * new MyScalar, mutates nothing) - flagging those would reject entirely
+     * safe, already-working code. A non-const method that also returns
+     * something meaningful gets no protection from this check at all (a real,
+     * accepted gap, not an oversight): if that return value is itself read,
+     * the call evaluates correctly regardless of what self-mutation may also
+     * have happened, so there's no reliable way to tell "self-mutation was
+     * this call's only point" apart from "the return value just wasn't read
+     * this time" without knowing the future. A void-returning, non-const call
+     * has no such ambiguity - it can only ever have been made for its side
+     * effect - so this is the narrowest condition that reliably captures the
+     * genuinely broken case without rejecting merely-not-const-qualified pure
+     * methods.
+     *
+     * Same introspection limits as deduce_return_type_hint: only meaningful for
+     * a callable shape function_traits.hpp can introspect (a function pointer,
+     * member pointer, or a concrete, non-generic functor/lambda) with at least
+     * one parameter. Returns false (i.e. "not detected as mutating", the
+     * conservative/permissive default) for anything else - notably a
+     * sol::overload_set (used pervasively by generated bindings for any
+     * overloaded method), which has no single introspectable operator() at
+     * all. An overloaded mutating method therefore currently gets no
+     * protection from this mechanism at all; only a single, non-overloaded
+     * mutating registration does.
+     */
+    template <typename F>
+    bool deduce_receiver_is_mutating() {
+        using DecayedF = std::decay_t<F>;
+        // Nested if constexpr blocks throughout, not conditions joined by &&:
+        // function_traits<DecayedF>::arity/return_type/argument<0> all have to be
+        // named to even form a combined condition's own type, which would
+        // force-instantiate function_traits<DecayedF> for a type like
+        // sol::overload_set that has_function_traits_v<DecayedF> is specifically
+        // there to rule out first - the exact hazard has_return_type's own doc
+        // comment above already warns about, hit for real (a hard compile error,
+        // not a SFINAE failure) when this was first written with joined
+        // conditions. Nesting keeps each subsequent check's own body
+        // uninstantiated whenever an earlier branch is false.
+        if constexpr (has_function_traits_v<DecayedF>) {
+            if constexpr (function_traits<DecayedF>::arity >= 1) {
+                using Self = typename function_traits<DecayedF>::template argument<0>::type;
+                constexpr bool self_is_mutable_ref =
+                    std::is_lvalue_reference_v<Self> && !std::is_const_v<std::remove_reference_t<Self>>;
+                if constexpr (self_is_mutable_ref) {
+                    using R = typename function_traits<DecayedF>::return_type;
+                    return std::is_void_v<R>;
+                } else {
+                    return false;
+                }
+            } else {
+                return false;
+            }
+        } else {
+            return false;
+        }
+    }
+
 } // namespace details
 
 /**
@@ -251,6 +324,29 @@ public:
         m_receiver_type_hint = type;
     }
 
+    /**
+     * @brief whether this function's own receiver ("self") is mutated by the call -
+     * see details::deduce_receiver_is_mutating for the full explanation of why this
+     * matters (a mutating call dispatched through the decorated/parametric
+     * environment's lazy, pull-based evaluation silently never runs at all unless
+     * its own result is explicitly read) and its own documented false-negative gap
+     * for overloaded (sol::overload_set) registrations. Defaults to false (not
+     * mutating) for any function_meta not built via usertype_proxy::add_member_function,
+     * the only place this gets stamped.
+     */
+    bool receiver_is_mutating() const {
+        return m_receiver_is_mutating;
+    }
+
+    /**
+     * @brief sets whether this function's receiver is mutating - see
+     * receiver_is_mutating(). Used exclusively by usertype_proxy::add_member_function,
+     * right after construction, the same way set_receiver_type_hint is.
+     */
+    void set_receiver_is_mutating(bool mutating) {
+        m_receiver_is_mutating = mutating;
+    }
+
 private:
     ///@brief the name of the function
     std::string name;
@@ -266,6 +362,9 @@ private:
 
     ///@brief the C++ type this is a registered member function of, if any - see receiver_type_hint()
     std::optional<std::type_index> m_receiver_type_hint;
+
+    ///@brief whether this function's receiver is mutated by the call - see receiver_is_mutating()
+    bool m_receiver_is_mutating {false};
 };
 
 /**

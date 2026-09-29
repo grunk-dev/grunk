@@ -518,6 +518,40 @@ inline auto make_dynamic_action(function_meta const& func)
             }
             );
 
+        // A mutating member function (non-const `self` - see
+        // function_meta::receiver_is_mutating/details::deduce_receiver_is_mutating)
+        // dispatched through this decorated/parametric path is never actually safe:
+        // grunk::action builds a real compute node here, but grunk's own evaluation
+        // (a thin wrapper over the external `parametric` library's own DAG engine)
+        // is lazy and strictly pull-based - a node's eval() only ever runs when its
+        // own output feature is explicitly read. A bare `self:Mutate(...)` statement
+        // never assigns or otherwise reads that output, so the node - and the real
+        // C++ mutation inside it - silently never runs at all, regardless of
+        // whether it's one call or a whole sequence of them. This is exactly the
+        // failure this check exists to catch: fail loudly and immediately, rather
+        // than let the caller discover much later that `self` was never actually
+        // mutated. `modules:` scripts (state::run_module_script) never reach this
+        // code at all - their own bodies resolve against the undecorated
+        // original_env directly, so a mutating call there dispatches to plain,
+        // synchronous C++ with no ActionDynamic/DynamicFeature involved - which is
+        // why this check can fire unconditionally here without breaking that
+        // legitimate use case.
+        if (func.receiver_is_mutating() && func.receiver_type_hint()) {
+            throw std::runtime_error(
+                "grunk: '" + func.get_name() + "' mutates its own receiver (a non-const "
+                "`self`), but this call is happening inside a decorated/parametric "
+                "environment (a recipe's `steps:` block, or any other create_parametric_env() "
+                "script), where evaluation is lazy and pull-based - a mutating call whose "
+                "own result is never explicitly read (the common case for a bare "
+                "`obj:Mutate(...)` statement) silently never executes at all, so the "
+                "mutation you're expecting never happens. Wrap this call - and any other "
+                "mutating call on the same object - in a `modules:` function instead (see "
+                "grunk::state::run_module_script's own documentation): statements inside a "
+                "module function run outside the decorated environment, so non-const "
+                "setters work exactly as they would in plain C++."
+            );
+        }
+
         return grunk::action(func, args);
     };
     return decorated_function;

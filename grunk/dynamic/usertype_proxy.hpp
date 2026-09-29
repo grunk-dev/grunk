@@ -119,6 +119,12 @@ struct usertype_proxy {
         // its own return type hint, so ActionDynamic::serialize() can recognize this
         // call as a genuine method call later (see function_meta::receiver_type_hint).
         func.as<function_meta&>().set_receiver_type_hint(std::type_index(typeid(T)));
+        // Whether calling fun actually mutates its own receiver - see
+        // function_meta::receiver_is_mutating and details::deduce_receiver_is_mutating
+        // for why this matters (make_dynamic_action uses it to reject a mutating call
+        // made through the decorated/parametric environment, where such a call would
+        // otherwise silently never execute at all).
+        func.as<function_meta&>().set_receiver_is_mutating(details::deduce_receiver_is_mutating<F>());
 
         ut.set(std::forward<Key>(key), func);
         return *this;
