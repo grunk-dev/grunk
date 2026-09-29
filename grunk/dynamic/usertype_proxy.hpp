@@ -200,10 +200,33 @@ struct usertype_proxy {
      * unique-usertype-aware cast (type_unique_cast) that already lets a single
      * Handle(Derived)-returning function argument bind correctly to a
      * Handle(Base) const& parameter applies per-element here too, once the
-     * identity function below is itself typed as VecElement(VecElement const&)
-     * rather than T(T const&). Call e.g. `.with_std_vector<Handle<T>>()` on T's own
-     * usertype_proxy to get `T.as_vec(...)` producing std::vector<Handle<T>>
-     * instead of std::vector<T>.
+     * identity function below is itself typed as VecElement(VecElement) - BY VALUE,
+     * not VecElement(VecElement const&) - rather than T(T const&). The by-value
+     * parameter matters specifically for a unique-usertype VecElement: sol2's own
+     * unique-usertype-aware checker/getter (qualified_checker/qualified_getter,
+     * the path that actually consults rebind_actual_type/SOL_BASE_CLASSES to walk
+     * a Handle(Derived)->Handle(Base) conversion) excludes REFERENCE parameters
+     * outright (gated by !std::is_reference_v<X>) - the exact same constraint that
+     * forces generated Handle(X) function parameters elsewhere in this ecosystem
+     * (grunk-occt/grunk-geoml's own codegen hooks) to be emitted by value instead
+     * of by reference. A VecElement const& parameter here silently falls back to a
+     * DIFFERENT, non-base-aware getter that rejects any Handle(Derived) argument
+     * with "unrecognized userdata (not pushed by sol?)" even when add_bases<...>()
+     * and rebind_actual_type are both registered correctly. Ordinary (non-unique)
+     * VecElement types are unaffected either way - their inheritance-aware binding
+     * goes through the regular, reference-tolerant add_bases path instead.
+     *
+     * Separately: whichever translation unit instantiates
+     * with_std_vector<Handle<T>>() for a given T must itself have T's
+     * SOL_BASE_CLASSES(T, ...)/SOL_DERIVED_CLASSES(T, ...) declarations (see
+     * sol/forward.hpp) visible via #include - these specialize the compile-time
+     * sol::base<T>/sol::derive<T> traits sol2's checker consults, and an
+     * unspecialized primary template (silently, with no compile error) means "T
+     * has no known bases" from that TU's point of view, independent of whatever
+     * add_bases<...>() registered at runtime elsewhere.
+     *
+     * Call e.g. `.with_std_vector<Handle<T>>()` on T's own usertype_proxy to get
+     * `T.as_vec(...)` producing std::vector<Handle<T>> instead of std::vector<T>.
      *
      * @tparam VecElement the std::vector element type - T itself by default, or a
      *         smart-pointer-like wrapper around T (see above).
@@ -215,11 +238,15 @@ struct usertype_proxy {
         std::string ud_name = name;
         sol::state_view lua(ut.lua_state());
 
-        // A trivial real function VecElement(VecElement const&) - calling it forces
-        // sol2's ordinary, inheritance-aware argument-binding path onto whatever
-        // value is passed in, rather than the generic (and not inheritance-aware)
-        // sol::object::as<VecElement>().
-        sol::protected_function cast_to_element = sol::make_object(lua, [](VecElement const& x) -> VecElement { return x; });
+        // A trivial real function VecElement(VecElement) - BY VALUE, not
+        // VecElement(VecElement const&) - calling it forces sol2's ordinary,
+        // inheritance-aware argument-binding path onto whatever value is passed
+        // in, rather than the generic (and not inheritance-aware)
+        // sol::object::as<VecElement>(). The by-value parameter is required for a
+        // unique-usertype VecElement (e.g. Handle<T>) - see this method's own doc
+        // comment above for why a by-reference parameter silently takes a
+        // different, non-base-aware path instead.
+        sol::protected_function cast_to_element = sol::make_object(lua, [](VecElement x) -> VecElement { return x; });
 
         // convert_one is a generic lambda (not sol::object const&) for two reasons:
         // (1) portability - table iteration (from_table below) yields sol::object
