@@ -466,6 +466,71 @@ TEST(state, usertype_method_as_action_lua)
     EXPECT_NEAR(env.get<MyScalar>("z2").value(), 8, 1e-14); // 2^3
 }
 
+// A pImpl/shared_ptr-backed type (unlike MyScalar's plain double), used to
+// reproduce a real, previously-silent crash: DynamicFeature::as()'s returned
+// proxy used to capture `this` (a raw pointer to the DynamicFeature it was
+// called on) and pass it straight through to the wrapped type's own method,
+// instead of a copy of the feature's own *evaluated value*. For a plain
+// double-backed type like MyScalar this happened to not crash (misinterpreting
+// unrelated memory as a double is harmless UB), but for a type whose method
+// actually dereferences an internal pointer, it segfaults - found the hard way
+// via grunk-geoml's own geoml::Shape (also pImpl/shared_ptr-backed).
+namespace {
+
+struct PimplWidget
+{
+    struct Data { double value; };
+    std::shared_ptr<Data> data;
+
+    explicit PimplWidget(double v) : data(std::make_shared<Data>(Data{v})) {}
+    double get() const { return data->value; }
+};
+
+} // anonymous namespace
+
+// Reproduces the exact real-world shape of the bug: an *unnamed* DynamicFeature
+// (the result of a `modules:` script function call, which - unlike a plain
+// registered constructor/member-function call - carries no static return type
+// hint, see run_module_script's own doc comment) has :as(Type) called on it
+// directly, with nothing else keeping the original, wrapper-less temporary
+// feature reachable from Lua. A forced full GC between :as() and the first use
+// of its returned proxy used to leave the captured `this` pointer dangling
+// (the temporary's own userdata having been collected) - now the proxy holds
+// its own copy of the feature (a cheap, shared_ptr-backed handle), independent
+// of Lua's GC.
+TEST(state, as_on_module_function_result_survives_gc_and_uses_real_value)
+{
+    grunk::state grunk;
+
+    grunk.register_type<PimplWidget>("PimplWidget")
+    .add_constructors(
+        [](double v) { return PimplWidget(v); }
+    )
+    .add_member_function("get", &PimplWidget::get);
+
+    grunk.run_module_script("helpers", R"(
+        function make_widget(v)
+            return PimplWidget.new(v)
+        end
+    )");
+
+    auto env = grunk.create_parametric_env();
+    env.eval(R"(
+        w = helpers.make_widget(5.):as(PimplWidget)
+    )");
+
+    // Nothing but `w`'s own captured copy of the original module-function
+    // result keeps that temporary feature alive at this point - a full,
+    // forced collection is the most direct way to prove that.
+    env.eval(R"(collectgarbage("collect"))");
+
+    env.eval(R"(
+        result = w.get():value()
+    )");
+
+    EXPECT_NEAR(env.get<double>("result"), 5., 1e-14);
+}
+
 // A mutating method (MyScalar::set, non-const `self`) called directly on a
 // Feature from a decorated/parametric environment (`x:set(3)`, not routed
 // through `x:change_value():set(3)` the way usertype_method_as_action_lua
