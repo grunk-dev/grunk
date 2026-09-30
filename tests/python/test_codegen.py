@@ -214,6 +214,42 @@ def test_param_kind_falls_through_to_hooks_classify_param():
     assert generate.Param("SomeExoticType *", "x").kind(set(), set(), generate.CodeGenerator()) is None
 
 
+def test_param_kind_hooks_rejected_skips_unregistered_class_fallback():
+    # A plain, bare-identifier surface spelling ("SomeExoticType") is exactly
+    # the shape Param.kind()'s own unregistered-class fallback would otherwise
+    # happily accept as "object" - the whole point of REJECTED is to let a
+    # CodeGenerator subclass that positively recognizes this param's shape (and
+    # has positively determined it's unsupported for a reason specific to that
+    # shape) skip that fallback entirely, unlike returning plain None. This is
+    # the exact bug class test_classify_param_array1_array2 (grunk-occt's own
+    # tests/python/test_hooks.py) surfaced: an NCollection_Array1<T> parameter
+    # with an unregistered element T, whose *surface* spelling is a bare
+    # OCCT typedef (e.g. "TColgp_Array1OfPnt"), used to be silently accepted as
+    # a plain "object" once its own hook returned None instead of REJECTED.
+    class _RejectsBySpelling(generate.CodeGenerator):
+        def classify_param(self, param, registered_types, registered_enums):
+            if param.base == "SomeExoticType":
+                return generate.REJECTED
+            return None
+    p = generate.Param("SomeExoticType", "x")
+    # Without the hook (or with a hook returning plain None for this type),
+    # this exact same Param would classify as "object" via the fallback -
+    # confirm that baseline first, so the REJECTED case below is a genuine
+    # contrast, not a param that was already rejected for some other reason.
+    assert p.kind(set(), set(), generate.CodeGenerator()) == "object"
+    assert p.kind(set(), set(), _RejectsBySpelling()) is None
+
+
+def test_code_generator_classify_param_rejected_is_distinct_from_none():
+    # REJECTED and None must never compare equal to each other, and REJECTED
+    # must not collide with a legitimate string kind name a subclass might
+    # choose - see REJECTED's own module-level docstring for why this needs to
+    # be a dedicated sentinel type rather than e.g. a string constant.
+    assert generate.REJECTED is not None
+    assert generate.REJECTED != None  # noqa: E711 - deliberately testing __eq__, not identity twice
+    assert generate.REJECTED != "rejected"
+
+
 # ---------------------------------------------------------------------------
 # Callable.rejection_reason() / accepted_arities()
 # ---------------------------------------------------------------------------

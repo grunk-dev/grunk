@@ -196,6 +196,29 @@ CXX_FUNDAMENTAL_TYPES = {
 # "object" rather than rejected.
 BARE_TYPE_NAME = re.compile(r"[A-Za-z_]\w*(::[A-Za-z_]\w*)*")
 
+class _Rejected:
+    """Sentinel type for REJECTED below - a dedicated type (not e.g. a string
+    constant) so `is REJECTED` can never collide with a legitimate kind name a
+    CodeGenerator subclass happens to choose."""
+    def __repr__(self) -> str:
+        return "REJECTED"
+
+# Returned by CodeGenerator.classify_param() to definitively reject a parameter -
+# distinct from None, which means "not one of my own library's idioms, let
+# Param.kind()'s own unregistered-class fallback have a look instead" (see
+# classify_param()'s own docstring). Needed because a hook can recognize a
+# parameter's *shape* (e.g. "this canonical spelling is an NCollection_Array1<X>")
+# and, having recognized it, positively determine it's unsupported for a reason
+# specific to that shape (X itself isn't a supported element type) - falling
+# through to None in that case used to let the *surface* spelling (often a
+# library's own bare-identifier typedef, e.g. "TColgp_Array1OfPnt" for
+# "NCollection_Array1<gp_Pnt>") pass Param.kind()'s own generic BARE_TYPE_NAME
+# fallback and get silently accepted as a plain "object" anyway - the exact bug
+# this sentinel exists to let a subclass avoid (confirmed happening for real: an
+# NCollection_Array1<T> parameter with an unregistered element type, found via
+# grunk-occt's own test_hooks.py::test_classify_param_array1_array2).
+REJECTED = _Rejected()
+
 # std::string - sol2 converts a Lua string to/from std::string automatically, no
 # wrapping needed, exactly like a bare fundamental (hence "passthrough", not
 # "object" - it behaves like a value, not a Lua-side-identity usertype). Needs this
@@ -345,9 +368,12 @@ class Param:
         customization from any plugin; anything else - a smart-pointer
         wrapper, a fixed-size array/container type, a type with more than one
         possible C++ representation, or any other library-specific idiom - is
-        delegated to hooks.classify_param(), which returns None (still
-        unsupported) unless the plugin's own CodeGenerator subclass
-        recognizes it.
+        delegated to hooks.classify_param(). A None result there means "not one
+        of my own library's idioms" and still falls through to this method's
+        own unregistered-class fallback below; REJECTED means the hook
+        positively recognized param's shape and determined it's unsupported -
+        skip the fallback and reject outright (see REJECTED's own module-level
+        docstring for why this distinction is needed).
 
         Non-const-reference ("out") parameters ARE supported for an object
         (Lua/sol2 userdata for a class already has stable, mutable identity -
@@ -411,6 +437,8 @@ class Param:
         if self.base in registered_types:
             return "object"
         kind = hooks.classify_param(self, registered_types, registered_enums)
+        if kind is REJECTED:
+            return None
         if kind is not None:
             return kind
         if not BARE_TYPE_NAME.fullmatch(self.base):
@@ -1064,19 +1092,26 @@ class CodeGenerator:
         enum passthrough, already-registered class) fail to classify param.base.
         Returns any kind name this subclass chooses (a plain string, not drawn
         from a fixed enum this generator defines) for emit_param()/
-        emit_constructor() to later recognize by that same name, or None to
-        leave param unclassified here - NOT necessarily rejected outright:
-        Param.kind() still tries its own unregistered-class fallback afterward
-        (see its own docstring) before actually giving up, so returning None
-        only means "this isn't one of my own library's special idioms," not
-        "this parameter is unsupported." Receives the full Param (not just its
-        spelling) so a subclass can use param.canonical (typedef-resolved
-        spelling - needed to see through a library's own container/template
-        typedefs) and param.is_mutable_ref (a mutable reference to a value with
-        no stable Lua-side identity to mutate in place, e.g. a bare number or a
-        by-value container, is usually not supported - see Param.kind's own
-        docstring for the built-in kinds' own version of this rule). Default:
-        always None."""
+        emit_constructor() to later recognize by that same name; None to leave
+        param unclassified here - NOT rejected outright: Param.kind() still
+        tries its own unregistered-class fallback afterward (see its own
+        docstring) before actually giving up, so returning None only means
+        "this isn't one of my own library's special idioms," not "this
+        parameter is unsupported"; or REJECTED (module-level sentinel, see its
+        own docstring) when this method positively recognizes param's *shape*
+        as belonging to its own library's idiom and, having recognized it,
+        determines it's unsupported for a reason specific to that shape (e.g. a
+        container type whose element type isn't itself supported) - this skips
+        Param.kind()'s own fallback entirely, unlike None, since that fallback
+        would otherwise happily accept the param's surface spelling as a plain
+        unregistered "object" even though this method already knows better.
+        Receives the full Param (not just its spelling) so a subclass can use
+        param.canonical (typedef-resolved spelling - needed to see through a
+        library's own container/template typedefs) and param.is_mutable_ref (a
+        mutable reference to a value with no stable Lua-side identity to mutate
+        in place, e.g. a bare number or a by-value container, is usually not
+        supported - see Param.kind's own docstring for the built-in kinds' own
+        version of this rule). Default: always None."""
         return None
 
     def classify_ctor_mode(self, class_name: str, base_chain: list[str]) -> str | None:
