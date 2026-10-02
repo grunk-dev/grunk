@@ -7,6 +7,21 @@ cmake_minimum_required(VERSION 3.15)
 project(grunk VERSION 0.5.0)
 set(CMAKE_CXX_STANDARD 17)
 
+# grunk must be consumed as a pre-built dependency via find_package(grunk) - never vendored into
+# another project's build via add_subdirectory()/FetchContent_MakeAvailable(). See README.md's
+# "Consuming grunk" section for why (a real, previously-confirmed ODR/dispatch bug from having two
+# independently-compiled copies of grunk in one process). Fail fast here with an explanation instead
+# of the confusing "grunk/version.hpp: No such file or directory" this used to produce deep inside
+# recipe.hpp, caused by version.hpp only ever being generated into this project's own binary dir.
+if (NOT CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
+    message(FATAL_ERROR
+        "grunk cannot be configured as a CMake subproject (add_subdirectory()/FetchContent). Build "
+        "and install grunk on its own, then consume it from your project via find_package(grunk). "
+        "See this repository's README.md, \"Consuming grunk\", for why vendoring/static linking are "
+        "unsupported by design."
+    )
+endif()
+
 include(GNUInstallDirs)
 
 # grunk_recipe/grunk_plugin (and the umbrella `grunk` target) are built as SHARED

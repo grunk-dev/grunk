@@ -216,6 +216,19 @@ int main() {
 
 A plugin can just as well be a compiled Lua module (e.g. SWIG-generated) via `grunk::state::load_compiled_plugin`, or plain Lua source via `grunk::state::load_lua_plugin_script`/`load_lua_plugin_file` (or `grunk::plugin::load_script`) - see `grunk/plugin/loader.hpp` for the full native ABI and `grunk/dynamic/state.hpp` for all three `load_*_plugin`/`begin_plugin` methods.
 
+## Consuming grunk
+
+Build and install grunk, then consume it from a downstream project via `find_package(grunk)` -
+**do not** vendor grunk's source into another project via `FetchContent`/`add_subdirectory`, and do not
+link it statically. `grunk`/`grunk::recipe`/`grunk::plugin` are deliberately built as `SHARED` libraries
+with no option to change that, so that every consumer loaded into one process - native plugins
+(`grunk-occt`, `grunk-adolc`, ...), the Python bindings, a GUI - dynamically links the *same* physical
+`.so`/`.dylib`/`.dll`. Two independently-compiled copies of grunk loaded into one process is a real,
+previously-confirmed hazard: `std::type_index`-keyed dispatch (`grunk::dynamic`'s type/function registry)
+silently fails to match across copies, since each gets its own `type_info` identity, producing
+wrong-dispatch bugs that are hard to diagnose. Attempting to configure grunk as a CMake subproject fails
+fast with an error pointing back here, rather than the confusing missing-header error it used to produce.
+
 ## Documentation
 
 [Read the documentation](https://grunk-dev.github.io/grunk/) to learn more.
