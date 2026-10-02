@@ -356,6 +356,64 @@ TEST(state, usertype_ctor_as_action_lua)
     EXPECT_EQ(env.get_feature("x").value().as<MyScalar>().value(), 4.);
 }
 
+// Passing a value of one registered usertype where a *different*, unrelated
+// registered usertype is expected used to be a real, reproducible segfault
+// instead of a catchable error: sol2 defaults to unchecked argument
+// extraction (SOL_ALL_SAFETIES_ON off unless this is a debug build), which
+// blindly reinterprets a mismatched userdata's memory as the target type
+// rather than rejecting it - found via grunk-geoml's own airplane_seats.grr.yml
+// (a geoml::Shape passed directly where a TopoDS_Shape was expected). Fixed by
+// grunk/dynamic/CMakeLists.txt now defining SOL_ALL_SAFETIES_ON=1 as an
+// INTERFACE compile definition on grunk::dynamic, so every consumer - grunk's
+// own code and any downstream plugin linking against it - gets the checked
+// getter consistently. TypeA/TypeB here are two intentionally unrelated
+// (non-inheriting) registered types, the same shape as the real bug.
+namespace {
+
+struct TypeA
+{
+    explicit TypeA(double v) : value(v) {}
+    double value;
+};
+
+struct TypeB
+{
+    explicit TypeB(double v) : value(v) {}
+    double value;
+};
+
+} // anonymous namespace
+
+TEST(state, mismatched_usertype_argument_throws_instead_of_crashing)
+{
+    grunk::state grunk;
+
+    grunk.register_type<TypeA>("TypeA")
+    .add_constructors(
+        [](double v) { return TypeA(v); }
+    );
+    grunk.register_type<TypeB>("TypeB")
+    .add_constructors(
+        [](double v) { return TypeB(v); }
+    );
+    grunk.register_function(
+        "takes_a",
+        [](TypeA const& a) -> double { return a.value; }
+    );
+
+    auto env = grunk.create_parametric_env();
+    try {
+        env.eval(R"(
+            b = TypeB.new(3.)
+            x = takes_a(b)
+            result = x:value()
+        )");
+        FAIL() << "expected a catchable error, not a successful (or crashing) call";
+    } catch (sol::error const& e) {
+        EXPECT_NE(std::string(e.what()).find("TypeA"), std::string::npos);
+    }
+}
+
 TEST(state, usertype_operators_as_action_lua)
 {
     grunk::state grunk;

@@ -13,6 +13,23 @@ if (GRUNK_WITH_RECIPE)
   target_compile_definitions(grunk_dynamic INTERFACE GRUNK_WITH_RECIPE)
 endif()
 
+# sol2 defaults to UNCHECKED argument/userdata extraction (SOL_ALL_SAFETIES_ON
+# off unless this is a debug build) - a Lua value of one registered usertype
+# passed where a *different* usertype is expected (e.g. a plugin's own
+# implicitly-convertible wrapper type passed where the type it converts to is
+# expected) is blindly reinterpreted as the target type instead of being
+# rejected, corrupting memory and segfaulting deep inside unrelated code
+# instead of failing at the call site with a clear error - found the hard way
+# via grunk-geoml's own airplane_seats.grr.yml (geoml::Shape passed directly
+# where a TopoDS_Shape was expected). Propagated as an INTERFACE compile
+# definition (not just set for grunk's own sources) so every downstream
+# consumer that links against grunk::dynamic - directly or transitively, e.g.
+# a plugin's own generated registration code - gets the same, consistent
+# define: sol2 template instantiations must agree on this across every
+# translation unit that touches the same types, so this cannot be a
+# per-project opt-in without risking ODR/ABI mismatches.
+target_compile_definitions(grunk_dynamic INTERFACE SOL_ALL_SAFETIES_ON=1)
+
 target_compile_features(grunk_dynamic INTERFACE cxx_std_17)
 target_link_libraries(grunk_dynamic INTERFACE grunk::core sol2::sol2 ${LUA_LIBRARIES})
 
