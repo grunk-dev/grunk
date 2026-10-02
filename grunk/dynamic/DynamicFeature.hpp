@@ -85,11 +85,28 @@ public:
         sol::state_view l(lua);
         sol::table method_table = l.create_table();
         sol::table mt = l.create_table();
-        mt.set_function("__index", [this, usertype](sol::table, std::string const& method) -> sol::object {
+        // Capture a COPY of *this (self), not `this` (a raw pointer to it) - a
+        // Feature<object> is a thin, cheaply-copyable handle around a shared
+        // parametric::param<T> node (see FeatureBase), so copying it keeps the
+        // underlying feature alive via its own reference counting, independent of
+        // Lua's garbage collector, while still passing `func` an actual Feature
+        // (not its evaluated value) so dependency tracking/laziness works exactly
+        // as it does everywhere else (func's own decorated dispatch evaluates it
+        // when it needs to, not before). The DynamicFeature this method is called
+        // on is typically a short-lived Lua temporary (e.g. the unnamed result of
+        // a module-function call, as in `helpers.foo(...):as(SomeType)`) with no
+        // other Lua-side reference keeping it alive past this expression - a
+        // captured `this` pointer can go stale (the original userdata collected)
+        // long before these closures are actually invoked, since grunk's own
+        // evaluation is lazy/pull-based. Confirmed the hard way: a real,
+        // reproducible segfault once the original temporary had been garbage
+        // collected (see the as_on_module_function_result_survives_gc... test).
+        Feature<object> self = *this;
+        mt.set_function("__index", [self, usertype](sol::table, std::string const& method) -> sol::object {
             sol::protected_function func = usertype[method];
-            return sol::make_object(lua, sol::as_function(
-                [this, func](sol::variadic_args va){
-                    return func(*this, va);
+            return sol::make_object(self.lua, sol::as_function(
+                [self, func](sol::variadic_args va){
+                    return func(self, va);
                 }
             ));
         });

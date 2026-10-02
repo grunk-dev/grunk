@@ -197,27 +197,109 @@ l = Base.as_vec(d1, d2, b1)
 // sol::unique_usertype_traits-wrapped smart pointer around T too - the motivating
 // case being OCCT's Handle(T)/opencascade::handle<T>, where a function expects
 // std::vector<Handle(Base)> and Lua passes several Handle(Derived)-backed features.
-// This is confirmed working end-to-end against real OCCT types in grunk-occt
-// (Geom_Line/Geom_Geometry, both Handle-based with add_bases<...>() already
-// registered): `Geom_Geometry.as_vec(line1, line2)` (two Handle(Geom_Line) values)
-// correctly builds a std::vector<Handle(Geom_Geometry)>, and a function taking that
-// vector reports the right size - see grunk-occt's tests/test_geom.cpp and
-// docs/step5-investigation/ for the full writeup.
 //
-// A *self-contained* minimal repro of this specific case was attempted here (a
-// small Handle<T> stand-in matching opencascade::handle<T>'s own shape, including
-// its rebind_actual_type and upcast converting constructor) but did not reproduce
-// the working behavior - it fails at sol2's own argument-checking step
-// ("unrecognized userdata (not pushed by sol?)") even though the real OCCT case
-// (structurally identical as far as could be determined: same automagic_flags,
-// same add_bases usage, same registration order, tried both a plain registered
-// constructor function and a real .add_constructors()-based one, tried a 2-level
-// and a 3-level base chain) does not hit this failure. The exact discrepancy
-// between the minimal stand-in and opencascade::handle<T> was not found despite a
-// real debugging attempt (traced into sol2's stack_check_unqualified.hpp/
-// stack_get_unqualified.hpp/inheritance.hpp - the regular, non-unique inheritance
-// path is confirmed gated by weak_derive<T>, set correctly by add_bases; the
-// unique-usertype path's own checker did not appear to consult it, in the
-// stand-in's case). Filed as a follow-up rather than blocking this fix - see the
-// grunk-occt writeup for the full trace. If you find the actual discrepancy, a
-// `std_vector.with_bases_unique_usertype`-shaped test belongs here.
+// A prior version of this fix claimed this was "confirmed working end-to-end
+// against real OCCT types in grunk-occt" but a self-contained minimal Handle<T>
+// stand-in reproduced a failure ("unrecognized userdata (not pushed by sol?)")
+// that could not be explained at the time. Root-caused for real since then, against
+// grunk-geoml's own real OCCT Handle(Geom_Curve)/Handle(Geom_BSplineCurve) case
+// (occt.Geom_Curve.as_vec(...) previously failed identically) - two independent,
+// jointly-necessary causes, both fixed/documented now:
+//
+// 1. cast_to_element's parameter was VecElement const& (a reference). sol2's
+//    unique-usertype-aware checker/getter (the path that actually consults
+//    rebind_actual_type/SOL_BASE_CLASSES to walk a Handle(Derived)->Handle(Base)
+//    conversion) excludes reference parameters outright - the identical
+//    !std::is_reference_v<X> gate that already forced grunk-occt/grunk-geoml's own
+//    codegen to emit Handle(X) function parameters by value. Fixed above:
+//    cast_to_element now takes VecElement by value.
+// 2. SOL_BASE_CLASSES(T, ...)/SOL_DERIVED_CLASSES(T, ...) (sol/forward.hpp)
+//    specialize the compile-time sol::base<T>/sol::derive<T> traits - visible only
+//    via #include, per ordinary C++ template-specialization rules, independent of
+//    whatever add_bases<...>() registered at runtime. The original stand-in
+//    attempt registered add_bases<Base>() (the runtime side) but never declared
+//    SOL_BASE_CLASSES/SOL_DERIVED_CLASSES (the compile-time side) in its own TU -
+//    an unspecialized primary template silently means "no known bases" to sol2's
+//    checker, with no compile error, which is exactly the discrepancy that could
+//    not be found before: grunk-occt's own occt_plugin.cpp registers Geom_Curve's
+//    bases AND declares its own generated SOL_BASE_CLASSES/SOL_DERIVED_CLASSES in
+//    the same translation unit, but a foreign test TU (like the original stand-in,
+//    or any plugin consuming grunk-occt's registrations from a different .cpp)
+//    does not get that visibility for free.
+//
+// The test below reproduces cause 2 explicitly by only declaring SOL_BASE_CLASSES/
+// SOL_DERIVED_CLASSES for HandleDerived/HandleBase right here, matching what any
+// real caller must also do for its own Handle(X) hierarchy.
+namespace {
+
+    struct HandleBase { int i; };
+    struct HandleDerived : HandleBase {};
+
+    // A minimal opencascade::handle<T>-shaped smart pointer: a bare owning
+    // pointer plus an implicit upcast converting constructor from Handle<Derived>
+    // to Handle<Base> (mirroring Standard_Handle.hxx's own reference-conversion
+    // operator) - deliberately not reference-counted, since ownership semantics
+    // are irrelevant to the sol2 binding behavior under test.
+    template <typename T>
+    struct Handle {
+        T* ptr = nullptr;
+        Handle() = default;
+        explicit Handle(T* p) : ptr(p) {}
+        template <typename U, typename = std::enable_if_t<std::is_base_of_v<T, U>>>
+        Handle(Handle<U> const& other) : ptr(other.ptr) {}
+        bool IsNull() const { return ptr == nullptr; }
+        T* get() const { return ptr; }
+    };
+
+} // anonymous namespace
+
+namespace sol {
+    template <typename T>
+    struct unique_usertype_traits<Handle<T>> {
+        using type = T;
+        using actual_type = Handle<T>;
+        static const bool value = true;
+
+        template <typename X>
+        using rebind_actual_type = Handle<X>;
+
+        static bool is_null(actual_type const& p) { return p.IsNull(); }
+        static type* get(actual_type const& p) { return p.get(); }
+    };
+} // namespace sol
+
+SOL_BASE_CLASSES(HandleDerived, HandleBase);
+SOL_DERIVED_CLASSES(HandleBase, HandleDerived);
+
+TEST(std_vector, with_bases_unique_usertype)
+{
+    grunk::state grunk;
+
+    grunk.register_type<HandleBase>("HandleBase")
+    .add_constructors([](int i){ return Handle<HandleBase>(new HandleBase{i}); })
+    .with_std_vector<Handle<HandleBase>>();
+
+    grunk.register_type<HandleDerived>("HandleDerived")
+    .add_constructors([](int i){ return Handle<HandleDerived>(new HandleDerived{HandleBase{i}}); })
+    .add_bases<HandleBase>();
+
+    auto env = grunk.create_env();
+    env.eval(R"(
+d1 = HandleDerived.new(5)
+d2 = HandleDerived.new(7)
+b1 = HandleBase.new(9)
+
+l = HandleBase.as_vec(d1, d2, b1)
+)");
+
+    sol::object l = env["l"];
+    ASSERT_TRUE(l.is<std::vector<Handle<HandleBase>>>());
+    auto lv = l.as<std::vector<Handle<HandleBase>>>();
+    ASSERT_EQ(lv.size(), 3u);
+    ASSERT_FALSE(lv[0].IsNull());
+    ASSERT_FALSE(lv[1].IsNull());
+    ASSERT_FALSE(lv[2].IsNull());
+    EXPECT_EQ(lv[0].get()->i, 5);
+    EXPECT_EQ(lv[1].get()->i, 7);
+    EXPECT_EQ(lv[2].get()->i, 9);
+}

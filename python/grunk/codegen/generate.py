@@ -107,7 +107,41 @@ def expand_headers(patterns: list[str], include_dir: Path, exclude_headers: list
     for pattern in patterns:
         is_glob = any(ch in pattern for ch in "*?[")
         if is_glob:
-            matches = sorted(p.name for p in include_dir.glob(pattern) if p.name not in excluded)
+            # Path.relative_to(include_dir), not the bare basename (p.name): a glob
+            # like "gp_*.hxx" against a flat include_dir (OCCT's own layout) makes no
+            # difference here (a flat file's relative path already equals its
+            # basename), but a glob spanning subdirectories - e.g. "geoml/<module>/*.h"
+            # - previously collapsed to just the trailing filename, which
+            # process_module then re-joined onto include_dir directly
+            # (include_dir / header), silently reconstructing the WRONG path for
+            # anything not sitting flat under include_dir (confirmed the hard way
+            # against a real nested-header library: a TranslationUnitLoadError trying
+            # to parse "<include_dir>/surfaces.h", which doesn't exist - the real file
+            # was "<include_dir>/geoml/surfaces/surfaces.h"). exclude_headers is
+            # matched against this same relative-path spelling, so a nested-layout
+            # plugin's own exclude_headers entries should be relative-path spelled too
+            # (a flat-layout plugin's existing bare-filename entries are unaffected,
+            # since relative path and basename coincide there). .as_posix(), not
+            # plain str(): Path.relative_to() renders with the *native* separator
+            # on the platform the generator itself happens to be running on -
+            # backslash on Windows - so a plain str() would make this glob's own
+            # returned header spelling (and therefore config.yml's own
+            # exclude_headers matching, and translation_units.txt/generated
+            # filenames wherever a header's own relative path feeds into one)
+            # silently platform-dependent, breaking reproducibility and any
+            # config.yml exclude_headers entry authored (as every one in this
+            # codebase already is) with forward slashes - found via a real CI
+            # failure on Windows, not just reasoned about. include_dir / header
+            # reconstruction (parse_headers, elsewhere) still resolves correctly
+            # from a forward-slash string on Windows either way - pathlib's own
+            # Windows path flavour accepts '/' as a separator natively - so this
+            # is purely about keeping the *returned spelling* canonical, not a
+            # second, different path-reconstruction bug.
+            matches = sorted(
+                p.relative_to(include_dir).as_posix()
+                for p in include_dir.glob(pattern)
+                if p.relative_to(include_dir).as_posix() not in excluded
+            )
             if not matches:
                 raise RuntimeError(f"header glob {pattern!r} matched no files in {include_dir}")
         else:
@@ -161,6 +195,80 @@ CXX_FUNDAMENTAL_TYPES = {
 # name this generator run doesn't itself recognize still gets treated as an
 # "object" rather than rejected.
 BARE_TYPE_NAME = re.compile(r"[A-Za-z_]\w*(::[A-Za-z_]\w*)*")
+
+class _Rejected:
+    """Sentinel type for REJECTED below - a dedicated type (not e.g. a string
+    constant) so `is REJECTED` can never collide with a legitimate kind name a
+    CodeGenerator subclass happens to choose."""
+    def __repr__(self) -> str:
+        return "REJECTED"
+
+# Returned by CodeGenerator.classify_param() to definitively reject a parameter -
+# distinct from None, which means "not one of my own library's idioms, let
+# Param.kind()'s own unregistered-class fallback have a look instead" (see
+# classify_param()'s own docstring). Needed because a hook can recognize a
+# parameter's *shape* (e.g. "this canonical spelling is an NCollection_Array1<X>")
+# and, having recognized it, positively determine it's unsupported for a reason
+# specific to that shape (X itself isn't a supported element type) - falling
+# through to None in that case used to let the *surface* spelling (often a
+# library's own bare-identifier typedef, e.g. "TColgp_Array1OfPnt" for
+# "NCollection_Array1<gp_Pnt>") pass Param.kind()'s own generic BARE_TYPE_NAME
+# fallback and get silently accepted as a plain "object" anyway - the exact bug
+# this sentinel exists to let a subclass avoid (confirmed happening for real: an
+# NCollection_Array1<T> parameter with an unregistered element type, found via
+# grunk-occt's own test_hooks.py::test_classify_param_array1_array2).
+REJECTED = _Rejected()
+
+# std::string - sol2 converts a Lua string to/from std::string automatically, no
+# wrapping needed, exactly like a bare fundamental (hence "passthrough", not
+# "object" - it behaves like a value, not a Lua-side-identity usertype). Needs this
+# explicit, unconditional built-in rather than falling through to the "object"
+# fallback below: std::string's *surface* spelling ("std::string") matches
+# BARE_TYPE_NAME fine, but its *canonical* (typedef-resolved) spelling is whichever
+# standard library implementation's own real template instantiation (libstdc++'s
+# std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char>>),
+# which does not match BARE_TYPE_NAME (angle brackets, commas) - the "object"
+# fallback's own canonical cross-check (see Param.kind()) used to reject on this
+# basis alone, silently rejecting every std::string parameter/return of any plugin
+# wrapping any library that uses std::string directly (found the hard way wrapping
+# geoml: has_tag, every exporter/importer's filename parameter, ... all silently
+# rejected until this became a built-in). Genuinely library-agnostic - not an idiom
+# of any one third-party library, so belongs here rather than behind a
+# CodeGenerator.classify_param() override.
+CXX_STD_STRING = "std::string"
+
+# std::vector<T> - sol2 already converts a Lua table to/from std::vector<T> natively
+# (its own generic container support) whenever T itself is push/gettable, with zero
+# wrapping code needed in the emitted lambda body, as long as this generator
+# classifies the *whole* std::vector<T> as a plain "passthrough"-shaped parameter
+# rather than rejecting it. Like std::string above, this needs its own built-in
+# rather than the "object" fallback: a parameter/return spelled directly as
+# "std::vector<T>" (as opposed to hidden behind a library's own typedef, e.g.
+# OCCT's TColgp_Array1OfPnt-style indirection - not this pattern's concern, see a
+# CodeGenerator subclass's own classify_param() for that) fails even the *surface*
+# BARE_TYPE_NAME check (angle brackets), let alone the canonical one - rejected
+# outright before a subclass's own classify_param() ever gets a chance to special-
+# case it (found the hard way wrapping geoml: nurbs_curve, interpolate_curves,
+# translate, every extract_control_point_* accessor, ... all silently rejected).
+# Deliberately permissive about the *element* type T - any CXX_FUNDAMENTAL_TYPES
+# member, std::string itself, or any other plausible bare class name (registered by
+# this run or not - exactly Param.kind()'s own "object" fallback logic for a
+# standalone parameter, reapplied here to one vector element) is accepted, since
+# none of those need any manual per-element conversion for sol2 to already handle a
+# std::vector of them correctly.
+STD_VECTOR_PATTERN = re.compile(r"^std::vector<\s*(.+?)\s*>$")
+
+
+def _std_vector_element_supported(elem: str, registered_types: set[str], registered_enums: set[str]) -> bool:
+    """Whether `elem` (a std::vector<T>'s own T, already stripped of surrounding
+    whitespace) is a type sol2 can already push/get on its own, needing no manual
+    conversion - see STD_VECTOR_PATTERN's own comment for the full rationale."""
+    if elem in CXX_FUNDAMENTAL_TYPES or elem == CXX_STD_STRING:
+        return True
+    if elem in registered_types or elem in registered_enums:
+        return True
+    return bool(BARE_TYPE_NAME.fullmatch(elem))
+
 
 # Operator overloads (see python/grunk/codegen/README.md's "Operator overloads and
 # friend free functions"): C++ operator token -> sol2 meta_function name.
@@ -260,9 +368,12 @@ class Param:
         customization from any plugin; anything else - a smart-pointer
         wrapper, a fixed-size array/container type, a type with more than one
         possible C++ representation, or any other library-specific idiom - is
-        delegated to hooks.classify_param(), which returns None (still
-        unsupported) unless the plugin's own CodeGenerator subclass
-        recognizes it.
+        delegated to hooks.classify_param(). A None result there means "not one
+        of my own library's idioms" and still falls through to this method's
+        own unregistered-class fallback below; REJECTED means the hook
+        positively recognized param's shape and determined it's unsupported -
+        skip the fallback and reject outright (see REJECTED's own module-level
+        docstring for why this distinction is needed).
 
         Non-const-reference ("out") parameters ARE supported for an object
         (Lua/sol2 userdata for a class already has stable, mutable identity -
@@ -309,9 +420,25 @@ class Param:
         # fundamental above - reuses the "passthrough" kind rather than a new one.
         if self.base in registered_enums:
             return None if self.is_mutable_ref else "passthrough"
+        # std::string/std::vector<T> - see their own module-level comments for why
+        # these need to be unconditional built-ins (ahead of registered_types/
+        # classify_param, exactly like the fundamentals/enum checks above) rather
+        # than falling through to the "object" fallback below or being left to each
+        # plugin's own classify_param() override: both are genuinely library-
+        # agnostic (pure standard-library idioms, not any one third-party library's
+        # own convention), and the "object" fallback's own canonical/bare-type-name
+        # checks reject both outright regardless (std::string's canonical spelling,
+        # and std::vector<T>'s own *surface* spelling, both contain angle brackets).
+        if self.base == CXX_STD_STRING:
+            return None if self.is_mutable_ref else "passthrough"
+        m_vec = STD_VECTOR_PATTERN.fullmatch(self.base)
+        if m_vec and _std_vector_element_supported(m_vec.group(1), registered_types, registered_enums):
+            return None if self.is_mutable_ref else "passthrough"
         if self.base in registered_types:
             return "object"
         kind = hooks.classify_param(self, registered_types, registered_enums)
+        if kind is REJECTED:
+            return None
         if kind is not None:
             return kind
         if not BARE_TYPE_NAME.fullmatch(self.base):
@@ -325,16 +452,29 @@ class Param:
         # to notice it's secretly a pointer, but self.canonical can (found
         # the hard way: silently pushing a raw pointer as if it were a plain
         # object is a different, riskier shape than this fallback is meant
-        # to cover).
+        # to cover). Deliberately checks for a *pointer* spelling specifically
+        # (trailing "*"), not "canonical_base doesn't look like a bare type name" in
+        # general - that broader check used to reject any class whose canonical
+        # spelling happens to be a template instantiation (std::string's own
+        # standard-library implementation, or any other class template used
+        # directly), even though a template instantiation is exactly as safe a
+        # "genuine, stable-identity class" as a plain class name is; only a pointer
+        # canonical is the actual, documented hazard this check exists to catch.
         canonical_base = strip_type(self.canonical) if self.canonical else None
-        if canonical_base is not None and not BARE_TYPE_NAME.fullmatch(canonical_base):
+        canonical_is_pointer = canonical_base is not None and canonical_base.endswith("*")
+        if canonical_is_pointer:
             return None
         if self.is_mutable_ref:
             # Safe (a mutable reference to a genuine, stable-identity class -
             # same as an in-run registered class already supports) only when
             # the canonical spelling positively confirms this isn't secretly
             # a fundamental; unavailable (a return-type check) or actually
-            # fundamental both stay conservative and rejected.
+            # fundamental both stay conservative and rejected. canonical_base
+            # need not itself be a "bare type name" here - a template
+            # instantiation (std::vector<double>, a real class with its own
+            # stable identity) is exactly as safe as a bare class name for this
+            # purpose, so only an actual CXX_FUNDAMENTAL_TYPES match (or no
+            # canonical spelling at all) is disqualifying.
             if canonical_base is None or canonical_base in CXX_FUNDAMENTAL_TYPES:
                 return None
         return "object"
@@ -952,19 +1092,26 @@ class CodeGenerator:
         enum passthrough, already-registered class) fail to classify param.base.
         Returns any kind name this subclass chooses (a plain string, not drawn
         from a fixed enum this generator defines) for emit_param()/
-        emit_constructor() to later recognize by that same name, or None to
-        leave param unclassified here - NOT necessarily rejected outright:
-        Param.kind() still tries its own unregistered-class fallback afterward
-        (see its own docstring) before actually giving up, so returning None
-        only means "this isn't one of my own library's special idioms," not
-        "this parameter is unsupported." Receives the full Param (not just its
-        spelling) so a subclass can use param.canonical (typedef-resolved
-        spelling - needed to see through a library's own container/template
-        typedefs) and param.is_mutable_ref (a mutable reference to a value with
-        no stable Lua-side identity to mutate in place, e.g. a bare number or a
-        by-value container, is usually not supported - see Param.kind's own
-        docstring for the built-in kinds' own version of this rule). Default:
-        always None."""
+        emit_constructor() to later recognize by that same name; None to leave
+        param unclassified here - NOT rejected outright: Param.kind() still
+        tries its own unregistered-class fallback afterward (see its own
+        docstring) before actually giving up, so returning None only means
+        "this isn't one of my own library's special idioms," not "this
+        parameter is unsupported"; or REJECTED (module-level sentinel, see its
+        own docstring) when this method positively recognizes param's *shape*
+        as belonging to its own library's idiom and, having recognized it,
+        determines it's unsupported for a reason specific to that shape (e.g. a
+        container type whose element type isn't itself supported) - this skips
+        Param.kind()'s own fallback entirely, unlike None, since that fallback
+        would otherwise happily accept the param's surface spelling as a plain
+        unregistered "object" even though this method already knows better.
+        Receives the full Param (not just its spelling) so a subclass can use
+        param.canonical (typedef-resolved spelling - needed to see through a
+        library's own container/template typedefs) and param.is_mutable_ref (a
+        mutable reference to a value with no stable Lua-side identity to mutate
+        in place, e.g. a bare number or a by-value container, is usually not
+        supported - see Param.kind's own docstring for the built-in kinds' own
+        version of this rule). Default: always None."""
         return None
 
     def classify_ctor_mode(self, class_name: str, base_chain: list[str]) -> str | None:
@@ -1354,6 +1501,106 @@ def process_module(module: dict, cache: dict[str, ParsedHeader], registered_type
     return result
 
 
+def render_sol_base_classes_header(all_bases: dict[str, list[str]], all_namespace_of: dict[str, str],
+                                    class_to_header: dict[str, str], hooks: CodeGenerator,
+                                    banner: str = DEFAULT_GENERATED_BANNER) -> str:
+    """Renders sol_base_classes.hpp: one SOL_BASE_CLASSES(...)/SOL_DERIVED_CLASSES(...)
+    macro pair per class with a non-empty base chain, aggregated across *every*
+    module in this run (not just one) - see this generator's own module-level
+    docstring/README for why this needs to be global rather than per-module.
+
+    This is a *separate*, compile-time-only mechanism from the ordinary
+    `.add_bases<...>()` runtime call render_module() already emits per class
+    (usertype_proxy::add_bases, a Lua-visible metatable property used for plain
+    reference-based up/downcasting and colon-call method lookup): sol2's own
+    Handle(Derived)->Handle(Base) *unique-usertype* conversion
+    (sol::detail::inheritance<T>::type_unique_cast, consulted when a
+    Handle(Geom_BSplineSurface)-shaped value needs to satisfy a Handle(Geom_Surface)
+    parameter/overload-candidate, say) instead requires two explicit compile-time
+    template specializations - SOL_BASE_CLASSES(Derived, Base...) (the "upward"
+    direction, giving `sol::base<Derived>` its own bases) and
+    SOL_DERIVED_CLASSES(Base, Derived...) (the "downward" direction, giving
+    `sol::derive<Base>` the set of classes that might actually be stored where a
+    Base is asked for) - without *both*, sol2 unconditionally treats the
+    relevant list as empty and the conversion silently never happens, regardless
+    of what add_bases<...>() declares. Confirmed empirically (a live spike
+    against real OCCT classes) that adding both macros, plus a
+    unique_usertype_traits<Handle<T>>::rebind_actual_type member (the plugin's
+    own responsibility, not this generator's - see the consuming plugin's own
+    sol traits header), is sufficient to make the conversion work correctly,
+    including in an OCCT build without OCCT_HANDLE_NOCAST (no value-constructing
+    handle converting constructor, only an implicit reference-conversion
+    operator) - the actual assignment this triggers binds through that operator
+    and then runs the target handle's own ordinary, always-available
+    same-type copy-assignment, with correct reference counting.
+
+    A *derived* class's own SOL_BASE_CLASSES bases come from hooks.emit_bases()
+    (the same override point/filtering a plugin's hooks.py already uses for
+    add_bases<...>()), so a plugin that truncates or filters its own class
+    hierarchy there (e.g. stopping short of a deep, Lua-irrelevant ancestor
+    chain) gets the identical chain reflected here - the two mechanisms should
+    always agree on "what is this class's base, as far as Lua is concerned".
+    SOL_DERIVED_CLASSES's own "downward" lists are then just this same
+    information inverted globally across every class in the run.
+
+    Names are emitted fully-qualified (via all_namespace_of, ModuleResult's own
+    per-module namespace_of aggregated across the whole run) since, unlike each
+    module's own generated .cpp, this shared header has no per-module `using
+    ns::Name;` declarations to rely on. class_to_header maps every class name in
+    all_bases (bases and classes-with-bases alike) to the literal header it was
+    discovered in (built by run() from the same parse cache every module's own
+    processing already reads), so this header is self-contained regardless of
+    which module's .cpp happens to include it first - a class mentioned here
+    only as *someone else's* base (never itself explicitly processed as this
+    run's own primary subject) still needs its own #include for its name to be
+    resolvable at all.
+
+    usertype_traits<T>::qualified_name() (what SOL_BASE_CLASSES/
+    SOL_DERIVED_CLASSES ultimately compare at runtime) is a compile-time-type-
+    derived (RTTI demangle-based) string, entirely independent of whether
+    register_type<T>(...) was ever called for T at runtime - so a base class
+    that is itself never registered as a Lua-visible usertype (a pure
+    implementation-detail intermediate ancestor, say) can still appear here
+    without issue."""
+    def qualify(name: str) -> str:
+        ns = all_namespace_of.get(name)
+        return f"{ns}::{name}" if ns else name
+
+    # Every class name this header will ever mention, on either side of a
+    # SOL_BASE_CLASSES/SOL_DERIVED_CLASSES pair - collected first so each one's
+    # own header is included exactly once, in a stable (sorted) order.
+    all_names: set[str] = set(all_bases.keys())
+    for bases in all_bases.values():
+        all_names.update(bases)
+
+    header_lines = sorted({
+        f"#include <{class_to_header[name]}>" for name in all_names if name in class_to_header
+    })
+
+    derived_of: dict[str, list[str]] = {}
+    base_lines: list[str] = []
+    for name in sorted(all_bases.keys()):
+        bases = hooks.emit_bases(name, all_bases[name])
+        if not bases:
+            continue
+        base_lines.append(f"SOL_BASE_CLASSES({qualify(name)}, {', '.join(qualify(b) for b in bases)});")
+        for base in bases:
+            derived_of.setdefault(base, []).append(name)
+
+    derived_lines = [
+        f"SOL_DERIVED_CLASSES({qualify(base)}, {', '.join(qualify(d) for d in sorted(derived))});"
+        for base, derived in sorted(derived_of.items())
+    ]
+
+    body = "\n".join(header_lines) + "\n\n" + "\n".join(base_lines) + "\n\n" + "\n".join(derived_lines) + "\n"
+    return banner + f"""
+#pragma once
+
+#include <sol/sol.hpp>
+
+{body}"""
+
+
 def render_module(result: ModuleResult, hooks: CodeGenerator,
                    includes_for_kinds: dict[str, list[str]],
                    includes_for_ctor_modes: dict[str, list[str]],
@@ -1575,6 +1822,7 @@ void register_{result.name}(grunk::plugin_namespace& ns);
 
     cpp_source = banner + f"""
 #include "{result.name}.hpp"
+#include "sol_base_classes.hpp"
 
 {includes}
 
@@ -1745,11 +1993,20 @@ def run(args: argparse.Namespace) -> int:
         e.name for p in cache.values() for e in p.entities if e.kind == "enum"
     } - blacklisted_names
 
+    # Aggregated across *every* module (not reset per module) so
+    # render_sol_base_classes_header() below can see the whole class hierarchy
+    # this run knows about, however many modules a given base/derived pair's
+    # two ends happen to be split across - see that function's own docstring.
+    all_bases: dict[str, list[str]] = {}
+    all_namespace_of: dict[str, str] = {}
+
     for module in config["modules"]:
         result = process_module(module, cache, registered_types, registered_enums, hooks)
         header_source, cpp_source = render_module(result, hooks, includes_for_kinds, includes_for_ctor_modes, banner)
         (args.output_dir / f"{result.name}.hpp").write_text(header_source)
         (args.output_dir / f"{result.name}.cpp").write_text(cpp_source)
+        all_bases.update(result.bases)
+        all_namespace_of.update(result.namespace_of)
 
         n_accepted = sum(len(v) for v in result.accepted_ctors.values()) + sum(
             len(o) for m in result.accepted_methods.values() for o in m.values()
@@ -1760,6 +2017,17 @@ def run(args: argparse.Namespace) -> int:
             print(f"  rejected {c.class_name}::{c.cpp_name}: {reason}", file=sys.stderr)
         for c in result.blacklisted:
             print(f"  blacklisted {c.class_name}::{c.cpp_name}", file=sys.stderr)
+
+    # class name -> the literal header it was discovered in, built from the same
+    # whole-config parse cache used for registered_types/registered_enums above -
+    # see render_sol_base_classes_header()'s own docstring for why this shared
+    # header needs it (a class mentioned there only as someone else's base may
+    # never have been this run's own primary subject in any one module).
+    class_to_header: dict[str, str] = {
+        e.name: header for header, parsed in cache.items() for e in parsed.entities if e.kind == "class"
+    }
+    sol_base_classes_source = render_sol_base_classes_header(all_bases, all_namespace_of, class_to_header, hooks, banner)
+    (args.output_dir / "sol_base_classes.hpp").write_text(sol_base_classes_source)
 
     # See the consuming CMakeLists.txt's own comment on reading this file: one
     # line per translation unit, each a space-separated list of module names

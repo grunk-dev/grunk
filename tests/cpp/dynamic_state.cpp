@@ -356,6 +356,64 @@ TEST(state, usertype_ctor_as_action_lua)
     EXPECT_EQ(env.get_feature("x").value().as<MyScalar>().value(), 4.);
 }
 
+// Passing a value of one registered usertype where a *different*, unrelated
+// registered usertype is expected used to be a real, reproducible segfault
+// instead of a catchable error: sol2 defaults to unchecked argument
+// extraction (SOL_ALL_SAFETIES_ON off unless this is a debug build), which
+// blindly reinterprets a mismatched userdata's memory as the target type
+// rather than rejecting it - found via grunk-geoml's own airplane_seats.grr.yml
+// (a geoml::Shape passed directly where a TopoDS_Shape was expected). Fixed by
+// grunk/dynamic/CMakeLists.txt now defining SOL_ALL_SAFETIES_ON=1 as an
+// INTERFACE compile definition on grunk::dynamic, so every consumer - grunk's
+// own code and any downstream plugin linking against it - gets the checked
+// getter consistently. TypeA/TypeB here are two intentionally unrelated
+// (non-inheriting) registered types, the same shape as the real bug.
+namespace {
+
+struct TypeA
+{
+    explicit TypeA(double v) : value(v) {}
+    double value;
+};
+
+struct TypeB
+{
+    explicit TypeB(double v) : value(v) {}
+    double value;
+};
+
+} // anonymous namespace
+
+TEST(state, mismatched_usertype_argument_throws_instead_of_crashing)
+{
+    grunk::state grunk;
+
+    grunk.register_type<TypeA>("TypeA")
+    .add_constructors(
+        [](double v) { return TypeA(v); }
+    );
+    grunk.register_type<TypeB>("TypeB")
+    .add_constructors(
+        [](double v) { return TypeB(v); }
+    );
+    grunk.register_function(
+        "takes_a",
+        [](TypeA const& a) -> double { return a.value; }
+    );
+
+    auto env = grunk.create_parametric_env();
+    try {
+        env.eval(R"(
+            b = TypeB.new(3.)
+            x = takes_a(b)
+            result = x:value()
+        )");
+        FAIL() << "expected a catchable error, not a successful (or crashing) call";
+    } catch (sol::error const& e) {
+        EXPECT_NE(std::string(e.what()).find("TypeA"), std::string::npos);
+    }
+}
+
 TEST(state, usertype_operators_as_action_lua)
 {
     grunk::state grunk;
@@ -464,6 +522,170 @@ TEST(state, usertype_method_as_action_lua)
 
     EXPECT_NEAR(env.get<MyScalar>("z1").value(),27, 1e-14); // 3^3
     EXPECT_NEAR(env.get<MyScalar>("z2").value(), 8, 1e-14); // 2^3
+}
+
+// A pImpl/shared_ptr-backed type (unlike MyScalar's plain double), used to
+// reproduce a real, previously-silent crash: DynamicFeature::as()'s returned
+// proxy used to capture `this` (a raw pointer to the DynamicFeature it was
+// called on) and pass it straight through to the wrapped type's own method,
+// instead of a copy of the feature's own *evaluated value*. For a plain
+// double-backed type like MyScalar this happened to not crash (misinterpreting
+// unrelated memory as a double is harmless UB), but for a type whose method
+// actually dereferences an internal pointer, it segfaults - found the hard way
+// via grunk-geoml's own geoml::Shape (also pImpl/shared_ptr-backed).
+namespace {
+
+struct PimplWidget
+{
+    struct Data { double value; };
+    std::shared_ptr<Data> data;
+
+    explicit PimplWidget(double v) : data(std::make_shared<Data>(Data{v})) {}
+    double get() const { return data->value; }
+};
+
+} // anonymous namespace
+
+// Reproduces the exact real-world shape of the bug: an *unnamed* DynamicFeature
+// (the result of a `modules:` script function call, which - unlike a plain
+// registered constructor/member-function call - carries no static return type
+// hint, see run_module_script's own doc comment) has :as(Type) called on it
+// directly, with nothing else keeping the original, wrapper-less temporary
+// feature reachable from Lua. A forced full GC between :as() and the first use
+// of its returned proxy used to leave the captured `this` pointer dangling
+// (the temporary's own userdata having been collected) - now the proxy holds
+// its own copy of the feature (a cheap, shared_ptr-backed handle), independent
+// of Lua's GC.
+TEST(state, as_on_module_function_result_survives_gc_and_uses_real_value)
+{
+    grunk::state grunk;
+
+    grunk.register_type<PimplWidget>("PimplWidget")
+    .add_constructors(
+        [](double v) { return PimplWidget(v); }
+    )
+    .add_member_function("get", &PimplWidget::get);
+
+    grunk.run_module_script("helpers", R"(
+        function make_widget(v)
+            return PimplWidget.new(v)
+        end
+    )");
+
+    auto env = grunk.create_parametric_env();
+    env.eval(R"(
+        w = helpers.make_widget(5.):as(PimplWidget)
+    )");
+
+    // Nothing but `w`'s own captured copy of the original module-function
+    // result keeps that temporary feature alive at this point - a full,
+    // forced collection is the most direct way to prove that.
+    env.eval(R"(collectgarbage("collect"))");
+
+    env.eval(R"(
+        result = w.get():value()
+    )");
+
+    EXPECT_NEAR(env.get<double>("result"), 5., 1e-14);
+}
+
+// A mutating method (MyScalar::set, non-const `self`) called directly on a
+// Feature from a decorated/parametric environment (`x:set(3)`, not routed
+// through `x:change_value():set(3)` the way usertype_method_as_action_lua
+// above does) used to silently never execute at all: make_dynamic_action builds
+// a real compute node for the call, but grunk's evaluation is lazy/pull-based
+// (a thin wrapper over the external `parametric` library's own DAG engine) - a
+// bare `obj:Mutate(...)` statement never reads that node's own output feature,
+// so it's simply never eval()'d, and the real C++ mutation inside it never runs.
+// Now rejected loudly and immediately instead - see ActionDynamic.hpp's
+// make_dynamic_action.
+TEST(state, mutating_member_function_direct_call_in_decorated_env_throws)
+{
+    grunk::state grunk;
+
+    grunk.register_type<MyScalar>("MyScalar")
+    .add_constructors(
+        [](double v) { return MyScalar(v); }
+    )
+    .add_member_function("set", &MyScalar::set);
+
+    auto env = grunk.create_parametric_env();
+    try {
+        env.eval(R"(
+            local x = MyScalar.new_feature(2)
+            x:set(3)
+        )");
+        FAIL() << "expected the mutating call to throw";
+    } catch (sol::error const& err) {
+        std::string what = err.what();
+        EXPECT_NE(what.find("mutates its own receiver"), std::string::npos);
+        EXPECT_NE(what.find("modules:"), std::string::npos);
+    }
+}
+
+// The same mutating call, wrapped in a `modules:`-equivalent module script
+// (state::run_module_script), works exactly as plain C++ would - a module
+// function's own body resolves against the undecorated original_env directly,
+// so it never reaches make_dynamic_action's own check at all (nor the bug it
+// guards against). This is the fix the thrown error above actually points users
+// at - confirmed here that it's real, not just an escape hatch mentioned in an
+// error message.
+TEST(state, mutating_member_function_inside_module_script_works)
+{
+    grunk::state grunk;
+
+    grunk.register_type<MyScalar>("MyScalar")
+    .add_constructors(
+        [](double v) { return MyScalar(v); }
+    )
+    .add_member_function("set", &MyScalar::set)
+    .add_member_function("value", &MyScalar::value);
+
+    grunk.run_module_script("helpers", R"(
+        function make_scalar_set_to(v)
+            local s = MyScalar.new(0)
+            s:set(v)
+            return s
+        end
+    )");
+
+    auto env = grunk.create_parametric_env();
+    auto res = env.eval(R"(
+        result = helpers.make_scalar_set_to(42)
+    )");
+    ASSERT_TRUE(res.valid());
+    // Calling INTO a module function from decorated code still goes through
+    // make_dynamic_action once, for the module function call itself - so its
+    // result is a DynamicFeature wrapping the returned MyScalar, not a raw
+    // MyScalar directly.
+    EXPECT_NEAR(env.get_feature("result").value().as<MyScalar>().value(), 42, 1e-14);
+}
+
+// MyScalar::pow has a non-const `self` too (it isn't marked `const`, even
+// though it mutates nothing - a common, entirely legitimate real-world shape:
+// plenty of methods just never got the `const` they could have) but returns a
+// real value (MyScalar), not void - must NOT be affected by the new check,
+// which deliberately requires BOTH a non-const self AND a void return type
+// (see details::deduce_receiver_is_mutating's own doc comment for why
+// non-const alone is not a safe-enough signal on its own - this exact method
+// is the concrete counterexample that proved it).
+TEST(state, non_const_but_non_void_member_function_direct_call_in_decorated_env_does_not_throw)
+{
+    grunk::state grunk;
+
+    grunk.register_type<MyScalar>("MyScalar")
+    .add_constructors(
+        [](double v) { return MyScalar(v); }
+    )
+    .add_member_function("pow", &MyScalar::pow);
+
+    auto env = grunk.create_parametric_env();
+    auto res = env.eval(R"(
+        local x = MyScalar.new_feature(2)
+        result = x:pow(3)
+    )");
+    ASSERT_TRUE(res.valid());
+    EXPECT_NEAR(env.get_feature("result").value().as<MyScalar>().value(), 8, 1e-14);
 }
 
 // usertype_method_as_action_lua above only ever calls :as() on a "root" feature
@@ -841,7 +1063,23 @@ TEST(state, native_colon_call_reserved_name_shadowing)
     EXPECT_NEAR(result.as<MyScalar>().value(), 2., 1e-14);
 }
 
-TEST(state, native_colon_call_void_return_no_hint)
+// void-returning + non-const `self` (MyScalar::set) is exactly the shape
+// make_dynamic_action's own mutating-receiver check now rejects (see
+// ActionDynamic.hpp) - this test used to assert the call succeeded silently
+// (EXPECT_NO_THROW(y.value())), without ever checking whether `x` itself was
+// actually mutated by it (it is, if - and only if - `y`'s own result feature
+// is explicitly forced, e.g. via y.value(), exactly as done here; a bare
+// `x:set(5.)` statement with no assignment at all never runs the mutation, an
+// even more broken variant of the same hazard). That "safe if you remember to
+// force the result" pattern is fragile precisely because it's easy to get
+// wrong - see mutating_member_function_direct_call_in_decorated_env_throws
+// below for the far more common, silently-broken bare-statement shape this
+// project actually hit in production (grunk-geoml's wing_loft.grr.yml, an
+// occt.gp_GTrsf built via 3 separate bare SetValue(...) statements, each
+// silently a no-op). Rejecting unconditionally, rather than only the
+// definitely-discarded case, is deliberate: whether a given call's result will
+// ever be read isn't knowable at the point the call is dispatched at all.
+TEST(state, mutating_member_function_via_assign_and_force_read_also_throws)
 {
     grunk::state grunk;
 
@@ -849,16 +1087,18 @@ TEST(state, native_colon_call_void_return_no_hint)
     .add_constructors(
         [](double v) { return MyScalar(v); }
     )
-    .add_member_function("set", &MyScalar::set); // void-returning
+    .add_member_function("set", &MyScalar::set); // void-returning, non-const self
 
     auto x = grunk.feature(MyScalar(2.));
     auto env = grunk.create_parametric_env();
     env["x"] = x;
-    env.eval("y = x:set(5.)");
-
-    grunk::DynamicFeature y = env.get_feature("y");
-    EXPECT_FALSE(y.type_hint().has_value());
-    EXPECT_NO_THROW(y.value());
+    try {
+        env.eval("y = x:set(5.)");
+        FAIL() << "expected the mutating call to throw";
+    } catch (sol::error const& err) {
+        std::string what = err.what();
+        EXPECT_NE(what.find("mutates its own receiver"), std::string::npos);
+    }
 }
 
 TEST(state, deduce_return_type_hint_tuple_return_is_safe)
@@ -1216,10 +1456,13 @@ TEST(state, usertype_nonconst_method_as_action_lua)
 TO DO
   - test (nested) enums
   - test data member as action (read-only) in LUA and C++
-  - idea to prevent non-const member functions:
-      - wrap registration of method in TypeFactory like in reflect, with a add_member_function method
-      - use metaprogramming alchemistry to determine if argument to add_member_function is non-const member function
-      - if yes, register a method that throws an exception or returns an invalid sol::protected_function_result
+  - DONE: prevent non-const member functions from silently doing nothing under
+    decorated/parametric dispatch - see function_meta::receiver_is_mutating /
+    details::deduce_receiver_is_mutating (function_meta.hpp) and the check in
+    ActionDynamic.hpp's make_dynamic_action. Narrower than the original idea
+    above: non-const alone is not a safe signal (MyScalar::pow is non-const but
+    mutates nothing - see the non_const_but_non_void_... test above), so this
+    additionally requires a void return type.
   - docstrings + documentation
   - copy potentially missing tests from main branch
   - think about good syntax for scripts and expressions (having mixed yaml-lua in mind)

@@ -1340,7 +1340,7 @@ Exporting the recipe will result in the following yaml-representation:
      b: PluginA.Scalar(15)
    steps: |
      c = PluginA.add(a, b)
-     multiplication = recipes.multiplication
+     multiplication = recipes.multiplication()
      multiplication.x = a
      multiplication.y = b
      d = multiplication.z
@@ -1433,7 +1433,7 @@ A ``grunk::Feature`` does not have to have a value. The only use-case of this ar
          b: PluginA.Scalar(15)
       steps: |
          c = PluginA.add(a, b)
-         multiplication = recipes.multiplication
+         multiplication = recipes.multiplication()
          multiplication.x = a
          multiplication.y = b
          d = multiplication.z

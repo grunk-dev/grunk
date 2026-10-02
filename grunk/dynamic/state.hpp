@@ -1091,12 +1091,38 @@ private:
         lua.script("function grunk.__dynamic_unm(v) return -v end");
         sol::protected_function _unmfun = g["__dynamic_unm"];
         g["_dynamic_unm"] = create_function_meta(
-            lua, 
-            "grunk._dynamic_unm", 
+            lua,
+            "grunk._dynamic_unm",
             {Parameter{"value", }},
             _unmfun
         );
-        function_meta const& _unm = g["_dynamic_unm"];        
+        function_meta const& _unm = g["_dynamic_unm"];
+
+        // Forwards a Feature's own sol::meta_function::call (Lua obj(...) syntax) the
+        // same way the arithmetic operators above are forwarded: a small generic Lua
+        // closure invokes the *raw*, unwrapped self value as a function (Lua's own
+        // __call protocol passes self as the first argument, exactly like __add/__sub
+        // above receive lhs/rhs - no "duplicated self" quirk here the way __unm's HACK
+        // works around, since Lua only calls __call once per invocation), and
+        // make_dynamic_action wraps that into a properly dependency-tracked action, so
+        // self and every call argument become genuine inputs of the resulting Feature.
+        // This is what makes a DynamicFeature wrapping a type with its own bound
+        // operator() (e.g. geoml's Transform, see grunk-geoml's transform_extras.hpp)
+        // callable as obj(args...) from inside a real recipe's decorated/parametric
+        // environment - previously this failed with "attempt to call a
+        // sol.grunk::Feature<...> value", since DynamicFeature's own usertype never
+        // registered sol::meta_function::call at all (a plain, undecorated
+        // environment already worked, since there self is the raw type directly and
+        // Lua finds that type's own __call binding with no Feature wrapper involved).
+        lua.script("function grunk.__dynamic_call(self, ...) return self(...) end");
+        sol::protected_function _callfun = g["__dynamic_call"];
+        g["_dynamic_call"] = create_function_meta(
+            lua,
+            "grunk._dynamic_call",
+            {Parameter{"self", }},
+            _callfun
+        );
+        function_meta const& _call = g["_dynamic_call"];
 
         register_type<DynamicFeature>("Feature", g)
         .add_constructors(
@@ -1132,6 +1158,7 @@ private:
         .add_member_function(sol::meta_function::modulus, details::make_dynamic_action(_mod), {Parameter{"lhs", }, Parameter{"rhs",}  })
         .add_member_function(sol::meta_function::power_of, details::make_dynamic_action(_pow), {Parameter{"base", }, Parameter{"exponent",}  })
         .add_member_function(sol::meta_function::unary_minus, details::make_dynamic_action(_unm), {Parameter{"value",}  })
+        .add_member_function(sol::meta_function::call, details::make_dynamic_action(_call), {})
         .set(sol::meta_function::index, [this](DynamicFeature const& self, std::string const& key) -> sol::object {
             // Native colon-call dispatch fallback: sol2 checks Feature's own members
             // (value, set_value, id, ..., as) before this ever runs, so those always win

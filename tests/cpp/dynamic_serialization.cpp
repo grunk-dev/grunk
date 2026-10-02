@@ -503,6 +503,19 @@ TEST(serialization, member_function_action_cpp)
     EXPECT_EQ(ret_y, "y = Dummy.value(a)");
 }
 
+// Dummy::set_value (void-returning, non-const self) called from Lua now hits
+// ActionDynamic.hpp's make_dynamic_action mutating-receiver check (see
+// state.mutating_member_function_direct_call_in_decorated_env_throws in
+// dynamic_state.cpp) - even for a call whose only purpose here was building an
+// action to serialize, never to actually evaluate. That's deliberate: from
+// Lua's own point of view there's no way to distinguish "I only want this for
+// serialization" from "I actually want this to run" - both go through the
+// exact same decorated-dispatch call. member_function_action_cpp above still
+// covers set_value's own serialization directly via grunk::action(...) (the
+// lower-level C++ API make_dynamic_action's check does not intercept at all,
+// since it's not Lua-dispatched) - this Lua-facing test now only exercises the
+// non-mutating half (Dummy::value) directly from Lua, plus confirms the
+// mutating half is rejected loudly rather than silently misbehaving.
 TEST(serialization, member_function_action_lua)
 {
     grunk::state grunk;
@@ -517,17 +530,20 @@ TEST(serialization, member_function_action_lua)
     auto env = grunk.create_parametric_env();
     env.eval(R"(
         a = Dummy.new_feature():with_id("a")
-
-        x = Dummy.set_value(a, 4.):with_id("x")
         y = Dummy.value(a):with_id("y")
     )");
-    auto x = env.get_feature("x");
-    auto ret_x = x.compute_node()->serialize();
-    EXPECT_EQ(ret_x, "x = Dummy.set_value(a, 4.0)");
 
     auto y = env.get_feature("y");
     auto ret_y = y.compute_node()->serialize();
     EXPECT_EQ(ret_y, "y = Dummy.value(a)");
+
+    try {
+        env.eval(R"(x = Dummy.set_value(a, 4.):with_id("x"))");
+        FAIL() << "expected the mutating call to throw";
+    } catch (sol::error const& err) {
+        std::string what = err.what();
+        EXPECT_NE(what.find("mutates its own receiver"), std::string::npos);
+    }
 }
 
 TEST(serialization, ctor_action_cpp)

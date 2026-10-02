@@ -133,12 +133,121 @@ def test_param_kind_typedef_hiding_a_pointer_stays_rejected():
     assert generate.Param("WidgetAlias", "x", canonical="Widget").kind(set(), set(), _hooks) == "object"
 
 
+def test_param_kind_canonical_template_instantiation_does_not_reject():
+    # Regression test: the canonical-spelling cross-check used to reject
+    # *any* class whose canonical spelling isn't itself a bare type name
+    # (BARE_TYPE_NAME.fullmatch), not just a pointer - which silently broke
+    # every std::string parameter of any plugin using it directly (found
+    # wrapping geoml: std::string's own canonical spelling is libstdc++'s real
+    # template instantiation, std::__cxx11::basic_string<char, ...>, which
+    # doesn't match BARE_TYPE_NAME at all - angle brackets, commas). "Widget"
+    # here plays the role of any class whose canonical spelling happens to be
+    # a template instantiation (its own standard-library implementation, or
+    # any other class template used directly) - exactly as safe a "genuine,
+    # stable-identity class" as a plain class name, and must classify as
+    # "object" here, the same as a plain canonical spelling already does two
+    # tests up. Only a *pointer* canonical spelling (previous test) is the
+    # actual, documented hazard this cross-check exists to catch.
+    assert generate.Param("Widget", "x", canonical="ns::Widget<int, std::allocator<int>>").kind(
+        set(), set(), _hooks
+    ) == "object"
+    # Same, but as a confirmed-safe mutable "out" parameter (the other branch
+    # this cross-check feeds into) - a template-instantiated canonical is not
+    # a fundamental, so this should be accepted exactly like a plain-class
+    # canonical mutable ref already is.
+    assert generate.Param("Widget &", "x", canonical="ns::Widget<int, std::allocator<int>>").kind(
+        set(), set(), _hooks
+    ) == "object"
+
+
+# ---------------------------------------------------------------------------
+# Param.kind() - std::string/std::vector<T> built-ins. Genuinely library-
+# agnostic (pure standard-library idioms, not any one third-party library's
+# own convention) - see CXX_STD_STRING/STD_VECTOR_PATTERN's own module-level
+# comments for the full rationale and the real-world symptom (every
+# std::string/std::vector<T>-taking geoml function silently rejected until
+# these became built-ins).
+# ---------------------------------------------------------------------------
+
+def test_param_kind_std_string_passthrough():
+    assert generate.Param("std::string", "x").kind(set(), set(), _hooks) == "passthrough"
+    assert generate.Param("const std::string &", "x").kind(set(), set(), _hooks) == "passthrough"
+    # Mutable out-param stays rejected - same reasoning as a bare fundamental's
+    # own mutable reference (no Lua-side identity to mutate a temporary
+    # std::string through).
+    assert generate.Param("std::string &", "x").kind(set(), set(), _hooks) is None
+
+
+def test_param_kind_std_vector_of_fundamental_passthrough():
+    assert generate.Param("std::vector<double>", "x").kind(set(), set(), _hooks) == "passthrough"
+    assert generate.Param("const std::vector<int> &", "x").kind(set(), set(), _hooks) == "passthrough"
+    assert generate.Param("std::vector<double> &", "x").kind(set(), set(), _hooks) is None
+
+
+def test_param_kind_std_vector_of_std_string_passthrough():
+    assert generate.Param("const std::vector<std::string> &", "x").kind(set(), set(), _hooks) == "passthrough"
+
+
+def test_param_kind_std_vector_of_registered_type_passthrough():
+    assert generate.Param("const std::vector<Widget> &", "x").kind({"Widget"}, set(), _hooks) == "passthrough"
+
+
+def test_param_kind_std_vector_of_plausible_bare_class_passthrough():
+    # Not registered by this run at all - exactly Param.kind()'s own "object"
+    # fallback logic for a standalone parameter, reapplied here to one vector
+    # element (most commonly a type registered by a *different* plugin this
+    # one depends on).
+    assert generate.Param("const std::vector<Widget> &", "x").kind(set(), set(), _hooks) == "passthrough"
+
+
+def test_param_kind_std_vector_of_unsupported_element_is_rejected():
+    # A pointer-shaped element is not a plausible bare type name - the whole
+    # vector stays rejected, same conservatism as a bare pointer parameter.
+    assert generate.Param("const std::vector<Widget *> &", "x").kind(set(), set(), _hooks) is None
+
+
 def test_param_kind_falls_through_to_hooks_classify_param():
     class _RecognizesEverything(generate.CodeGenerator):
         def classify_param(self, param, registered_types, registered_enums):
             return "custom"
     assert generate.Param("SomeExoticType *", "x").kind(set(), set(), _RecognizesEverything()) == "custom"
     assert generate.Param("SomeExoticType *", "x").kind(set(), set(), generate.CodeGenerator()) is None
+
+
+def test_param_kind_hooks_rejected_skips_unregistered_class_fallback():
+    # A plain, bare-identifier surface spelling ("SomeExoticType") is exactly
+    # the shape Param.kind()'s own unregistered-class fallback would otherwise
+    # happily accept as "object" - the whole point of REJECTED is to let a
+    # CodeGenerator subclass that positively recognizes this param's shape (and
+    # has positively determined it's unsupported for a reason specific to that
+    # shape) skip that fallback entirely, unlike returning plain None. This is
+    # the exact bug class test_classify_param_array1_array2 (grunk-occt's own
+    # tests/python/test_hooks.py) surfaced: an NCollection_Array1<T> parameter
+    # with an unregistered element T, whose *surface* spelling is a bare
+    # OCCT typedef (e.g. "TColgp_Array1OfPnt"), used to be silently accepted as
+    # a plain "object" once its own hook returned None instead of REJECTED.
+    class _RejectsBySpelling(generate.CodeGenerator):
+        def classify_param(self, param, registered_types, registered_enums):
+            if param.base == "SomeExoticType":
+                return generate.REJECTED
+            return None
+    p = generate.Param("SomeExoticType", "x")
+    # Without the hook (or with a hook returning plain None for this type),
+    # this exact same Param would classify as "object" via the fallback -
+    # confirm that baseline first, so the REJECTED case below is a genuine
+    # contrast, not a param that was already rejected for some other reason.
+    assert p.kind(set(), set(), generate.CodeGenerator()) == "object"
+    assert p.kind(set(), set(), _RejectsBySpelling()) is None
+
+
+def test_code_generator_classify_param_rejected_is_distinct_from_none():
+    # REJECTED and None must never compare equal to each other, and REJECTED
+    # must not collide with a legitimate string kind name a subclass might
+    # choose - see REJECTED's own module-level docstring for why this needs to
+    # be a dedicated sentinel type rather than e.g. a string constant.
+    assert generate.REJECTED is not None
+    assert generate.REJECTED != None  # noqa: E711 - deliberately testing __eq__, not identity twice
+    assert generate.REJECTED != "rejected"
 
 
 # ---------------------------------------------------------------------------
@@ -308,6 +417,67 @@ def test_code_generator_emit_bases_default_is_identity():
 
 def test_code_generator_emit_return_type_default_is_none():
     assert generate.CodeGenerator().emit_return_type("Widget") is None
+
+
+def test_render_sol_base_classes_header_emits_transitive_bases_and_derived():
+    # Base <- Middle <- Derived, Middle <- OtherDerived (a diamond-free, simple
+    # three-generation hierarchy) - see render_sol_base_classes_header's own
+    # docstring for why both directions (SOL_BASE_CLASSES: Derived's own full
+    # ancestor chain; SOL_DERIVED_CLASSES: every class that transitively derives
+    # from a given base) are needed, and why they must be computed globally
+    # across every module in one run, not per-module.
+    all_bases = {
+        "Derived": ["Middle", "Base"],
+        "OtherDerived": ["Middle", "Base"],
+        "Middle": ["Base"],
+        "Base": [],
+    }
+    class_to_header = {name: "widgets.hpp" for name in all_bases}
+    source = generate.render_sol_base_classes_header(all_bases, {}, class_to_header, generate.CodeGenerator())
+
+    assert "#include <widgets.hpp>" in source
+    assert "SOL_BASE_CLASSES(Derived, Middle, Base);" in source
+    assert "SOL_BASE_CLASSES(Middle, Base);" in source
+    assert "SOL_BASE_CLASSES(OtherDerived, Middle, Base);" in source
+    # Base has no bases of its own - no SOL_BASE_CLASSES(Base, ...) line.
+    assert "SOL_BASE_CLASSES(Base," not in source
+    assert "SOL_DERIVED_CLASSES(Base, Derived, Middle, OtherDerived);" in source
+    assert "SOL_DERIVED_CLASSES(Middle, Derived, OtherDerived);" in source
+
+
+def test_render_sol_base_classes_header_qualifies_namespaced_names():
+    # Unlike each module's own generated .cpp (which gets a `using ns::Name;` for
+    # every namespaced entity it discovers), this shared header has no such
+    # declarations - a namespaced class must be spelled out fully qualified for
+    # its name to resolve regardless of which module's .cpp includes this
+    # header first.
+    all_bases = {"Derived": ["Base"]}
+    all_namespace_of = {"Derived": "mylib", "Base": "mylib"}
+    class_to_header = {"Derived": "widgets.hpp", "Base": "widgets.hpp"}
+    source = generate.render_sol_base_classes_header(all_bases, all_namespace_of, class_to_header, generate.CodeGenerator())
+
+    assert "SOL_BASE_CLASSES(mylib::Derived, mylib::Base);" in source
+    assert "SOL_DERIVED_CLASSES(mylib::Base, mylib::Derived);" in source
+
+
+def test_render_sol_base_classes_header_respects_hooks_emit_bases_override():
+    # A plugin's own emit_bases() override (e.g. truncating a chain at a
+    # library-specific root, exactly like grunk-occt's own Standard_Transient
+    # truncation) must be reflected here identically to how it's reflected in
+    # each class's own .add_bases<...>() call - the two mechanisms should never
+    # disagree about "what is this class's base, as far as Lua is concerned".
+    class TruncateAtMiddle(generate.CodeGenerator):
+        def emit_bases(self, class_name, chain):
+            return chain[:1]  # only the direct parent, never further
+
+    all_bases = {"Derived": ["Middle", "Base"]}
+    class_to_header = {"Derived": "widgets.hpp", "Middle": "widgets.hpp", "Base": "widgets.hpp"}
+    source = generate.render_sol_base_classes_header(all_bases, {}, class_to_header, TruncateAtMiddle())
+
+    assert "SOL_BASE_CLASSES(Derived, Middle);" in source
+    assert "SOL_BASE_CLASSES(Derived, Middle, Base);" not in source
+    assert "SOL_DERIVED_CLASSES(Middle, Derived);" in source
+    assert "SOL_DERIVED_CLASSES(Base, Derived);" not in source
 
 
 def test_emit_callable_plain_passthrough_needs_no_conversion():
@@ -516,6 +686,59 @@ def test_expand_headers_dedups_across_overlapping_patterns(tmp_path):
     (tmp_path / "widget_a.hxx").write_text("")
     headers, _ = generate.expand_headers(["widget_*.hxx", "widget_a.hxx"], tmp_path)
     assert headers == ["widget_a.hxx"]
+
+
+def test_expand_headers_glob_preserves_nested_relative_path(tmp_path):
+    # Regression test: a glob match used to be reduced to its bare basename
+    # (p.name) before being handed back to parse_headers(), which then
+    # reconstructs the path as include_dir / header - silently correct for a
+    # flat header layout (OCCT's own), but silently WRONG for any nested one
+    # (a real library like geoml, headers under geoml/<module>/*.h) - found
+    # the hard way, a TranslationUnitLoadError trying to parse
+    # "<include_dir>/widget.hpp", which never existed; the real file was
+    # "<include_dir>/nested/widget.hpp". The returned path must be relative to
+    # include_dir (nested/widget.hpp), not just the trailing filename.
+    (tmp_path / "nested").mkdir()
+    (tmp_path / "nested" / "widget.hpp").write_text("")
+    headers, glob_matched = generate.expand_headers(["nested/*.hpp"], tmp_path)
+    assert headers == ["nested/widget.hpp"]
+    assert glob_matched == {"nested/widget.hpp"}
+    assert (tmp_path / headers[0]).exists()
+
+
+def test_expand_headers_glob_disambiguates_same_basename_in_different_dirs(tmp_path):
+    # A real basename collision a basename-only glob would have mishandled
+    # silently (found wrapping geoml: geoml/boolean_ops/modeling.hpp and
+    # geoml/primitives/modeling.hpp share the exact same filename) - both must
+    # survive, distinguished by their own relative path.
+    (tmp_path / "a").mkdir()
+    (tmp_path / "b").mkdir()
+    (tmp_path / "a" / "modeling.hpp").write_text("")
+    (tmp_path / "b" / "modeling.hpp").write_text("")
+    headers, _ = generate.expand_headers(["a/*.hpp", "b/*.hpp"], tmp_path)
+    assert headers == ["a/modeling.hpp", "b/modeling.hpp"]
+
+
+def test_expand_headers_exclude_headers_drops_nested_glob_matches(tmp_path):
+    # exclude_headers is matched against the same relative-path spelling
+    # expand_headers now returns for a nested glob, not the bare basename.
+    (tmp_path / "nested").mkdir()
+    (tmp_path / "nested" / "widget_a.hpp").write_text("")
+    (tmp_path / "nested" / "widget_bad.hpp").write_text("")
+    headers, _ = generate.expand_headers(
+        ["nested/*.hpp"], tmp_path, exclude_headers=["nested/widget_bad.hpp"]
+    )
+    assert headers == ["nested/widget_a.hpp"]
+
+
+def test_expand_headers_flat_layout_glob_unaffected_by_relative_path_change(tmp_path):
+    # A flat file's relative path already equals its basename, so a
+    # flat-layout plugin (grunk-occt's own OCCT headers) sees no behavior
+    # change at all from the relative-path fix above.
+    (tmp_path / "widget_a.hxx").write_text("")
+    headers, glob_matched = generate.expand_headers(["widget_*.hxx"], tmp_path)
+    assert headers == ["widget_a.hxx"]
+    assert glob_matched == {"widget_a.hxx"}
 
 
 # ---------------------------------------------------------------------------

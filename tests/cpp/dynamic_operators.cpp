@@ -676,3 +676,54 @@ TEST(operators, usertype_addition_lua)
     EXPECT_NEAR(env.get<MyScalar>("z1").value(), 5., 1e-14);
     EXPECT_NEAR(env.get<MyScalar>("z2").value(), 42., 1e-14);
 }
+
+namespace {
+
+// A usertype whose own operator() is bound to Lua via sol::meta_function::call -
+// the shape geoml's Transform (grunk-geoml's src/transform_extras.hpp) uses for its
+// own value-transformation call. Exercises DynamicFeature's own sol::meta_function::call
+// forwarding (state.hpp): before this existed, calling a Feature-wrapped Doubler as
+// Lua obj(...) failed with "attempt to call a sol.grunk::Feature<...> value", even
+// though the very same call worked fine on a raw, unwrapped Doubler.
+class Doubler {
+public:
+    Doubler() = default;
+    double operator()(double v) const { return v * m_factor; }
+    void set_factor(double f) { m_factor = f; }
+
+private:
+    double m_factor {2.0};
+};
+
+} // namespace
+
+TEST(operators, usertype_call_lua)
+{
+    grunk::state grunk;
+
+    grunk.register_type<Doubler>("Doubler")
+    .add_constructors(
+        []() { return Doubler(); }
+    )
+    .add_member_function("set_factor", &Doubler::set_factor)
+    .set(sol::meta_function::call, [](Doubler const& self, double v) { return self(v); });
+
+    auto env = grunk.create_parametric_env();
+    env.eval(R"(
+        local d = Doubler.new_feature()
+        local x = 3.
+        local z = d(x)
+
+        z1 = z:value()
+
+        d:change_value():set_factor(10.)
+
+        z2 = z:value()
+    )");
+
+    // Confirms both that the call itself succeeds (the actual bug) and that the
+    // result is a genuinely dependency-tracked Feature, not a one-shot eager call -
+    // z2 must reflect d's new factor without re-evaluating z from scratch.
+    EXPECT_NEAR(env.get<double>("z1"), 6., 1e-14);
+    EXPECT_NEAR(env.get<double>("z2"), 30., 1e-14);
+}
