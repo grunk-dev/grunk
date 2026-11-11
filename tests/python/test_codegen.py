@@ -941,3 +941,83 @@ def test_run_end_to_end_loads_code_generator_from_config(tmp_path):
     cpp_source = (output_dir / "widget.cpp").read_text()
     assert "sol::object factor" in cpp_source
     assert "toy_ns::to_widget(factor)" in cpp_source
+
+
+MULTI_CANDIDATE_WIDGET_HEADER = """\
+class Widget {
+public:
+    Widget();
+    double value() const;
+    static double unit();
+};
+"""
+
+
+def test_run_end_to_end_wraps_single_overload_widened_into_several_candidates(tmp_path):
+    """Regression test for the bug this fix addresses: render_module() used to
+    only wrap a same-named group of callables in sol::overload(...) when more
+    than one real C++ overload was discovered for that name. For exactly one
+    overload, it spliced a CodeGenerator subclass's own emit_callable() return
+    value bare, as the sole argument to
+    grunk::plugin_namespace::register_function()/
+    grunk::usertype_proxy::add_member_function() - both take exactly one Func
+    template parameter (see usertype_proxy.hpp's own add_member_function, not
+    its plural add_member_functions sibling, which already wraps in
+    sol::overload(...) itself for exactly this reason).
+
+    emit_callable()'s own docstring already allows a subclass to return
+    several candidate lambdas for ONE Callable by embedding extra top-level
+    commas (the same thing emit_constructor() has always been allowed to do,
+    relied on by add_constructors()'s own unconditional flat/variadic
+    splicing) - e.g. to widen one parameter's concrete type into several
+    sol2-exact-match candidates covering a whole class hierarchy, since sol2's
+    own base-class-aware usertype conversion only reliably applies to a
+    by-value parameter, not a reference one (see grunk-geoml's own
+    codegen/hooks.py ALL_TOPODS_SHAPE_WIDEN_TYPES for the real-world
+    motivating case: geoml::repeat_shape has exactly one real C++ overload,
+    yet needs widening into 9 candidates). Before this fix, such a widened
+    single-overload result produced several literal extra positional
+    arguments to a function taking only one - a hard compile error.
+
+    Hooks below returns the SAME fake candidate lambda text twice, comma-
+    joined, for every non-constructor/non-operator Callable - a minimal stand-
+    in for a real multi-candidate widening, exercising both the free-function/
+    static-method loop ("unit") and the instance-method loop ("value") in one
+    pass."""
+    include_dir = tmp_path / "include"
+    include_dir.mkdir()
+    (include_dir / "widget.hpp").write_text(MULTI_CANDIDATE_WIDGET_HEADER)
+
+    (tmp_path / "hooks.py").write_text(
+        "from grunk.codegen import generate\n"
+        "class Hooks(generate.CodeGenerator):\n"
+        "    def emit_callable(self, c, kinds, ctor_mode):\n"
+        "        base = super().emit_callable(c, kinds, ctor_mode)\n"
+        "        if c.kind in ('constructor', 'operator'):\n"
+        "            return base\n"
+        "        return base + ',\\n        ' + base\n"
+    )
+
+    config_path = tmp_path / "config.yml"
+    config_path.write_text(yaml.safe_dump({
+        "code_generator": "hooks.py",
+        "modules": [{"name": "widget", "headers": ["widget.hpp"]}],
+    }))
+
+    output_dir = tmp_path / "generated"
+    args = argparse.Namespace(config=config_path, include_dir=include_dir, output_dir=output_dir)
+    assert generate.run(args) == 0
+
+    cpp_source = (output_dir / "widget.cpp").read_text()
+
+    # The static method ("unit", registered as a free function under its
+    # composed name) - exactly one real C++ overload, widened into two fake
+    # candidates - must be wrapped in a single sol::overload(...), not spliced
+    # bare into register_function()'s own single Func parameter.
+    assert 'ns.register_function("Widget_unit", sol::overload(' in cpp_source
+    assert cpp_source.count("return Widget::unit();") == 2
+
+    # The instance method ("value") - same shape, add_member_function() this
+    # time.
+    assert '.add_member_function("value", sol::overload(' in cpp_source
+    assert cpp_source.count("return self.value();") == 2
