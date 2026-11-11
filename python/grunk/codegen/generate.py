@@ -1656,13 +1656,27 @@ void register_{result.name}(grunk::plugin_namespace& ns);
             if not overloads[0][0].is_static:
                 continue
             overloads = ambiguity_safe_overload_order(overloads, hooks)
-            if len(overloads) == 1:
-                c, kinds = overloads[0]
-                fun_expr = hooks.emit_callable(c, kinds, ctor_mode)
-            else:
-                fun_expr = "sol::overload(\n        " + ",\n        ".join(
-                    hooks.emit_callable(c, kinds, ctor_mode) for c, kinds in overloads
-                ) + "\n    )"
+            # Always wrapped in sol::overload(...), even for a single discovered
+            # C++ overload (len(overloads) == 1 used to skip this wrapping as a
+            # premature optimization) - a CodeGenerator subclass's own
+            # emit_callable() is free to return more than one candidate lambda
+            # for a SINGLE Callable by embedding extra top-level commas in its
+            # returned text (the same thing emit_constructor() has always been
+            # allowed to do, relied on by add_constructors()'s own unconditional
+            # flat/variadic splicing below) - e.g. to widen one concrete
+            # parameter type into several sol2-exact-match candidates covering
+            # a whole class hierarchy. Without this wrapping, such a widened
+            # single-overload result was spliced as literal extra positional
+            # arguments directly into a plugin_namespace::register_function()/
+            # usertype_proxy::add_member_function() call, both of which take
+            # exactly one Func template parameter - a hard compile error, not a
+            # silent bug (found via a real downstream plugin needing to widen a
+            # single-overload free function exactly this way). sol::overload(...)
+            # containing exactly one function works correctly too, so this is
+            # strictly more general, not merely a special-case fix.
+            fun_expr = "sol::overload(\n        " + ",\n        ".join(
+                hooks.emit_callable(c, kinds, ctor_mode) for c, kinds in overloads
+            ) + "\n    )"
 
             # A *genuine* C++ namespace's own free functions (result.entity_kind
             # == "namespace") get registered under their own bare name where
@@ -1756,13 +1770,11 @@ void register_{result.name}(grunk::plugin_namespace& ns);
             lines.append("        .add_constructors(\n            " + ",\n            ".join(ctor_exprs) + "\n        )")
 
         for method_name, overloads in instance_methods.items():
-            if len(overloads) == 1:
-                c, kinds = overloads[0]
-                fun_expr = hooks.emit_callable(c, kinds, ctor_mode)
-            else:
-                fun_expr = "sol::overload(\n            " + ",\n            ".join(
-                    hooks.emit_callable(c, kinds, ctor_mode) for c, kinds in overloads
-                ) + "\n        )"
+            # Always wrapped, same reasoning as the free-function/static-method
+            # loop above - see its own comment for the full "why".
+            fun_expr = "sol::overload(\n            " + ",\n            ".join(
+                hooks.emit_callable(c, kinds, ctor_mode) for c, kinds in overloads
+            ) + "\n        )"
             if method_name.startswith("__meta_"):
                 # An operator group (see process_module's own "__meta_"
                 # keying) - a real sol2/Lua metamethod slot, not a named
