@@ -119,10 +119,12 @@ using register_fn_t = char const* (*)(state&, PluginInfo const&);
  * comment still shows that form, since it's what the ABI actually requires
  * conceptually) - this macro additionally suppresses MSVC's C4190 ("'
  * grunk_plugin_info' has C-linkage specified, but returns 'grunk::PluginInfo'
- * which is incompatible with C") around just this one declaration.
+ * which is incompatible with C") and Clang's equivalent `-Wreturn-type-c-linkage`
+ * around just this one declaration (GCC has no equivalent diagnostic for this
+ * case, nothing to suppress there).
  *
- * The warning is a real, general MSVC diagnostic - `extern "C"` functions aren't
- * supposed to return non-POD C++ types (`PluginInfo` holds two `std::string`
+ * The warning is a real, general MSVC/Clang diagnostic - `extern "C"` functions
+ * aren't supposed to return non-POD C++ types (`PluginInfo` holds two `std::string`
  * members) - but not a bug here: `GRUNK_PLUGIN_EXPORT`'s `extern "C"` is used
  * purely to keep this symbol's name unmangled for `load_native`'s dlsym/
  * GetProcAddress lookup (see `GRUNK_PLUGIN_EXPORT`'s own doc comment), not to claim
@@ -141,6 +143,15 @@ using register_fn_t = char const* (*)(state&, PluginInfo const&);
     __pragma(warning(disable : 4190)) \
     GRUNK_PLUGIN_EXPORT grunk::PluginInfo grunk_plugin_info() { return grunk::PluginInfo{name, version}; } \
     __pragma(warning(pop))
+#elif defined(__clang__)
+// Clang's equivalent of MSVC's C4190 above - same "real in general, not a bug
+// here" reasoning (see this macro's own doc comment). GCC has no equivalent
+// diagnostic for this case, so it gets the plain, unsuppressed definition below.
+#define GRUNK_PLUGIN_INFO(name, version) \
+    _Pragma("clang diagnostic push") \
+    _Pragma("clang diagnostic ignored \"-Wreturn-type-c-linkage\"") \
+    GRUNK_PLUGIN_EXPORT grunk::PluginInfo grunk_plugin_info() { return grunk::PluginInfo{name, version}; } \
+    _Pragma("clang diagnostic pop")
 #else
 #define GRUNK_PLUGIN_INFO(name, version) \
     GRUNK_PLUGIN_EXPORT grunk::PluginInfo grunk_plugin_info() { return grunk::PluginInfo{name, version}; }
