@@ -13,6 +13,27 @@
 
 namespace grunk {
 
+namespace details {
+
+/**
+ * @brief Identity function used by usertype_proxy::with_std_vector as its
+ * element-cast callable. A named function template rather than a lambda on
+ * purpose: sol2 keys the metatable of a pushed callable on a type name it
+ * derives from __PRETTY_FUNCTION__, and Clang spells a lambda there as
+ * "(lambda at file:line:col)" with no enclosing template arguments. A lambda
+ * defined inside with_std_vector<VecElement>() therefore gets the *same* name
+ * for every instantiation, so the second type to call with_std_vector() in one
+ * lua_State silently reuses the first type's metatable (and its __call) - e.g.
+ * Geom_Curve.as_vec(...) ending up invoking gp_Pnt's cast and rejecting every
+ * argument. GCC includes the template arguments in that name and MSVC uses a
+ * unique lambda id, which is why this only ever showed up on Clang (macOS CI).
+ * A function template's name carries its template argument on every compiler.
+ */
+template <typename V>
+V identity_cast(V x) { return x; }
+
+} // namespace details
+
 /**
  * @brief A proxy class for sol::usertype that allows for more convenient registration of usertypes with metadata. It provides a fluent interface for adding constructors, member functions and data members to the usertype, as well as setting arbitrary properties. It also provides a helper function with_std_vector to add support for std::vector<T> where T is the usertype itself.
  *
@@ -252,7 +273,10 @@ struct usertype_proxy {
         // unique-usertype VecElement (e.g. Handle<T>) - see this method's own doc
         // comment above for why a by-reference parameter silently takes a
         // different, non-base-aware path instead.
-        sol::protected_function cast_to_element = sol::make_object(lua, [](VecElement x) -> VecElement { return x; });
+        //
+        // Deliberately a named function template, NOT a lambda - see
+        // details::identity_cast for why a lambda here breaks under Clang.
+        sol::protected_function cast_to_element = sol::make_object(lua, &details::identity_cast<VecElement>);
 
         // convert_one is a generic lambda (not sol::object const&) for two reasons:
         // (1) portability - table iteration (from_table below) yields sol::object

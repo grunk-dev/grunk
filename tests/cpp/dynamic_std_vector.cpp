@@ -303,3 +303,45 @@ l = HandleBase.as_vec(d1, d2, b1)
     EXPECT_EQ(lv[1].get()->i, 7);
     EXPECT_EQ(lv[2].get()->i, 9);
 }
+
+// Regression test for issue #300: two different types opting into
+// with_std_vector() in the SAME grunk::state must each get their own element
+// cast. Every test above registers exactly one with_std_vector() type per state,
+// which is why this never showed up here - it did under Emscripten (#300) and in
+// grunk-occt/grunk-geoml on macOS, where gp_Pnt and Handle(Geom_Curve) share one
+// state and Geom_Curve.as_vec(...) rejected every argument. Clang only - see
+// details::identity_cast in usertype_proxy.hpp for the cause.
+TEST(std_vector, two_types_in_one_state)
+{
+    grunk::state grunk;
+
+    grunk.register_type<Foo>("Foo")
+    .add_constructors([](int i){ return Foo{i}; })
+    .with_std_vector();
+
+    grunk.register_type<HandleBase>("HandleBase")
+    .add_constructors([](int i){ return Handle<HandleBase>(new HandleBase{i}); })
+    .with_std_vector<Handle<HandleBase>>();
+
+    auto env = grunk.create_env();
+    env.eval(R"(
+foos = Foo.as_vec(Foo.new(1), Foo.new(2))
+handles = HandleBase.as_vec(HandleBase.new(3), HandleBase.new(4))
+)");
+
+    sol::object foos = env["foos"];
+    ASSERT_TRUE(foos.is<std::vector<Foo>>());
+    auto fv = foos.as<std::vector<Foo>>();
+    ASSERT_EQ(fv.size(), 2u);
+    EXPECT_EQ(fv[0].i, 1);
+    EXPECT_EQ(fv[1].i, 2);
+
+    sol::object handles = env["handles"];
+    ASSERT_TRUE(handles.is<std::vector<Handle<HandleBase>>>());
+    auto hv = handles.as<std::vector<Handle<HandleBase>>>();
+    ASSERT_EQ(hv.size(), 2u);
+    ASSERT_FALSE(hv[0].IsNull());
+    ASSERT_FALSE(hv[1].IsNull());
+    EXPECT_EQ(hv[0].get()->i, 3);
+    EXPECT_EQ(hv[1].get()->i, 4);
+}
