@@ -7,7 +7,9 @@
 #include <sol/sol.hpp>
 #include "grunk/dynamic/function_meta.hpp"
 
+#include <cstdint>
 #include <functional>
+#include <iostream> // TEMP DIAGNOSTIC - see with_std_vector
 #include <typeindex>
 #include <vector>
 
@@ -271,12 +273,67 @@ struct usertype_proxy {
         // never a userdata at all is undefined behavior in that unchecked mode
         // rather than the clean failure this function is supposed to produce. A
         // plain Lua-type-tag comparison is always safe regardless of that setting.
-        auto convert_one = [ud_name, cast_to_element](auto const& v) -> VecElement {
+        // TEMP DIAGNOSTIC (remove once grunk-geoml's macOS-only
+        // occt.Geom_Curve.as_vec(...) failure is root-caused): four hand-rolled
+        // replicas of this exact function, registered right next to the real
+        // as_vec in grunk-occt's geom_extras.hpp, all PASS on macOS CI while
+        // this one still throws - on the same curves, in the same Lua state, in
+        // the same dylib. Every structural difference has been ruled out by
+        // inspection, so this dumps what the two throw branches below actually
+        // see at the point of failure: which branch fires, sol2's own error
+        // text (the handler's "unrecognized userdata"/"not the correct unique
+        // usertype"/cross-state message is what the generic throw hides), the
+        // value's metatable name, lua_State identity of the value vs the
+        // registration-time cast_to_element, and whether a cast_to_element
+        // rebuilt fresh from the value's own state succeeds where the captured
+        // one fails.
+        lua_State* const registration_state = ut.lua_state();
+        std::cerr << "[with_std_vector DIAG] registered " << ud_name << ".as_vec: VecElement="
+                  << sol::usertype_traits<VecElement>::qualified_name()
+                  << " registration L=" << static_cast<void const*>(registration_state)
+                  << " cast_to_element L=" << static_cast<void const*>(cast_to_element.lua_state()) << "\n";
+
+        auto describe = [](auto const& v) -> std::string {
+            lua_State* L = v.lua_state();
+            std::string out = "type=" + std::to_string(static_cast<int>(v.get_type()));
+            v.push();
+            if (luaL_getmetafield(L, -1, "__name") != LUA_TNIL) {
+                char const* s = lua_tostring(L, -1);
+                out += " __name=" + std::string(s ? s : "<non-string>");
+                lua_pop(L, 1);
+            } else {
+                out += " __name=<no metatable/__name>";
+            }
+            out += " ptr=" + std::to_string(reinterpret_cast<std::uintptr_t>(lua_topointer(L, -1)));
+            lua_pop(L, 1);
+            return out;
+        };
+
+        auto convert_one = [ud_name, cast_to_element, registration_state, describe](auto const& v) -> VecElement {
             if (v.get_type() != sol::type::userdata) {
+                std::cerr << "[with_std_vector DIAG] " << ud_name << ".as_vec: branch=NOT_USERDATA " << describe(v)
+                          << " value L=" << static_cast<void const*>(v.lua_state())
+                          << " registration L=" << static_cast<void const*>(registration_state) << "\n";
                 throw std::runtime_error("Cannot create std::vector. The values cannot be converted to the expected usertype \"" + ud_name + "\".");
             }
             sol::protected_function_result res = cast_to_element(v);
             if (!res.valid()) {
+                sol::error err = res;
+                std::cerr << "[with_std_vector DIAG] " << ud_name << ".as_vec: branch=CAST_FAILED " << describe(v)
+                          << " value L=" << static_cast<void const*>(v.lua_state())
+                          << " registration L=" << static_cast<void const*>(registration_state)
+                          << " cast_to_element L=" << static_cast<void const*>(cast_to_element.lua_state())
+                          << " gettop(value L)=" << lua_gettop(v.lua_state())
+                          << "\n[with_std_vector DIAG]   captured cast error: " << err.what() << "\n";
+                sol::state_view fresh_lua(v.lua_state());
+                sol::protected_function fresh_cast = sol::make_object(fresh_lua, [](VecElement x) -> VecElement { return x; });
+                sol::protected_function_result fresh_res = fresh_cast(v);
+                if (fresh_res.valid()) {
+                    std::cerr << "[with_std_vector DIAG]   fresh cast_to_element from value's own state: OK\n";
+                } else {
+                    sol::error fresh_err = fresh_res;
+                    std::cerr << "[with_std_vector DIAG]   fresh cast_to_element from value's own state: FAILED: " << fresh_err.what() << "\n";
+                }
                 throw std::runtime_error("Cannot create std::vector. The values cannot be converted to the expected usertype \"" + ud_name + "\".");
             }
             return res.get<VecElement>();
